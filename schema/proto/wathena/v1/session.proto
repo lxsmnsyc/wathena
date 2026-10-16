@@ -33,6 +33,31 @@ message Welcome {
   // limits are the world ruleset's limits, so the client sizes its
   // windows (strategy section 6.8).
   Limits limits = 6;
+  // world is the world's mode and the versions of its map generator, so
+  // the client loads the generator only for a procedural world (strategy
+  // section 8.1). A server that leaves it out runs a classic world.
+  WorldInfo world = 7;
+}
+
+// WorldInfo describes the world a client joined.
+message WorldInfo {
+  WorldMode mode = 1;
+  // generator_version is the map generator version the world records,
+  // or 0 in a classic world (docs/specs/generator-v1.md).
+  uint32 generator_version = 2;
+  // rng_version is the seed tree spec the world records, such as
+  // "rng-v1" (docs/specs/rng-v1.md), or empty in a classic world.
+  string rng_version = 3;
+}
+
+// WorldMode is the world mode chosen when the world was made.
+enum WorldMode {
+  // A server that sends no mode runs a classic world.
+  WORLD_MODE_UNSPECIFIED = 0;
+  // rAthena's fixed maps.
+  WORLD_MODE_CLASSIC = 1;
+  // Maps generated from the world seed.
+  WORLD_MODE_PROCEDURAL = 2;
 }
 
 // Limits are limits that rAthena compiles in and a ruleset sets

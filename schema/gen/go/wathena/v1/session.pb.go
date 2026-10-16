@@ -20,6 +20,54 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// WorldMode is the world mode chosen when the world was made.
+type WorldMode int32
+
+const (
+	// A server that sends no mode runs a classic world.
+	WorldMode_WORLD_MODE_UNSPECIFIED WorldMode = 0
+	// rAthena's fixed maps.
+	WorldMode_WORLD_MODE_CLASSIC WorldMode = 1
+	// Maps generated from the world seed.
+	WorldMode_WORLD_MODE_PROCEDURAL WorldMode = 2
+)
+
+// Enum value maps for WorldMode.
+var (
+	WorldMode_name = map[int32]string{
+		0: "WORLD_MODE_UNSPECIFIED",
+		1: "WORLD_MODE_CLASSIC",
+		2: "WORLD_MODE_PROCEDURAL",
+	}
+	WorldMode_value = map[string]int32{
+		"WORLD_MODE_UNSPECIFIED": 0,
+		"WORLD_MODE_CLASSIC":     1,
+		"WORLD_MODE_PROCEDURAL":  2,
+	}
+)
+
+func (x WorldMode) Enum() *WorldMode {
+	p := new(WorldMode)
+	*p = x
+	return p
+}
+
+func (x WorldMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WorldMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_wathena_v1_session_proto_enumTypes[0].Descriptor()
+}
+
+func (WorldMode) Type() protoreflect.EnumType {
+	return &file_wathena_v1_session_proto_enumTypes[0]
+}
+
+func (x WorldMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type DisconnectReason int32
 
 const (
@@ -96,11 +144,11 @@ func (x DisconnectReason) String() string {
 }
 
 func (DisconnectReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_wathena_v1_session_proto_enumTypes[0].Descriptor()
+	return file_wathena_v1_session_proto_enumTypes[1].Descriptor()
 }
 
 func (DisconnectReason) Type() protoreflect.EnumType {
-	return &file_wathena_v1_session_proto_enumTypes[0]
+	return &file_wathena_v1_session_proto_enumTypes[1]
 }
 
 func (x DisconnectReason) Number() protoreflect.EnumNumber {
@@ -225,6 +273,7 @@ type Welcome struct {
 	xxx_hidden_NetId           uint32                 `protobuf:"varint,4,opt,name=net_id,json=netId,proto3"`
 	xxx_hidden_Map             string                 `protobuf:"bytes,5,opt,name=map,proto3"`
 	xxx_hidden_Limits          *Limits                `protobuf:"bytes,6,opt,name=limits,proto3"`
+	xxx_hidden_World           *WorldInfo             `protobuf:"bytes,7,opt,name=world,proto3"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -296,6 +345,13 @@ func (x *Welcome) GetLimits() *Limits {
 	return nil
 }
 
+func (x *Welcome) GetWorld() *WorldInfo {
+	if x != nil {
+		return x.xxx_hidden_World
+	}
+	return nil
+}
+
 func (x *Welcome) SetProtocolVersion(v uint32) {
 	x.xxx_hidden_ProtocolVersion = v
 }
@@ -320,6 +376,10 @@ func (x *Welcome) SetLimits(v *Limits) {
 	x.xxx_hidden_Limits = v
 }
 
+func (x *Welcome) SetWorld(v *WorldInfo) {
+	x.xxx_hidden_World = v
+}
+
 func (x *Welcome) HasLimits() bool {
 	if x == nil {
 		return false
@@ -327,8 +387,19 @@ func (x *Welcome) HasLimits() bool {
 	return x.xxx_hidden_Limits != nil
 }
 
+func (x *Welcome) HasWorld() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_World != nil
+}
+
 func (x *Welcome) ClearLimits() {
 	x.xxx_hidden_Limits = nil
+}
+
+func (x *Welcome) ClearWorld() {
+	x.xxx_hidden_World = nil
 }
 
 type Welcome_builder struct {
@@ -347,6 +418,10 @@ type Welcome_builder struct {
 	// limits are the world ruleset's limits, so the client sizes its
 	// windows (strategy section 6.8).
 	Limits *Limits
+	// world is the world's mode and the versions of its map generator, so
+	// the client loads the generator only for a procedural world (strategy
+	// section 8.1). A server that leaves it out runs a classic world.
+	World *WorldInfo
 }
 
 func (b0 Welcome_builder) Build() *Welcome {
@@ -359,6 +434,97 @@ func (b0 Welcome_builder) Build() *Welcome {
 	x.xxx_hidden_NetId = b.NetId
 	x.xxx_hidden_Map = b.Map
 	x.xxx_hidden_Limits = b.Limits
+	x.xxx_hidden_World = b.World
+	return m0
+}
+
+// WorldInfo describes the world a client joined.
+type WorldInfo struct {
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Mode             WorldMode              `protobuf:"varint,1,opt,name=mode,proto3,enum=wathena.v1.WorldMode"`
+	xxx_hidden_GeneratorVersion uint32                 `protobuf:"varint,2,opt,name=generator_version,json=generatorVersion,proto3"`
+	xxx_hidden_RngVersion       string                 `protobuf:"bytes,3,opt,name=rng_version,json=rngVersion,proto3"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
+}
+
+func (x *WorldInfo) Reset() {
+	*x = WorldInfo{}
+	mi := &file_wathena_v1_session_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorldInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorldInfo) ProtoMessage() {}
+
+func (x *WorldInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_session_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *WorldInfo) GetMode() WorldMode {
+	if x != nil {
+		return x.xxx_hidden_Mode
+	}
+	return WorldMode_WORLD_MODE_UNSPECIFIED
+}
+
+func (x *WorldInfo) GetGeneratorVersion() uint32 {
+	if x != nil {
+		return x.xxx_hidden_GeneratorVersion
+	}
+	return 0
+}
+
+func (x *WorldInfo) GetRngVersion() string {
+	if x != nil {
+		return x.xxx_hidden_RngVersion
+	}
+	return ""
+}
+
+func (x *WorldInfo) SetMode(v WorldMode) {
+	x.xxx_hidden_Mode = v
+}
+
+func (x *WorldInfo) SetGeneratorVersion(v uint32) {
+	x.xxx_hidden_GeneratorVersion = v
+}
+
+func (x *WorldInfo) SetRngVersion(v string) {
+	x.xxx_hidden_RngVersion = v
+}
+
+type WorldInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Mode WorldMode
+	// generator_version is the map generator version the world records,
+	// or 0 in a classic world (docs/specs/generator-v1.md).
+	GeneratorVersion uint32
+	// rng_version is the seed tree spec the world records, such as
+	// "rng-v1" (docs/specs/rng-v1.md), or empty in a classic world.
+	RngVersion string
+}
+
+func (b0 WorldInfo_builder) Build() *WorldInfo {
+	m0 := &WorldInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Mode = b.Mode
+	x.xxx_hidden_GeneratorVersion = b.GeneratorVersion
+	x.xxx_hidden_RngVersion = b.RngVersion
 	return m0
 }
 
@@ -387,7 +553,7 @@ type Limits struct {
 
 func (x *Limits) Reset() {
 	*x = Limits{}
-	mi := &file_wathena_v1_session_proto_msgTypes[2]
+	mi := &file_wathena_v1_session_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -399,7 +565,7 @@ func (x *Limits) String() string {
 func (*Limits) ProtoMessage() {}
 
 func (x *Limits) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_session_proto_msgTypes[2]
+	mi := &file_wathena_v1_session_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -637,7 +803,7 @@ type LimitRange struct {
 
 func (x *LimitRange) Reset() {
 	*x = LimitRange{}
-	mi := &file_wathena_v1_session_proto_msgTypes[3]
+	mi := &file_wathena_v1_session_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -649,7 +815,7 @@ func (x *LimitRange) String() string {
 func (*LimitRange) ProtoMessage() {}
 
 func (x *LimitRange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_session_proto_msgTypes[3]
+	mi := &file_wathena_v1_session_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -720,7 +886,7 @@ type Ping struct {
 
 func (x *Ping) Reset() {
 	*x = Ping{}
-	mi := &file_wathena_v1_session_proto_msgTypes[4]
+	mi := &file_wathena_v1_session_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -732,7 +898,7 @@ func (x *Ping) String() string {
 func (*Ping) ProtoMessage() {}
 
 func (x *Ping) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_session_proto_msgTypes[4]
+	mi := &file_wathena_v1_session_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -778,7 +944,7 @@ type Pong struct {
 
 func (x *Pong) Reset() {
 	*x = Pong{}
-	mi := &file_wathena_v1_session_proto_msgTypes[5]
+	mi := &file_wathena_v1_session_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -790,7 +956,7 @@ func (x *Pong) String() string {
 func (*Pong) ProtoMessage() {}
 
 func (x *Pong) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_session_proto_msgTypes[5]
+	mi := &file_wathena_v1_session_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -850,7 +1016,7 @@ type Disconnect struct {
 
 func (x *Disconnect) Reset() {
 	*x = Disconnect{}
-	mi := &file_wathena_v1_session_proto_msgTypes[6]
+	mi := &file_wathena_v1_session_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -862,7 +1028,7 @@ func (x *Disconnect) String() string {
 func (*Disconnect) ProtoMessage() {}
 
 func (x *Disconnect) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_session_proto_msgTypes[6]
+	mi := &file_wathena_v1_session_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -923,14 +1089,20 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\rsession_token\x18\x02 \x01(\fR\fsessionToken\x12\x1f\n" +
 	"\vclient_name\x18\x03 \x01(\tR\n" +
 	"clientName\x12\x1a\n" +
-	"\blanguage\x18\x04 \x01(\tR\blanguage\"\xc3\x01\n" +
+	"\blanguage\x18\x04 \x01(\tR\blanguage\"\xf0\x01\n" +
 	"\aWelcome\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\rR\x0fprotocolVersion\x12$\n" +
 	"\x0eserver_time_ms\x18\x02 \x01(\x04R\fserverTimeMs\x12\x12\n" +
 	"\x04tick\x18\x03 \x01(\rR\x04tick\x12\x15\n" +
 	"\x06net_id\x18\x04 \x01(\rR\x05netId\x12\x10\n" +
 	"\x03map\x18\x05 \x01(\tR\x03map\x12*\n" +
-	"\x06limits\x18\x06 \x01(\v2\x12.wathena.v1.LimitsR\x06limits\"\xf7\x03\n" +
+	"\x06limits\x18\x06 \x01(\v2\x12.wathena.v1.LimitsR\x06limits\x12+\n" +
+	"\x05world\x18\a \x01(\v2\x15.wathena.v1.WorldInfoR\x05world\"\x84\x01\n" +
+	"\tWorldInfo\x12)\n" +
+	"\x04mode\x18\x01 \x01(\x0e2\x15.wathena.v1.WorldModeR\x04mode\x12+\n" +
+	"\x11generator_version\x18\x02 \x01(\rR\x10generatorVersion\x12\x1f\n" +
+	"\vrng_version\x18\x03 \x01(\tR\n" +
+	"rngVersion\"\xf7\x03\n" +
 	"\x06Limits\x12#\n" +
 	"\rparty_members\x18\x01 \x01(\rR\fpartyMembers\x12\x18\n" +
 	"\afriends\x18\x02 \x01(\rR\afriends\x12\x1d\n" +
@@ -963,7 +1135,11 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"Disconnect\x124\n" +
 	"\x06reason\x18\x01 \x01(\x0e2\x1c.wathena.v1.DisconnectReasonR\x06reason\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage*\xe6\x03\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*Z\n" +
+	"\tWorldMode\x12\x1a\n" +
+	"\x16WORLD_MODE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12WORLD_MODE_CLASSIC\x10\x01\x12\x19\n" +
+	"\x15WORLD_MODE_PROCEDURAL\x10\x02*\xe6\x03\n" +
 	"\x10DisconnectReason\x12!\n" +
 	"\x1dDISCONNECT_REASON_UNSPECIFIED\x10\x00\x12)\n" +
 	"%DISCONNECT_REASON_VERSION_UNSUPPORTED\x10\x01\x12%\n" +
@@ -980,27 +1156,31 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\x19DISCONNECT_REASON_RESTART\x10\v\x12&\n" +
 	"\"DISCONNECT_REASON_ACCOUNT_DELETION\x10\fB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
-var file_wathena_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_wathena_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_wathena_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_wathena_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_wathena_v1_session_proto_goTypes = []any{
-	(DisconnectReason)(0), // 0: wathena.v1.DisconnectReason
-	(*Hello)(nil),         // 1: wathena.v1.Hello
-	(*Welcome)(nil),       // 2: wathena.v1.Welcome
-	(*Limits)(nil),        // 3: wathena.v1.Limits
-	(*LimitRange)(nil),    // 4: wathena.v1.LimitRange
-	(*Ping)(nil),          // 5: wathena.v1.Ping
-	(*Pong)(nil),          // 6: wathena.v1.Pong
-	(*Disconnect)(nil),    // 7: wathena.v1.Disconnect
+	(WorldMode)(0),        // 0: wathena.v1.WorldMode
+	(DisconnectReason)(0), // 1: wathena.v1.DisconnectReason
+	(*Hello)(nil),         // 2: wathena.v1.Hello
+	(*Welcome)(nil),       // 3: wathena.v1.Welcome
+	(*WorldInfo)(nil),     // 4: wathena.v1.WorldInfo
+	(*Limits)(nil),        // 5: wathena.v1.Limits
+	(*LimitRange)(nil),    // 6: wathena.v1.LimitRange
+	(*Ping)(nil),          // 7: wathena.v1.Ping
+	(*Pong)(nil),          // 8: wathena.v1.Pong
+	(*Disconnect)(nil),    // 9: wathena.v1.Disconnect
 }
 var file_wathena_v1_session_proto_depIdxs = []int32{
-	3, // 0: wathena.v1.Welcome.limits:type_name -> wathena.v1.Limits
-	4, // 1: wathena.v1.Limits.ranges:type_name -> wathena.v1.LimitRange
-	0, // 2: wathena.v1.Disconnect.reason:type_name -> wathena.v1.DisconnectReason
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	5, // 0: wathena.v1.Welcome.limits:type_name -> wathena.v1.Limits
+	4, // 1: wathena.v1.Welcome.world:type_name -> wathena.v1.WorldInfo
+	0, // 2: wathena.v1.WorldInfo.mode:type_name -> wathena.v1.WorldMode
+	6, // 3: wathena.v1.Limits.ranges:type_name -> wathena.v1.LimitRange
+	1, // 4: wathena.v1.Disconnect.reason:type_name -> wathena.v1.DisconnectReason
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_session_proto_init() }
@@ -1013,8 +1193,8 @@ func file_wathena_v1_session_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_session_proto_rawDesc), len(file_wathena_v1_session_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   7,
+			NumEnums:      2,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -10,7 +10,7 @@ It is at an early stage: a map viewer for development, built on the parts the ga
 | `src/formats/` | Decoders for the binary asset formats in docs/specs/assets-v1.md. |
 | `src/render/` | three.js scenes: the ground, water, and models of a map, lit as RO lights them, sprites that face the camera, and characters built from body, head, and equipment sprites, baked effects, and cylinder effects such as warp portals. |
 | `src/sw/` | The Service Worker, which caches assets by hash and checks them before caching. |
-| `src/world/` | Game rules the client shares with the server, such as pathfinding, from `shared/` compiled to WebAssembly. |
+| `src/world/` | Game rules the client shares with the server, from `shared/` compiled to WebAssembly: pathfinding (`path.wasm`) and the map generator of procedural worlds (`gen.wasm`). |
 | `src/viewer/` | The map viewer page. |
 | `data/` | Client data tables, such as `jobs.yml`. |
 
@@ -124,6 +124,16 @@ Map ready after a warp, measured in Chrome on an Apple M2 with `waserver` and th
 | Map already in the page's memory | | | 167 to 183 ms |
 | After a reload, from the Service Worker cache | | 102 to 153 ms | 246 to 283 ms |
 
+## Procedural worlds
+
+`Welcome.world` names the world's mode, and for a procedural world its map generator version and rng spec version (docs/decisions/0038-generator-core.md). For a procedural world only, the viewer imports `src/world/generator.ts` and loads `gen.wasm`, and logs an error when the module lacks the world's version. A classic world never fetches it. The module comes from `shared/gen/wasm`:
+
+```text
+tinygo build -o client/src/world/gen.wasm -target=wasm-unknown -opt=2 -no-debug -tags procedural ./shared/gen/wasm
+```
+
+`generator.test.ts` checks it against the golden checksums of `shared/gen/testdata` in Node, and `pnpm check:browsers` does the same in Chromium, Firefox and WebKit. Nothing generates maps yet. Phase 7 step 2 generates fields with it.
+
 ## Mod names and art
 
 The server's `/client-data.json`, format version 2, names the records of mods and their art (docs/decisions/0035-phase-6-exit-check.md). The client shows:
@@ -162,7 +172,7 @@ pnpm build
 pnpm check:browsers   # render, audio, and cache checks in real browsers, and the exit check
 ```
 
-`check:browsers` builds and serves the placeholder pack, then checks in Chromium that the viewer renders a map without errors, that Opus test sounds decode to their exact length, and that a second visit loads assets from the Service Worker. It also checks the admin screens and the account pages at 375 pixels wide, and plays on a `waserver --dev` with the end-to-end fixture mod: a scripted touch run on an iPhone and an Android phone profile, a tablet and a phone held sideways, a mouse run on a desktop page, and frame times at phone size with Chrome's CPU throttling, printed as `info` lines. It then runs the phase 6 exit check (`exit-check.ts`, docs/decisions/0035-phase-6-exit-check.md): three players on a desktop and a Pixel 7 play every tier 1 system against a real `waserver` with PostgreSQL, a staff account with TOTP mutes a player, and the lantern mod's item, monster, skill and job show their names and art. It needs `WATHENA_TEST_DATABASE_URL`, which `scripts/check.sh browsers` sets, and `EXIT_STEPS`, a regular expression, runs only the steps it matches. `CHECKS=touch,phone` runs only the checks named. `SCREENSHOTS` names a folder for screenshots of failed steps. `BROWSERS=chromium,firefox,webkit` adds the other engines, after `pnpm exec playwright-core install`. `scripts/check.sh browsers` runs it in Chromium.
+`check:browsers` builds and serves the placeholder pack, then checks in Chromium that the viewer renders a map without errors, that Opus test sounds decode to their exact length, and that a second visit loads assets from the Service Worker. It also checks the admin screens and the account pages at 375 pixels wide, and plays on a `waserver --dev` with the end-to-end fixture mod: a scripted touch run on an iPhone and an Android phone profile, a tablet and a phone held sideways, a mouse run on a desktop page, and frame times at phone size with Chrome's CPU throttling, printed as `info` lines. It then runs the phase 6 exit check (`exit-check.ts`, docs/decisions/0035-phase-6-exit-check.md): three players on a desktop and a Pixel 7 play every tier 1 system against a real `waserver` with PostgreSQL, a staff account with TOTP mutes a player, and the lantern mod's item, monster, skill and job show their names and art. It needs `WATHENA_TEST_DATABASE_URL`, which `scripts/check.sh browsers` sets, and `EXIT_STEPS`, a regular expression, runs only the steps it matches. `CHECKS=touch,phone` runs only the checks named. `SCREENSHOTS` names a folder for screenshots of failed steps. `BROWSERS=chromium,firefox,webkit` adds the other engines, after `pnpm exec playwright-core install`. `scripts/check.sh browsers` runs it in Chromium. The check `gen` always runs in Chromium, Firefox and WebKit, or the browsers `GEN_BROWSERS` names: it loads `gen.wasm` through `generator.ts` and compares the golden checksums of `shared/gen/testdata`. A browser that does not start is skipped with a message.
 
 ### Writing a browser check
 

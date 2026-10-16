@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-16)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and step 1 is built.
 
 Done:
 
@@ -85,6 +85,11 @@ Done:
   - The client reads touch gesture times from the events, so a long frame no longer turns a tap into a press or splits a double tap.
   - The checks wait for a still view (`viewer.settled()`) and still units, the checks' Lantern Ghosts do not wander, and the steps no longer retry a click that missed.
   - The zone tests' Lua states have no wall-clock limit, which failed `TestFoodRaisesStr` when the machine paused the test.
+- Phase 7 step 1, the generator core ([decision 0038](decisions/0038-generator-core.md), [generator-v1](specs/generator-v1.md)):
+  - `shared/gen` with a registry of generator versions, the grid and its SHA-256 checksum, and generator version 1, a small grid on the seed tree. `TestGuard` fails on floating point, map types and clock imports in `shared/gen` and `shared/rng`.
+  - The build tag `procedural`. Builds without it run only classic worlds.
+  - `wactl world new --mode classic|procedural`, and the world row's mode, generator version and rng version. `waserver` refuses a world it cannot run. `Welcome.world` tells the client, which loads `gen.wasm` only for a procedural world.
+  - `gen.wasm`, built with TinyGo and checked in as `path.wasm` is. The golden maps give the same checksums in Go on arm64 and on amd64 under Rosetta, in TinyGo, in Node, and in Chromium, Firefox and WebKit. `scripts/check.sh` has the step `gen`, and runs vet, unit tests and lint with and without the tag.
 
 Open review items:
 
@@ -104,7 +109,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16 with step 1, the generator core.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Step 1, the generator core, is built. Step 2, fields, is next.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -1405,8 +1410,8 @@ Procedural mode is included with the Go build tag `procedural`.
 - Builds with the tag contain the generator, `wa.generation`, and rotating dungeons. New worlds default to `procedural`.
 - Builds without the tag contain only `classic` mode. New worlds default to `classic`.
 - The mode is still chosen per world at creation time, in builds that include both.
-- The server tells the web client which modes it supports at login. The client loads the generator WebAssembly module only for procedural worlds.
-- CI builds and tests both variants on every pull request, so code without the tag cannot break.
+- The server tells the web client the world's mode and its generator and rng versions at login. The client loads the generator WebAssembly module only for procedural worlds.
+- `scripts/check.sh` vets, tests and lints both variants, so code without the tag cannot break. The repository has no CI (decision 0026).
 
 This lets a release ship in either order. Classic mode can launch while procedural mode is still in development.
 
@@ -2793,7 +2798,17 @@ The order from here:
    - Items, monsters, skills, and jobs added by a mod display correctly: the lantern mod's item, monster, skill and job show their names in the page and their art, checked by the network and by pixels.
    Left for later: the economy dashboards come with the simulator of phase 7 (section 8.13), and retention jobs and encrypted backups come with phase 8. Each step drafts its admin API and any Lua API for review before it is built.
 10. Phase 7 in full. Procedural mode. It runs in these steps, approved on 2026-10-16:
-   1. The generator core on the seed tree of `shared/rng` (rng-v1): versioned generator rules (section 8.4), the world mode setting and the `procedural` build tag (section 8.1), the generator module built with TinyGo, and a determinism check of one cell grid in Go on arm64 and on amd64, and in Chrome, Firefox and WebKit.
+   1. The generator core on the seed tree of `shared/rng` (rng-v1): versioned generator rules (section 8.4), the world mode setting and the `procedural` build tag (section 8.1), the generator module built with TinyGo, and a determinism check of one cell grid in Go on arm64 and on amd64, and in Chrome, Firefox and WebKit. Done on 2026-10-16 ([decision 0038](decisions/0038-generator-core.md), [generator-v1](specs/generator-v1.md), server/README.md, "World modes", client/README.md, "Procedural worlds", and shared/README.md):
+      - `shared/gen`: `Generator` with a version and its rng spec, `Lookup`, `Latest` and `Versions`, and `Grid` with GAT cell types, 4 corner heights per cell in Q16.16, a water level and `Checksum`, the SHA-256 of a fixed encoding. Version 1 derives `height`, `water` and `objects` from a public node: two octaves of value noise, walkable and deep water, gaps on steep cells, and rocks. A 400 × 400 grid takes 18 ms in Go.
+      - `TestGuard` parses `shared/gen`, `shared/gen/wasm` and `shared/rng` and fails on float types and literals, math functions, map types, and imports of `math/rand`, `time`, `os` and `unsafe`.
+      - The build tag `procedural`: with it, `gen.Procedural` is true, the registry holds the generators, and new worlds default to procedural. Without it, only classic.
+      - Migration 00029 adds `mode` and `rng_version` to the world row, tied to `generator_version` by a check. `wactl world new --mode` chooses the mode. `waserver` refuses a procedural world without the tag, or with a generator or rng version it lacks.
+      - `Welcome.world` (`WorldInfo`) sends the mode and the versions, recorded in proposal 0001. The viewer imports `generator.ts` and loads `gen.wasm` only for a procedural world, and logs an error for a version it lacks.
+      - `client/src/world/gen.wasm` (93 KB), built with TinyGo and committed. `scripts/check.sh tinygo` rebuilds it and fails when it differs.
+      - Determinism: the 8 golden maps of `shared/gen/testdata/golden-v1.json`, from 1 × 1 to 400 × 400 and 1024 × 8, give the same checksums in Go on darwin/arm64 and darwin/amd64 under Rosetta, in TinyGo native and in wasmtime, in `gen.wasm` in Node 26, and in Chromium, Firefox and WebKit through Playwright. The 400 × 400 map takes 32 to 35 ms in Chromium and WebKit and 315 ms in Firefox.
+      - `scripts/check.sh`: `vet` with and without the tag, `unit` and `lint` also with the tag on the packages it changes, `tinygo` with the tag, the new default step `gen`, and the check `gen` in `browsers`.
+      - Tests: `TestChecksum` against the encoding written out, `TestModes`, `TestVersions`, `TestGolden`, `TestGridV1Order`, `TestGuard` and `TestGuardFinds`, `TestWorldMode` in the store, `TestWorldVersions` in wactl, `TestCheckWorldMode` in waserver, `TestWelcomeWorldMode` in the gateway, and `generator.test.ts` and `worldOf` in vitest.
+      - Left: the public node of each map, the server's generation and the download fallback (step 2), a run on a real amd64 machine and in Safari, and a procedural release build.
    2. Fields: terrain from biome rules, with validation and retries, as WMAP maps (sections 8.5 and 8.12). The client generates a field itself, checks the server's checksum, and downloads the map when they differ.
    3. Dungeons and towns: room and corridor dungeons and caves, floors that get harder, boss rooms, town templates with buildings and roads, and named places through `wa.places` (section 8.6).
    4. World layout: map identity, town naming styles, the map graph and warps, the home area from mod maps, and save and memo points (sections 8.10 and 8.12). Every map is reachable from the home area.

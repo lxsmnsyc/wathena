@@ -56,6 +56,7 @@ Labels are part of the spec, because changing one changes every key below it. Ne
 | `secret` | none | The root of a secret branch. |
 | `zone:<map ID>` | none | The secret stream of a classic map's zone, such as `zone:prontera`. It places and moves the map's monsters and rolls its drops and hits. Only the server uses it. |
 | `spawns`, `loot`, `puzzles`, `npcs`, `quests` | none | Steps under `secret`. |
+| `height`, `water`, `objects` | none | Steps of map generator version 1 below a map's public node ([generator-v1](generator-v1.md)). |
 
 ## Streams
 

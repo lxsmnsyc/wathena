@@ -26,7 +26,8 @@ func TestNewWorld(t *testing.T) {
 		t.Fatalf("new world: %d, %v", id, err)
 	}
 	got, err := store.LoadWorld(ctx, game)
-	if err != nil || got.Name != "Test" || got.Ruleset != "renewal" || got.Seed != nil {
+	if err != nil || got.Name != "Test" || got.Ruleset != "renewal" || got.Seed != nil ||
+		got.Mode != "classic" || got.GeneratorVersion != 0 || got.RNGVersion != "" {
 		t.Errorf("load: %+v, %v", got, err)
 	}
 	var name string
@@ -69,5 +70,33 @@ func TestNewWorld(t *testing.T) {
 	}
 	if _, err := game.Exec(ctx, "INSERT INTO accounts (name, dev) VALUES ('dev one', true)"); err != nil {
 		t.Errorf("game role: %v", err)
+	}
+}
+
+// TestWorldMode: a procedural world records its generator and rng
+// versions, and the table refuses a mode without them (decision 0038).
+func TestWorldMode(t *testing.T) {
+	admin, game := migrated(t)
+	ctx := timeout(t)
+	seed := bytes.Repeat([]byte{9}, 32)
+	for _, bad := range []store.World{
+		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "procedural"},
+		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "procedural", GeneratorVersion: 1},
+		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "classic", GeneratorVersion: 1, RNGVersion: "rng-v1"},
+		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "other"},
+		{Name: "W", Ruleset: "renewal", Seed: seed, Mode: "procedural", GeneratorVersion: 1, RNGVersion: "rng-1"},
+	} {
+		if _, err := store.NewWorld(ctx, admin, bad, store.Admin{Name: "Admin1", Hash: "x"}); !isCode(err, "23514") {
+			t.Errorf("%+v: %v, want a check violation", bad, err)
+		}
+	}
+	w := store.World{Name: "Gen", Ruleset: "pre-renewal", Seed: seed, Mode: "procedural", GeneratorVersion: 1, RNGVersion: "rng-v1"}
+	if _, err := store.NewWorld(ctx, admin, w, store.Admin{Name: "Admin1", Hash: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.LoadWorld(ctx, game)
+	if err != nil || got.Name != w.Name || got.Ruleset != w.Ruleset || got.Seed != nil ||
+		got.Mode != w.Mode || got.GeneratorVersion != w.GeneratorVersion || got.RNGVersion != w.RNGVersion {
+		t.Errorf("load: %+v, %v, want %+v", got, err, w)
 	}
 }

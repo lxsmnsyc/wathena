@@ -26,7 +26,28 @@ import {
   ServerMessageSchema,
 } from '../gen/wathena/v1/envelope_pb';
 import type { Event } from '../gen/wathena/v1/event_pb';
-import { DisconnectReason, type Welcome } from '../gen/wathena/v1/session_pb';
+import { DisconnectReason, type Welcome, WorldMode } from '../gen/wathena/v1/session_pb';
+
+/** The world's mode and map generator, as Welcome.world. */
+export interface WorldValues {
+  mode: 'classic' | 'procedural';
+  /** The map generator version of a procedural world, else 0. */
+  generatorVersion: number;
+  /** The seed tree spec of a procedural world, such as "rng-v1", else empty. */
+  rngVersion: string;
+}
+
+/**
+ * The world Welcome describes. A server that sends no mode runs a classic
+ * world (decision 0038).
+ */
+export function worldOf(welcome: Pick<Welcome, 'world'>): WorldValues {
+  const w = welcome.world;
+  if (w?.mode !== WorldMode.PROCEDURAL) {
+    return { mode: 'classic', generatorVersion: 0, rngVersion: '' };
+  }
+  return { mode: 'procedural', generatorVersion: w.generatorVersion, rngVersion: w.rngVersion };
+}
 
 /** A party's sharing options, as PartyOptions. */
 export interface PartyOptionValues {
@@ -297,11 +318,15 @@ export class Connection {
   /** The world's limits from Welcome, with defaults for the ones it left out. */
   readonly limits: ClientLimits;
 
+  /** The world's mode and map generator from Welcome. */
+  readonly world: WorldValues;
+
   private constructor(
     private readonly socket: WebSocket,
     readonly welcome: Welcome,
   ) {
     this.limits = limitsOf(welcome);
+    this.world = worldOf(welcome);
   }
 
   /**

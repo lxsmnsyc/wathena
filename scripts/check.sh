@@ -10,8 +10,10 @@
 #   scripts/check.sh lint e2e     only the steps named
 #
 # Steps:
-#   vet       go vet ./...
-#   unit      go test without -race on every package but ./e2e.
+#   vet       go vet ./..., without and with the procedural tag
+#   unit      go test without -race on every package but ./e2e, then
+#             with the procedural tag on the packages it changes:
+#             shared/gen and those that import it (decision 0038).
 #             Results of unchanged packages come from Go's test
 #             cache.
 #   test      unit, then go test -race ./.... Heavy tests on one
@@ -22,12 +24,18 @@
 #   loadtest  the 50-bot smoke test
 #   schema    buf lint and the generated protocol code
 #   queries   the generated sqlc code
-#   lint      golangci-lint
+#   lint      golangci-lint, then with the procedural tag on the
+#             packages it changes
 #   security  govulncheck, gosec and sqlcheck.sh
 #   fuzz      every fuzz test for 10 seconds, 4 at once.
 #             scripts/fuzz.sh 5m fuzzes longer.
 #   client    pnpm check, lint, format:check, test and build
-#   tinygo    the shared packages under TinyGo, and path.wasm
+#   tinygo    the shared packages under TinyGo, without and with the
+#             procedural tag, and path.wasm and gen.wasm
+#   gen       the map generator's golden checksums in Go on this
+#             machine's architecture and on the other one (amd64 under
+#             Rosetta on an arm64 Mac), and in gen.wasm in Node. The
+#             browsers step checks them in Chromium, Firefox and WebKit.
 #   e2e       the e2e package alone, with -race, with the phase 5
 #             exit check for 30 minutes (WATHENA_EXIT_MINUTES=30,
 #             e2e/README.md), and prints its numbers. test runs
@@ -35,8 +43,9 @@
 #             exit check, so it is not a default step.
 #   compose   the Compose stack smoke test. Only with all.
 #   browsers  the client in Chromium, with the phase 6 exit check
-#             (decision 0035) against waserver and PostgreSQL. Only
-#             with all.
+#             (decision 0035) against waserver and PostgreSQL, and the
+#             map generator in Chromium, Firefox and WebKit. Only with
+#             all.
 #
 # Tool versions. The script runs the tools on PATH and does not install
 # them. These are the versions the checks were written for:
@@ -79,7 +88,7 @@ govulncheck_version=v1.8.0
 # gosec is pinned in tools/gosec/go.mod, with a newer golang.org/x/tools
 # than its own go.mod asks for.
 
-default_steps="vet test mods lua loadtest schema queries lint security fuzz client tinygo"
+default_steps="vet test mods lua loadtest schema queries lint security fuzz client tinygo gen"
 all_steps="$default_steps compose browsers"
 known_steps="$all_steps unit e2e"
 quick_steps="vet unit lint"
@@ -185,7 +194,20 @@ database() {
 	export WATHENA_TEST_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:$port/postgres?sslmode=disable"
 }
 
-step_vet() { go vet ./...; }
+# procedural_packages lists the folders of the packages that the
+# procedural tag changes: shared/gen and every package that imports it.
+# Other packages build the same with and without the tag.
+procedural_packages() {
+	go list -tags procedural -f '{{.Dir}} {{.ImportPath}} {{join .Deps " "}}' ./... |
+		awk -v root="$root" -v gen="github.com/lxsmnsyc/wathena/shared/gen" '
+			$2 ~ /\/e2e$/ { next }
+			{ for (i = 2; i <= NF; i++) if ($i == gen) { sub(root, ".", $1); print $1; next } }'
+}
+
+step_vet() {
+	go vet ./...
+	go vet -tags procedural ./...
+}
 
 # The race detector only finds races in code that runs goroutines, and
 # it makes code 5 to 20 times slower. So the tests run twice:
@@ -198,6 +220,8 @@ step_vet() { go vet ./...; }
 step_unit() {
 	# shellcheck disable=SC2046 # one argument per package.
 	go test -timeout 45m $(go list ./... | grep -v '/e2e$')
+	# shellcheck disable=SC2046 # one argument per package.
+	go test -timeout 45m -tags procedural $(procedural_packages)
 }
 
 step_test() {
@@ -308,11 +332,13 @@ step_queries() {
 }
 
 step_lint() {
+	local lint=(go run "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v$golangci_version")
 	if have golangci-lint && golangci-lint version 2>/dev/null | grep -q "version $golangci_version "; then
-		golangci-lint run ./...
-	else
-		go run "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v$golangci_version" run ./...
+		lint=(golangci-lint)
 	fi
+	"${lint[@]}" run ./...
+	# shellcheck disable=SC2046 # one argument per package.
+	"${lint[@]}" run --build-tags procedural $(procedural_packages)
 }
 
 step_security() {
@@ -339,13 +365,54 @@ step_client() {
 step_tinygo() {
 	have tinygo || skip "the shared packages need tinygo 0.42"
 	tinygo test ./shared/...
+	tinygo test -tags procedural ./shared/...
 	if have wasmtime; then
 		tinygo test -target=wasip1 ./shared/...
+		tinygo test -target=wasip1 -tags procedural ./shared/...
 	else
 		echo "part skipped: the WebAssembly tests need wasmtime"
 	fi
 	unchanged client/src/world/path.wasm -- \
 		tinygo build -o client/src/world/path.wasm -target=wasm-unknown -opt=2 -no-debug ./shared/path/wasm
+	unchanged client/src/world/gen.wasm -- \
+		tinygo build -o client/src/world/gen.wasm -target=wasm-unknown -opt=2 -no-debug -tags procedural ./shared/gen/wasm
+}
+
+# The map generator must give the same grid on every platform (strategy
+# section 8.4). Each part generates the golden maps of
+# shared/gen/testdata and compares the checksums.
+step_gen() {
+	local host other runner=() bin
+	host=$(go env GOARCH)
+	echo "== Go on $(go env GOOS)/$host"
+	go test -count=1 -tags procedural -run '^TestGolden$|^TestGridV1Order$' -v ./shared/gen
+	case "$host" in
+	arm64) other=amd64 ;;
+	amd64) other=arm64 ;;
+	*) other="" ;;
+	esac
+	if [ -n "$other" ]; then
+		echo "== Go on $(go env GOOS)/$other"
+		bin="$work/gen-$other.test"
+		GOARCH=$other go test -c -tags procedural -o "$bin" ./shared/gen
+		if [ "$(uname -s)" = Darwin ] && [ "$other" = amd64 ]; then
+			runner=(arch -x86_64)
+		fi
+		if ${runner[@]+"${runner[@]}"} "$bin" -test.list XXX >/dev/null 2>&1; then
+			(cd shared/gen && ${runner[@]+"${runner[@]}"} "$bin" -test.count=1 -test.run '^TestGolden$|^TestGridV1Order$' -test.v)
+		elif [ "$(uname -s)" = Darwin ]; then
+			echo "part skipped: the $other test binary does not run; an arm64 Mac needs Rosetta (softwareupdate --install-rosetta)"
+		else
+			echo "part skipped: this machine cannot run $other binaries"
+		fi
+	fi
+	echo "== gen.wasm in Node"
+	if have pnpm; then
+		client_install
+		(cd client && pnpm exec vitest run src/world/generator.test.ts)
+	else
+		echo "part skipped: the Node check needs pnpm"
+	fi
 }
 
 step_compose() {

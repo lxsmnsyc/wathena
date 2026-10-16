@@ -171,6 +171,9 @@ type Gateway struct {
 	// Limits are the world ruleset's limits, which Welcome sends.
 	// rAthena's when zero.
 	Limits rules.Limits
+	// Mode is the world's mode and generator versions, which Welcome
+	// sends. The zero value is a classic world.
+	Mode WorldMode
 	// CheckName checks the name of a --dev session's character against
 	// the chat filter and the reserved names (strategy section 7.10). It
 	// may be nil.
@@ -431,6 +434,7 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 		NetId:           p.NetID,
 		Map:             p.Map,
 		Limits:          limitsMessage(g.Limits),
+		World:           g.Mode.message(),
 	}.Build()}.Build()
 	if err := write(ctx, c, welcome); err != nil {
 		return err

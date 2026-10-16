@@ -14,11 +14,13 @@ import (
 
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/store"
+	"github.com/lxsmnsyc/wathena/shared/gen"
 )
 
 // worldNew makes a world in a database that roles.sql prepared:
 //  1. It applies pending migrations.
-//  2. It makes the world row with a new secret root seed.
+//  2. It makes the world row with a new secret root seed and the world
+//     mode, with the newest generator for a procedural world.
 //  3. It makes the first account with a password.
 //  4. It prints the staff.owners line that makes the account an owner.
 //
@@ -28,6 +30,7 @@ func worldNew(args []string) error {
 	database := fs.String("database", "", "PostgreSQL URL of the migrator role; prefer the "+migrateEnv+" environment variable")
 	name := fs.String("name", "wAthena", "the world's name, 1 to 64 characters")
 	ruleset := fs.String("ruleset", "renewal", "the base ruleset: renewal or pre-renewal. waserver's mode must match it")
+	mode := fs.String("mode", gen.DefaultMode(), "the world mode: "+strings.Join(gen.Modes(), " or ")+". It cannot change later")
 	admin := fs.String("admin", "", "name of the first account, for the config's staff.owners: 4 to 24 ASCII letters, digits and underscores, starting with a letter")
 	passwordFile := fs.String("admin-password-file", "", "file with the account's password on its first line, or - for standard input")
 	if err := fs.Parse(args); err != nil {
@@ -38,6 +41,10 @@ func worldNew(args []string) error {
 	}
 	if *ruleset != "renewal" && *ruleset != "pre-renewal" {
 		return fmt.Errorf("--ruleset %q is not renewal or pre-renewal", *ruleset)
+	}
+	generator, rngVersion, err := worldVersions(*mode)
+	if err != nil {
+		return err
 	}
 	if !account.ValidAccountName(*admin) {
 		return errors.New("--admin must be 4 to 24 ASCII letters, digits and underscores, starting with a letter")
@@ -79,13 +86,41 @@ func worldNew(args []string) error {
 	if _, err := rand.Read(seed); err != nil {
 		return err
 	}
-	id, err := store.NewWorld(ctx, pool, store.World{Name: *name, Ruleset: *ruleset, Seed: seed}, store.Admin{Name: *admin, Hash: hash})
+	w := store.World{Name: *name, Ruleset: *ruleset, Seed: seed, Mode: *mode, GeneratorVersion: generator, RNGVersion: rngVersion}
+	id, err := store.NewWorld(ctx, pool, w, store.Admin{Name: *admin, Hash: hash})
 	if err != nil {
 		return err
 	}
-	fmt.Printf("made the world %q (%s) and the account %s (id %d)\n", *name, *ruleset, *admin, id)
+	fmt.Printf("made the %s world %q (%s) and the account %s (id %d)\n", worldModeText(w), *name, *ruleset, *admin, id)
 	fmt.Print(ownersHint(*admin))
 	return nil
+}
+
+// worldVersions returns the generator and rng versions a new world of
+// the mode records: none for classic, the newest generator for
+// procedural. A build without the procedural tag has only classic.
+func worldVersions(mode string) (generator int, rngVersion string, err error) {
+	switch {
+	case mode == gen.ModeProcedural && !gen.HasMode(mode):
+		return 0, "", errors.New("--mode procedural needs a wactl built with -tags procedural")
+	case !gen.HasMode(mode):
+		return 0, "", fmt.Errorf("--mode %q is not %s", mode, strings.Join(gen.Modes(), " or "))
+	case mode == gen.ModeClassic:
+		return 0, "", nil
+	}
+	g, ok := gen.Latest()
+	if !ok {
+		return 0, "", errors.New("this build has no map generator")
+	}
+	return g.Version, g.RNG, nil
+}
+
+// worldModeText names a world's mode, with its versions when procedural.
+func worldModeText(w store.World) string {
+	if w.Mode == gen.ModeProcedural {
+		return fmt.Sprintf("procedural (generator %d, %s)", w.GeneratorVersion, w.RNGVersion)
+	}
+	return w.Mode
 }
 
 // ownersHint tells the operator how to make the account an owner. Roles

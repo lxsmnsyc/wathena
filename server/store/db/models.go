@@ -573,6 +573,8 @@ type World struct {
 	Seed             []byte
 	GeneratorVersion int
 	CreatedAt        pgtype.Timestamptz
+	Mode             string
+	RngVersion       string
 }
 
 type WorldEventProgress struct {

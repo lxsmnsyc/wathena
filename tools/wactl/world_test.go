@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"go.yaml.in/yaml/v3"
+
+	"github.com/lxsmnsyc/wathena/shared/gen"
+	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
 func TestSplitPassword(t *testing.T) {
@@ -55,5 +58,33 @@ func TestOwnersHint(t *testing.T) {
 	}
 	if err := yaml.Unmarshal([]byte(block), &cfg); err != nil || len(cfg.Staff.Owners) != 1 || cfg.Staff.Owners[0] != "Admin" {
 		t.Errorf("%q: %+v, %v", block, cfg, err)
+	}
+}
+
+// TestWorldVersions: classic records no generator, procedural the
+// newest, and a build without the procedural tag refuses procedural.
+func TestWorldVersions(t *testing.T) {
+	if g, r, err := worldVersions(gen.ModeClassic); err != nil || g != 0 || r != "" {
+		t.Errorf("classic: %d %q %v", g, r, err)
+	}
+	if _, _, err := worldVersions("other"); err == nil {
+		t.Error("an unknown mode was taken")
+	}
+	g, r, err := worldVersions(gen.ModeProcedural)
+	if gen.Procedural {
+		latest, _ := gen.Latest()
+		if err != nil || g != latest.Version || r != rng.Version {
+			t.Errorf("procedural: %d %q %v", g, r, err)
+		}
+		if gen.DefaultMode() != gen.ModeProcedural {
+			t.Errorf("default mode %s", gen.DefaultMode())
+		}
+		return
+	}
+	if err == nil || !strings.Contains(err.Error(), "-tags procedural") {
+		t.Errorf("procedural without the tag: %d %q %v", g, r, err)
+	}
+	if gen.DefaultMode() != gen.ModeClassic {
+		t.Errorf("default mode %s", gen.DefaultMode())
 	}
 }

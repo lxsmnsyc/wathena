@@ -13,6 +13,9 @@
 # The client's pathfinding module, built from shared/path with TinyGo. CI
 # rebuilds it and checks that it matches.
 !/client/src/world/path.wasm
+# The client's map generator, built from shared/gen with TinyGo and the
+# procedural tag. scripts/check.sh rebuilds it and checks that it matches.
+!/client/src/world/gen.wasm
 
 # Go
 /vendor/

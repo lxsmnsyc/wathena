@@ -1,12 +1,13 @@
 import { create } from '@bufbuild/protobuf';
 import { describe, expect, it } from 'vitest';
-import { DisconnectReason, WelcomeSchema } from '../gen/wathena/v1/session_pb';
+import { DisconnectReason, WelcomeSchema, WorldMode } from '../gen/wathena/v1/session_pb';
 import {
   DEFAULT_LIMITS,
   disconnectDelay,
   disconnectText,
   limitsOf,
   unpackSteps,
+  worldOf,
 } from './connection';
 
 describe('limitsOf', () => {
@@ -147,5 +148,25 @@ describe('disconnectDelay', () => {
     expect(disconnectDelay(DisconnectReason.ACCOUNT_DELETION)).toBe(10_000);
     expect(disconnectDelay(DisconnectReason.LOGGED_OUT)).toBe(3000);
     expect(disconnectDelay()).toBe(3000);
+  });
+});
+
+describe('worldOf', () => {
+  it('reads a procedural world and its versions', () => {
+    const welcome = create(WelcomeSchema, {
+      world: { mode: WorldMode.PROCEDURAL, generatorVersion: 1, rngVersion: 'rng-v1' },
+    });
+    expect(worldOf(welcome)).toEqual({
+      mode: 'procedural',
+      generatorVersion: 1,
+      rngVersion: 'rng-v1',
+    });
+  });
+
+  it('takes a world without a mode as classic', () => {
+    const classic = { mode: 'classic', generatorVersion: 0, rngVersion: '' };
+    expect(worldOf(create(WelcomeSchema, {}))).toEqual(classic);
+    expect(worldOf(create(WelcomeSchema, { world: { mode: WorldMode.CLASSIC } }))).toEqual(classic);
+    expect(worldOf(create(WelcomeSchema, { world: { generatorVersion: 3 } }))).toEqual(classic);
   });
 });

@@ -31,6 +31,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 - Without a C compiler, or with `CGO_ENABLED=0`, the same code runs Lua compiled to WebAssembly in wazero. It is slower, and meant for development.
 - Release builds use `zig cc`: static musl binaries for Linux, and binaries for Windows and macOS. The Dockerfile and CI's `lua` and `lua-macos` jobs have the commands. Static Linux builds need `-Wl,-z,stack-size=8388608`, since Lua needs more C stack than musl's default.
 - At startup, `waserver` runs a self-test of the Lua runtime and refuses to start when it fails.
+- Procedural mode is in builds with the tag `procedural`: `go build -tags procedural ./server/cmd/waserver`. Builds without it run only classic worlds (strategy section 8.1, docs/decisions/0038-generator-core.md). See "World modes".
 
 ## Development server
 
@@ -158,7 +159,17 @@ read -rs PASSWORD
 printf '%s\n' "$PASSWORD" | go run ./tools/wactl world new --admin Admin --admin-password-file -
 ```
 
-`--ruleset` is `renewal` by default, and must match `waserver`'s `--mode`. The account has no staff role. The command prints the `staff.owners` lines that make it the owner (see "Staff and admin tools").
+`--ruleset` is `renewal` by default, and must match `waserver`'s `--mode`. `--mode` sets the world mode, `classic` or `procedural` (see "World modes"). The account has no staff role. The command prints the `staff.owners` lines that make it the owner (see "Staff and admin tools").
+
+### World modes
+
+A world is `classic` or `procedural`, chosen by `wactl world new --mode` and kept in the world row with the map generator version and the rng spec version (docs/specs/generator-v1.md). It never changes.
+
+- A build with the tag `procedural` makes procedural worlds by default, with the newest generator. A build without it makes classic worlds, and refuses `--mode procedural`.
+- `waserver` refuses to start on a procedural world when it was built without the tag, or when it lacks the world's generator version or rng spec version.
+- `Welcome.world` tells the client the mode and the versions. The client loads its map generator only for a procedural world.
+- A `--dev` server without a world runs classic.
+- Procedural worlds have no generated maps yet. Phase 7 step 2 adds fields.
 
 ### Running with accounts
 
@@ -1097,6 +1108,8 @@ scripts/check.sh lint e2e     # some steps
 - The `unit` step runs `go test` without `-race` on every package but `e2e`. Go's test cache keeps the results of packages that did not change, so after a small change it reruns only that package and the packages that import it. It does not start PostgreSQL: the database tests skip unless `WATHENA_TEST_DATABASE_URL` is set.
 - The `test` step runs the `unit` step, then `go test -race ./...`, which includes the end-to-end tests in [e2e](../e2e/README.md).
 - Under `-race`, the heavy tests that run on one goroutine skip with `testrace.SkipUnderRace` ([decision 0022](../docs/decisions/0022-test-speed.md)). They run in the first pass.
+- The `vet`, `unit` and `lint` steps also run with the tag `procedural`: `vet` on every package, `unit` and `lint` on `shared/gen` and the packages that import it, the only ones the tag changes ([decision 0038](../docs/decisions/0038-generator-core.md)).
+- The `gen` step generates the golden maps of `shared/gen` in Go on this machine's architecture and on the other one, under Rosetta on an arm64 Mac, and in `gen.wasm` in Node. The `browsers` step does it in Chromium, Firefox and WebKit.
 - The `fuzz` step runs each fuzz test for 10 seconds, 4 at once.
 - Without `WATHENA_TEST_DATABASE_URL`, the script starts a `postgres:18` container for the database tests when Docker runs, and removes it at the end. `CHECK_NO_DOCKER=1` turns that off.
 - Checks of generated files compare the files before and after the generator, so uncommitted work does not fail them.

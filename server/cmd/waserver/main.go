@@ -111,6 +111,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
+	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 	"github.com/lxsmnsyc/wathena/tools/convert"
 )
@@ -630,7 +631,8 @@ func runAll(name string, args []string) error {
 		},
 	})
 	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: cfg.Origins, Log: log, Metrics: &reg.Conns,
-		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName, Limits: rules.LimitsOrDefault(worldRules), Closed: planner.Closed}
+		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName, Limits: rules.LimitsOrDefault(worldRules), Closed: planner.Closed,
+		Mode: worldMode(worldRow)}
 	go reg.Conns.Run(ctx)
 	hc := &health{}
 	var st *store.Store
@@ -1015,7 +1017,41 @@ func checkWorld(ctx context.Context, pool *pgxpool.Pool, cfg settings) (store.Wo
 	case cfg.Mode != "none" && w.Ruleset != cfg.Mode:
 		return store.World{}, fmt.Errorf("the world %q uses the %s ruleset, but mode is %s", w.Name, w.Ruleset, cfg.Mode)
 	}
+	if err := checkWorldMode(w); err != nil {
+		return store.World{}, err
+	}
 	return w, nil
+}
+
+// checkWorldMode refuses a world this build cannot run: a procedural
+// world in a build without the procedural tag, or a generator version or
+// rng spec the build lacks (strategy sections 8.1 and 8.4).
+func checkWorldMode(w store.World) error {
+	switch {
+	case w.Mode == gen.ModeProcedural && !gen.HasMode(w.Mode):
+		return fmt.Errorf("the world %q is procedural, but this waserver was built without -tags procedural", w.Name)
+	case !gen.HasMode(w.Mode):
+		return fmt.Errorf("the world %q has the unknown mode %q", w.Name, w.Mode)
+	case w.Mode == gen.ModeClassic:
+		return nil
+	}
+	g, ok := gen.Lookup(w.GeneratorVersion)
+	if !ok {
+		return fmt.Errorf("the world %q uses map generator %d, which this waserver lacks; it has %v", w.Name, w.GeneratorVersion, gen.Versions())
+	}
+	if g.RNG != w.RNGVersion {
+		return fmt.Errorf("the world %q uses %s, but map generator %d uses %s", w.Name, w.RNGVersion, g.Version, g.RNG)
+	}
+	return nil
+}
+
+// worldMode is what Welcome tells clients about the world. A dev server
+// without a world runs classic maps.
+func worldMode(w store.World) gateway.WorldMode {
+	if w.Mode != gen.ModeProcedural {
+		return gateway.WorldMode{}
+	}
+	return gateway.WorldMode{Procedural: true, GeneratorVersion: w.GeneratorVersion, RNGVersion: w.RNGVersion}
 }
 
 // rulesetBase is the ruleset base that the mode or the world row fixes:

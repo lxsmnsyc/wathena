@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wathena/v1/session.proto.
  */
 export const file_wathena_v1_session: GenFile = /*@__PURE__*/
-  fileDesc("Chh3YXRoZW5hL3YxL3Nlc3Npb24ucHJvdG8SCndhdGhlbmEudjEiXwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIVCg1zZXNzaW9uX3Rva2VuGAIgASgMEhMKC2NsaWVudF9uYW1lGAMgASgJEhAKCGxhbmd1YWdlGAQgASgJIooBCgdXZWxjb21lEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQSDAoEdGljaxgDIAEoDRIOCgZuZXRfaWQYBCABKA0SCwoDbWFwGAUgASgJEiIKBmxpbWl0cxgGIAEoCzISLndhdGhlbmEudjEuTGltaXRzIskCCgZMaW1pdHMSFQoNcGFydHlfbWVtYmVycxgBIAEoDRIPCgdmcmllbmRzGAIgASgNEhIKCmJsb2NrX2xpc3QYAyABKA0SFQoNZ3VpbGRfbWVtYmVycxgEIAEoDRIXCg9ndWlsZF9wb3NpdGlvbnMYBSABKA0SFAoMZ3VpbGRfYWxsaWVzGAYgASgNEhUKDWd1aWxkX2VuZW1pZXMYByABKA0SFQoNZ3VpbGRfc3RvcmFnZRgIIAEoDRIXCg9pbnZlbnRvcnlfc2xvdHMYCSABKA0SFQoNc3RvcmFnZV9zbG90cxgKIAEoDRISCgpjYXJ0X3Nsb3RzGAsgASgNEiYKBnJhbmdlcxgMIAMoCzIWLndhdGhlbmEudjEuTGltaXRSYW5nZRISCgptYWlsX2l0ZW1zGA0gASgNEg8KB21haWxib3gYDiABKA0iNQoKTGltaXRSYW5nZRIMCgRuYW1lGAEgASgJEgwKBGJhc2UYAiABKA0SCwoDbWF4GAMgASgNIhUKBFBpbmcSDQoFbm9uY2UYASABKA0iLQoEUG9uZxINCgVub25jZRgBIAEoDRIWCg5zZXJ2ZXJfdGltZV9tcxgCIAEoBCJLCgpEaXNjb25uZWN0EiwKBnJlYXNvbhgBIAEoDjIcLndhdGhlbmEudjEuRGlzY29ubmVjdFJlYXNvbhIPCgdtZXNzYWdlGAIgASgJKuYDChBEaXNjb25uZWN0UmVhc29uEiEKHURJU0NPTk5FQ1RfUkVBU09OX1VOU1BFQ0lGSUVEEAASKQolRElTQ09OTkVDVF9SRUFTT05fVkVSU0lPTl9VTlNVUFBPUlRFRBABEiUKIURJU0NPTk5FQ1RfUkVBU09OX1NFU1NJT05fSU5WQUxJRBACEikKJURJU0NPTk5FQ1RfUkVBU09OX0xPR0dFRF9JTl9FTFNFV0hFUkUQAxIiCh5ESVNDT05ORUNUX1JFQVNPTl9SQVRFX0xJTUlURUQQBBIhCh1ESVNDT05ORUNUX1JFQVNPTl9CQURfTUVTU0FHRRAFEhwKGERJU0NPTk5FQ1RfUkVBU09OX0JBTk5FRBAGEiUKIURJU0NPTk5FQ1RfUkVBU09OX1NFUlZFUl9TSFVURE9XThAHEiAKHERJU0NPTk5FQ1RfUkVBU09OX0xPR0dFRF9PVVQQCBIfChtESVNDT05ORUNUX1JFQVNPTl9BVVRPVFJBREUQCRIcChhESVNDT05ORUNUX1JFQVNPTl9LSUNLRUQQChIdChlESVNDT05ORUNUX1JFQVNPTl9SRVNUQVJUEAsSJgoiRElTQ09OTkVDVF9SRUFTT05fQUNDT1VOVF9ERUxFVElPThAMQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
+  fileDesc("Chh3YXRoZW5hL3YxL3Nlc3Npb24ucHJvdG8SCndhdGhlbmEudjEiXwoFSGVsbG8SGAoQcHJvdG9jb2xfdmVyc2lvbhgBIAEoDRIVCg1zZXNzaW9uX3Rva2VuGAIgASgMEhMKC2NsaWVudF9uYW1lGAMgASgJEhAKCGxhbmd1YWdlGAQgASgJIrABCgdXZWxjb21lEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQSDAoEdGljaxgDIAEoDRIOCgZuZXRfaWQYBCABKA0SCwoDbWFwGAUgASgJEiIKBmxpbWl0cxgGIAEoCzISLndhdGhlbmEudjEuTGltaXRzEiQKBXdvcmxkGAcgASgLMhUud2F0aGVuYS52MS5Xb3JsZEluZm8iYAoJV29ybGRJbmZvEiMKBG1vZGUYASABKA4yFS53YXRoZW5hLnYxLldvcmxkTW9kZRIZChFnZW5lcmF0b3JfdmVyc2lvbhgCIAEoDRITCgtybmdfdmVyc2lvbhgDIAEoCSLJAgoGTGltaXRzEhUKDXBhcnR5X21lbWJlcnMYASABKA0SDwoHZnJpZW5kcxgCIAEoDRISCgpibG9ja19saXN0GAMgASgNEhUKDWd1aWxkX21lbWJlcnMYBCABKA0SFwoPZ3VpbGRfcG9zaXRpb25zGAUgASgNEhQKDGd1aWxkX2FsbGllcxgGIAEoDRIVCg1ndWlsZF9lbmVtaWVzGAcgASgNEhUKDWd1aWxkX3N0b3JhZ2UYCCABKA0SFwoPaW52ZW50b3J5X3Nsb3RzGAkgASgNEhUKDXN0b3JhZ2Vfc2xvdHMYCiABKA0SEgoKY2FydF9zbG90cxgLIAEoDRImCgZyYW5nZXMYDCADKAsyFi53YXRoZW5hLnYxLkxpbWl0UmFuZ2USEgoKbWFpbF9pdGVtcxgNIAEoDRIPCgdtYWlsYm94GA4gASgNIjUKCkxpbWl0UmFuZ2USDAoEbmFtZRgBIAEoCRIMCgRiYXNlGAIgASgNEgsKA21heBgDIAEoDSIVCgRQaW5nEg0KBW5vbmNlGAEgASgNIi0KBFBvbmcSDQoFbm9uY2UYASABKA0SFgoOc2VydmVyX3RpbWVfbXMYAiABKAQiSwoKRGlzY29ubmVjdBIsCgZyZWFzb24YASABKA4yHC53YXRoZW5hLnYxLkRpc2Nvbm5lY3RSZWFzb24SDwoHbWVzc2FnZRgCIAEoCSpaCglXb3JsZE1vZGUSGgoWV09STERfTU9ERV9VTlNQRUNJRklFRBAAEhYKEldPUkxEX01PREVfQ0xBU1NJQxABEhkKFVdPUkxEX01PREVfUFJPQ0VEVVJBTBACKuYDChBEaXNjb25uZWN0UmVhc29uEiEKHURJU0NPTk5FQ1RfUkVBU09OX1VOU1BFQ0lGSUVEEAASKQolRElTQ09OTkVDVF9SRUFTT05fVkVSU0lPTl9VTlNVUFBPUlRFRBABEiUKIURJU0NPTk5FQ1RfUkVBU09OX1NFU1NJT05fSU5WQUxJRBACEikKJURJU0NPTk5FQ1RfUkVBU09OX0xPR0dFRF9JTl9FTFNFV0hFUkUQAxIiCh5ESVNDT05ORUNUX1JFQVNPTl9SQVRFX0xJTUlURUQQBBIhCh1ESVNDT05ORUNUX1JFQVNPTl9CQURfTUVTU0FHRRAFEhwKGERJU0NPTk5FQ1RfUkVBU09OX0JBTk5FRBAGEiUKIURJU0NPTk5FQ1RfUkVBU09OX1NFUlZFUl9TSFVURE9XThAHEiAKHERJU0NPTk5FQ1RfUkVBU09OX0xPR0dFRF9PVVQQCBIfChtESVNDT05ORUNUX1JFQVNPTl9BVVRPVFJBREUQCRIcChhESVNDT05ORUNUX1JFQVNPTl9LSUNLRUQQChIdChlESVNDT05ORUNUX1JFQVNPTl9SRVNUQVJUEAsSJgoiRElTQ09OTkVDVF9SRUFTT05fQUNDT1VOVF9ERUxFVElPThAMQkBaPmdpdGh1Yi5jb20vbHhzbW5zeWMvd2F0aGVuYS9zY2hlbWEvZ2VuL2dvL3dhdGhlbmEvdjE7d2F0aGVuYXYxYgZwcm90bzM");
 
 /**
  * Hello is the first client message on a new connection.
@@ -103,6 +103,15 @@ export type Welcome = Message<"wathena.v1.Welcome"> & {
    * @generated from field: wathena.v1.Limits limits = 6;
    */
   limits?: Limits | undefined;
+
+  /**
+   * world is the world's mode and the versions of its map generator, so
+   * the client loads the generator only for a procedural world (strategy
+   * section 8.1). A server that leaves it out runs a classic world.
+   *
+   * @generated from field: wathena.v1.WorldInfo world = 7;
+   */
+  world?: WorldInfo | undefined;
 };
 
 /**
@@ -111,6 +120,41 @@ export type Welcome = Message<"wathena.v1.Welcome"> & {
  */
 export const WelcomeSchema: GenMessage<Welcome> = /*@__PURE__*/
   messageDesc(file_wathena_v1_session, 1);
+
+/**
+ * WorldInfo describes the world a client joined.
+ *
+ * @generated from message wathena.v1.WorldInfo
+ */
+export type WorldInfo = Message<"wathena.v1.WorldInfo"> & {
+  /**
+   * @generated from field: wathena.v1.WorldMode mode = 1;
+   */
+  mode: WorldMode;
+
+  /**
+   * generator_version is the map generator version the world records,
+   * or 0 in a classic world (docs/specs/generator-v1.md).
+   *
+   * @generated from field: uint32 generator_version = 2;
+   */
+  generatorVersion: number;
+
+  /**
+   * rng_version is the seed tree spec the world records, such as
+   * "rng-v1" (docs/specs/rng-v1.md), or empty in a classic world.
+   *
+   * @generated from field: string rng_version = 3;
+   */
+  rngVersion: string;
+};
+
+/**
+ * Describes the message wathena.v1.WorldInfo.
+ * Use `create(WorldInfoSchema)` to create a new message.
+ */
+export const WorldInfoSchema: GenMessage<WorldInfo> = /*@__PURE__*/
+  messageDesc(file_wathena_v1_session, 2);
 
 /**
  * Limits are limits that rAthena compiles in and a ruleset sets
@@ -227,7 +271,7 @@ export type Limits = Message<"wathena.v1.Limits"> & {
  * Use `create(LimitsSchema)` to create a new message.
  */
 export const LimitsSchema: GenMessage<Limits> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 2);
+  messageDesc(file_wathena_v1_session, 3);
 
 /**
  * LimitRange is one limit: base is what a player or guild starts with,
@@ -257,7 +301,7 @@ export type LimitRange = Message<"wathena.v1.LimitRange"> & {
  * Use `create(LimitRangeSchema)` to create a new message.
  */
 export const LimitRangeSchema: GenMessage<LimitRange> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 3);
+  messageDesc(file_wathena_v1_session, 4);
 
 /**
  * @generated from message wathena.v1.Ping
@@ -274,7 +318,7 @@ export type Ping = Message<"wathena.v1.Ping"> & {
  * Use `create(PingSchema)` to create a new message.
  */
 export const PingSchema: GenMessage<Ping> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 4);
+  messageDesc(file_wathena_v1_session, 5);
 
 /**
  * @generated from message wathena.v1.Pong
@@ -296,7 +340,7 @@ export type Pong = Message<"wathena.v1.Pong"> & {
  * Use `create(PongSchema)` to create a new message.
  */
 export const PongSchema: GenMessage<Pong> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 5);
+  messageDesc(file_wathena_v1_session, 6);
 
 /**
  * Disconnect is the last message before the server closes the connection.
@@ -322,7 +366,41 @@ export type Disconnect = Message<"wathena.v1.Disconnect"> & {
  * Use `create(DisconnectSchema)` to create a new message.
  */
 export const DisconnectSchema: GenMessage<Disconnect> = /*@__PURE__*/
-  messageDesc(file_wathena_v1_session, 6);
+  messageDesc(file_wathena_v1_session, 7);
+
+/**
+ * WorldMode is the world mode chosen when the world was made.
+ *
+ * @generated from enum wathena.v1.WorldMode
+ */
+export enum WorldMode {
+  /**
+   * A server that sends no mode runs a classic world.
+   *
+   * @generated from enum value: WORLD_MODE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * rAthena's fixed maps.
+   *
+   * @generated from enum value: WORLD_MODE_CLASSIC = 1;
+   */
+  CLASSIC = 1,
+
+  /**
+   * Maps generated from the world seed.
+   *
+   * @generated from enum value: WORLD_MODE_PROCEDURAL = 2;
+   */
+  PROCEDURAL = 2,
+}
+
+/**
+ * Describes the enum wathena.v1.WorldMode.
+ */
+export const WorldModeSchema: GenEnum<WorldMode> = /*@__PURE__*/
+  enumDesc(file_wathena_v1_session, 0);
 
 /**
  * @generated from enum wathena.v1.DisconnectReason
@@ -417,5 +495,5 @@ export enum DisconnectReason {
  * Describes the enum wathena.v1.DisconnectReason.
  */
 export const DisconnectReasonSchema: GenEnum<DisconnectReason> = /*@__PURE__*/
-  enumDesc(file_wathena_v1_session, 0);
+  enumDesc(file_wathena_v1_session, 1);
 

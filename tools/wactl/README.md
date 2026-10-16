@@ -46,11 +46,12 @@ Converts rAthena's NPC scripts and shops from the extracts in `reference/rathena
 
 Lists the database migrations, or applies the pending ones. They need the migrator role's URL in `WATHENA_MIGRATE_DATABASE_URL`, or in a file that `WATHENA_MIGRATE_DATABASE_URL_FILE` names, such as a Docker secret. `--database` also takes it, but shows the password in process lists. See server/README.md, "Running with PostgreSQL".
 
-`wactl world new --admin <name> --admin-password-file <file or -> [--name <world name>] [--ruleset renewal|pre-renewal]`
+`wactl world new --admin <name> --admin-password-file <file or -> [--name <world name>] [--ruleset renewal|pre-renewal] [--mode classic|procedural]`
 
 Makes a world in a database that `deploy/postgres/roles.sql` prepared. It applies pending migrations, then makes the world's row and the first account in one transaction:
 
 - The world row has the name, the ruleset, and a secret 32-byte root seed from `crypto/rand` (docs/specs/rng-v1.md). `waserver` refuses to start without it, and when its `--mode` is not the ruleset.
+- The world row has the world mode, which never changes (docs/decisions/0038-generator-core.md). `--mode` is `procedural` by default in a `wactl` built with `-tags procedural`, and `classic` otherwise. A procedural world records the newest map generator version and its rng spec version, such as 1 and `rng-v1` (docs/specs/generator-v1.md). A `wactl` built without the tag refuses `--mode procedural`.
 - The account has the given name and password, with the account service's rules. The password is the first line of the file, or of standard input for `-`.
 - The account has no staff role. The command prints the `staff.owners` lines to add to `waserver.yml`, which make it the owner (decision 0036).
 

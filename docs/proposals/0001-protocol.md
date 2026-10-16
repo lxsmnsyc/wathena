@@ -64,7 +64,7 @@ Server to client, in `ServerMessage`:
 
 | Case | Use |
 |---|---|
-| `welcome` | Session accepted, with server time, tick, the player's own entity ID, and the map's asset name. |
+| `welcome` | Session accepted, with server time, tick, the player's own entity ID, the map's asset name, the world's limits, and the world's mode. |
 | `pong` | Reply to `ping`, with server time. |
 | `frame` | Everything visible that happened in one tick. |
 | `disconnect` | Reason for closing, shown to the player. |
@@ -158,6 +158,7 @@ Server to client, in `ServerMessage`:
   - Frames from the old map can arrive before the change. Commands sent while the player moves between maps are dropped, as rAthena ignores them during a map change, and `Frame.ack_seq` continues from the old map.
   - Other players on the old map see the player vanish with `VANISH_REASON_OUT_OF_SIGHT`, as rAthena's `pc_setpos` with `CLR_OUTSIGHT`.
   - A warp within the same map sends no `MapChange`. The player's own `EntityAppear` comes again at the new cell, as after a revive.
+- **World mode.** `Welcome.world` is a `WorldInfo`: the world's `mode`, `WORLD_MODE_CLASSIC` or `WORLD_MODE_PROCEDURAL`, and for a procedural world its `generator_version` and `rng_version`, such as 1 and `rng-v1` (strategy section 8.1, [generator-v1](../specs/generator-v1.md), [decision 0038](../decisions/0038-generator-core.md)). The client loads its map generator module only for a procedural world. A client takes a `Welcome` without `world`, or with `WORLD_MODE_UNSPECIFIED`, as a classic world. The protocol version stays 1, since `v1` can change freely before the first public release.
 
 ### Limits
 

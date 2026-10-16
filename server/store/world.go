@@ -22,8 +22,15 @@ type World struct {
 	Name    string
 	Ruleset string
 	// Seed is the secret root of the seed tree. LoadWorld leaves it nil.
-	Seed             []byte
+	Seed []byte
+	// Mode is classic or procedural (strategy section 8.1). An empty mode
+	// makes a classic world.
+	Mode string
+	// GeneratorVersion and RNGVersion are the map generator version and
+	// the seed tree spec, such as "rng-v1", of a procedural world. A
+	// classic world has 0 and "".
 	GeneratorVersion int
+	RNGVersion       string
 }
 
 // Admin is the first account that NewWorld makes. Hash is the
@@ -40,8 +47,13 @@ func NewWorld(ctx context.Context, pool *pgxpool.Pool, w World, admin Admin) (in
 	var id int64
 	err := pgx.BeginFunc(ctx, pool, func(tx pgx.Tx) error {
 		q := db.New(tx)
+		mode := w.Mode
+		if mode == "" {
+			mode = "classic"
+		}
 		n, err := q.CreateWorld(ctx, db.CreateWorldParams{
-			Name: w.Name, Ruleset: w.Ruleset, Seed: w.Seed, GeneratorVersion: w.GeneratorVersion,
+			Name: w.Name, Ruleset: w.Ruleset, Seed: w.Seed, Mode: mode,
+			GeneratorVersion: w.GeneratorVersion, RngVersion: w.RNGVersion,
 		})
 		if err != nil {
 			return err
@@ -68,5 +80,8 @@ func LoadWorld(ctx context.Context, pool *pgxpool.Pool) (World, error) {
 	if err != nil {
 		return World{}, err
 	}
-	return World{Name: row.Name, Ruleset: row.Ruleset, GeneratorVersion: row.GeneratorVersion}, nil
+	return World{
+		Name: row.Name, Ruleset: row.Ruleset, Mode: row.Mode,
+		GeneratorVersion: row.GeneratorVersion, RNGVersion: row.RngVersion,
+	}, nil
 }

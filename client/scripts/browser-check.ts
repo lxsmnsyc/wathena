@@ -23,6 +23,11 @@
 //   WATHENA_TEST_DATABASE_URL, which scripts/check.sh browsers sets.
 //   Chromium only.
 //
+// - gen: the map generator module (src/world/gen.wasm) gives the golden
+//   checksums of shared/gen/testdata in Chromium, Firefox and WebKit,
+//   whatever BROWSERS says (decision 0038). GEN_BROWSERS picks others. A
+//   browser that is not installed is skipped with a message.
+//
 // CHECKS picks checks by name, such as CHECKS=touch,phone. All run by
 // default.
 //
@@ -61,6 +66,7 @@ import {
   startGame,
 } from './game-check.ts';
 import { checkExit } from './exit-check.ts';
+import type * as GeneratorModule from '../src/world/generator.ts';
 
 const repo = join(import.meta.dirname, '..', '..');
 const client = join(repo, 'client');
@@ -816,6 +822,103 @@ async function checkPhoneWidth(name: string, browser: Browser, base: string): Pr
   }
 }
 
+/** A golden map of shared/gen/testdata. */
+interface GoldenMap {
+  key: string;
+  width: number;
+  height: number;
+  checksum: string;
+}
+
+interface GoldenFile {
+  version: number;
+  rng: string;
+  maps: GoldenMap[];
+}
+
+function isGoldenFile(v: unknown): v is GoldenFile {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    'version' in v &&
+    typeof v.version === 'number' &&
+    'rng' in v &&
+    typeof v.rng === 'string' &&
+    'maps' in v &&
+    Array.isArray(v.maps) &&
+    v.maps.every(
+      (m: unknown) =>
+        typeof m === 'object' &&
+        m !== null &&
+        'key' in m &&
+        typeof m.key === 'string' &&
+        'width' in m &&
+        typeof m.width === 'number' &&
+        'height' in m &&
+        typeof m.height === 'number' &&
+        'checksum' in m &&
+        typeof m.checksum === 'string',
+    )
+  );
+}
+
+/** Every generator version's golden maps, from shared/gen/testdata. */
+function goldenMaps(): GoldenFile[] {
+  const dir = join(repo, 'shared/gen/testdata');
+  return readdirSync(dir)
+    .filter((f) => /^golden-v\d+\.json$/.test(f))
+    .map((f) => {
+      const g: unknown = JSON.parse(readFileSync(join(dir, f), 'utf8'));
+      if (!isGoldenFile(g)) {
+        throw new Error(`${f}: invalid`);
+      }
+      return { version: g.version, rng: g.rng, maps: g.maps };
+    });
+}
+
+/**
+ * Generates the golden maps with the client's generator module in the
+ * browser, through the client's own loader, and compares the checksums.
+ */
+async function checkGen(name: string, browser: Browser, base: string): Promise<void> {
+  const page = await browser.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(`${base}/src/audio/testdata/sounds.json`);
+  const goldens = goldenMaps();
+  const results = await page.evaluate(async (versions) => {
+    const path = '/src/world/generator.ts';
+    // The page imports the client's own module, which vite serves.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const m = (await import(path)) as typeof GeneratorModule;
+    const g = await m.Generator.load();
+    const out: { label: string; ok: boolean; detail: string }[] = [];
+    for (const v of versions) {
+      out.push({
+        label: `gen v${v.version} supported`,
+        ok: g.supports(v.version, v.rng),
+        detail: `${v.rng}, newest ${g.latest}`,
+      });
+      for (const want of v.maps) {
+        const began = performance.now();
+        const grid = g.generate(v.version, m.keyFromHex(want.key), want.width, want.height);
+        const took = performance.now() - began;
+        out.push({
+          label: `gen v${v.version} ${want.key.slice(0, 8)} ${want.width}x${want.height}`,
+          ok: grid.checksum === want.checksum,
+          detail: `${grid.checksum.slice(0, 16)} in ${took.toFixed(1)} ms`,
+        });
+      }
+    }
+    return out;
+  }, goldens);
+  for (const r of results) {
+    check(name, r.label, r.ok, r.detail);
+  }
+  check(name, 'gen errors', errors.length === 0, errors.join('; ') || 'none');
+  await page.close();
+}
+
 /** The touch, tablet and mouse runs on a game server, and frame times. */
 async function checkGame(
   name: string,
@@ -905,6 +1008,22 @@ try {
       }
     } finally {
       await browser.close();
+    }
+  }
+  if (wanted('gen')) {
+    for (const name of (process.env.GEN_BROWSERS ?? 'chromium,firefox,webkit').split(',')) {
+      let browser: Browser;
+      try {
+        browser = await launch(name);
+      } catch (error) {
+        console.log(`skip ${name} gen: the browser did not start: ${String(error).split('\n')[0]}`);
+        continue;
+      }
+      try {
+        await checkGen(name, browser, base);
+      } finally {
+        await browser.close();
+      }
     }
   }
 } finally {

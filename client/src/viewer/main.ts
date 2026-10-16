@@ -603,6 +603,22 @@ if (serverURL === null) {
     },
   });
   view.self = connection.welcome.netId;
+  // A procedural world's maps come from the generator module, which a
+  // classic world never loads (decision 0038). Phase 7 step 2 generates
+  // fields with it.
+  if (connection.world.mode === 'procedural') {
+    const world = connection.world;
+    import('../world/generator')
+      .then(async ({ generatorFor }) => generatorFor(world))
+      .then((g) => {
+        console.info(
+          `map generator ${world.generatorVersion} (${world.rngVersion}) loaded, newest ${g?.latest}`,
+        );
+      })
+      .catch((error: unknown) => {
+        console.error('map generator:', error);
+      });
+  }
   // World events: a banner for each start and end, and a panel of the
   // runs that last, on the server's clock.
   const eventBanner = document.querySelector<HTMLElement>('#event-banner');

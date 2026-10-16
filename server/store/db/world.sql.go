@@ -38,8 +38,8 @@ func (q *Queries) CreateAdminAccount(ctx context.Context, arg CreateAdminAccount
 
 const createWorld = `-- name: CreateWorld :execrows
 
-INSERT INTO world (name, ruleset, seed, generator_version)
-VALUES ($1, $2, $3, $4)
+INSERT INTO world (name, ruleset, seed, mode, generator_version, rng_version)
+VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (id) DO NOTHING
 `
 
@@ -47,7 +47,9 @@ type CreateWorldParams struct {
 	Name             string
 	Ruleset          string
 	Seed             []byte
+	Mode             string
 	GeneratorVersion int
+	RngVersion       string
 }
 
 // Queries for the world row and its first account. `wactl world new`
@@ -60,7 +62,9 @@ func (q *Queries) CreateWorld(ctx context.Context, arg CreateWorldParams) (int64
 		arg.Name,
 		arg.Ruleset,
 		arg.Seed,
+		arg.Mode,
 		arg.GeneratorVersion,
+		arg.RngVersion,
 	)
 	if err != nil {
 		return 0, err
@@ -69,13 +73,15 @@ func (q *Queries) CreateWorld(ctx context.Context, arg CreateWorldParams) (int64
 }
 
 const world = `-- name: World :one
-SELECT name, ruleset, generator_version, created_at FROM world WHERE id = 1
+SELECT name, ruleset, mode, generator_version, rng_version, created_at FROM world WHERE id = 1
 `
 
 type WorldRow struct {
 	Name             string
 	Ruleset          string
+	Mode             string
 	GeneratorVersion int
+	RngVersion       string
 	CreatedAt        pgtype.Timestamptz
 }
 
@@ -86,7 +92,9 @@ func (q *Queries) World(ctx context.Context) (WorldRow, error) {
 	err := row.Scan(
 		&i.Name,
 		&i.Ruleset,
+		&i.Mode,
 		&i.GeneratorVersion,
+		&i.RngVersion,
 		&i.CreatedAt,
 	)
 	return i, err

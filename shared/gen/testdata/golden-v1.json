@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "rng": "rng-v1",
+  "maps": [
+    {
+      "secret": "golden-0",
+      "region": [
+        0,
+        0
+      ],
+      "key": "8fa3355ef9b7909172097ab80329d00b77c231c6ffa1de163dc8fcdce68bda23",
+      "width": 1,
+      "height": 1,
+      "water": -27493,
+      "counts": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "checksum": "30a71e94a6c9f99c69cc5b5c52d3df6228dda163f355226781397e744655a0e0"
+    },
+    {
+      "secret": "golden-0",
+      "region": [
+        0,
+        1
+      ],
+      "key": "a04df142cafe4d81ae335f822e713b8087478b8a3fce530eb8c55cf4bb575fad",
+      "width": 7,
+      "height": 5,
+      "water": 6564,
+      "counts": [
+        24,
+        0,
+        11,
+        0
+      ],
+      "checksum": "94e9a72d4740a1c88f6cf4a06ac3bfe9755afc15aafc9173ce6a7739139188fd"
+    },
+    {
+      "secret": "golden-0",
+      "region": [
+        3,
+        -1
+      ],
+      "key": "ff2044449ef1dcbb7a45b995f3b0161e4be54bf62d40b41e86968f87786b970a",
+      "width": 64,
+      "height": 64,
+      "water": -14380,
+      "counts": [
+        1707,
+        1284,
+        1095,
+        10
+      ],
+      "checksum": "2afc98c291177a14047f394f8a38454765b5154ee6d0046f85b496aabc377b90"
+    },
+    {
+      "secret": "golden-1",
+      "region": [
+        -2,
+        5
+      ],
+      "key": "825ca13c2ac6ad0f39b9d3d5b9e97bb01cd0dd0d76c17da2119263ae371b07db",
+      "width": 33,
+      "height": 129,
+      "water": -16768,
+      "counts": [
+        2214,
+        630,
+        1413,
+        0
+      ],
+      "checksum": "be67e097c55d04e1618fa14305b18f5dfd51ef5d8d4e1c0caa240f5276698445"
+    },
+    {
+      "secret": "golden-1",
+      "region": [
+        1099511627776,
+        -1099511627776
+      ],
+      "key": "60924eabfcef6eb70c64561b0c04b58309de226bbe85bb4a49cfabcd06939838",
+      "width": 200,
+      "height": 150,
+      "water": 23507,
+      "counts": [
+        7850,
+        14338,
+        7805,
+        7
+      ],
+      "checksum": "bff51f7076a0c0e32064df30cded4b50575a28d8b890d7256968c1d8db3d5bb4"
+    },
+    {
+      "secret": "golden-2",
+      "region": [
+        0,
+        0
+      ],
+      "key": "442fc79a30dda4673da95460e2b6608edd9f15588923936736a397f3544ba806",
+      "width": 400,
+      "height": 400,
+      "water": 11187,
+      "counts": [
+        74610,
+        48220,
+        36974,
+        196
+      ],
+      "checksum": "683c4575e765275ded6a387be52bdf1c10041b99d44a0314f61b2d4766d40119"
+    },
+    {
+      "secret": "golden-3",
+      "region": [
+        7,
+        7
+      ],
+      "key": "3ac939c9cabe44d43288fa658532cd65b2bc1fb3e8a2aaf6d99a7e4325e31fe5",
+      "width": 1024,
+      "height": 8,
+      "water": -16764,
+      "counts": [
+        4026,
+        2536,
+        1629,
+        1
+      ],
+      "checksum": "66f6f19f7aba507a6353ef02fa6ff1e00a692cd9b9145f2c52b820e7f101b8dd"
+    },
+    {
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "width": 48,
+      "height": 48,
+      "water": -27389,
+      "counts": [
+        361,
+        900,
+        1040,
+        3
+      ],
+      "checksum": "de8beda93bb4885eaea03a871f8587aff133f2046a73724e0560812eaf199670"
+    }
+  ]
+}
