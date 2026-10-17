@@ -121,7 +121,8 @@ type Planned struct {
 // in the order of maps, with their bosses (strategy section 8.11, step
 // 6, review decision 44):
 //
-//   - Each map's species come from Select with its node.
+//   - Each map's species come from SelectChecked with its node: Select,
+//     with the economy checks on fields when st has them.
 //   - A field next to a town gets a boss of st.TownFieldBossRole with a
 //     chance of st.TownFieldBossChance percent, from its node's child
 //     boss.
@@ -135,7 +136,7 @@ func Plan(secret rng.Node, list []Map, p *Pool, st Resolved) []Planned {
 	out := make([]Planned, len(list))
 	for i, m := range list {
 		node := MapNode(secret, m.ID)
-		out[i] = Planned{Map: m.ID, Spawns: Select(node, m, p, st)}
+		out[i] = Planned{Map: m.ID, Spawns: SelectChecked(node, m, p, st)}
 		var boss *Spawn
 		switch {
 		case m.Kind == "field" && m.NextToTown:

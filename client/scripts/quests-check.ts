@@ -8,6 +8,8 @@
 //   the quest inactive and active again, and turns it in.
 // - Tapper, on a phone with touch, sees the icon, takes the quest, opens
 //   the quest window through the menu, and marks the quest inactive.
+//   Tapper plays only when browser-check.ts passes touch, since touch
+//   input is frozen as built in decision 0034.
 
 import type { Browser } from 'playwright-core';
 import { Player, choose, endDialog, kill, talk } from './exit-check.ts';
@@ -70,12 +72,16 @@ async function iconShown(p: Player, icon: string): Promise<void> {
     .waitFor({ state: 'visible', timeout: 15_000 });
 }
 
-/** Runs the quest check. Chromium only, as the other game checks. */
+/**
+ * Runs the quest check. Chromium only, as the other game checks. With
+ * touch, a phone page with touch plays after the desktop page.
+ */
 export async function checkQuests(
   name: string,
   browser: Browser,
   ctx: FieldContext,
   check: Check,
+  touch = false,
 ): Promise<void> {
   const game = await startGame(ctx.repo, ctx.client, ctx.dir, ctx.wactl, ctx.build, {
     mods: ['mods/examples/hunting-board'],
@@ -197,40 +203,42 @@ export async function checkQuests(
       return 'paid, the quest left the window, and the icon went away';
     });
 
-    const tapper = await Player.open(browser, 'Tapper', true, gameURL(game.base, 'Tapper'));
-    players.push(tapper);
-    await run('phone icon', tapper, async () => {
-      await until(
-        async () => masterIcon(tapper),
-        (i) => i === 'quest',
-      );
-      await iconShown(tapper, 'quest');
-      return 'the Hunt Master shows "!"';
-    });
-    await run('phone take', tapper, async () => {
-      await talk(tapper, 'Hunt Master');
-      await choose(tapper, "I'll do it.");
-      await endDialog(tapper);
-      await until(
-        async () => patrol(tapper),
-        (q) => q !== undefined,
-      );
-      return 'taken with taps';
-    });
-    await run('phone window', tapper, async () => {
-      await tapper.show('#quest-window', '#quest-toggle');
-      const phoneItem = `#quest-window li.quest[data-quest-id="${id}"]`;
-      const objective =
-        (await tapper.page.locator(`${phoneItem} .quest-objective`).first().textContent()) ?? '';
-      if (!objective.includes('Dummy 0/3')) {
-        throw new Error(`the window shows "${objective}"`);
-      }
-      await tapper.press(`${phoneItem} .quest-state`);
-      await tapper.page
-        .locator(`#quest-window li.quest.inactive[data-quest-id="${id}"]`)
-        .waitFor({ timeout: 15_000 });
-      return `${objective}, marked inactive with a tap`;
-    });
+    if (touch) {
+      const tapper = await Player.open(browser, 'Tapper', true, gameURL(game.base, 'Tapper'));
+      players.push(tapper);
+      await run('phone icon', tapper, async () => {
+        await until(
+          async () => masterIcon(tapper),
+          (i) => i === 'quest',
+        );
+        await iconShown(tapper, 'quest');
+        return 'the Hunt Master shows "!"';
+      });
+      await run('phone take', tapper, async () => {
+        await talk(tapper, 'Hunt Master');
+        await choose(tapper, "I'll do it.");
+        await endDialog(tapper);
+        await until(
+          async () => patrol(tapper),
+          (q) => q !== undefined,
+        );
+        return 'taken with taps';
+      });
+      await run('phone window', tapper, async () => {
+        await tapper.show('#quest-window', '#quest-toggle');
+        const phoneItem = `#quest-window li.quest[data-quest-id="${id}"]`;
+        const objective =
+          (await tapper.page.locator(`${phoneItem} .quest-objective`).first().textContent()) ?? '';
+        if (!objective.includes('Dummy 0/3')) {
+          throw new Error(`the window shows "${objective}"`);
+        }
+        await tapper.press(`${phoneItem} .quest-state`);
+        await tapper.page
+          .locator(`#quest-window li.quest.inactive[data-quest-id="${id}"]`)
+          .waitFor({ timeout: 15_000 });
+        return `${objective}, marked inactive with a tap`;
+      });
+    }
     c('server errors', game.errors.length === 0, game.errors.slice(0, 3).join('; ') || 'none');
   } catch (error) {
     c('run', false, String(error).split('\n')[0] ?? '');

@@ -163,3 +163,31 @@ func TestSubWeaponPropertyEDP(t *testing.T) {
 		t.Errorf("sub weapon property %+v", x)
 	}
 }
+
+// TestMonsterCloakingEnds checks SC_CLOAKING and SC_MAXIMIZEPOWER on a
+// monster, which cannot consume SP: each ends at its first timer, 10
+// seconds in, as rAthena's status_damage takes no SP from it. Before,
+// the timer charged the monster and ran again at once, forever, with
+// a status_tick each time.
+func TestMonsterCloakingEnds(t *testing.T) {
+	for _, typ := range []int{sc.SCCloaking, sc.SCMaximizepower} {
+		en, e := newEngine(t, reference.Renewal)
+		m := newUnit(sc.KindMonster, battle.Status{Level: 50, MaxHP: 1000, MaxSP: 10})
+		if !en.Start(m, m, sc.Start{Type: typ, Rate: 10000, Val1: 5, Duration: 30000, Flag: sc.NoAvoid}) {
+			t.Fatalf("status %d did not start", typ)
+		}
+		e.now = 9999
+		en.Advance(e.now)
+		if !m.list.Has(typ) {
+			t.Fatalf("status %d ended early", typ)
+		}
+		e.now = 10000
+		en.Advance(e.now)
+		if m.list.Has(typ) || en.Next() >= 0 && en.Next() <= e.now {
+			t.Errorf("status %d: still on %v, next timer %d", typ, m.list.Has(typ), en.Next())
+		}
+		if len(e.ticked) > 1 {
+			t.Errorf("status %d ticked %d times", typ, len(e.ticked))
+		}
+	}
+}

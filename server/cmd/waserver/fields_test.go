@@ -228,4 +228,34 @@ spawns:
 	if _, err := validate(o, secrets{}); err == nil || !strings.Contains(err.Error(), "town_field_boss_role") {
 		t.Errorf("a bad role: %v", err)
 	}
+	// The economy checks and the rolled drops of decision 0046.
+	p = writeConfig(t, `
+assets: `+assets+`
+dev: true
+spawns:
+  economy: false
+procedural:
+  drop_roll_levels: 20
+`)
+	if o, _, err = parseOptions("waserver all", []string{"--config", p}, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validate(o, secrets{}); err != nil || *o.Spawns.Economy || o.Procedural.dropRollLevels() != 20 {
+		t.Errorf("%+v %v", o.Spawns, err)
+	}
+	if def := (proceduralOptions{}).dropRollLevels(); def != DefaultDropRollLevels {
+		t.Errorf("drop_roll_levels defaults to %d", def)
+	}
+	p = writeConfig(t, `
+assets: `+assets+`
+dev: true
+procedural:
+  drop_roll_levels: -1
+`)
+	if o, _, err = parseOptions("waserver all", []string{"--config", p}, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validate(o, secrets{}); err == nil || !strings.Contains(err.Error(), "drop_roll_levels") {
+		t.Errorf("a bad drop_roll_levels: %v", err)
+	}
 }

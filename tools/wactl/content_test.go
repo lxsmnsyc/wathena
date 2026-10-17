@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -58,23 +59,40 @@ func summarize(seed string, w *content.World) goldenContent {
 // TestGoldenContent makes two default worlds of core's records and
 // compares their content with testdata/golden-content.json: the quest
 // boards' and guilds' quests, their places, and the rebirth town
-// (decision 0044). The same seed must give the same content.
+// (decision 0044). The same seed must give the same content. The worlds
+// leave the economy checks of decision 0046 off, with spawns.economy:
+// false, so the file still holds step 6b's content;
+// TestGoldenEconomyContent holds a new world's.
 // go test ./tools/wactl -run TestGoldenContent -update-content rewrites
-// the file.
+// the files.
 func TestGoldenContent(t *testing.T) {
+	cfg := filepath.Join(t.TempDir(), "waserver.yml")
+	if err := os.WriteFile(cfg, []byte("spawns:\n  economy: false\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	goldenContentFile(t, cfg, "testdata/golden-content.json")
+}
+
+// TestGoldenEconomyContent is TestGoldenContent for new worlds, with the
+// economy checks on, in testdata/golden-content-economy.json.
+func TestGoldenEconomyContent(t *testing.T) {
+	goldenContentFile(t, "", "testdata/golden-content-economy.json")
+}
+
+func goldenContentFile(t *testing.T, cfg, file string) {
+	t.Helper()
 	g, ok := gen.Latest()
 	if !ok {
 		t.Skip("a build without the procedural tag")
 	}
 	var got []goldenContent
 	for _, seed := range []string{"golden-content-seed-0000000001", "golden-content-seed-0000000002"} {
-		pw, err := proceduralWorld("", "renewal", []byte(seed), g.Version)
+		pw, err := proceduralWorld(cfg, "renewal", []byte(seed), g.Version)
 		if err != nil {
 			t.Fatal(err)
 		}
 		got = append(got, summarize(seed, pw.content))
 	}
-	const file = "testdata/golden-content.json"
 	if *updateContent {
 		b, _ := json.MarshalIndent(got, "", "  ")
 		if err := os.MkdirAll("testdata", 0o750); err != nil {

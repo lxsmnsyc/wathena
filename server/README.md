@@ -319,6 +319,26 @@ procedural:
 
 `waserver --dev --layout` rotates its dungeon in the same way, with keys from `--seed`, and keeps the state in memory. `--dev`'s clock, `POST /debug/wathena/clock?advance=...`, moves rotations and seasons too. Worlds of `--fields`, `--towns` and `--dungeons` do not rotate.
 
+### Economy
+
+A new procedural world's fields earn about what rAthena's classic fields of their level earn (docs/decisions/0046-economy-and-phase-7-exit.md, strategy section 8.13):
+
+- `server/economy` is the simulator. A model player of each level, from `server/economy/core/data/economy.yml`, is a melee character with the status points of its level, the gear of a town's dealers, refined from level 50, and a potion: a Novice to level 10, a Swordman to level 49, then a Knight. It hunts a field's lines that are not bosses: the walk to the next monster by the density, the fight by the server's battle formulas, played 32 times per monster, and the loot. It leaves alone monsters that teleport away or heal themselves in a fight, and those it needs more than a minute to kill.
+- Each band of 10 levels has target rates per hour, `server/economy/core/data/economy_targets.yml`: base exp, job exp, zeny from NPC sales of the drops, and the zeny of the potions the damage taken costs. They are the medians of the model player of the band's middle level on rAthena's renewal classic fields of that band. `go test -run TestTargets ./server/economy -update` writes them again.
+- `wactl world new` checks every field: its base exp and zeny per hour must be within 30% of its band's target, and its monsters' median level within 10 levels of its band. A field that misses has its counts moved between species of one role and its density scaled, then its species drawn again from the secret branch, up to 32 times, with their levels shifted by up to 8 and, in the later draws, from every biome. The draw that misses least stays. In 24 default worlds of tests, every field passes.
+- `waserver` checks the fields of a changed region in the same way. Rotating floors are not checked.
+- `wactl sim economy --seed <text>` makes a procedural world in memory and prints each field's rates against its band's target, with `--config` for the mods and settings. It starts no server and needs a `wactl` built with the procedural tag.
+- Rolled drops are better in higher bands: on a generated map, each full 30 levels of the band past level 1 gives each random roll of a drop one more draw, and the best stays.
+
+```yaml
+spawns:
+  economy: true            # the economy checks of new worlds' fields
+procedural:
+  drop_roll_levels: 30     # 0 turns better rolled drops off
+```
+
+`scripts/check.sh economy` plays the bot runs: bots of the model player hunt a field of four bands for `WATHENA_ECONOMY_MINUTES`, 10 by default, and their exp and zeny per hour must be within 20% of the simulator's.
+
 ### Running with accounts
 
 Without `--dev`, `waserver` needs both database URLs. It serves the account pages under `/account/` and accepts only game tickets:

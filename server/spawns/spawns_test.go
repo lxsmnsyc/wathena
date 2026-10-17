@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/rotation"
 	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -276,7 +277,8 @@ func TestSpawnDensity(t *testing.T) {
 	}
 }
 
-// TestPublicSeed: what the client gets reveals nothing of the spawns.
+// TestPublicSeed: what the client gets reveals nothing of the spawns
+// (the phase 7 exit criteria, decision 0046).
 // The spawn lists come from the secret branch only: the same public
 // branch, maps and layout with another secret give other lists, and
 // every node a client can derive from the public branch, used in its
@@ -304,6 +306,30 @@ func TestPublicSeed(t *testing.T) {
 		}
 		if same > len(got)/4 {
 			t.Errorf("%s gives %d of %d lists of the world", name, same, len(got))
+		}
+	}
+	// A new world's lists, with the economy checks that redraw and
+	// balance fields (decision 0046), come from the secret branch too.
+	ep, est := econPool(t)
+	realEcon := spawns.Plan(w.secret, w.maps, ep, est)
+	for name, guess := range guesses {
+		got := spawns.Plan(guess, w.maps, ep, est)
+		same := 0
+		for i := range got {
+			if reflect.DeepEqual(got[i].Spawns, realEcon[i].Spawns) {
+				same++
+			}
+		}
+		if same > len(got)/4 {
+			t.Errorf("%s gives %d of %d lists of the world with the economy checks", name, same, len(got))
+		}
+	}
+	// The keys the game role gets for the rotating dungeons' and the
+	// seasons' spawns (decision 0045) are not any node a client derives.
+	for name, guess := range guesses {
+		if rotation.RotationKey(guess, "d1").Key() == rotation.RotationKey(w.secret, "d1").Key() ||
+			rotation.SeasonKey(guess).Key() == rotation.SeasonKey(w.secret).Key() {
+			t.Errorf("%s gives a rotation or season key of the world", name)
 		}
 	}
 	// The spawns depend on the secret: other secrets with the same maps

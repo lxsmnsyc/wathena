@@ -1,6 +1,6 @@
 // The phase 6 exit check (review decision 40, decision 0035): three
-// players on a desktop and a phone profile play every tier 1 system of
-// strategy section 11.3 against a real waserver with PostgreSQL, a staff
+// players on desktop profiles play every tier 1 system of strategy
+// section 11.3 against a real waserver with PostgreSQL, a staff
 // account with TOTP finds a player, reads its item history and mutes it,
 // and a sample mod's item, monster, skill and job show their own names
 // and art.
@@ -8,14 +8,20 @@
 // It runs two servers on one database, one after the other:
 //
 // 1. A --dev server with the game role, where names are session tokens.
-//    Ann plays on a desktop with the mouse, Bob on a Pixel 7 with touch,
-//    and Cid on a smaller desktop window. They start as Merchants at base
-//    level 50 and job level 40.
+//    Ann and Bob play on desktops with the mouse, and Cid on a smaller
+//    desktop window. They start as Merchants at base level 50 and job
+//    level 40.
 // 2. A server with accounts, which serves the account pages. Dora signs
-//    up on a phone, makes a character, plays, makes a guild and uploads
+//    up on a desktop, makes a character, plays, makes a guild and uploads
 //    its emblem on the account page. Admin, the owner, turns on TOTP,
 //    logs in with a code, finds Dora on /admin, reads the history of one
 //    of her items and mutes her, and Dora's chat shows the mute.
+//
+// Touch input is frozen as built in decision 0034, so the default run
+// uses the mouse only. With touch, which browser-check.ts passes when
+// CHECKS names touch, Bob and Dora play on a Pixel 7 with touch instead.
+// Their steps then use taps, a double tap, a long press, a long drag and
+// the chat button.
 //
 // The database comes from WATHENA_TEST_DATABASE_URL, a role that can make
 // databases. tools/testdb makes one for the run and drops it at the end.
@@ -109,6 +115,11 @@ export class Player {
 
   get touch(): boolean {
     return this.fingers !== undefined;
+  }
+
+  /** Where the player plays, for the reports: "on the phone" or "on a desktop". */
+  get on(): string {
+    return this.touch ? 'on the phone' : 'on a desktop';
   }
 
   /** The first input picks touch or mouse mode, as on a real device. */
@@ -516,13 +527,14 @@ type Run = () => Promise<string>;
 
 /**
  * Runs the exit check. It reports each step as a check, and the time of
- * the whole run.
+ * the whole run. With touch, Bob and Dora play on a phone with touch.
  */
 export async function checkExit(
   name: string,
   browser: Browser,
   ctx: ExitContext,
   check: (browser: string, name: string, ok: boolean, detail: string) => void,
+  touch = false,
 ): Promise<void> {
   const started = Date.now();
   const url = process.env.WATHENA_TEST_DATABASE_URL;
@@ -555,8 +567,8 @@ export async function checkExit(
       env: { ...process.env, WATHENA_MIGRATE_DATABASE_URL: dbURL() },
       stdio: ['pipe', 'ignore', 'inherit'],
     });
-    await playPhaseOne(browser, ctx, dbURL('wathena_game'), c);
-    await playPhaseTwo(browser, ctx, dbURL, password, c);
+    await playPhaseOne(browser, ctx, dbURL('wathena_game'), c, touch);
+    await playPhaseTwo(browser, ctx, dbURL, password, c, touch);
   } finally {
     execFileSync(testdb, ['drop', db], { stdio: 'inherit' });
     console.log(`info ${name} exit check took ${((Date.now() - started) / 1000).toFixed(0)} s`);
@@ -622,6 +634,7 @@ async function playPhaseOne(
   ctx: ExitContext,
   gameDB: string,
   c: Check,
+  touch: boolean,
 ): Promise<void> {
   const game = await startGame(ctx.repo, ctx.client, ctx.dir, ctx.wactl, ctx.build, {
     name: 'exit-dev',
@@ -633,7 +646,7 @@ async function playPhaseOne(
   const players: Player[] = [];
   try {
     const ann = await Player.open(browser, 'Ann', false, devURL(game.base, 'Ann'));
-    const bob = await Player.open(browser, 'Bob', true, devURL(game.base, 'Bob'));
+    const bob = await Player.open(browser, 'Bob', touch, devURL(game.base, 'Bob'));
     const cid = await Player.open(browser, 'Cid', false, devURL(game.base, 'Cid'));
     players.push(ann, bob, cid);
     await phaseOneSteps(c, game, ann, bob, cid);
@@ -657,6 +670,7 @@ async function playPhaseTwo(
   dbURL: (role?: string) => string,
   password: string,
   c: Check,
+  touch: boolean,
 ): Promise<void> {
   const game = await startGame(ctx.repo, ctx.client, ctx.dir, ctx.wactl, ctx.build, {
     name: 'exit-accounts',
@@ -672,7 +686,7 @@ async function playPhaseTwo(
   });
   const players: Player[] = [];
   try {
-    await phaseTwoSteps(c, game, browser, password, players);
+    await phaseTwoSteps(c, game, browser, password, players, touch);
   } finally {
     for (const p of players) {
       await p.close();
@@ -1092,37 +1106,53 @@ async function phaseOneSteps(
     return 'Ann learned Mammonite, used it from the skill window, and its damage showed on a Dummy';
   });
 
-  // The basic game on the phone, with touch.
-  await play(c, 'phone walk, fight and loot', [bob], async () => {
+  // The basic game for Bob: on the phone with touch, or on a second
+  // desktop with the mouse.
+  const bobOn = bob.touch ? 'phone' : 'second desktop';
+  await play(c, `${bobOn} walk, fight and loot`, [bob], async () => {
     const before = await selfCell(bob.page);
     await bob.walkTo(before[0] - 2, before[1] + 2);
     await killForDrop(bob, 'Dummy', (g) => g.itemId === 909);
     await pickUp(bob, (g) => g.itemId === 909);
+    if (!bob.touch) {
+      return `Bob clicked the ground from ${before} to the Dummies, clicked one until it died, and clicked its Jellopy`;
+    }
     return `Bob tapped the ground from ${before} to the Dummies, tapped one until it died, and tapped its Jellopy`;
   });
-  await play(c, 'phone NPC, equip and skill', [bob], async () => {
+  await play(c, `${bobOn} NPC, equip and skill`, [bob], async () => {
     await talk(bob, 'Quartermaster');
     await choose(bob, 'Give');
     await waitText(bob, '#dialog-window', 'Here you are');
     await endDialog(bob);
     await bob.show('#inventory-window', '#inventory-toggle');
     const knife = inv('1201');
-    const [x, y] = await middle(bob.page, `${knife} .name`);
-    await bob.fingers!.doubleTap(x, y);
+    if (bob.fingers === undefined) {
+      await bob.page.dblclick(`${knife} .name`);
+    } else {
+      const [x, y] = await middle(bob.page, `${knife} .name`);
+      await bob.fingers.doubleTap(x, y);
+    }
     await bob.page.locator(knife).waitFor({ state: 'detached', timeout: 10_000 });
     await bob.hide('#inventory-window', '#inventory-toggle');
     await bob.show('#skill-window', '#skill-toggle');
     const row = '#skill-window li:has(.name:text-is("Mammonite"))';
     await bob.press(`${row} button.learn`);
     await bob.page.locator(`${row}[draggable="true"]`).waitFor({ timeout: 10_000 });
-    const from = await middle(bob.page, `${row} .skill-text`);
-    const slot = await middle(bob.page, '#hotkeys .hotkey >> nth=0');
-    await bob.fingers!.longDrag(from, slot);
+    if (bob.fingers === undefined) {
+      await bob.page.dragAndDrop(row, '#hotkeys .hotkey >> nth=0');
+    } else {
+      const from = await middle(bob.page, `${row} .skill-text`);
+      const slot = await middle(bob.page, '#hotkeys .hotkey >> nth=0');
+      await bob.fingers.longDrag(from, slot);
+    }
     await bob.hide('#skill-window', '#skill-toggle');
     const dummy = (u: UnitView): boolean => u.name === 'Dummy' && !u.npc;
     await castOn(bob, dummy, async () => {
       await bob.press('#hotkeys .hotkey >> nth=0');
     });
+    if (!bob.touch) {
+      return 'Bob clicked Give at the Quartermaster, double-clicked the knife on, dragged Mammonite to F1 with the mouse, and cast it on a Dummy from F1';
+    }
     return 'Bob tapped Give at the Quartermaster, double-tapped the knife on, dragged Mammonite to F1, and cast it on a Dummy';
   });
 
@@ -1182,7 +1212,7 @@ async function socialSteps(c: Check, ann: Player, bob: Player, cid: Player): Pro
     await bob.hears('a secret for Bob');
     await bob.say('/w Ann got it');
     await ann.hears('got it');
-    return 'Bob and Cid heard Ann in local chat; Ann and Bob whispered both ways, Bob from the phone';
+    return `Bob and Cid heard Ann in local chat; Ann and Bob whispered both ways, Bob ${bob.on}`;
   });
   await play(c, 'chat channel', all, async () => {
     await bob.say('/join #trade');
@@ -1199,7 +1229,7 @@ async function socialSteps(c: Check, ann: Player, bob: Player, cid: Player): Pro
     await bob.accept('friend');
     await waitText(ann, '#friend-panel', 'Bob');
     await ann.press('#friend-toggle');
-    return "Ann added Bob in the friend panel, Bob accepted on the phone, and Ann's list shows Bob";
+    return `Ann added Bob in the friend panel, Bob accepted ${bob.on}, and Ann's list shows Bob`;
   });
   await play(c, 'party and party chat', [ann, bob], async () => {
     await bob.show('#party-window', '#party-toggle');
@@ -1213,7 +1243,7 @@ async function socialSteps(c: Check, ann: Player, bob: Player, cid: Player): Pro
     await bob.hide('#party-window', '#party-toggle');
     await ann.say('%party line from Ann');
     await bob.hears('party line from Ann');
-    return "Bob made the party Lanterns on the phone and invited Ann, who accepted; Bob read Ann's party line";
+    return `Bob made the party Lanterns ${bob.on} and invited Ann, who accepted; Bob read Ann's party line`;
   });
   await play(c, 'party booking', [bob, cid], async () => {
     await cid.show('#booking-window', '#booking-toggle');
@@ -1235,7 +1265,7 @@ async function socialSteps(c: Check, ann: Player, bob: Player, cid: Player): Pro
     await bob.show('#party-window', '#party-toggle');
     await waitText(bob, '#party-window', 'Cid');
     await bob.hide('#party-window', '#party-toggle');
-    return 'Cid placed an ad, Bob found it by level on the phone and invited Cid from it, and Cid joined the party';
+    return `Cid placed an ad, Bob found it by level ${bob.on} and invited Cid from it, and Cid joined the party`;
   });
   await play(c, 'guild, guild chat and guild skills', [ann, cid], async () => {
     await ann.show('#guild-window', '#guild-toggle');
@@ -1301,7 +1331,7 @@ async function economySteps(c: Check, ann: Player, bob: Player, cid: Player): Pr
       null,
       { timeout: 15_000 },
     );
-    return 'Ann right-clicked Bob for Trade, Bob accepted on the phone, Ann offered Item 2101 and 100 zeny, both pressed OK and Trade, and the trade event confirmed it';
+    return `Ann right-clicked Bob for Trade, Bob accepted ${bob.on}, Ann offered Item 2101 and 100 zeny, both pressed OK and Trade, and the trade event confirmed it`;
   });
   await play(c, 'NPC shops of every cost kind', [ann], async () => {
     await ann.hide('#inventory-window', '#inventory-toggle');
@@ -1421,7 +1451,7 @@ async function economySteps(c: Check, ann: Player, bob: Player, cid: Player): Pr
           await bob.press('#store-search .store-head button:has-text("Close")');
         }
       });
-    return 'Bob searched the stores for "Paper Lantern" on the phone, opened Cid\'s shop from the result and bought the lantern for 300 zeny';
+    return `Bob searched the stores for "Paper Lantern" ${bob.on}, opened Cid's shop from the result and bought the lantern for 300 zeny`;
   });
   await play(c, 'mail', [ann, bob], async () => {
     await ann.hide('#inventory-window', '#inventory-toggle');
@@ -1461,7 +1491,7 @@ async function economySteps(c: Check, ann: Player, bob: Player, cid: Player): Pr
     if (after !== before + 2) {
       throw new Error(`Bob's Jellopy went from ${before} to ${after}`);
     }
-    return `Ann wrote Bob a mail with 50 zeny and 2 Item 909, and Bob took on the phone all from the inbox: ${before} became ${after}`;
+    return `Ann wrote Bob a mail with 50 zeny and 2 Item 909, and Bob took ${bob.on} all from the inbox: ${before} became ${after}`;
   });
 }
 
@@ -1741,15 +1771,17 @@ async function phaseTwoSteps(
   browser: Browser,
   password: string,
   players: Player[],
+  touch: boolean,
 ): Promise<void> {
   const client = accountURL(game.base);
   let dora: Player | undefined;
   let admin: Player | undefined;
-  const ok = await play(c, 'phone sign up and play', [], async () => {
+  const doraOn = touch ? 'phone' : 'desktop';
+  const ok = await play(c, `${doraOn} sign up and play`, [], async () => {
     dora = await Player.open(
       browser,
       'Dora',
-      true,
+      touch,
       `${game.base}/account/signup?return=${encodeURIComponent(client)}`,
       false,
     );
@@ -1766,13 +1798,13 @@ async function phaseTwoSteps(
     await page.click('.characters button:has-text("Play")');
     await inGame(page);
     await dora.wake();
-    return `Dora signed up on the phone's account pages, made the character Dora and pressed Play, which took her into the game: ${await levels(dora)}`;
+    return `Dora signed up on the account pages ${dora.on}, made the character Dora and pressed Play, which took her into the game: ${await levels(dora)}`;
   });
   if (!ok || dora === undefined) {
     return;
   }
   const d = dora;
-  await play(c, 'phone guild and emblem upload', [d], async () => {
+  await play(c, `${doraOn} guild and emblem upload`, [d], async () => {
     await talk(d, 'Quartermaster');
     await choose(d, 'Give');
     await waitText(d, '#dialog-window', 'Here you are');
@@ -1801,7 +1833,7 @@ async function phaseTwoSteps(
       null,
       { timeout: 20_000 },
     );
-    return `Dora made the guild Lantern Hall on the phone, uploaded a 24 by 24 PNG on the account page ("${notice.replaceAll(/\s+/g, ' ').trim().slice(0, 80)}"), and the guild window shows the emblem`;
+    return `Dora made the guild Lantern Hall ${d.on}, uploaded a 24 by 24 PNG on the account page ("${notice.replaceAll(/\s+/g, ' ').trim().slice(0, 80)}"), and the guild window shows the emblem`;
   });
   await play(c, 'admin TOTP login', [], async () => {
     admin = await Player.open(browser, 'Admin', false, `${game.base}/account/login`, false);

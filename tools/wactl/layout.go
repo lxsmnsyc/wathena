@@ -11,8 +11,10 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/content"
+	"github.com/lxsmnsyc/wathena/server/economy"
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mapfolder"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -150,6 +152,16 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*mad
 		return nil, err
 	}
 	secret := spawns.SecretBranch(root)
+	// The economy simulator on the world's game data, with the monsters
+	// and items of the mods, for the economy checks of fields (decision
+	// 0046).
+	econ, targets, err := economyWorld(loaded, env)
+	if err != nil {
+		return nil, err
+	}
+	if settings.Economy {
+		settings.Rate = gamedata.EconomyRater(econ, targets)
+	}
 	planned := spawns.Plan(secret, maps, spawns.NewPool(loaded.SpawnMonsters, loaded.SpawnThemes), settings)
 	idx := gamedata.SpawnIndex(loaded.Monsters, loaded.SpawnMonsters)
 	var layers content.Layers
@@ -178,7 +190,7 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*mad
 	for _, n := range w.Notes {
 		log.Warn("generation: " + n)
 	}
-	out := &madeWorld{layout: l, spawns: w.Spawns, content: w}
+	out := &madeWorld{layout: l, spawns: w.Spawns, content: w, maps: maps, econ: econ, targets: targets}
 	// The rotating dungeon, and the keys of its spawns and the seasons'
 	// for the game role (decision 0045).
 	_, styles := fields.LayoutOf(recs.Styles, recs.Templates)
@@ -191,9 +203,33 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*mad
 	return out, nil
 }
 
+// economyWorld is the economy simulator on a world's game data, with
+// core's targets.
+func economyWorld(loaded *gamedata.Mods, env *modkit.Env) (*economy.World, economy.Targets, error) {
+	cfg, err := economy.LoadConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+	ts, err := economy.LoadTargets()
+	if err != nil {
+		return nil, nil, err
+	}
+	jobs := loaded.JobTables
+	if jobs == nil {
+		jobs = env.Jobs
+	}
+	return gamedata.EconomyWorld(cfg, item.New(loaded.Items.Data), jobs, loaded.Tables, loaded.Rules, loaded.Monsters), ts, nil
+}
+
 // madeWorld is a new procedural world's layout, spawns, content, and
 // its rotating dungeon with the derived keys (decision 0045).
 type madeWorld struct {
+	// maps are the fields' and floors' spawn inputs, and econ and
+	// targets the economy simulator and targets, for wactl sim economy.
+	maps    []spawns.Map
+	econ    *economy.World
+	targets economy.Targets
+
 	layout    *layout.Layout
 	spawns    []spawns.Planned
 	content   *content.World

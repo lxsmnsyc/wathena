@@ -298,13 +298,10 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
-	seed := secret()
 	if cfg.Seed != "" {
-		// Tests fix the random streams, so a run repeats.
-		seed = []byte(cfg.Seed)
 		log.Warn("the random streams follow --seed; use it only for tests")
 	}
-	root, err := rng.NewRoot(seed)
+	root, err := runRoot(cfg.Seed)
 	if err != nil {
 		return err
 	}
@@ -509,6 +506,7 @@ func runAll(name string, args []string) error {
 		loaded.zone.Places, loaded.zone.Atlas = idx, proc.atlas
 		proc.host.places, proc.host.moved = idx, moved
 		loaded.zone.Teleport = zone.TeleportPrices{Base: int64(cfg.Procedural.TeleportBase), Step: int64(cfg.Procedural.TeleportStep)}
+		loaded.zone.DropRollLevels = cfg.Procedural.dropRollLevels()
 		for m, list := range placeNPCs(idx, loaded.all.PlaceNPCs, log) {
 			loaded.npcs[m] = append(loaded.npcs[m], list...)
 		}
@@ -553,7 +551,7 @@ func runAll(name string, args []string) error {
 		// Each zone has its own secret stream from the world's root, so
 		// no zone's randomness depends on another's (rng-v1, label
 		// zone:<map ID>).
-		z := zone.New(n, grid, root.Child("zone:"+id).SecretStream(), sp)
+		z := zone.New(n, grid, zoneStream(root, id), sp)
 		z.Progress, z.Status, z.Start, z.Items, z.StartItems = tables, jobs, start, items, given
 		z.Statuses = statuses
 		z.Skills, z.SkillTrees, z.SkillSettings = loaded.all.Skills, loaded.all.SkillTrees, skill.Settings{}
@@ -1328,6 +1326,25 @@ func count(spawns []zone.Spawn) int {
 // secret returns random bytes for the zones' random streams. Each start
 // gets new ones: play randomness does not come from the world seed
 // (strategy section 8.3).
+// runRoot is the root of the zones' and world events' random streams,
+// which roll loot, rolled values, hits and monster moves: a fresh secret
+// at each start, or the text of --seed, which needs --dev, so a test
+// repeats. It is not the world's seed tree, so neither the public branch
+// that clients get nor the stored secret branch predicts it (the public
+// seed test, decision 0046).
+func runRoot(seedText string) (rng.Node, error) {
+	seed := secret()
+	if seedText != "" {
+		seed = []byte(seedText)
+	}
+	return rng.NewRoot(seed)
+}
+
+// zoneStream is a map's zone's stream from the run's root: each zone
+// has its own, so no zone's draws depend on another's (rng-v1, label
+// zone:<map ID>).
+func zoneStream(root rng.Node, id string) *rng.Rand { return root.Child("zone:" + id).SecretStream() }
+
 func secret() []byte {
 	b := make([]byte, 32)
 	if _, err := crand.Read(b); err != nil {

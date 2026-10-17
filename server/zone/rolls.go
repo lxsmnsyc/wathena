@@ -49,6 +49,10 @@ func (z *Zone) newRolls(d *item.Def, random bool, src rollSource) item.Rolls {
 	if r := z.scripts; r != nil && r.HasHooks("item_roll") {
 		hooks = r
 	}
+	draws := 1
+	if random && src.kind == sourceDrop {
+		draws += z.dropRollBonus()
+	}
 	m := make(map[string]int, len(d.Rolls))
 	// Names in order, so the random stream is drawn the same way each
 	// time.
@@ -57,6 +61,9 @@ func (z *Zone) newRolls(d *item.Def, random bool, src rollSource) item.Rolls {
 		v := def.Default
 		if random {
 			v = def.Random(z.rand)
+			for range draws - 1 {
+				v = max(v, def.Random(z.rand))
+			}
 		}
 		if hooks != nil {
 			lo, hi := def.Bounds()
@@ -70,6 +77,21 @@ func (z *Zone) newRolls(d *item.Def, random bool, src rollSource) item.Rolls {
 		m[name] = def.Clamp(v)
 	}
 	return item.RollsOf(m)
+}
+
+// dropRollBonus is how many more draws a random roll of a drop gets on
+// the zone's map (Mods.DropRollLevels): one for each full DropRollLevels
+// levels below its band's lowest level, so a band from level 31 gets
+// one more at the default of 30. Maps outside the atlas get none.
+func (z *Zone) dropRollBonus() int {
+	if z.Mods == nil || z.Mods.DropRollLevels <= 0 {
+		return 0
+	}
+	m, ok := z.atlas().Map(z.Map)
+	if !ok || m.Levels[0] < 1 {
+		return 0
+	}
+	return (m.Levels[0] - 1) / z.Mods.DropRollLevels
 }
 
 // newExtra is the extra of a new copy: its rolls, and the random options

@@ -11,15 +11,17 @@
 //   opens an event's form, and the mods screen shows errors and switches.
 //
 // - phone: the admin screens and the account pages at 375 pixels wide do
-//   not scroll sideways (decision 0034).
+//   not scroll sideways (decision 0034). Not in the default run.
 // - touch: game-check.ts plays on a waserver with --dev sessions: phones
 //   and a tablet with touch, a desktop page with the mouse, and frame
-//   times at phone size with the CPU slowed down. Chromium only.
+//   times at phone size with the CPU slowed down. Chromium only. Not in
+//   the default run.
 //
-// - exit: the phase 6 exit check (exit-check.ts): three players on a
-//   desktop and a phone play every tier 1 system against waserver with
-//   PostgreSQL, a staff account with TOTP mutes a player, and a sample
-//   mod's records show their names and art. It needs
+// - exit: the phase 6 exit check (exit-check.ts): three players on
+//   desktop profiles with the mouse play every tier 1 system against
+//   waserver with PostgreSQL, a staff account with TOTP mutes a player,
+//   and a sample mod's records show their names and art. With touch in
+//   CHECKS, Bob and Dora play on a phone with touch instead. It needs
 //   WATHENA_TEST_DATABASE_URL, which scripts/check.sh browsers sets.
 //   Chromium only.
 //
@@ -45,8 +47,8 @@
 //   sample mod, whose Hunt Master stands on the start map. A desktop page
 //   with the mouse sees her quest icon, takes her quest, reads it in the
 //   quest window, hunts Dummies for it, marks it inactive and active, and
-//   turns it in. A phone page with touch takes it and marks it inactive
-//   (decision 0043). Chromium only.
+//   turns it in (decision 0043). With touch in CHECKS, a phone page with
+//   touch also takes it and marks it inactive. Chromium only.
 //
 // - content: content-check.ts makes a small procedural world with a
 //   wactl built with -tags procedural, in a database of
@@ -68,8 +70,14 @@
 //   GEN_BROWSERS picks others. A browser that is not installed is
 //   skipped with a message.
 //
-// CHECKS picks checks by name, such as CHECKS=touch,phone. All run by
-// default.
+// CHECKS picks checks by name, such as CHECKS=render,quests. Without
+// CHECKS, every check runs except touch and phone:
+//
+// - Touch input is frozen as built in decision 0034. It is not extended.
+// - The touch and phone checks run only when CHECKS names them, such as
+//   CHECKS=touch,phone pnpm check:browsers.
+// - With touch in CHECKS, the exit and quests checks also play on a phone
+//   with touch, such as CHECKS=exit,quests,touch.
 //
 // By default it builds the placeholder pack with wactl and serves it, so
 // it needs no game files. Set WATHENA_ASSETS to an asset server, such as
@@ -119,9 +127,13 @@ const client = join(repo, 'client');
 const map = process.env.MAP ?? 'placeholder/map';
 const browsers = (process.env.BROWSERS ?? 'chromium').split(',');
 const only = process.env.CHECKS?.split(',');
+/** Checks that run only when CHECKS names them (decision 0034). */
+const onDemand = new Set(['touch', 'phone']);
+/** Whether the exit and quests checks also play on a phone with touch. */
+const touch = only?.includes('touch') === true;
 
 function wanted(name: string): boolean {
-  return only === undefined || only.includes(name);
+  return only === undefined ? !onDemand.has(name) : only.includes(name);
 }
 
 const failures: string[] = [];
@@ -1114,7 +1126,7 @@ try {
       }
       if (wanted('quests')) {
         if (name === 'chromium') {
-          await checkQuests(name, browser, { repo, client, ...assets }, check);
+          await checkQuests(name, browser, { repo, client, ...assets }, check, touch);
         } else {
           console.log(`skip ${name} quests: the game checks run in Chromium`);
         }
@@ -1135,9 +1147,9 @@ try {
       }
       if (wanted('exit')) {
         if (name === 'chromium') {
-          await checkExit(name, browser, { repo, client, ...assets }, check);
+          await checkExit(name, browser, { repo, client, ...assets }, check, touch);
         } else {
-          console.log(`skip ${name} exit: its phone runs through the Chrome DevTools Protocol`);
+          console.log(`skip ${name} exit: the game checks run in Chromium`);
         }
       }
     } finally {

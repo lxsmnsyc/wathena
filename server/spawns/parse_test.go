@@ -81,8 +81,13 @@ func TestParseTheme(t *testing.T) {
 func TestResolve(t *testing.T) {
 	d := Densities{Field: 41, Dungeon: 48}
 	r, err := Settings{}.Resolve(d)
-	if err != nil || r != (Resolved{TownFieldBossChance: 50, TownFieldBossRole: MiniBoss, FieldDensity: 41, Density: 48}) {
+	if err != nil || r.Rate != nil || r.TownFieldBossChance != 50 || r.TownFieldBossRole != MiniBoss || r.FieldDensity != 41 ||
+		r.Density != 48 || !r.Economy {
 		t.Errorf("defaults %+v %v", r, err)
+	}
+	off := false
+	if r, err := (Settings{Economy: &off}).Resolve(d); err != nil || r.Economy {
+		t.Errorf("economy off %+v %v", r, err)
 	}
 	zero := 0
 	s := Settings{TownFieldBossChance: &zero, TownFieldBossRole: "field_boss"}

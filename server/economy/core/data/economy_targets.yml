@@ -1,0 +1,19 @@
+# The target rates per hour of each level band (strategy section 8.13,
+# decision 0046). Do not edit: the economy package's TestTargets
+# derives them from rAthena's renewal classic fields with the simulator,
+# and go test -run TestTargets ./server/economy -update writes them.
+#
+# Each band's target is what the model player of its middle level gets
+# on the classic fields whose hunt level falls in the band, as the
+# median of those fields. fields is how many there are.
+targets:
+  - { levels: [1, 10], level: 5, fields: 13, base_exp: 78561, job_exp: 31252, zeny: 7656, supplies: 270 }
+  - { levels: [11, 20], level: 15, fields: 11, base_exp: 83040, job_exp: 62789, zeny: 14683, supplies: 1310 }
+  - { levels: [21, 30], level: 25, fields: 6, base_exp: 94858, job_exp: 76129, zeny: 15328, supplies: 5925 }
+  - { levels: [31, 40], level: 35, fields: 9, base_exp: 104351, job_exp: 89672, zeny: 11869, supplies: 10500 }
+  - { levels: [41, 50], level: 45, fields: 9, base_exp: 114183, job_exp: 97845, zeny: 14195, supplies: 57960 }
+  - { levels: [51, 60], level: 55, fields: 7, base_exp: 124809, job_exp: 109572, zeny: 11197, supplies: 97380 }
+  - { levels: [61, 70], level: 65, fields: 8, base_exp: 147056, job_exp: 144164, zeny: 13710, supplies: 112860 }
+  - { levels: [71, 80], level: 75, fields: 10, base_exp: 186577, job_exp: 168952, zeny: 18209, supplies: 616800 }
+  - { levels: [81, 90], level: 85, fields: 17, base_exp: 182689, job_exp: 165672, zeny: 7988, supplies: 854400 }
+  - { levels: [91, 99], level: 95, fields: 4, base_exp: 126667, job_exp: 120060, zeny: 6791, supplies: 1342800 }

@@ -51,16 +51,26 @@
 #             exit check, so it is not a default step.
 #   compose   the Compose stack smoke test. Only with all.
 #   browsers  the client in Chromium, with the phase 6 exit check
-#             (decision 0035) against waserver and PostgreSQL, a walk on
+#             (decision 0035) on desktops against waserver and
+#             PostgreSQL, a walk on
 #             generated fields (decision 0039), a walk from a field into
 #             a town and a dungeon floor (decision 0040), a walk from a
 #             home map into a town with the world map (decision 0041),
-#             a quest with its window and NPC icon on a desktop and a
-#             phone (decision 0043), a walk to a Kafra and a quest board
+#             a quest with its window and NPC icon on a desktop
+#             (decision 0043), a walk to a Kafra and a quest board
 #             in a world that wactl world new made (decision 0044), a
 #             rotation that moves a player and the new floors it loads
 #             (decision 0045), and the map
 #             generator in Chromium, Firefox and WebKit. Only with all.
+#             Touch input is frozen as built (decision 0034), so the
+#             touch and phone checks are not in this step. Run them with
+#             CHECKS=touch,phone pnpm check:browsers in client.
+#   economy   the bot runs of the economy simulator (decision 0046):
+#             bots of the model player hunt a field of four bands in a
+#             world that wactl world new made, with PostgreSQL, for
+#             WATHENA_ECONOMY_MINUTES (10 by default), and their exp and
+#             zeny per hour must be within 20% of the simulator's. It
+#             prints the numbers. Not a default step, and not in all.
 #
 # Tool versions. The script runs the tools on PATH and does not install
 # them. These are the versions the checks were written for:
@@ -105,7 +115,7 @@ govulncheck_version=v1.8.0
 
 default_steps="vet test mods lua loadtest schema queries lint security fuzz client tinygo gen"
 all_steps="$default_steps compose browsers"
-known_steps="$all_steps unit e2e"
+known_steps="$all_steps unit e2e economy"
 quick_steps="vet unit lint"
 
 steps=()
@@ -403,8 +413,9 @@ step_tinygo() {
 # 0041), which only the server runs, so no client checks them.
 layout_tests='^TestGoldenLayout$|^TestLayoutRules$|^TestLayoutDeterministic$'
 # spawn_tests are the golden spawn lists of new worlds (decision 0042),
-# which only wactl picks.
-spawn_tests='^TestGoldenSpawns$|^TestSpawnDeterministic$'
+# which only wactl picks, with the economy checks' lists (decision
+# 0046).
+spawn_tests='^TestGoldenSpawns$|^TestSpawnDeterministic$|^TestGoldenEconomySpawns$'
 rotation_tests='^TestGoldenRotation$|^TestRotationRules$'
 gen_tests='^TestGolden$|^TestGridV1Order$|^TestFieldV2$|^TestFieldV2Retries$|^TestF32Bits$|^TestDungeonV3$|^TestTownV3$|^TestFieldV3Places$|^TestMapV3Retries$'
 
@@ -451,6 +462,19 @@ step_gen() {
 	fi
 }
 
+# The bot runs take about 3 minutes to make the world and start the
+# server, then the minutes the bots hunt.
+step_economy() {
+	local code=0
+	WATHENA_ECONOMY_MINUTES="${WATHENA_ECONOMY_MINUTES:-10}" WATHENA_ECONOMY_REPORT="$work/economy-report.txt" \
+		go test -count=1 -timeout 60m -run '^TestEconomyBots$' -v ./e2e/ | grep -E 'economy_test.go|^(---|ok|FAIL|PASS)' || code=$?
+	if [ -f "$work/economy-report.txt" ]; then
+		echo "the bot runs' numbers:"
+		cat "$work/economy-report.txt"
+	fi
+	return "$code"
+}
+
 step_compose() {
 	have docker || skip "the Compose test needs Docker"
 	(cd deploy/compose && docker compose --env-file .env.example --profile tools config --quiet)
@@ -465,7 +489,7 @@ step_browsers() {
 # The database starts here, not in a step's subshell, so the cleanup
 # sees its container.
 case " ${steps[*]} " in
-*" test "* | *" e2e "* | *" browsers "*) database ;;
+*" test "* | *" e2e "* | *" browsers "* | *" economy "*) database ;;
 esac
 
 for s in "${steps[@]}"; do

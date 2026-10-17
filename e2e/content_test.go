@@ -124,7 +124,11 @@ func TestProceduralContent(t *testing.T) {
 	if o := info.GetObjectives(); len(o) > 0 {
 		label = o[0].GetLabel()
 	}
+	// A fresh Novice fights a hunt's monsters with its fists, which may
+	// take longer than a step's usual wait, such as for a Moss Poring.
+	p.Timeout = 2 * time.Minute
 	doQuest(p, *board, label)
+	p.Timeout = DefaultTimeout
 	before := p.Stat(wathenav1.StatId_STAT_ID_ZENY)
 	c = p.Talk("Quest Board")
 	c.Next()

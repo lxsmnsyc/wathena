@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/shared/gen"
 )
 
 // TestRolledDropDistributions makes 100,000 monster drops of an item with
@@ -93,4 +95,49 @@ func dropChiSquare(r *item.RollDef, counts map[int]int, n int) (float64, int) {
 		df++
 	}
 	return stat, df
+}
+
+// TestDropRollsByBand: on a map of the atlas, a drop's random rolls get
+// one more draw for each full Mods.DropRollLevels levels of the band
+// past level 1, and keep the best (decision 0046). Values stay in the
+// roll's range. A band from level 1, a map outside the atlas, and a
+// setting of 0 keep one draw.
+func TestDropRollsByBand(t *testing.T) {
+	z, _, _ := rollZone(t, "return function() end")
+	d := z.Items.Get(rollHat)
+	d.Static = nil
+	d.Rolls = map[string]*item.RollDef{"even": {Min: 1, Max: 100, Default: 50, Distribution: item.Uniform}}
+	mean := func() float64 {
+		sum := 0
+		for range 20_000 {
+			v, _ := z.dropCopy(rollHat, "", nil).extra.Rolls.Get("even")
+			if v < 1 || v > 100 {
+				t.Fatalf("%d outside 1..100", v)
+			}
+			sum += v
+		}
+		return float64(sum) / 20_000
+	}
+	atlas := func(lo int) *layout.Atlas {
+		return layout.NewAtlas(&layout.Layout{Maps: []layout.Map{{ID: z.Map, Kind: gen.KindField, Levels: [2]int{lo, lo + 9}}}, Home: z.Map}, layout.AtlasOptions{})
+	}
+	z.Mods.DropRollLevels = 30
+	for _, c := range []struct {
+		lo     int
+		want   float64
+		levels int
+	}{
+		// The mean of the best of k uniform draws of 1 to 100 is about
+		// 100k/(k+1).
+		{1, 50.5, 30}, {31, 67, 30}, {61, 75.5, 30}, {91, 80.5, 30}, {91, 50.5, 0},
+	} {
+		z.Mods.Atlas, z.Mods.DropRollLevels = atlas(c.lo), c.levels
+		if got := mean(); math.Abs(got-c.want) > 1.5 {
+			t.Errorf("band from %d, every %d levels: mean %.1f, want about %.1f", c.lo, c.levels, got, c.want)
+		}
+	}
+	z.Mods.Atlas, z.Mods.DropRollLevels = nil, 30
+	if got := mean(); math.Abs(got-50.5) > 1.5 {
+		t.Errorf("no atlas: mean %.1f", got)
+	}
 }

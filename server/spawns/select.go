@@ -186,7 +186,10 @@ func (p *Pool) Theme(node rng.Node, m Map) *Theme {
 // common, uncommon, plant and rare monsters of its biome whose level is
 // within margin of its band. With other set, monsters of any biome
 // count, at a weight of 1.
-func (p *Pool) candidates(m Map, margin int, other bool, theme *Theme) []pick {
+//
+// With flat set, every monster of any biome counts at a weight of 1, as
+// the late draws of the economy checks take them.
+func (p *Pool) candidates(m Map, margin int, other, flat bool, theme *Theme) []pick {
 	var out []pick
 	for _, mon := range p.list {
 		if mon.Tags.Role.Boss() {
@@ -196,6 +199,9 @@ func (p *Pool) candidates(m Map, margin int, other bool, theme *Theme) []pick {
 			continue
 		}
 		w := mon.Tags.Weight(m.Biome)
+		if flat {
+			w = 1
+		}
 		if w == 0 {
 			if !other {
 				continue
@@ -293,6 +299,9 @@ type Settings struct {
 		Field   int `yaml:"field"`
 		Dungeon int `yaml:"dungeon"`
 	} `yaml:"density"`
+	// Economy turns the economy checks of fields on or off (strategy
+	// section 8.13, decision 0046). They are on by default.
+	Economy *bool `yaml:"economy"`
 }
 
 // Defaults of Settings.
@@ -306,13 +315,33 @@ type Resolved struct {
 	TownFieldBossChance   int
 	TownFieldBossRole     Role
 	FieldDensity, Density int
+	// Economy is set when the economy checks are on. Rate rates a
+	// field's list for them; the caller sets it, since it needs the
+	// game data. Without Rate, fields are not checked.
+	Economy bool
+	Rate    Rater
 }
+
+// Rater rates a field's spawn list against its band's target rates
+// (strategy section 8.13, decision 0046): 0 when the list is within
+// the tolerance, and more the further it misses.
+type Rater func(m Map, list []Spawn) int
+
+// EconomyAttempts is how many draws a field's species get before the
+// economy checks take the draw that misses least: the first draw, then
+// one from each child economy(n) of the map's node.
+const EconomyAttempts = 32
+
+// EconomyShifts are the level shifts of the species of each draw of
+// the economy checks after the first, in turn: monsters a little lower
+// or higher than the band fight and pay differently.
+var EconomyShifts = []int{0, -4, 4, -8, 8}
 
 // Resolve checks the settings and fills in the defaults. densities are
 // rAthena's, from core's spawn tags.
 func (s Settings) Resolve(densities Densities) (Resolved, error) {
 	r := Resolved{TownFieldBossChance: DefaultTownFieldBossChance, TownFieldBossRole: MiniBoss,
-		FieldDensity: densities.Field, Density: densities.Dungeon}
+		FieldDensity: densities.Field, Density: densities.Dungeon, Economy: s.Economy == nil || *s.Economy}
 	if s.TownFieldBossChance != nil {
 		if *s.TownFieldBossChance < 0 || *s.TownFieldBossChance > 100 {
 			return Resolved{}, errSetting("spawns.town_field_boss_chance is 0 to 100, in percent")
@@ -362,12 +391,21 @@ type Densities struct{ Field, Dungeon int }
 //
 // It returns nil when no monster fits, such as with an empty pool.
 func Select(node rng.Node, m Map, p *Pool, st Resolved) []Spawn {
+	return selectFrom(node, m, p, st, 0, false)
+}
+
+// selectFrom is Select with the candidates' levels shifted by shift,
+// and every monster at one weight when flat is set. The species' limits
+// still read the map's own band.
+func selectFrom(node rng.Node, m Map, p *Pool, st Resolved, shift int, flat bool) []Spawn {
+	window := m
+	window.Band = [2]int{max(m.Band[0]+shift, 1), max(m.Band[1]+shift, 1)}
 	theme := p.Theme(node, m)
 	want := MinSpecies + node.Child("count").SecretStream().IntN(MaxSpecies-MinSpecies+1)
 	var chosen []Monster
 	for i, t := range tiers {
 		s := node.Child("species", int64(i)).SecretStream()
-		if chosen = species(s, p.candidates(m, t.margin, t.other, theme), want, m.Band); chosen != nil {
+		if chosen = species(s, p.candidates(window, t.margin, t.other, flat, theme), want, m.Band); chosen != nil {
 			break
 		}
 	}
@@ -379,6 +417,119 @@ func Select(node rng.Node, m Map, p *Pool, st Resolved) []Spawn {
 		density = st.Density
 	}
 	return counts(node, m, chosen, density)
+}
+
+// SelectChecked is Select with the economy checks (strategy section
+// 8.13, step 5, decision 0046). A field's list that misses its band's
+// targets is adjusted, then checked again:
+//
+//   - Balance moves monsters between the species of one role, which
+//     keeps the role shares of section 8.11.
+//   - When that is not enough, the species are drawn again from the
+//     children economy(1) to economy(EconomyAttempts-1) of the map's
+//     node, with their levels shifted by EconomyShifts in turn, each
+//     balanced, until one passes. The second half of the draws take
+//     monsters of every biome at one weight, for biomes with few
+//     monsters at a band. The one that misses least stays. The map keeps
+//     its band and biome.
+//
+// Floors, and settings without the checks or a Rate, keep Select's
+// list.
+func SelectChecked(node rng.Node, m Map, p *Pool, st Resolved) []Spawn {
+	first := Select(node, m, p, st)
+	if !st.Economy || st.Rate == nil || m.Kind != "field" || first == nil {
+		return first
+	}
+	best, miss := Balance(m, first, st.Rate)
+	for n := 1; miss > 0 && n < EconomyAttempts; n++ {
+		// Draws after the first shift the species' levels in turn, as
+		// the tiers of Select also widen them.
+		list := selectFrom(node.Child("economy", int64(n)), m, p, st, EconomyShifts[n%len(EconomyShifts)], n >= EconomyAttempts/2)
+		if list == nil {
+			continue
+		}
+		if l, x := Balance(m, list, st.Rate); x < miss {
+			best, miss = l, x
+		}
+	}
+	return best
+}
+
+// BalanceSteps is how many moves Balance makes at most.
+const BalanceSteps = 16
+
+// Balance changes a field's counts to bring its list toward its
+// targets. Each step tries these moves and makes the one that lowers
+// the miss most:
+//
+//   - Move a quarter of a species' monsters, at least 1, to another
+//     species of its role, keeping at least 2 of each. Role shares stay
+//     as section 8.11 sets them.
+//   - Scale every species but bosses by 7/8 or 9/8, which changes the
+//     density, while the total stays from half to twice the first
+//     total and each species keeps at least 2.
+//
+// It stops when the list passes, no move helps, or after BalanceSteps
+// moves. It returns the list, sorted, and its miss.
+func Balance(m Map, list []Spawn, rate Rater) ([]Spawn, int) {
+	cur := slices.Clone(list)
+	total := func(l []Spawn) int {
+		n := 0
+		for _, s := range l {
+			if !s.Role.Boss() {
+				n += s.Count
+			}
+		}
+		return n
+	}
+	first := total(cur)
+	miss := rate(m, cur)
+	for range BalanceSteps {
+		if miss == 0 {
+			break
+		}
+		var best []Spawn
+		bestMiss := miss
+		try := func(l []Spawn) {
+			if x := rate(m, l); x < bestMiss {
+				best, bestMiss = slices.Clone(l), x
+			}
+		}
+		for a, sa := range cur {
+			if sa.Role.Boss() {
+				continue
+			}
+			n := max(sa.Count/4, 1)
+			if sa.Count-n < 2 {
+				continue
+			}
+			for b, sb := range cur {
+				if b == a || sb.Role != sa.Role || sb.Count+n > MaxCount {
+					continue
+				}
+				cur[a].Count, cur[b].Count = sa.Count-n, sb.Count+n
+				try(cur)
+				cur[a].Count, cur[b].Count = sa.Count, sb.Count
+			}
+		}
+		for _, f := range [][2]int{{7, 8}, {9, 8}} {
+			l := slices.Clone(cur)
+			for i := range l {
+				if !l[i].Role.Boss() {
+					l[i].Count = min(max(l[i].Count*f[0]/f[1], 2), MaxCount)
+				}
+			}
+			if t := total(l); t*2 >= first && t <= first*2 {
+				try(l)
+			}
+		}
+		if best == nil {
+			break
+		}
+		cur, miss = best, bestMiss
+	}
+	SortSpawns(cur)
+	return cur, miss
 }
 
 // counts gives each species its count, respawn and area (steps 4 and

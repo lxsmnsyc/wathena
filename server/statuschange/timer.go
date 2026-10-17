@@ -53,8 +53,12 @@ func (en *Engine) timer(u Unit, e *Entry, due int64) {
 			return
 		}
 	case SCMaximizepower, SCCloaking:
-		// Not enough SP to go on ends it.
-		if en.charge(u, 0, 1) {
+		// Not enough SP to go on ends it. rAthena takes the SP with
+		// status_damage, which takes none from a unit that cannot
+		// consume SP, such as a monster, and so ends the status at its
+		// first timer, 10 seconds in. charge would let a monster go on,
+		// with a val2 of 0: a timer due at once, forever.
+		if isPC && en.charge(u, 0, 1) {
 			tick(int64(e.Val2) + due)
 			return
 		}

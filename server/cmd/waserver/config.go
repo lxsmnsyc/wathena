@@ -110,6 +110,22 @@ type proceduralOptions struct {
 	TeleportStep int `yaml:"teleport_step"`
 	// Seasons are the world changes (decision 0045).
 	Seasons seasonOptions `yaml:"seasons"`
+	// DropRollLevels makes rolled drops better in higher bands
+	// (decision 0046): each full that many levels below a map's band
+	// adds a draw to a drop's random rolls, and the best stays. Nil is
+	// 30, and 0 turns it off.
+	DropRollLevels *int `yaml:"drop_roll_levels"`
+}
+
+// DefaultDropRollLevels is procedural.drop_roll_levels's default.
+const DefaultDropRollLevels = 30
+
+// dropRollLevels is procedural.drop_roll_levels with its default.
+func (p proceduralOptions) dropRollLevels() int {
+	if p.DropRollLevels == nil {
+		return DefaultDropRollLevels
+	}
+	return *p.DropRollLevels
 }
 
 // seasonOptions turn seasons on: with Days set, a season ends every that
@@ -596,6 +612,9 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if o.Procedural.DevLayout && wantsDevMaps(o.Procedural) {
 		bad("procedural.dev_layout", "a dev layout places its own maps; leave out --fields, --towns and --dungeons")
+	}
+	if l := o.Procedural.dropRollLevels(); l < 0 || l > 999 {
+		bad("procedural.drop_roll_levels", "is 0, for no better rolls, to 999 levels")
 	}
 	if o.Procedural.Seasons.Days < 0 || o.Procedural.Seasons.Days > maxSeasonDays {
 		bad("procedural.seasons.days", "is 0, for no seasons, to %d days", maxSeasonDays)

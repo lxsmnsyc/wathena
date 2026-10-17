@@ -462,7 +462,11 @@ func (s *Server) launch() {
 		_, _ = io.Copy(io.Discard, stderr)
 	}()
 	go func() {
-		_ = cmd.Wait()
+		// The exit status joins the log, so a server that a signal
+		// stopped shows why in a failed test's log.
+		if err := cmd.Wait(); err != nil {
+			s.logs.line("the server exited: " + err.Error())
+		}
 		close(exited)
 	}()
 	select {

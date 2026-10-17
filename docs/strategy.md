@@ -13,9 +13,9 @@ This document is the plan for wAthena, a rebuild of rAthena on a new stack. The 
 
 Each phase has exit criteria that can be tested. Section 2.3 lists the decisions already made.
 
-## Where work stands (2026-10-17)
+## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 7 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done.
 
 Done:
 
@@ -72,7 +72,7 @@ Done:
 - Phase 6 step 8, the phase 6 exit check ([decision 0035](decisions/0035-phase-6-exit-check.md)):
   - `/client-data.json` format version 2 names mods' items, monsters, skills and jobs, with items' descriptions. The client shows the names, and draws skill icons and effects, monster sounds, worn item sprites and mod jobs' bodies.
   - A player without any command permission says `@` lines as chat. Lifting a permanent ban needs `moderation.ban_permanent`.
-  - `scripts/check.sh browsers` plays the exit check against `waserver` and PostgreSQL: three players on a desktop and a phone profile through the basic game and every tier 1 system, an admin run with TOTP, and the lantern mod's records.
+  - `scripts/check.sh browsers` plays the exit check against `waserver` and PostgreSQL: three players through the basic game and every tier 1 system, an admin run with TOTP, and the lantern mod's records. Since phase 7 step 8 they play on desktops; touch input is frozen as built in decision 0034, and the touch and phone checks run only with `CHECKS=touch,phone`.
 - The phase 6 review. Review decision 41 accepted the details to review of next steps 18 to 26, and next step 27 built its changes ([decision 0036](decisions/0036-phase-6-review-changes.md)):
   - `accounts.staff` is gone. `wactl world new --admin` prints the `staff.owners` lines for its account.
   - `@hide` is saved with the character and lasts across logins while the role may still use it, and a hidden staff member's local chat reaches players in range, as in rAthena.
@@ -138,6 +138,15 @@ Done:
   - Lua: `dungeon_rotated`, `region_changed`, `world:rotate` and `world:change_region`. The events screen lists rotations and seasons, and staff force one with `events.control` and an audit row.
   - The e2e test `TestRotation` proves the exit criteria with PostgreSQL: the dungeon changes on schedule as the server clock moves, the player inside goes to the nearest town, and an offline player's save and memo points there follow. The browser check `rotation` loads the new floors after a rotation. A startup that failed with a database no longer stalls (`TestStartFailsAtOnce`).
 
+- Phase 7 step 8, the economy simulator and the phase 7 exit check ([decision 0046](decisions/0046-economy-and-phase-7-exit.md)):
+  - `server/economy` simulates a field's exp, zeny and supplies per hour for a model player of its band, with the server's battle formulas, and keeps targets per band from rAthena's renewal classic fields.
+  - `wactl world new` keeps every field within 30% of its band's target base exp and zeny, with fitting monster levels, by balancing counts and drawing species again from the secret branch. `wactl sim economy` prints a new world's rates by field.
+  - Rolled drops get one more draw for each full 30 levels of the map's band, and the best stays.
+  - `scripts/check.sh economy` plays bot runs of the model player in a real `waserver` and compares them with the simulator within 20%.
+  - The public seed test covers spawns and loot. `TestLevelPath` walks the level path from 1 to 99. Decision 0046 maps every phase 7 exit criterion to its proof.
+  - Touch input is frozen as built in decision 0034, and its browser checks run only on demand.
+  - A monster's Cloaking or Maximize Power no longer loops its status timer forever, which hung a zone.
+
 Open review items:
 
 - Next step 27's details to review, in proposal 0002, "Next steps".
@@ -146,8 +155,7 @@ Open review items:
 - Next step 31's details to review, and the review items of decision 0043: a Lua way to list a player's quests or read a quest record, a minimap mark for `showevent`, `questinfo`, `setquestinfo` and `open_quest_ui`, options for the quest events, and quest calls for another character.
 - Next step 32's details to review, and the review items of decision 0044: a public exp reward call, a Lua way to read a world's quests, player fields for skill points and weight, a layer's read of map cells, a places scope of fields, objects of a mod's own art, board quest limits and repeats, and whether `world.generate` should be flagged.
 - Next step 33's details to review, and the review items of decision 0045: the hooks and generation layers on rotating floors and changed fields, a Lua way to read a rotating dungeon's date or a region's season, forced changes across a restart and a cancel, new level bands with a world change, more than one rotating dungeon, and locale text and a banner for the warnings.
-- The rAthena fork's change to `build_refine`, which adds refine costs to `refine_db.json`, is not committed yet.
-- The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
+- Decision 0046's review items: whether every class family's guild should stand in a town of the first bands, the model player and the targets, the economy checks and the `spawn_table` hooks, and a Lua way to read a field's simulated rates.
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -161,8 +169,8 @@ Known issues:
 
 Next:
 
-1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 7, the generator core, generated fields, dungeons, towns and named places, the world layout, spawns with the level band fix, quests and procedural content, and rotation, are built. Step 8, the economy simulator, the public seed test and the phase 7 exit check, is next.
+1. The review of phase 7's open items: next steps 27 to 33 of proposal 0002 and decision 0046's review items.
+2. Phase 8, the first public release (section 15, "Phase 8"), built with the `procedural` tag.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -2922,7 +2930,17 @@ The order from here:
       - A startup stall: a start with a database that failed after the server variables' writer began, such as one whose event named a map that does not run, waited for a signal. The waits now end the context first.
       - Tests: the rotation package's timing, catch-up, force, season, retry and daylight saving tests, `TestGoldenRotation` and `TestRotationRules` on arm64 and amd64 under Rosetta in `scripts/check.sh gen`, the layout, places, world, zone, store, admin, adminworld, modscript, waserver, wactl and modkit tests, the Market Town's 2 new cases, the e2e tests `TestRotation` and `TestStartFailsAtOnce` with PostgreSQL, and the browser check `rotation`.
       - Left: the hooks and layers on rotating floors and changed fields, world quests of changed regions, jail return points on removed maps, forced changes across a restart, and a run on a real amd64 machine.
-   8. The economy simulator and generator checks (section 8.13), bot runs compared with the simulator, the public seed test, and the phase 7 exit check.
+   8. The economy simulator and generator checks (section 8.13), bot runs compared with the simulator, the public seed test, and the phase 7 exit check. Done on 2026-10-18 ([decision 0046](decisions/0046-economy-and-phase-7-exit.md), server/README.md, "Economy", and client/README.md, "Touch" and "Checks"):
+      - `server/economy`: a model player per level, a Novice, then a Swordman, then a Knight, with the status points of its level, a town's gear and a potion, and a simulator of a field's base and job exp, zeny and supplies per hour, from the spawn list, the walk by the density, fights by the server's battle formulas, exp after the level penalty, and drops at NPC sell prices. It leaves alone monsters that teleport or heal and fights over a minute.
+      - Targets per band of 10 levels, `server/economy/core/data/economy_targets.yml`: the medians of the model player of the band's middle level on rAthena's renewal classic fields of the band, which `TestTargets` derives.
+      - Generator checks: `wactl world new` keeps every field within 30% of its band's target base exp and zeny, with its monsters' median level within 10 of its band, by moving counts within a role, scaling the density, and drawing species again from the secret branch with shifted levels. Without the checks, 367 of 720 fields of 24 default worlds missed; with them, none. `spawns.economy: false` turns them off, and the earlier golden tests keep the unchecked path.
+      - Rolled drops are better in higher bands: each full 30 levels of a map's band past level 1 gives a drop's random rolls one more draw, and the best stays (`procedural.drop_roll_levels`).
+      - `wactl sim economy` prints a new world's rates by field. `scripts/check.sh economy`, outside the default steps, plays the bot runs: bots of the model player hunt a field of four bands in a real `waserver`, and their exp and zeny per hour are compared with the simulator's within 20%.
+      - The public seed test: `TestPublicSeed` plans spawns from every node a client derives and gets other lists, also with the checks, and `TestPublicSeedLoot` shows the zones' loot streams come from a secret drawn at each start, which no world node predicts.
+      - The phase 7 exit check: decision 0046 maps each exit criterion to its tests, and `TestLevelPath` walks the level path of default worlds from level 1 to the transcendent cap of 99.
+      - Touch input is frozen as built in decision 0034. The touch and phone checks run only with `CHECKS=touch,phone`, and the phase 6 exit check plays on desktops by default, with its tier 1 coverage kept.
+      - A server bug the bot runs found: a monster's Cloaking or Maximize Power ran its status timer again at once, forever, after 10 seconds, which hung its zone and grew `waserver` until the system killed it. The timer now ends the status for units that cannot consume SP, as rAthena's `status_damage` does (`TestMonsterCloakingEnds`).
+      - Left: the live economy dashboards, rate settings the targets follow, monster skills other than heal and teleport in the simulator, a model player with skills and cards, economy checks of dungeon floors, a full bot playthrough to level 99, and a run on a real amd64 machine and in Safari.
    Art: the generator names biome tilesets, and a table maps each tileset to textures and models. Development points the table at the operator's own build, such as one from the kRO client. A public release needs an original or licensed art pack, which is art work outside this phase. Without one, maps use placeholder textures. Steps 3 and 6, and steps 4, 5 and 7 if they need it, draft their Lua API for review before they are built.
 
 Reasons for this order:
@@ -3192,6 +3210,16 @@ Exit criteria:
 - Every level band has at least 3 fields, and every generated field meets the spawn constraints in section 8.11.
 - Every field is within 30% of its band's target exp and zeny rates in the simulator, and bot runs agree with the simulator within 20%.
 - Players cannot predict loot or spawns from public seeds, tested with a known public seed.
+
+Phase 7 is done (2026-10-18). [Decision 0046](decisions/0046-economy-and-phase-7-exit.md), "Exit criteria and their proof", maps each criterion to its tests:
+
+- Same cell grid: the golden maps match in Go on arm64 and on amd64 under Rosetta, in TinyGo, in Node, and in Chromium, Firefox and WebKit through Playwright. A real amd64 machine and Safari itself are not proven.
+- Playable from level 1 to the transcendent cap: `TestLevelPath` checks default new worlds of 5 towns, 30 fields and 6 dungeons for reachability, fields reachable without crossing harder maps, fitting fields for every level from 1 to 99, the job guilds' tests and the rebirth place; the e2e and modkit tests play the job changes and the rebirth. No bot plays one character from 1 to 99.
+- Rotation on schedule, and removal that moves players and points: the e2e test `TestRotation`.
+- Reachability and unique town names: `TestLayoutRules`, `TestCoverage`, `FuzzLayout`, `TestTownNames` and `TestWorldLayout`.
+- 3 fields per band and the spawn constraints: `TestCoverage`, `TestSpawnRules`, `TestEconomyChecks` and `TestLevelPath`.
+- Economy: every field of 24 default worlds within 30% of its band's targets in the simulator (`TestEconomyChecks`), and bot runs within 20% of the simulator (`scripts/check.sh economy`).
+- Public seeds: `TestPublicSeed` for spawns and `TestPublicSeedLoot` for loot.
 
 ### Phase 8: First public release
 

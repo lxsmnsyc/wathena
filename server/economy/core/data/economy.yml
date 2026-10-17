@@ -1,0 +1,64 @@
+# The economy model of procedural worlds (strategy section 8.13,
+# decision 0046). The simulator reads it, and so do the bot runs of the
+# e2e test TestEconomyBots, which play the same player.
+#
+# player is the model player of a level: a melee character with the
+# gear of a town's dealers, as a solo player of that level has.
+#   - jobs: the job from a base level on. The job level is the base level
+#     minus from plus 1, at most max_job_level.
+#   - build: the weights that share the status points of the level
+#     among STR, AGI, VIT and DEX. Each point goes to the stat with the
+#     lowest value per weight.
+#   - gear: the items worn from a base level on, by AegisName, and their
+#     refine level, as a player of that level has them refined.
+#   - potions: the potion of a level and the HP it heals, as its
+#     itemheal, for the supplies the player spends.
+player:
+  jobs:
+    - { from: 1, job: 0, max_job_level: 10 }
+    - { from: 11, job: 1, max_job_level: 50 }
+    - { from: 50, job: 7, max_job_level: 50 }
+  build: { str: 5, agi: 2, vit: 4, dex: 3 }
+  gear:
+    - { from: 1, items: [Knife, Cotton_Shirt, Sandals] }
+    - { from: 11, items: [Blade, Adventure_Suit, Guard, Hat, Sandals, Hood] }
+    - { from: 21, items: [Ring_Pommel_Saber, Wooden_Mail, Buckler, Cap, Shoes, Muffler] }
+    - { from: 31, items: [Tsurugi, Coat, Buckler, Cap, Shoes, Muffler] }
+    - { from: 41, items: [Tsurugi, Chain_Mail, Buckler, Helm, Boots, Manteau] }
+    - { from: 50, items: [Claymore, Plate_Armor, Helm, Boots, Manteau], refine: 4 }
+    - { from: 70, items: [Zweihander, Plate_Armor, Helm, Boots, Manteau], refine: 7 }
+  potions:
+    - { from: 1, item: Red_Potion, hp: [45, 65] }
+    - { from: 21, item: Orange_Potion, hp: [105, 145] }
+    - { from: 41, item: Yellow_Potion, hp: [175, 235] }
+    - { from: 71, item: White_Potion, hp: [325, 405] }
+
+# hunt is how the model player spends its time (the player model of
+# section 8.13). Each kill takes:
+#   - the walk to the next monster: approach_permille thousandths of the
+#     side of the square that holds one monster on average, at the
+#     player's walk speed, less the one cell of melee reach;
+#   - the fight: the attacks the server's battle formulas need, at the
+#     player's attack delay rounded up to the zone's tick of 50 ms;
+#   - overhead_ms for the kill and the search for the next target: the
+#     bot runs of decision 0046 spend about 2 seconds a kill looking for
+#     a monster in sight that the path search reaches, which the walk by
+#     the density leaves out;
+#   - loot_ms for each item that drops, which the player picks up.
+# fights is how many fights the simulator plays out per monster.
+# max_fight_ms is the longest fight the player takes on: it leaves alone
+# the monsters whose fights last longer on average, and they do not
+# count toward the density it hunts in.
+hunt:
+  approach_permille: 1000
+  overhead_ms: 2000
+  loot_ms: 400
+  fights: 32
+  max_fight_ms: 60000
+
+# tolerance is how far a field may be from its band's target in the
+# generator checks, and how far a bot run may be from the simulator,
+# in percent (the phase 7 exit criteria).
+tolerance:
+  generator: 30
+  bots: 20

@@ -103,6 +103,12 @@ type Mods struct {
 	Atlas *layout.Atlas
 	// Teleport is the teleport service's prices.
 	Teleport TeleportPrices
+	// DropRollLevels makes rolled drops better in higher bands (strategy
+	// section 8.11, "Rolled drops", decision 0046): on a map of the
+	// atlas, each full DropRollLevels levels below the band's lowest
+	// level adds one draw to each random roll of a monster's drop, and
+	// the best draw stays. 0 turns it off.
+	DropRollLevels int
 	// Quests are the quests of data/quests.yml (review decision 45).
 	// Without them a zone has no quests.
 	Quests *quest.Table

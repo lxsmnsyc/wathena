@@ -12,8 +12,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/lxsmnsyc/wathena/server/economy"
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
+	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/places"
@@ -605,6 +607,20 @@ func changedSpawns(cfg settings, proc *proceduralWorld, all *gamedata.Mods, log 
 	st, err := cfg.Spawns.Resolve(core.Densities)
 	if err != nil {
 		return err
+	}
+	if st.Economy && all.JobTables != nil && all.Items != nil {
+		// Changed regions' fields pass the economy checks, as `wactl
+		// world new` picks fields (decision 0046).
+		ecfg, err := economy.LoadConfig()
+		if err != nil {
+			return err
+		}
+		ts, err := economy.LoadTargets()
+		if err != nil {
+			return err
+		}
+		w := gamedata.EconomyWorld(ecfg, item.New(all.Items.Data), all.JobTables, all.Tables, all.Rules, all.Monsters)
+		st.Rate = gamedata.EconomyRater(w, ts)
 	}
 	run := proc.atlas.Layout()
 	regions := regionsOf(proc.atlas.Base())
