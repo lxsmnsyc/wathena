@@ -3236,6 +3236,7 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 6. Web client plugin API (section 10.4).
 7. The headless web client, with the web client's UI rebuilt on it (section 10.4).
 8. Other clients (section 10.7): the guide to writing a client with local game files and the native login flow it needs, then the Go client, then the Lua client with LÖVE.
+9. JS and TS, if the study in section 17 ("JS and TS, and scriptc") says to go ahead: first JS and TS mods compiled to WebAssembly, then the server port to scriptc.
 
 ## 16. Risks
 
@@ -3266,6 +3267,22 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 
 ## 17. Open questions
 
+- **JS and TS, and scriptc.** Added on 2026-10-17 at the user's request. The idea is to replace Lua scripting with JS and TS, and to port the whole server to [scriptc](https://scriptc.dev/), which compiles TS and JS ahead of time to native programs and WebAssembly through LLVM. It needs a study before any decision. The two parts can be done separately:
+  - **JS and TS mods.** This part costs less and is worth more.
+    - Mods are written in TS and compiled to WebAssembly modules, with scriptc or another compiler.
+    - They run in a WebAssembly sandbox, as `wazero` already runs other modules.
+    - The API keeps the shape of the Lua API 1.0: modules, handles, events, hooks and permissions.
+    - The CPU budget becomes a WebAssembly fuel or step limit.
+    - The converter gains a TS output target.
+    - Lua and TS mods can run side by side during the move.
+  - **The server port.** This part is large and has the most risk. Every Go package moves: the zone loop, the gateway, storage, transfers and the generator.
+  - **What the study measures:**
+    - tick times and memory against the 10 ms budget, since scriptc counts references and collects cycles;
+    - its concurrency (fibers and worker threads) against one goroutine per zone;
+    - a PostgreSQL driver that scriptc can compile;
+    - generator determinism on every platform: JS numbers are doubles, so the generator stays integer-only (scriptc's `Int32` contract) and needs fused multiply-add turned off;
+    - scriptc's maturity. On 2026-10-17 it was version 0.3.0, marked experimental, with partial package support. It has no runtime `eval` and no built-in engine, so a scriptc-built server cannot load JS mods from source at runtime.
+  - **Recommendation:** study the mods part after the first release. Hold the server port until scriptc is stable, and decide after a small prototype of one zone and its tick.
 - **Lua API design.** The API in section 5 is a sketch. It will be redesigned before the binding layer is built, for example so that mods do not define custom globals. The redesign needs a design proposal.
 - **One Lua state per mod.** Per-mod memory limits need a separate state for each mod in each zone, instead of shared environment tables (threat model, finding 1). Decide this in the Lua API redesign.
 - **Crash recovery for zone processes.** A crash in C Lua stops the process. The save interval and restart behavior need numbers (threat model, finding 3).
