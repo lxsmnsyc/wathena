@@ -1045,6 +1045,14 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Rebirth.** An NPC in the largest town of the highest band.
     - **`wa.generation`.** Run at world creation on the server only. `generation.on("map", function(map, node) ... end)` receives a node with `child(label)`, `stream()` and `hash(x, y)`, and returns `{ places, objects, bosses }`. Layers cannot change terrain cells, which the client generates. `generation.quest_template(record)` adds a quest template. It needs a new permission, `world.generate`.
 
+47. Rotation and world changes (phase 7 step 7). The user approved these on 2026-10-17:
+    - **Rotating dungeons.** A dungeon style may set `rotation: { every: daily | weekly, at, weekday }`. Core marks one dungeon per world as rotating. Map IDs carry the date, such as `gen:dungeon:crypt:2026-10-31:2`, and the layout comes from the public node `dungeon(name, date)`. The next rotation is built before it starts. At the hour, the entrance portal switches to the new floors and the old floors are removed. Rotating floors have `nomemo`.
+    - **Secrets for rotation.** `wactl world new` gives the game role one derived key per rotating dungeon, `child(secret, "rotation", name)`, and one for seasons, `child(secret, "season")`. They reveal only those maps' future spawns and loot. The threat model records the risk.
+    - **World changes.** At the end of a season, a region's fields are generated again from `field(x, y, "season", n)` with a new biome. Map IDs and level bands stay. Off by default; `procedural.seasons.days` turns it on. Staff can trigger it.
+    - **Removing or replacing a map**, as strategy section 8.10: warnings at 10, 5 and 1 minutes and 30 seconds; players still there move to the nearest town by the map graph; save and memo points on the map move to that town's save spot; portals to the map update in the same step.
+    - **Lua.** World events `dungeon_rotated` with { `dungeon`, `date` } and `region_changed` with { `region`, `season` }. `wa.testing` gains `world:rotate(dungeon)` and `world:change_region(x, y)`.
+    - **Admin.** The events tool lists rotations and seasons, and staff can force one with `events.control` and an audit row.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
