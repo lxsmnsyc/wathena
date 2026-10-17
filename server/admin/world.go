@@ -88,6 +88,10 @@ type World interface {
 	// EventAction starts, stops, changes or resets an event, writes its
 	// audit row, and returns the event after it.
 	EventAction(ctx context.Context, o EventOrder) (*adminv1.EventInfo, error)
+	// ForceChange forces a rotation of a rotating dungeon or a change of a
+	// region, after the countdown, writes its audit row, and returns the
+	// events after it (decision 0045).
+	ForceChange(ctx context.Context, o ChangeOrder) (*adminv1.EventList, error)
 	// Mods lists the loaded mods.
 	Mods(ctx context.Context) (*adminv1.ModList, error)
 	// SwitchMod turns a mod off or on, writes its audit row, and returns
@@ -123,6 +127,14 @@ type EventOrder struct {
 	On              *bool
 	Trigger         map[string]any
 	DurationMinutes int
+	Reason          string
+}
+
+// ChangeOrder is POST /rotations/{dungeon}/rotate or
+// /regions/{region}/change: one of Dungeon and Region is set.
+type ChangeOrder struct {
+	Actor
+	Dungeon, Region string
 	Reason          string
 }
 

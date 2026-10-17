@@ -68,6 +68,12 @@ type generated struct {
 	world  []modscript.CoreQuest
 	// notes are what the layers did that the rules left out.
 	notes []string
+	// gen, public and secret are the test world's generator and
+	// branches, and settings the spawn settings, for world:rotate and
+	// world:change_region (decision 0045).
+	gen            gen.Generator
+	public, secret rng.Node
+	settings       spawns.Resolved
 }
 
 type genResult struct {
@@ -147,6 +153,7 @@ func (l *Loaded) makeGenerated() (*generated, error) {
 		return nil, err
 	}
 	secret := spawns.SecretBranch(root)
+	out.gen, out.public, out.secret, out.settings = g, public, secret, st
 	planned := spawns.Plan(secret, sm, spawns.NewPool(l.SpawnMonsters, l.SpawnThemes), st)
 	for i, p := range planned {
 		out.spawnMaps[p.Map], out.planned[p.Map] = sm[i], p.Spawns

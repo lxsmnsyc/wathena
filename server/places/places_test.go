@@ -129,3 +129,47 @@ func TestNearest(t *testing.T) {
 		t.Error("a nil index found a place")
 	}
 }
+
+// TestUpdate: a rotation replaces the crypt's floors with dated ones.
+// Old handles keep reading their places, gone ones leave Find and
+// Nearest, the new floors' places come in map ID order, and the dungeon
+// scope names dated floors (decision 0045).
+func TestUpdate(t *testing.T) {
+	x := world()
+	c := x.Clone()
+	entrance := x.Find(Scope{kind: "dungeon", id: "crypt"}, "entrance")[0]
+	gate := x.Find(Scope{kind: "town", id: "t1"}, "gate")[0]
+	add := []Map{
+		{ID: "gen:dungeon:crypt:2026-10-31:2", Places: []gen.Place{{Tags: []string{"entrance"}, X: 4, Y: 4}}},
+		{ID: "gen:dungeon:crypt:2026-10-31:1", Places: []gen.Place{{Tags: []string{"entrance"}, X: 6, Y: 6}, {Tags: []string{"exit"}, X: 50, Y: 50}}},
+		{ID: "gen:town:t2", Places: []gen.Place{{Tags: []string{"square"}, X: 12, Y: 12}}},
+	}
+	links := []Link{
+		{From: "gen:town:t1", X: 90, Y: 50, To: "gen:dungeon:crypt:2026-10-31:1", ToX: 6, ToY: 9},
+		{From: "gen:dungeon:crypt:2026-10-31:1", X: 50, Y: 50, To: "gen:dungeon:crypt:2026-10-31:2", ToX: 4, ToY: 7},
+	}
+	x.Update([]string{"gen:dungeon:crypt:1", "gen:dungeon:crypt:2"}, add, links)
+	if p := x.Place(entrance); p.Map != "gen:dungeon:crypt:1" || !x.Gone(entrance) || x.Gone(gate) {
+		t.Errorf("an old handle reads %+v", p)
+	}
+	got := maps(x, x.Find(Scope{kind: "dungeon", id: "crypt"}, "entrance"))
+	if !slices.Equal(got, []string{"gen:dungeon:crypt:2026-10-31:1", "gen:dungeon:crypt:2026-10-31:2"}) {
+		t.Errorf("entrances %v", got)
+	}
+	if got := maps(x, x.Find(Scope{kind: "town", id: "any"}, "square")); !slices.Equal(got, []string{"gen:town:t1", "gen:town:t2"}) {
+		t.Errorf("squares %v", got)
+	}
+	if sq := x.Find(Scope{kind: "town", id: "t2"}, "square"); len(sq) != 1 || x.Place(sq[0]).X != 12 {
+		t.Errorf("the replaced town's square %v", sq)
+	}
+	if i, ok := x.Nearest("gen:town:t1", 90, 52, "exit"); !ok || x.Place(i).Map != "gen:dungeon:crypt:2026-10-31:1" {
+		t.Errorf("nearest exit %d %v", i, ok)
+	}
+	if x.Len() != 11+4 {
+		t.Errorf("%d places", x.Len())
+	}
+	// The clone did not change.
+	if got := maps(c, c.Find(Scope{kind: "dungeon", id: "any"}, "entrance")); !slices.Equal(got, []string{"gen:dungeon:crypt:1", "gen:dungeon:crypt:2"}) {
+		t.Errorf("the clone %v", got)
+	}
+}

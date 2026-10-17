@@ -1035,6 +1035,10 @@ var Events = map[string][]string{
 	// A restart was planned or cancelled, in every zone (review decision
 	// 36).
 	"restart_planned": {KindMod, KindNPC, KindEvent},
+	// A rotating dungeon rotated, or a region changed, in every zone
+	// (review decision 47).
+	"dungeon_rotated": {KindMod, KindNPC, KindEvent},
+	"region_changed":  {KindMod, KindNPC, KindEvent},
 	// A player's quest log changed, on the context's map (review
 	// decision 45).
 	"quest_add":      {KindMod, KindNPC, KindEvent},

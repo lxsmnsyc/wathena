@@ -23,23 +23,35 @@ import (
 // from its node with its size and biome, each town and dungeon floor
 // from its node and the params the layout keeps, and the home map from
 // its folder. home is the home map's folder, or nil for a layout without
-// one. A map that fails is an error that names its public node.
+// one. A map that fails is an error that names its public node. A
+// field's node follows its season, and a rotating floor's its date
+// (decision 0045).
 func GenerateLayout(g gen.Generator, public rng.Node, l *layout.Layout, home *mapfolder.Map) ([]*Field, error) {
+	list := make([]*layout.Map, len(l.Maps))
+	for i := range l.Maps {
+		list[i] = &l.Maps[i]
+	}
+	return GenerateLayoutMaps(g, public, list, home)
+}
+
+// GenerateLayoutMaps makes some maps of a layout, several at once, as
+// GenerateLayout makes them all, in the order given.
+func GenerateLayoutMaps(g gen.Generator, public rng.Node, list []*layout.Map, home *mapfolder.Map) ([]*Field, error) {
 	if g.Field == nil || !g.Makes(gen.KindTown) {
 		return nil, fmt.Errorf("map generator %d makes no towns; a world layout needs generator 3 or later", g.Version)
 	}
-	out := make([]*Field, len(l.Maps))
-	errs := make([]error, len(l.Maps))
+	out := make([]*Field, len(list))
+	errs := make([]error, len(list))
 	next := make(chan int)
 	var wg sync.WaitGroup
-	for range min(runtime.GOMAXPROCS(0), len(l.Maps)) {
+	for range min(runtime.GOMAXPROCS(0), len(list)) {
 		wg.Go(func() {
 			for i := range next {
-				out[i], errs[i] = generateLayoutMap(g, public, &l.Maps[i], home)
+				out[i], errs[i] = generateLayoutMap(g, public, list[i], home)
 			}
 		})
 	}
-	for i := range l.Maps {
+	for i := range list {
 		next <- i
 	}
 	close(next)
@@ -58,13 +70,13 @@ func generateLayoutMap(g gen.Generator, public rng.Node, m *layout.Map, home *ma
 		if m.Biome < 0 || m.Biome >= len(g.Biomes) {
 			return nil, fmt.Errorf("field %s: generator %d has no biome %d", m.ID, g.Version, m.Biome)
 		}
-		f, err = generate(g, public, Spec{X: m.X, Y: m.Y, Biome: g.Biomes[m.Biome]}, m.Size)
+		f, err = generateField(g, layout.MapNode(public, *m), m.X, m.Y, m.Biome, m.Size)
 	case gen.KindTown:
-		f, err = generateMap(g, mapJob{id: m.ID, kind: gen.KindTown, name: m.Record, node: gen.TownNode(public, m.Town),
+		f, err = generateMap(g, mapJob{id: m.ID, kind: gen.KindTown, name: m.Record, node: layout.MapNode(public, *m),
 			params: m.Params, town: m.Town})
 	case gen.KindDungeon:
 		f, err = generateMap(g, mapJob{id: m.ID, kind: gen.KindDungeon, name: m.Record,
-			node: gen.FloorNode(gen.DungeonNode(public, m.Dungeon), m.Floor), params: m.Params,
+			node: layout.MapNode(public, *m), params: m.Params,
 			dungeon: m.Dungeon, floor: m.Floor, floors: m.Floors})
 	case layout.KindHome:
 		f, err = homeField(g, m, home)
@@ -235,7 +247,7 @@ func LayoutOf(styles []Style, templates []Template) ([]layout.TownRecord, []layo
 	}
 	out := make([]layout.StyleRecord, len(styles))
 	for i, s := range styles {
-		out[i] = layout.StyleRecord{Name: s.Name, Style: s.Style}
+		out[i] = layout.StyleRecord{Name: s.Name, Style: s.Style, Rotation: s.Rotation}
 	}
 	return towns, out
 }
@@ -263,4 +275,29 @@ func MapsOf(list []*Field) map[string]*gen.Field {
 		out[f.ID] = &f.Field
 	}
 	return out
+}
+
+// SaveSpot returns a town's save spot, where the players and the points
+// of a removed or replaced map go (strategy section 8.10, decision
+// 0045): a walkable cell 3 to 6 cells from its inn, else its square,
+// else its first place, that no warp covers. A map without places gives
+// its middle.
+func SaveSpot(f *Field, warps []zone.Warp) (int, int) {
+	covered := func(x, y int) bool {
+		for _, w := range warps {
+			if x >= w.X-w.XS && x <= w.X+w.XS && y >= w.Y-w.YS && y <= w.Y+w.YS {
+				return true
+			}
+		}
+		return false
+	}
+	places := f.AllPlaces()
+	for _, tag := range []string{"inn", "square", ""} {
+		for _, p := range places {
+			if tag == "" || p.HasTag(tag) {
+				return arrivalAvoiding(f, p.X, p.Y, covered)
+			}
+		}
+	}
+	return arrivalAvoiding(f, f.Field.Width/2, f.Field.Height/2, covered)
 }

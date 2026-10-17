@@ -3,7 +3,8 @@
 // lasts with its time left, and the latest results. Staff start and stop
 // runs, change an event's trigger, duration and whether it is on, and
 // reset it to the config. Changes apply at once and are saved over the
-// config.
+// config. A procedural world adds its rotating dungeons and its regions'
+// seasons, which staff force after a countdown (decision 0045).
 
 import { type JsonObject, create } from '@bufbuild/protobuf';
 import { type Timestamp, timestampDate } from '@bufbuild/protobuf/wkt';
@@ -11,7 +12,9 @@ import {
   type EventChange,
   EventChangeSchema,
   type EventInfo,
+  type EventList,
   type EventResult,
+  type WorldChange,
 } from '../gen/wathena/admin/v1/admin_pb';
 import type { Context } from './context';
 import { button, el, field, input, row, table, when, wideRow } from './dom';
@@ -293,6 +296,106 @@ export function changedText(e: EventInfo): string {
   return `${o.changedBy}, ${when(o.changedAt)}`;
 }
 
+/**
+ * A change that waits, for a table cell, such as
+ * "2026-10-23 on 2026-10-23 20:00, forced".
+ */
+export function worldChangeText(c: WorldChange | undefined): string {
+  if (c === undefined) {
+    return '';
+  }
+  const what = c.date === '' ? `season ${String(c.season)}` : c.date;
+  return `${what} on ${when(c.at)}${c.forced ? ', forced' : ''}`;
+}
+
+/** The seasons' line above the regions, such as "Every 30 days since 2026-10-01: 2 season ends." */
+export function seasonsText(list: EventList): string {
+  const s = list.seasons;
+  if (s === undefined) {
+    return '';
+  }
+  if (s.days === 0) {
+    return 'Seasons are off: procedural.seasons.days is not set. Staff can still change a region.';
+  }
+  const ends = s.ends === 1 ? '1 season end' : `${String(s.ends)} season ends`;
+  const next =
+    s.next === undefined ? '' : ` The next changes ${s.next.region}: ${worldChangeText(s.next)}.`;
+  return `Every ${String(s.days)} days since ${s.started === '' ? 'today' : s.started}: ${ends}.${next}`;
+}
+
+/** Renders the rotating dungeons and the regions of a procedural world. */
+function renderChanges(
+  ctx: Context,
+  into: HTMLElement,
+  list: EventList,
+  load: () => Promise<void>,
+): void {
+  into.replaceChildren();
+  if (list.rotations.length === 0 && list.seasons === undefined) {
+    return;
+  }
+  const force = (kind: 'rotation' | 'region', id: string, label: string): HTMLButtonElement => {
+    const b = button(label, () => {
+      b.disabled = true;
+      ctx.run(
+        (async () => {
+          const r = await ctx.api.forceChange(kind, id, '');
+          if (!r.ok) {
+            ctx.fail(r);
+            return;
+          }
+          ctx.say(
+            `${id} changes in 10 minutes. Players there are warned, then go to the nearest town.`,
+          );
+          await load();
+        })().finally(() => {
+          b.disabled = false;
+        }),
+      );
+    });
+    b.dataset.action = kind;
+    return b;
+  };
+  const rot = table(['Rotating dungeon', 'Rotation', 'Floors of', 'Next', '']);
+  for (const r of list.rotations) {
+    const tr = row([
+      `${r.name} (${r.dungeon})`,
+      r.rotation,
+      r.date,
+      worldChangeText(r.next),
+      force('rotation', r.dungeon, 'Rotate in 10 minutes'),
+    ]);
+    tr.dataset.dungeon = r.dungeon;
+    rot.body.append(tr);
+  }
+  if (list.rotations.length === 0) {
+    rot.body.append(wideRow('No dungeon of this world rotates.', 5));
+  }
+  const reg = table(['Region', 'Fields', 'Season', 'Forced', '']);
+  for (const r of list.seasons?.regions ?? []) {
+    const tr = row([
+      `${r.name} (${r.region})`,
+      String(r.fields),
+      String(r.season),
+      worldChangeText(r.forced),
+      force('region', r.region, 'Change in 10 minutes'),
+    ]);
+    tr.dataset.region = r.region;
+    reg.body.append(tr);
+  }
+  into.append(
+    el('h2', 'Rotations and seasons'),
+    el(
+      'p',
+      'A forced change happens 10 minutes later, after the warnings, and writes an audit row. Times are the server time zone.',
+      'admin-who',
+    ),
+    rot.table,
+    el('p', seasonsText(list), 'admin-who'),
+    reg.table,
+  );
+}
+
 /** Renders the events screen into a section and loads it. */
 export function renderEvents(ctx: Context, section: HTMLElement): void {
   section.replaceChildren(el('h2', 'World events'));
@@ -309,6 +412,7 @@ export function renderEvents(ctx: Context, section: HTMLElement): void {
     '',
   ]);
   const editor = el('div', '', 'admin-event-editor');
+  const changes = el('div', '', 'admin-world-changes');
   section.append(
     el(
       'p',
@@ -317,6 +421,7 @@ export function renderEvents(ctx: Context, section: HTMLElement): void {
     ),
     t,
     editor,
+    changes,
   );
   const load = async (): Promise<void> => {
     const r = await ctx.api.events();
@@ -390,6 +495,7 @@ export function renderEvents(ctx: Context, section: HTMLElement): void {
     if (r.value.events.length === 0) {
       body.append(wideRow('There are no world events.', 10));
     }
+    renderChanges(ctx, changes, r.value, load);
   };
   ctx.run(load());
 }

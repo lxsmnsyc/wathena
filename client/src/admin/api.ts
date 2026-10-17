@@ -538,6 +538,23 @@ export class AdminAPI {
     );
   }
 
+  /**
+   * POST /rotations/{dungeon}/rotate or /regions/{region}/change: a
+   * rotation or a world change after the countdown (decision 0045).
+   */
+  async forceChange(
+    kind: 'rotation' | 'region',
+    id: string,
+    reason: string,
+  ): Promise<Result<EventList>> {
+    const req = create(EventActionSchema, { reason: reason.trim() });
+    const path =
+      kind === 'rotation'
+        ? `rotations/${encodeURIComponent(id)}/rotate`
+        : `regions/${encodeURIComponent(id)}/change`;
+    return decode(EventListSchema, await this.call('POST', path, toJson(EventActionSchema, req)));
+  }
+
   /** GET /mods: the loaded mods with their errors. */
   async mods(): Promise<Result<ModList>> {
     return decode(ModListSchema, await this.call('GET', 'mods'));

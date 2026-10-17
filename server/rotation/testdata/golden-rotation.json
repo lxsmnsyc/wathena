@@ -1,0 +1,222 @@
+[
+  {
+    "secret": "golden-rotation-1",
+    "dungeon": "tower",
+    "rotation": "daily at 04:00",
+    "region": "t1",
+    "states": [
+      {
+        "dates": {
+          "tower": "2026-10-16"
+        },
+        "seasons": null,
+        "layout": "ae5784ea87be93e127b7622ad6cc9bdcc32fe62a1e7202346479714bf52917d6",
+        "maps": {
+          "gen:dungeon:tower:2026-10-16:1": "node 0113fc5f0f0b48613710ebf9db4e06a67c5b928288db3a7ae6b4568886cd6b8d biome  grid d84a90f27c2ddb0c8e8d38ed2ccb976ea0c633435ed1a269617e1a675b1d5241 wmap 700ea971d4200b3aab117bc0bf6fa609f5b69215601fe750298e6530ddc2eac0",
+          "gen:dungeon:tower:2026-10-16:2": "node cdb407db80022051a440b4540141360c9d97274aa6d816edabf378a6e07b08cb biome  grid bb975bf60eb2810a403716b4359414dc223840783a5667f11d5e7dcd10c9c54a wmap ddc0261afae87be57faa699cc2fced419743061f5163f8cb386b4454cc2b6530",
+          "gen:dungeon:tower:2026-10-16:3": "node c30160289ae38d4c19269fc82ba1695e3b2032110d3270673da804ead184e2bd biome  grid a758ea59a76fe8392a357a11e6664dd547676e96c7052465daf9340aa478b67c wmap 2a74dd90f37d5178a3936225ba7cabc60c73f9dc04a39a036b5247a3d73cfac0",
+          "gen:dungeon:tower:2026-10-16:4": "node b8279b835b665339e196da5c4c50897bfc3d88fb6095024aeafed4f499a1f5de biome  grid 61cfe1a2c3901af61c6ba9e3c9fc75771a0d085c1e5975eb0c9eed9d2948137e wmap bfbf6976571aaeb962c9cdf804e5ba3301127177cadd47b5eca88953e0edc0f4",
+          "gen:dungeon:tower:2026-10-16:5": "node 5c694ed06a69a339aaa72ffb71d48f9fb5f8af28cd16c6022f0b024132abc2e2 biome  grid 4c3de06071c626d2abe4cd142b0943a9c8bf132ee8a3869373f15af34cd78f6d wmap eb0e0824bd849013373da66e9560c9e63ab5b036ed3eea042df0264141d5d89e"
+        },
+        "spawns": {
+          "gen:dungeon:tower:2026-10-16:1": "db1dc3fb2ca843d70800975c1e9362f2bbaf4f8179e310e3769584d52091e1c5",
+          "gen:dungeon:tower:2026-10-16:2": "eb79ad4c225e97c66218a47a2cf35508afb7941faed98b531c7ada00764c8825",
+          "gen:dungeon:tower:2026-10-16:3": "1f50d312fc8ec0776d580231f5243c3cbf93e7fbbba3b37a5a6e2ba9764a22af",
+          "gen:dungeon:tower:2026-10-16:4": "0eaf497e4512b66eb3bd74eb3f85ae860359fb71b3fe1a581eebe3bd67af8adf",
+          "gen:dungeon:tower:2026-10-16:5": "f545a87aadd5850839d3d1cd54c1539ddbd314f6fd61b84a276f64001f26fb61"
+        }
+      },
+      {
+        "dates": {
+          "tower": "2026-10-23"
+        },
+        "seasons": null,
+        "layout": "4491b3e3193bca9831404bc823320bced7f009b1a3d6df2e5cfbdf373f2cca64",
+        "maps": {
+          "gen:dungeon:tower:2026-10-23:1": "node 3d84b6da81716ba66114374b48151f104359517d8f39e1525922ec6e75f66235 biome  grid ce771b8160a4b714e0f3b07b9e2381d60e6c9c6a5468cb9f929dbd23d655df33 wmap 496254c854ecc67feaad379b8e779c39c8dd063285848623f9488ae26a70576e",
+          "gen:dungeon:tower:2026-10-23:2": "node bdf5416e6a668b84bb229795da298adff187429060b64746385bd2cddfb2632a biome  grid 09fa427a4ac685bde20c42b2abfc53173d500e46955b17feb4ab502a2df66d53 wmap efea23b84931a3a801826f47fabc2f9ece5fc6e43a52f7e2cfc0cced333632e0",
+          "gen:dungeon:tower:2026-10-23:3": "node 99fcb7f0d0921cbe613359ec0bb8b4bf95a5d286936b4a372bbfb31bf35ba7da biome  grid c478d39992180e628a2a5fad7b7b9c8fec8e746c1ecd975c74bbaec8d0a0e77f wmap 433536f15302d6a6eefa9b89eada6c6c9650a5ba60676e47c766883b91a407f8",
+          "gen:dungeon:tower:2026-10-23:4": "node b5d58df6ab9b058de4800c5fa832e0c0d1890d5400732073b476b2f37020e1d2 biome  grid 13e522600ef7b8ec20946e56bdf1b89f2d9b40f5759462250e11321716f0a4ee wmap 1677209d6b89d19a450b9a3d676f32df058a161497ffad99d2a0f3262c41d615",
+          "gen:dungeon:tower:2026-10-23:5": "node 68d6adf799e9ea6c2c521a74ec1ddec23250e9d25369761b2974f46fd3a809b7 biome  grid e148f13920a30d9856bbc40fb00e553d45830baf12e598ae8bf8f29fa5592c04 wmap ae098be54833fa56cbcda402624bdeead273e51a9ab7919aa0fadd988ab76449"
+        },
+        "spawns": {
+          "gen:dungeon:tower:2026-10-23:1": "7840cdc5af72abac06de5bae4d0ea8ff34937e6c3edc4c914e8c524a606fedad",
+          "gen:dungeon:tower:2026-10-23:2": "d59bcaa37ec59c0083a10d5267d7a462f56d0913cd37e9cde572d3d42f4ab50a",
+          "gen:dungeon:tower:2026-10-23:3": "6c9a45f363500dc68bd786018107027948e39bb10d70a6553549fcd40e72b200",
+          "gen:dungeon:tower:2026-10-23:4": "2e09b5d099e3b9d087e6965f82b697608631f0ab99ead800ee930355140b58f0",
+          "gen:dungeon:tower:2026-10-23:5": "1f6ad541316f7f8431f9cdc6008380d621248a0fbb5ecacfc976680747588d74"
+        }
+      },
+      {
+        "dates": {
+          "tower": "2026-10-23"
+        },
+        "seasons": {
+          "t1": 1
+        },
+        "layout": "6e57039c4972a9b84683a599f89ec8ec361062540888bb6b45d465323c971dd2",
+        "maps": {
+          "gen:dungeon:tower:2026-10-23:1": "node 3d84b6da81716ba66114374b48151f104359517d8f39e1525922ec6e75f66235 biome  grid ce771b8160a4b714e0f3b07b9e2381d60e6c9c6a5468cb9f929dbd23d655df33 wmap 496254c854ecc67feaad379b8e779c39c8dd063285848623f9488ae26a70576e",
+          "gen:dungeon:tower:2026-10-23:2": "node bdf5416e6a668b84bb229795da298adff187429060b64746385bd2cddfb2632a biome  grid 09fa427a4ac685bde20c42b2abfc53173d500e46955b17feb4ab502a2df66d53 wmap efea23b84931a3a801826f47fabc2f9ece5fc6e43a52f7e2cfc0cced333632e0",
+          "gen:dungeon:tower:2026-10-23:3": "node 99fcb7f0d0921cbe613359ec0bb8b4bf95a5d286936b4a372bbfb31bf35ba7da biome  grid c478d39992180e628a2a5fad7b7b9c8fec8e746c1ecd975c74bbaec8d0a0e77f wmap 433536f15302d6a6eefa9b89eada6c6c9650a5ba60676e47c766883b91a407f8",
+          "gen:dungeon:tower:2026-10-23:4": "node b5d58df6ab9b058de4800c5fa832e0c0d1890d5400732073b476b2f37020e1d2 biome  grid 13e522600ef7b8ec20946e56bdf1b89f2d9b40f5759462250e11321716f0a4ee wmap 1677209d6b89d19a450b9a3d676f32df058a161497ffad99d2a0f3262c41d615",
+          "gen:dungeon:tower:2026-10-23:5": "node 68d6adf799e9ea6c2c521a74ec1ddec23250e9d25369761b2974f46fd3a809b7 biome  grid e148f13920a30d9856bbc40fb00e553d45830baf12e598ae8bf8f29fa5592c04 wmap ae098be54833fa56cbcda402624bdeead273e51a9ab7919aa0fadd988ab76449",
+          "gen:field:0:0": "node e3392464e6d38b9c9db5c729899dedffd38d76b4fb58379359e314b1c00c6dbd biome beach grid 5c9d16c3b8690b2a33baf051bb66fd40f4b09e642f1d54f0a2586483f536e832 wmap 0a023bfd134f2d949d27d780f102e69078e3cb4810e4854db48948c46ef8b3a5",
+          "gen:field:0:1": "node 63232431f515d2d87a366d699b454d7d6b23aac04ae84f9032f2df67c5340989 biome beach grid 4b1720f361c17286311aa253eb5fd98c844c9a2395bd119219daf079a7dd2910 wmap 0c02b6b1d61261e7cd3414d21b1a5e59192f62de1f252966164d6bfa1381682a",
+          "gen:field:0:2": "node eff330b80546ac4671c1bc07f015d64278d651af1954f4de5969e883309874e0 biome beach grid c2ef6b4e55c7789025fd3ee970d24cc06396b27a861844a0ac63bbe9c590d00e wmap 0075930ec3986543fcac3e801682be9ba69490a18d666bc466c83c38061b7e5c",
+          "gen:field:1:2": "node 87414875e9e135df680296895b87a6a256a7e7b22e42b8dc5a2a17c22b47bafc biome beach grid 7216a5898ffec80c698e305d962cc2fbaf652f9a35aaaadf6dc39d45491232e5 wmap 39109fd0ea0ab4bb0370269ab7402816cd4e6ef6832b7a095be63446619bd619",
+          "gen:field:2:2": "node 2623bd30464975f7e47a02973453f8558c7d9892243fd5410a1b6c0190568b5b biome beach grid 5e63dd306c24ee3761f8681c14a796b69175ee6d1b297364346342e6f6f1c5e2 wmap cdc3c266bf39b3d720ff440b96efd416ba63f3763b10244480ca05650ed7b079",
+          "gen:field:3:2": "node 91a9f00631d067142e450213af3a3ea0dc1ee962ff72c8f17ef9dbb87b3c6c84 biome beach grid 1cc32420d01dace0d217408231c13144232d67fe4e28a496da2bad3650170084 wmap b59f753fb7a2d92d428250427558b1c5482d92272d6df9a15f66262ebc272fb3"
+        },
+        "spawns": {
+          "gen:dungeon:tower:2026-10-23:1": "7840cdc5af72abac06de5bae4d0ea8ff34937e6c3edc4c914e8c524a606fedad",
+          "gen:dungeon:tower:2026-10-23:2": "d59bcaa37ec59c0083a10d5267d7a462f56d0913cd37e9cde572d3d42f4ab50a",
+          "gen:dungeon:tower:2026-10-23:3": "6c9a45f363500dc68bd786018107027948e39bb10d70a6553549fcd40e72b200",
+          "gen:dungeon:tower:2026-10-23:4": "2e09b5d099e3b9d087e6965f82b697608631f0ab99ead800ee930355140b58f0",
+          "gen:dungeon:tower:2026-10-23:5": "1f6ad541316f7f8431f9cdc6008380d621248a0fbb5ecacfc976680747588d74",
+          "gen:field:0:0": "b0208be4a901882eebf8b1b48723e6e1d0d105d636c432093d2a240eaa8e10fc",
+          "gen:field:0:1": "20155544aee2666832362e052f5f8a41a5c4d02db5c99cc37905e22ced1b7167",
+          "gen:field:0:2": "46da58de4a65ceec55265680c45f96202cf1d791fe9bc34a559e019563fd22d5",
+          "gen:field:1:2": "20fcb850632a0e30439c3ec80d3f895eeda3c8c37b71dc54a3d197db9b4e4b19",
+          "gen:field:2:2": "f7ce99409241df3b01aa66ceb99f09ca102e1e2d1c007387848a79358a4b2aba",
+          "gen:field:3:2": "cfb535186206b304ba0bd65de4b19bfe830a58137bbe1c462aaf19d58b51bbe7"
+        }
+      },
+      {
+        "dates": {
+          "tower": "2026-10-23"
+        },
+        "seasons": {
+          "t1": 2
+        },
+        "layout": "9bd62e05aa39cfa79e79f9ff2362ddf45e7572e93518d4bd49fb47cbefcc0c94",
+        "maps": {
+          "gen:dungeon:tower:2026-10-23:1": "node 3d84b6da81716ba66114374b48151f104359517d8f39e1525922ec6e75f66235 biome  grid ce771b8160a4b714e0f3b07b9e2381d60e6c9c6a5468cb9f929dbd23d655df33 wmap 496254c854ecc67feaad379b8e779c39c8dd063285848623f9488ae26a70576e",
+          "gen:dungeon:tower:2026-10-23:2": "node bdf5416e6a668b84bb229795da298adff187429060b64746385bd2cddfb2632a biome  grid 09fa427a4ac685bde20c42b2abfc53173d500e46955b17feb4ab502a2df66d53 wmap efea23b84931a3a801826f47fabc2f9ece5fc6e43a52f7e2cfc0cced333632e0",
+          "gen:dungeon:tower:2026-10-23:3": "node 99fcb7f0d0921cbe613359ec0bb8b4bf95a5d286936b4a372bbfb31bf35ba7da biome  grid c478d39992180e628a2a5fad7b7b9c8fec8e746c1ecd975c74bbaec8d0a0e77f wmap 433536f15302d6a6eefa9b89eada6c6c9650a5ba60676e47c766883b91a407f8",
+          "gen:dungeon:tower:2026-10-23:4": "node b5d58df6ab9b058de4800c5fa832e0c0d1890d5400732073b476b2f37020e1d2 biome  grid 13e522600ef7b8ec20946e56bdf1b89f2d9b40f5759462250e11321716f0a4ee wmap 1677209d6b89d19a450b9a3d676f32df058a161497ffad99d2a0f3262c41d615",
+          "gen:dungeon:tower:2026-10-23:5": "node 68d6adf799e9ea6c2c521a74ec1ddec23250e9d25369761b2974f46fd3a809b7 biome  grid e148f13920a30d9856bbc40fb00e553d45830baf12e598ae8bf8f29fa5592c04 wmap ae098be54833fa56cbcda402624bdeead273e51a9ab7919aa0fadd988ab76449",
+          "gen:field:0:0": "node 793e49f4d16a7a8e21ae09fcf2c5bf712efd7d66f84c3a97685b3df58c3b3e45 biome swamp grid 37972e92e45c654967f1ef8ca2fe4080e399363ac653412f6dfc4275472fcedd wmap d0948b374c936de1ba9d7eecb424178b6ae53cdefae8812ff8ba9ad7d13c7295",
+          "gen:field:0:1": "node e5c2f5942c46dd6c6b308ad86f1acefcfc88ff8f5c72bb9729b471c72053fa4d biome swamp grid b488290ba2f9fd1f740c548981ca759e29e0a361e7b55cc6e29e92e92f3ea2c7 wmap 234159349dfacd8d117cbbc9d3ba98a1287ba0ba4eb83a0b4b1a163879ab2fd4",
+          "gen:field:0:2": "node c4f4a6d03515fcfdf1982225f9440bde8a27b6179f976beecf4ce651a7b93637 biome swamp grid 6b1f97a27b6520acd4b461fb76c9af9519b347fe89ded386f47effc8f5b2950b wmap 66f0a154d67d8f9487f50cc205539c033e0c6ccba94730b1711afc2dfb34bc86",
+          "gen:field:1:2": "node e3971a419faeab9a8efa139f5fdbb7fe0b9a094eb2ac406a2dba39bd37619ae5 biome swamp grid 6e4b580ab598d00f6847a97b75bcd20df022c43174a05888e84fbcdb8eabd37e wmap d2f7d090d0e477427d3bb43c8ef4886cfef3be48c1447aca046681392663ddba",
+          "gen:field:2:2": "node cf9ca1ab076ec8a87ff95c6ab90582fa42050032d27bf946f455e610bb8896b0 biome swamp grid c98d648971ce6c47520a8ca1199488c47ca4bb8d2475399ab3187c8548a5f435 wmap 2099cdd3c75ec23f1d71a7b8f4ac9a03106bb70c8a674aee6baac7d1860c1e0e",
+          "gen:field:3:2": "node 6cbdead0f5f96f6b5327e18eeced38651a6479b7bbb3e0ba93dde65460d4134b biome swamp grid 02fa7881018c90c8615d137cbc2780263a1a663d847123521516e00e28940ad3 wmap 66bc0389c23645adf73fb20443de2ade1b619abbf338e3390d53f36573c956c8"
+        },
+        "spawns": {
+          "gen:dungeon:tower:2026-10-23:1": "7840cdc5af72abac06de5bae4d0ea8ff34937e6c3edc4c914e8c524a606fedad",
+          "gen:dungeon:tower:2026-10-23:2": "d59bcaa37ec59c0083a10d5267d7a462f56d0913cd37e9cde572d3d42f4ab50a",
+          "gen:dungeon:tower:2026-10-23:3": "6c9a45f363500dc68bd786018107027948e39bb10d70a6553549fcd40e72b200",
+          "gen:dungeon:tower:2026-10-23:4": "2e09b5d099e3b9d087e6965f82b697608631f0ab99ead800ee930355140b58f0",
+          "gen:dungeon:tower:2026-10-23:5": "1f6ad541316f7f8431f9cdc6008380d621248a0fbb5ecacfc976680747588d74",
+          "gen:field:0:0": "ace11253965bfc8c7efaf081a19d4f790f5259e5502b8179ef742d2f43849cc0",
+          "gen:field:0:1": "da0a5db0473b8e804f4c7f0456a300334eff34ee379ed7ddf412229fceb01ca0",
+          "gen:field:0:2": "71c52a0aed25c9e8e6861c1c9b20fec66ffbb39ab1147638aee294bcd45e8d52",
+          "gen:field:1:2": "b642c7995426b88a0ce5a39c6c0628cc85db9b705ae31d3590b86ca979516884",
+          "gen:field:2:2": "5f3bc54e54c708890f4c9ea503f0d47deb663fdaefa23e389c7cbcdb5a0d514a",
+          "gen:field:3:2": "396a094069ebbabb3b2656d7058796344ef32fd5d37db4234ceab4c9257057b8"
+        }
+      }
+    ]
+  },
+  {
+    "secret": "golden-rotation-2",
+    "dungeon": "crypt",
+    "rotation": "weekly on friday at 20:00",
+    "region": "t1",
+    "states": [
+      {
+        "dates": {
+          "crypt": "2026-10-16"
+        },
+        "seasons": null,
+        "layout": "81e70c338201e005f167e55161b9d33e1cc4169ce50976b7357759a6709b8d75",
+        "maps": {
+          "gen:dungeon:crypt:2026-10-16:1": "node 01df475fb88a113288030f18481299b18b12af98ce98cca40695e02eda5e7f17 biome  grid 575811110caf9d3f609ea735d97ba05cff1300397031f5527845e88f7ef9df2d wmap f664ec1f9e7e51b9a1708d293dd0a9d87caa3d4178f0fa86ee48ee21ec3c593d",
+          "gen:dungeon:crypt:2026-10-16:2": "node 0ad82dccc3f488e4610dd4568ff7a0d0c6a28db88e7168b41e219e9fd02619d1 biome  grid 35b644effcf1fcc5738ff37b3d8a286b549c97b09a2b3d9bd36c4c6cae520f5c wmap e75d1ee07d9b10b199cb61a3d6dacba18b6fc94075fb0ac38578a071bef71e2a",
+          "gen:dungeon:crypt:2026-10-16:3": "node f4b7d27a1bb36a5bd65d28846b9259bc1d98160c4353b1d92ad0e69c9c420bde biome  grid 75c10c33bd8035d5e55acce5073244fd82c806d4904c94b762ed953dd8c7292b wmap 1e519b3a3418fe9096d7c71648721696d34a8a67f578f593ccb1e0f9c9119dad"
+        },
+        "spawns": {
+          "gen:dungeon:crypt:2026-10-16:1": "eef5fb2c63fb71e82ed9d72711495a5dc4d61b998a95a35ec5b9e1ad1fe616fd",
+          "gen:dungeon:crypt:2026-10-16:2": "d02653d4994a6d5950e8d8685e0667ac3122ff479f62bda569369c04566444e7",
+          "gen:dungeon:crypt:2026-10-16:3": "e71190d91b1066b1459453d2808b2045cddaef2f4efaaee7ada0863000315628"
+        }
+      },
+      {
+        "dates": {
+          "crypt": "2026-10-23"
+        },
+        "seasons": null,
+        "layout": "959a2a2ce8d241cd89f811c80fb7041404c9777c5211b76da900c024c16f0749",
+        "maps": {
+          "gen:dungeon:crypt:2026-10-23:1": "node afd9232832428ca6948919812f7cc76d6f6f988ff5902fe76871ae0a409f9b2d biome  grid e274934f2da400e7dee93ce323ebf756e3413414c0a1218496bd33a3308b8422 wmap 19279897f50f763f74408fc3d410351b8baa1a2bf3ebcee95f0a37c221b4bab2",
+          "gen:dungeon:crypt:2026-10-23:2": "node f84e5558f32472d3b164c0135652ca6c580ae81bf37a49f7acd0b78128734c88 biome  grid ff0139d57531cbac0180f12ecf40983610fbb1fe160868b3cf6845258fcfe53a wmap 043f079323db50eb858f71557926ae3f4812606e82816716b954492f8988f52b",
+          "gen:dungeon:crypt:2026-10-23:3": "node 2d928be5a05b93bae1c8e99422087aaabd34a6bf636916d8faaa05139d871862 biome  grid 3248ca26d0b524c32bbdd7043950b8920fd55f18a06807e0098450953bc88a71 wmap 90702a1cad89cd127f6f3c62ecb0f6975337910803716c8a53d977ebda95e846"
+        },
+        "spawns": {
+          "gen:dungeon:crypt:2026-10-23:1": "c38de2d807ace1c9a24d4fc6df0a70ae4c95636d97ad497db2a8376738e4aaa5",
+          "gen:dungeon:crypt:2026-10-23:2": "2a18b94eeac2232d57958249a93b31ea13c1afb3e61d252c69e83c949cf1027c",
+          "gen:dungeon:crypt:2026-10-23:3": "8389578d3a1861b66c56b3b23519c9ad73b25f41f15b8e8e5cea1326d6b886b1"
+        }
+      },
+      {
+        "dates": {
+          "crypt": "2026-10-23"
+        },
+        "seasons": {
+          "t1": 1
+        },
+        "layout": "63552fd4dbbd64686f3c2204a33e75be507770fe95e8435297dec5a087fca329",
+        "maps": {
+          "gen:dungeon:crypt:2026-10-23:1": "node afd9232832428ca6948919812f7cc76d6f6f988ff5902fe76871ae0a409f9b2d biome  grid e274934f2da400e7dee93ce323ebf756e3413414c0a1218496bd33a3308b8422 wmap 19279897f50f763f74408fc3d410351b8baa1a2bf3ebcee95f0a37c221b4bab2",
+          "gen:dungeon:crypt:2026-10-23:2": "node f84e5558f32472d3b164c0135652ca6c580ae81bf37a49f7acd0b78128734c88 biome  grid ff0139d57531cbac0180f12ecf40983610fbb1fe160868b3cf6845258fcfe53a wmap 043f079323db50eb858f71557926ae3f4812606e82816716b954492f8988f52b",
+          "gen:dungeon:crypt:2026-10-23:3": "node 2d928be5a05b93bae1c8e99422087aaabd34a6bf636916d8faaa05139d871862 biome  grid 3248ca26d0b524c32bbdd7043950b8920fd55f18a06807e0098450953bc88a71 wmap 90702a1cad89cd127f6f3c62ecb0f6975337910803716c8a53d977ebda95e846",
+          "gen:field:0:0": "node 61bc76a9277e8445d91bd395e311602484390c47868070ac463ad842d48c4302 biome forest grid 1f7c77b13351260d34b959a4e5fd4ef9383e6388f327a3e39c291ce3fb0ca5bf wmap a62eb749f9299f0a487b1f5398fe06af73a1a7a10070e0857fc06dc8ccc2e2fe",
+          "gen:field:0:1": "node b66afaa1903cdc0b35bcc7b4a927d357051779068fb84aae828081e524958984 biome forest grid 7674fb6ceca70d520a47379cfbbddb3ee928cfc6e1961d8d5a938dcb767946b9 wmap a9e53dfe85abd1d68a20ba45b7a51e55350efec2ded4783bea2070683f9328fd",
+          "gen:field:0:2": "node 5ed8a5cba83566251ec9312d911b1e003edd188988059cb2c402ce0e5f859288 biome forest grid 3e0470c6e9f41f5482345c749876e74807e77b26a05d415421797339a00db1f8 wmap 3f99d81e8b02628b1643b413695389479b99cd3f666867766160a09cd097fe19",
+          "gen:field:1:0": "node 89976761cb14bd9a1fc13e304e2a2f0109d0125a63dca7f53773cfb79ae15d0c biome forest grid 6fe9c7601fe8096aa1ff38a97e610d888435dd6a3d262de48cfd746ee6efbcef wmap a6e33a1e47149ab5772c0d809deca74f37ae4283fd89b9d62b53e3afb48f753d",
+          "gen:field:2:0": "node 7e59e9dd578a93a6343f427b4c0446686c46c1c336a5ba6c9c1ce18aad786daf biome forest grid 7ee967965139bb5faa77bec90b29d8f72f592de511deb24dae8cb44f077a8d1b wmap 6d766e9ddd1478110287da2a5395f0aa303d6771d536a37ffa24f9cdd20856e9"
+        },
+        "spawns": {
+          "gen:dungeon:crypt:2026-10-23:1": "c38de2d807ace1c9a24d4fc6df0a70ae4c95636d97ad497db2a8376738e4aaa5",
+          "gen:dungeon:crypt:2026-10-23:2": "2a18b94eeac2232d57958249a93b31ea13c1afb3e61d252c69e83c949cf1027c",
+          "gen:dungeon:crypt:2026-10-23:3": "8389578d3a1861b66c56b3b23519c9ad73b25f41f15b8e8e5cea1326d6b886b1",
+          "gen:field:0:0": "f857892ac0cae87f9831e0c99048334552b2a971f0d51115e348a0250b9ef9a4",
+          "gen:field:0:1": "c0d7530c0cd74b50831309958a554741cc02bc29ef63b2846e0e95b3ba6c94ce",
+          "gen:field:0:2": "e8077799ea490f3f0e101ac80951aa443691062f1465c4a18205cf8da3410b94",
+          "gen:field:1:0": "2ba5a7f25accb30fcd6d4ad149c32aac7384b092f6a2329c0b7cc91251b9129b",
+          "gen:field:2:0": "7784217dd61edbf1522fcc2fa3637288d050b85e810389664e7d551c04713c64"
+        }
+      },
+      {
+        "dates": {
+          "crypt": "2026-10-23"
+        },
+        "seasons": {
+          "t1": 2
+        },
+        "layout": "06cf4c79f2c62bec3c102eb60361823c137d56fcffe71bb5f0a1b0a5dd653e27",
+        "maps": {
+          "gen:dungeon:crypt:2026-10-23:1": "node afd9232832428ca6948919812f7cc76d6f6f988ff5902fe76871ae0a409f9b2d biome  grid e274934f2da400e7dee93ce323ebf756e3413414c0a1218496bd33a3308b8422 wmap 19279897f50f763f74408fc3d410351b8baa1a2bf3ebcee95f0a37c221b4bab2",
+          "gen:dungeon:crypt:2026-10-23:2": "node f84e5558f32472d3b164c0135652ca6c580ae81bf37a49f7acd0b78128734c88 biome  grid ff0139d57531cbac0180f12ecf40983610fbb1fe160868b3cf6845258fcfe53a wmap 043f079323db50eb858f71557926ae3f4812606e82816716b954492f8988f52b",
+          "gen:dungeon:crypt:2026-10-23:3": "node 2d928be5a05b93bae1c8e99422087aaabd34a6bf636916d8faaa05139d871862 biome  grid 3248ca26d0b524c32bbdd7043950b8920fd55f18a06807e0098450953bc88a71 wmap 90702a1cad89cd127f6f3c62ecb0f6975337910803716c8a53d977ebda95e846",
+          "gen:field:0:0": "node 464b19d443fe3a6f49fae83952f1d041efa090e72b3ff818099932da0c45b7c2 biome desert grid bac5425137c49311732bf0447fca26d620c2b5c8ab34b56f433a01e492da03e4 wmap f8838271260fbf46ae86ab3d4c950f1fed3c2427e1c654a5af4a2406d471231b",
+          "gen:field:0:1": "node bc67091eb39b0f0b112e1c8f751bca50af3c9b67eeeb0a6f609c71c723d28c37 biome desert grid 75e806f9e2ab3a88f06997331dc37abd64836156605846466bcffa049c8ab4ce wmap 298359aafd0f58cc3e35b4c8e062de87886a2bdccb2f8b1dbc3f2244d0b563c4",
+          "gen:field:0:2": "node d2c9435d26ae38a3161bfafb12131ce0154194c94e057b91e10978ceb34bb4fd biome desert grid 12c66fa2295bfe1d59220eca607d0cb11d4508879dfe29e92f9b2e06119e2e1b wmap 7735136da701309f48264b10a51e86d6cee57cbd9d4fe5549620d50fad0598fb",
+          "gen:field:1:0": "node 6d198b7dbdb96c3eb732a9f4291bf196711938ef8a085942f97d7593abd3156f biome desert grid f1e7e825c5ff83e8f465fd97a22f0e9639680068147b6d66a365a19d9e0bbcf6 wmap 6d670a1ea831e6daa2ac32ed617064acd8e48d919285fad694524d2d6ef6e36c",
+          "gen:field:2:0": "node 67f7016e444242b4cddec91b4ab2cfdb143f7fb2241e10c4bb6938a137cc74ca biome desert grid 70301a8c4409b946c1b1ace9b2521075ef933370880059d51daa172de470cf27 wmap 6eec008628eae2971db9c4dd9e22085d70a3566c89cb2224ce3886166f4424d9"
+        },
+        "spawns": {
+          "gen:dungeon:crypt:2026-10-23:1": "c38de2d807ace1c9a24d4fc6df0a70ae4c95636d97ad497db2a8376738e4aaa5",
+          "gen:dungeon:crypt:2026-10-23:2": "2a18b94eeac2232d57958249a93b31ea13c1afb3e61d252c69e83c949cf1027c",
+          "gen:dungeon:crypt:2026-10-23:3": "8389578d3a1861b66c56b3b23519c9ad73b25f41f15b8e8e5cea1326d6b886b1",
+          "gen:field:0:0": "946c9470ae540a56243844cbb826da422561e7a9197847899089fff81eb1bd71",
+          "gen:field:0:1": "193cfc9842fcc001208cbcca8d9cc7682e709915955e048864ba3b1d89019eaa",
+          "gen:field:0:2": "bdd4fc5047c36110f134f381b659852adcd126563a5b1a83f27fe432b74a0d86",
+          "gen:field:1:0": "909a22a4404af11932c8596878955c378ed3b1c781e5e0c5df38d56765a0c453",
+          "gen:field:2:0": "f04fed02264cf3e18f5c5cd8494b2c35b2551c4804225c837621e1fae6db6ebd"
+        }
+      }
+    ]
+  }
+]

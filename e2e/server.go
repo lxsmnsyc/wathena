@@ -100,6 +100,8 @@ type Options struct {
 	// Config is more of waserver's config, in YAML, after the test
 	// config, such as a jail map.
 	Config string
+	// Maps is waserver's --maps. Empty runs StartMap and FieldMap.
+	Maps string
 	// Procedural runs a procedural world (decisions 0041 and 0042):
 	// waserver and wactl built with -tags procedural, the Home Village
 	// and Mossy Fields samples, and a world that
@@ -304,6 +306,46 @@ func (fieldSource) Items() ([]build.Item, error) {
 // Options.Database without WATHENA_TEST_DATABASE_URL.
 func Start(t testing.TB, o Options) *Server {
 	t.Helper()
+	s := newServer(t, o)
+	s.launch()
+	return s
+}
+
+// StartFailing runs a server that must stop at its start, such as one
+// whose config names a map that does not run, and returns its log. It
+// fails the test when the server serves, or does not stop within two
+// minutes: a start that failed after the server variables ran used to
+// wait for a signal (decision 0045).
+func StartFailing(t testing.TB, o Options) string {
+	t.Helper()
+	s := newServer(t, o)
+	cmd := exec.Command(s.bin, s.args...) // #nosec G204 -- a binary built by prepare.
+	cmd.Env, cmd.Stdout, cmd.Stderr = s.env, s.logs, s.logs
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	exited := make(chan error, 1)
+	go func() { exited <- cmd.Wait() }()
+	select {
+	case err := <-exited:
+		if err == nil {
+			t.Errorf("the server exited without an error:\n%s", s.logs.tail(20))
+		}
+	case <-time.After(2 * time.Minute):
+		_ = cmd.Process.Kill()
+		<-exited
+		t.Fatalf("the server did not stop in 2 minutes:\n%s", s.logs.tail(20))
+	}
+	text := strings.Join(s.logs.lines(), "\n")
+	if strings.Contains(text, "msg=serving") {
+		t.Errorf("the server served:\n%s", s.logs.tail(20))
+	}
+	return text
+}
+
+// newServer prepares a server's binary, database, config and arguments.
+func newServer(t testing.TB, o Options) *Server {
+	t.Helper()
 	if testing.Short() {
 		t.Skip("end-to-end tests run a server; skipped in -short mode")
 	}
@@ -367,8 +409,11 @@ func Start(t testing.TB, o Options) *Server {
 		newWorld(t, wactl, adminURL(t, admin), config, dir)
 	}
 	addr, debug := freeAddr(t), freeAddr(t)
+	if o.Maps == "" {
+		o.Maps = StartMap + "," + strings.TrimPrefix(FieldMap, "map/")
+	}
 	args := []string{"--config", config, "--assets", b.assets, "--map", StartMap,
-		"--maps", StartMap + "," + strings.TrimPrefix(FieldMap, "map/"), "--dev", "--mode", "renewal",
+		"--maps", o.Maps, "--dev", "--mode", "renewal",
 		"--addr", addr, "--debug-addr", debug, "--origins", "", "--shutdown-countdown", "0",
 		"--seed", o.Seed, "--start-job", o.StartJob, "--start-items", o.StartItems, "--mods", mods}
 	if o.Ruleset != "" {
@@ -383,7 +428,6 @@ func Start(t testing.TB, o Options) *Server {
 			t.Logf("server log:\n%s", s.logs.tail(80))
 		}
 	})
-	s.launch()
 	return s
 }
 

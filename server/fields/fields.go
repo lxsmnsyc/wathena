@@ -176,7 +176,13 @@ func generate(g gen.Generator, public rng.Node, s Spec, size int) (*Field, error
 		}
 		biome = b
 	}
-	node := gen.FieldNode(public, s.X, s.Y)
+	return generateField(g, gen.FieldNode(public, s.X, s.Y), s.X, s.Y, biome, size)
+}
+
+// generateField makes a field from a node: its own, or a season's
+// (decision 0045).
+func generateField(g gen.Generator, node rng.Node, x, y int64, biome, size int) (*Field, error) {
+	id := gen.FieldID(x, y)
 	field, err := g.Field(node, gen.Params{Width: size, Height: size, Biome: biome})
 	if err != nil {
 		// The node is public, so the log may name it for investigation.
@@ -184,14 +190,17 @@ func generate(g gen.Generator, public rng.Node, s Spec, size int) (*Field, error
 		return nil, fmt.Errorf("field %s (%s, node %s): %w", id, g.Biomes[biome], hex.EncodeToString(key[:]), err)
 	}
 	return &Field{
-		ID: id, Kind: gen.KindField, X: s.X, Y: s.Y, Version: g.Version, RNG: g.RNG,
+		ID: id, Kind: gen.KindField, X: x, Y: y, Version: g.Version, RNG: g.RNG,
 		Key: node.Key(), Biome: biome, BiomeName: g.Biomes[biome],
 		Field: field, Checksum: field.Checksum(), WMAPSum: sha256.Sum256(field.WMAP),
 	}, nil
 }
 
-// Set is the fields a server runs, with what clients download.
+// Set is the fields a server runs, with what clients download. Update
+// changes its maps while the server runs (decision 0045); its methods
+// are safe for concurrent use.
 type Set struct {
+	mu       sync.RWMutex
 	fields   []*Field
 	tilesets []byte
 	// names gives the current display names, which change with
@@ -212,15 +221,47 @@ func NewSet(fields []*Field, tilesets []byte) *Set {
 }
 
 // Fields lists the fields by ID.
-func (s *Set) Fields() []*Field { return s.fields }
+func (s *Set) Fields() []*Field {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return slices.Clone(s.fields)
+}
 
 // Get returns a field by map ID, or nil.
 func (s *Set) Get(id string) *Field {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	i, ok := slices.BinarySearchFunc(s.fields, id, func(f *Field, id string) int { return strings.Compare(f.ID, id) })
 	if !ok {
 		return nil
 	}
 	return s.fields[i]
+}
+
+// With returns a new set of the set's fields without those of remove,
+// and with add, which replace fields of the same ID. It shares the
+// tileset table and the names. The set does not change.
+func (s *Set) With(add []*Field, remove []string) *Set {
+	s.mu.RLock()
+	list := make([]*Field, 0, len(s.fields)+len(add))
+	for _, f := range s.fields {
+		if !slices.Contains(remove, f.ID) && !slices.ContainsFunc(add, func(a *Field) bool { return a.ID == f.ID }) {
+			list = append(list, f)
+		}
+	}
+	out := &Set{fields: append(list, add...), tilesets: s.tilesets, names: s.names}
+	s.mu.RUnlock()
+	slices.SortFunc(out.fields, func(a, b *Field) int { return strings.Compare(a.ID, b.ID) })
+	return out
+}
+
+// Update makes the set's maps those of next, such as a set from With,
+// for the clients that ask from now on.
+func (s *Set) Update(next *Set) {
+	list := next.Fields()
+	s.mu.Lock()
+	s.fields = list
+	s.mu.Unlock()
 }
 
 // Info is what /gen/maps/<id>.json tells a client about a map.

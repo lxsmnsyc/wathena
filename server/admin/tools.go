@@ -21,6 +21,9 @@ import (
 //     cancel a restart.
 //   - GET /events, POST /events/{name}/start, /stop and /reset, and
 //     PATCH /events/{name} (events.control).
+//   - POST /rotations/{dungeon}/rotate and /regions/{region}/change
+//     (events.control): a rotation or a world change after the
+//     countdown (decision 0045).
 //   - GET /mods (mods.read), and POST /mods/{id}/disable and /enable
 //     (mods.disable).
 //
@@ -194,6 +197,42 @@ func (h *Handler) eventAction(action string) func(ctx context.Context, w http.Re
 			return
 		}
 		h.runEvent(ctx, w, r, EventOrder{Actor: c.actor(), Name: name, Action: action, Reason: reason})
+	}
+}
+
+// forceChange is POST /rotations/{dungeon}/rotate and
+// /regions/{region}/change.
+func (h *Handler) forceChange(region bool) func(ctx context.Context, w http.ResponseWriter, r *http.Request, c caller) {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, c caller) {
+		o := ChangeOrder{Actor: c.actor()}
+		if region {
+			o.Region = r.PathValue("region")
+		} else {
+			o.Dungeon = r.PathValue("dungeon")
+		}
+		if !validText(o.Dungeon+o.Region, 32) {
+			h.fail(w, http.StatusBadRequest, "bad_request", "That is not a dungeon's or a region's ID.")
+			return
+		}
+		req := &adminv1.EventAction{}
+		if !h.read(w, r, req) {
+			return
+		}
+		o.Reason = strings.TrimSpace(req.GetReason())
+		if !validReason(o.Reason) {
+			h.fail(w, http.StatusBadRequest, "bad_request", "The reason is at most 255 characters.")
+			return
+		}
+		if !h.worldOnly(w) {
+			return
+		}
+		list, err := h.cfg.World.ForceChange(ctx, o)
+		if err != nil {
+			h.worldFailed(w, r, err)
+			return
+		}
+		h.log.Info("world change forced", "by", c.sess.AccountID, "dungeon", o.Dungeon, "region", o.Region)
+		h.write(w, http.StatusOK, list)
 	}
 }
 

@@ -298,6 +298,27 @@ A procedural world's town services, quest boards, job guilds, rebirth NPC and th
 - Core's NPCs of procedural worlds stand at the places: a Kafra at `storage`, an Innkeeper at `inn`, a Refiner at `blacksmith`, dealers at `shop:tool`, `shop:weapon` and `shop:armor`, the Quest Board, the guild masters and the Valkyrie. They reach the world's quests, quest rewards, skill points, weight and the refiner through `wa.internal`, which only core may require.
 - Dev worlds without a database have no content: no quest boards, guilds or rebirth NPC. Their services stand at the templates' places.
 
+### Rotations and world changes
+
+A procedural world has a rotating dungeon, and its regions change with the seasons when the config turns them on (docs/decisions/0045-rotation.md, proposal 0002, review decision 47, docs/specs/generator-v3.md, "Rotations and seasons"):
+
+- `wactl world new` marks the first dungeon, in the layout's order, whose style has a `rotation`. Core's styles all have one: cave and tower daily at 04:00, crypt weekly on Friday at 20:00, ruins weekly on Monday at 04:00. It prints the rotating dungeon, and writes it with its derived key to `world_rotations` (migration 00035).
+- The rotating dungeon's floors run as `gen:dungeon:<id>:<date>:<floor>`, such as `gen:dungeon:crypt:2026-10-31:2`, with the `nomemo` flag. Their layout comes from the public node of the dungeon's date, and their spawns from the derived key, with the same selection code as at world creation. The `spawn_table` hooks and generation layers do not run on them.
+- At its time, in the server's time zone (`time_zone`), the dungeon gets the next date's floors. The next floors are built right after the last change. Players on the old floors get warnings at 10, 5 and 1 minutes and 30 seconds. At the time, the entrance's portal leads to the new first floor, the players still inside go to the nearest town's save spot by the map graph, and the save points and memo points on the old floors move there too, for players online in memory and for every character in the database, in one transaction with the new date. The old floors' zones stop 30 seconds later.
+- With `procedural.seasons.days` set, a season ends at 00:00 every that many days from the day seasons started. Each season end changes the next region, by town number in turn: its fields generate again from their season's node with a new biome, and their spawns come from the season key. Map IDs, links and level bands stay. Players and points on those fields move to the region's town in the same way. Seasons are off by default.
+- Staff force a rotation or a region's change from the events screen, 10 minutes later, after the warnings. A forced change does not last across a restart.
+- Restarts: a rotation or a season end that came while the server was stopped happens at the start, before anyone joins, and so does one a stop cut short before the database recorded it. The log says `world changed while the server was stopped`. A first start takes the latest date.
+- The log says `rotating dungeon` at start and `world changed` at each change. Each change runs the Lua events `dungeon_rotated` and `region_changed` in every zone (mods/README.md, "Rotations and world changes").
+
+```yaml
+time_zone: Asia/Manila
+procedural:
+  seasons:
+    days: 30     # 0, the default, leaves seasons off
+```
+
+`waserver --dev --layout` rotates its dungeon in the same way, with keys from `--seed`, and keeps the state in memory. `--dev`'s clock, `POST /debug/wathena/clock?advance=...`, moves rotations and seasons too. Worlds of `--fields`, `--towns` and `--dungeons` do not rotate.
+
 ### Running with accounts
 
 Without `--dev`, `waserver` needs both database URLs. It serves the account pages under `/account/` and accepts only game tickets:
@@ -914,6 +935,8 @@ The admin API is JSON at `/admin/api/v1/` on the account service's origin. The m
 | `POST /events/{name}/start`, `/stop` | `events.control` | Starts a run now, or ends the run that lasts. `{"reason": "..."}`, optional. The name is URL-escaped, such as `core%3AField_Boss`. |
 | `PATCH /events/{name}` | `events.control` | `{"on": false, "trigger": {"weekly": {"day": "saturday", "time": "21:00"}}, "durationMinutes": 90, "reason": "..."}`. Fields left out keep their value. Applies at once, and is saved over the config. |
 | `POST /events/{name}/reset` | `events.control` | Deletes the staff change: the event follows the config again. |
+| `POST /rotations/{dungeon}/rotate` | `events.control` | Forces a rotation of the rotating dungeon, such as `crypt`, 10 minutes from now, after the warnings, with an `events.rotate` audit row. `{"reason": "..."}`, optional. Answers with `GET /events`'s list (decision 0045). |
+| `POST /regions/{region}/change` | `events.control` | Forces a change of a region, by its town's ID, such as `t2`, 10 minutes from now, with an `events.change_region` audit row. |
 | `GET /mods` | `mods.read` | Each loaded mod's version, signature status, permissions granted, requested and pending, the zones where it is off, and its Lua errors by zone with the last error. |
 | `POST /mods/{id}/disable`, `/enable` | `mods.disable` | `{"map": "prontera", "reason": "..."}`. An empty map is every zone. Turning off needs a reason. Core and its ruleset mods cannot be turned off. |
 

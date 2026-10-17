@@ -52,4 +52,34 @@ return function()
     testing.expect(#boss).to_be(1)
     testing.expect(boss[1]:get_map()).to_be("gen:dungeon:cellar:2")
   end)
+
+  testing.case("a rotation gives the cellar new floors, and the guide hears of it", function(world)
+    world:set_time("2026-10-31 12:00", "Asia/Manila")
+    local square = places.find(lamp_shop():get_area(), "square")[1]
+    local x, y = square:get_position()
+    local player = world:new_player { map = square:get_map(), x = x + 1, y = y }
+    -- The cellar rotates daily at 06:00, so the next floors are the next
+    -- day's.
+    local date = world:rotate("cellar")
+    testing.expect(date).to_be("2026-11-01")
+    local boss = places.find("dungeon:cellar", "boss_room")
+    testing.expect(#boss).to_be(1)
+    testing.expect(boss[1]:get_map()).to_be("gen:dungeon:cellar:2026-11-01:2")
+    -- A second rotation takes the day after.
+    testing.expect(world:rotate("cellar")).to_be("2026-11-02")
+    local said = world:talk(player, "Town Guide")
+    testing.expect(said).to_contain("The cellar has new floors since 2026-11-01.")
+    testing.expect(said).to_contain("The cellar has new floors since 2026-11-02.")
+  end)
+
+  testing.case("a world change gives the field's region its next season", function(world)
+    local square = places.find(lamp_shop():get_area(), "square")[1]
+    local x, y = square:get_position()
+    local player = world:new_player { map = square:get_map(), x = x + 1, y = y }
+    local region, season = world:change_region(0, 0)
+    testing.expect(region).to_contain("t")
+    testing.expect(season).to_be(1)
+    testing.expect(select(2, world:change_region(0, 0))).to_be(2)
+    testing.expect(world:talk(player, "Town Guide")).to_contain("The fields of " .. region .. " changed with season 2.")
+  end)
 end

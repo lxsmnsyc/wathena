@@ -11,6 +11,8 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/lxsmnsyc/wathena/server/content"
+	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/rotation"
 	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -121,14 +123,31 @@ func TestProceduralWorld(t *testing.T) {
 	seed := []byte("wactl-procedural-world-seed-0001")
 	g, ok := gen.Latest()
 	if !ok {
-		if _, _, _, err := proceduralWorld("", "renewal", seed, 3); err == nil {
+		if _, err := proceduralWorld("", "renewal", seed, 3); err == nil {
 			t.Error("a layout without the generator")
 		}
 		return
 	}
-	l, planned, w, err := proceduralWorld("", "renewal", seed, g.Version)
+	pw, err := proceduralWorld("", "renewal", seed, g.Version)
 	if err != nil {
 		t.Fatal(err)
+	}
+	l, planned, w := pw.layout, pw.spawns, pw.content
+	// The first dungeon rotates, and the game role gets its key and the
+	// seasons' (decision 0045).
+	root, _ := rng.NewRoot(seed)
+	secret := spawns.SecretBranch(root)
+	if len(pw.rotations) != 1 || len(pw.seasonKey) != 32 {
+		t.Fatalf("rotations %+v, season key %x", pw.rotations, pw.seasonKey)
+	}
+	r := pw.rotations[0]
+	first := slices.IndexFunc(l.Maps, func(m layout.Map) bool { return m.Kind == gen.KindDungeon })
+	rk, sk := rotation.RotationKey(secret, r.Dungeon).Key(), rotation.SeasonKey(secret).Key()
+	if r.Dungeon != l.Maps[first].Dungeon || r.Rule.Every == "" || !slices.Equal(r.Key, rk[:]) || !slices.Equal(pw.seasonKey, sk[:]) {
+		t.Errorf("rotation %+v", r)
+	}
+	if text := rotationText(l, pw.rotations); !strings.Contains(text, r.Dungeon) || !strings.Contains(text, r.Rule.String()) {
+		t.Errorf("text %q", text)
 	}
 	if len(l.Towns()) != 5 || l.Home != "gen:town:t1" || len(l.Maps) < 30+5+6 {
 		t.Errorf("core's layout: %d towns, home %s, %d maps", len(l.Towns()), l.Home, len(l.Maps))
@@ -151,8 +170,9 @@ func TestProceduralWorld(t *testing.T) {
 		}
 	}
 	// The same seed gives the same spawns.
-	_, again, wAgain, err := proceduralWorld("", "renewal", seed, g.Version)
-	if err != nil || !reflect.DeepEqual(again, planned) || !reflect.DeepEqual(wAgain, w) {
+	again, err := proceduralWorld("", "renewal", seed, g.Version)
+	if err != nil || !reflect.DeepEqual(again.spawns, planned) || !reflect.DeepEqual(again.content, w) ||
+		!reflect.DeepEqual(again.rotations, pw.rotations) || !slices.Equal(again.seasonKey, pw.seasonKey) {
 		t.Errorf("a second run differs: %v", err)
 	}
 	mods := t.TempDir()
@@ -176,10 +196,11 @@ func TestProceduralWorld(t *testing.T) {
 	if err := os.WriteFile(cfg, b, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	l, planned, w, err = proceduralWorld(cfg, "renewal", seed, g.Version)
+	pw, err = proceduralWorld(cfg, "renewal", seed, g.Version)
 	if err != nil {
 		t.Fatal(err)
 	}
+	l, planned, w = pw.layout, pw.spawns, pw.content
 	home := l.Map("gen:home:village")
 	if home == nil || l.Home != home.ID || home.Name != "Willow Village" || home.Record != "example.home-village:village" || len(l.Towns()) != 2 {
 		t.Fatalf("with the mod: home %+v, %d towns", home, len(l.Towns()))
@@ -226,11 +247,11 @@ func TestProceduralWorld(t *testing.T) {
 		if err := os.WriteFile(cfg, b, 0o600); err != nil {
 			t.Fatal(err)
 		}
-		if _, _, _, err := proceduralWorld(cfg, "renewal", seed, g.Version); err == nil || !strings.Contains(err.Error(), "spawns.") {
+		if _, err := proceduralWorld(cfg, "renewal", seed, g.Version); err == nil || !strings.Contains(err.Error(), "spawns.") {
 			t.Errorf("%v: %v", bad, err)
 		}
 	}
-	if _, _, _, err := proceduralWorld(filepath.Join(t.TempDir(), "none.yml"), "renewal", seed, g.Version); err == nil {
+	if _, err := proceduralWorld(filepath.Join(t.TempDir(), "none.yml"), "renewal", seed, g.Version); err == nil {
 		t.Error("a config that does not exist")
 	}
 }

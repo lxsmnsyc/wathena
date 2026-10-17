@@ -45,6 +45,8 @@ local events = {}
 ---@overload fun(name: "world_event_start", handler: fun(event: wa.WorldEvent)): wa.EventHandle
 ---@overload fun(name: "world_event_end", handler: fun(event: wa.WorldEvent)): wa.EventHandle
 ---@overload fun(name: "restart_planned", handler: fun(restart: wa.RestartPlan)): wa.EventHandle
+---@overload fun(name: "dungeon_rotated", handler: fun(rotation: wa.DungeonRotation)): wa.EventHandle
+---@overload fun(name: "region_changed", handler: fun(change: wa.RegionChange)): wa.EventHandle
 ---@overload fun(name: "quest_add", handler: fun(event: wa.QuestEvent)): wa.EventHandle
 ---@overload fun(name: "quest_progress", handler: fun(event: wa.QuestEvent)): wa.EventHandle
 ---@overload fun(name: "quest_complete", handler: fun(event: wa.QuestEvent)): wa.EventHandle

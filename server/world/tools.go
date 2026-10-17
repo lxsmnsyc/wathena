@@ -14,7 +14,7 @@ import (
 // AnnounceMap shows a line to every player of one map, by asset name.
 // It reports false when the map does not run.
 func (w *World) AnnounceMap(mapName, text string, color uint32) bool {
-	z := w.zones[mapName]
+	z := w.Zone(mapName)
 	if z == nil {
 		return false
 	}
@@ -25,7 +25,7 @@ func (w *World) AnnounceMap(mapName, text string, color uint32) bool {
 // RestartPlanned runs the restart_planned handlers of every zone. It
 // never waits on a zone.
 func (w *World) RestartPlanned(ev modscript.RestartPlanned) {
-	for _, z := range w.zones {
+	for _, z := range w.Zones() {
 		z.RestartPlanned(ev)
 	}
 }
@@ -38,7 +38,7 @@ func (w *World) SetModOff(ctx context.Context, mod string, maps []string, off bo
 	if len(maps) > 0 {
 		zones = zones[:0]
 		for _, m := range maps {
-			z := w.zones[m]
+			z := w.Zone(m)
 			if z == nil {
 				return fmt.Errorf("the map %s does not run in this world", m)
 			}

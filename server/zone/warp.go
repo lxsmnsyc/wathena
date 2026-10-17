@@ -274,6 +274,11 @@ func (z *Zone) arrive(h *handoff) {
 		h.finish(end)
 		return
 	}
+	if z.forward(h) {
+		// The map was removed: the player goes on to its town.
+		s.mu.Unlock()
+		return
+	}
 	p := newPlayer(s, h.char)
 	p.arrival = h
 	s.zone, s.player = z, p

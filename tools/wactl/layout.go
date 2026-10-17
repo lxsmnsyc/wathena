@@ -16,7 +16,9 @@ import (
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mapfolder"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/rotation"
 	"github.com/lxsmnsyc/wathena/server/spawns"
+	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -75,41 +77,41 @@ func readWorldConfig(path string) (worldConfig, error) {
 //     guilds and the rebirth place come from the stored spawns and the
 //     quest templates, with the secret branch. The returned spawns hold
 //     the layers' bosses.
-func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*layout.Layout, []spawns.Planned, *content.World, error) {
+func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*madeWorld, error) {
 	g, ok := gen.Lookup(version)
 	if !ok || !g.Makes(gen.KindTown) {
-		return nil, nil, nil, fmt.Errorf("map generator %d makes no towns; a world layout needs generator 3 or later", version)
+		return nil, fmt.Errorf("map generator %d makes no towns; a world layout needs generator 3 or later", version)
 	}
 	c, err := readWorldConfig(configPath)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	core, err := spawns.LoadCore()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	settings, err := c.Spawns.Resolve(core.Densities)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	root, err := rng.NewRoot(seed)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	var found []*mod.Mod
 	if c.Mods.Dir != "" {
 		if found, err = mod.Discover(c.Mods.Dir); err != nil {
-			return nil, nil, nil, fmt.Errorf("mods.dir: %w", err)
+			return nil, fmt.Errorf("mods.dir: %w", err)
 		}
 	}
 	mode := reference.Mode(ruleset)
 	base, ok := mod.ModeBase(ruleset)
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("the ruleset %q is not renewal or pre-renewal", ruleset)
+		return nil, fmt.Errorf("the ruleset %q is not renewal or pre-renewal", ruleset)
 	}
 	env, err := modkit.LoadEnv(mode, "")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	// The mods' log goes to standard error at warning level, as the
 	// operator runs this command once.
@@ -119,16 +121,16 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*lay
 	loaded, err := gamedata.LoadMods(ctx, found, mod.Config{Base: base, Ruleset: c.Mods.Ruleset, Approve: c.Mods.Approve,
 		Disable: c.Mods.Disable, Strict: c.Mods.Strict}, mode, env.Items, env.Monsters, env.Tables, env.Jobs, &mod.MemoryIDs{}, env.Core, log)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("mods: %w", err)
+		return nil, fmt.Errorf("mods: %w", err)
 	}
 	recs, err := fields.LoadLayoutRecords(loaded.Set, g)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("mods: %w", err)
+		return nil, fmt.Errorf("mods: %w", err)
 	}
 	public := gen.PublicBranch(root)
 	l, home, err := fields.BuildLayout(recs, g, public, c.Procedural.Layout, c.Procedural.FieldSize)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("the world layout: %w", err)
+		return nil, fmt.Errorf("the world layout: %w", err)
 	}
 	var homeMap *mapfolder.Map
 	if home != nil {
@@ -136,16 +138,16 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*lay
 	}
 	made, err := fields.GenerateLayout(g, public, l, homeMap)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	set := fields.NewSet(made, nil)
 	warps, err := set.LayoutWarps(l)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	maps, err := set.SpawnMaps(l, warps)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	secret := spawns.SecretBranch(root)
 	planned := spawns.Plan(secret, maps, spawns.NewPool(loaded.SpawnMonsters, loaded.SpawnThemes), settings)
@@ -157,7 +159,7 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*lay
 		// generation layers run in the same state, each with its node.
 		hooks, err := zone.NewSpawnHooks(loaded.Zone, secret.Child("hooks").Key())
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, err
 		}
 		defer hooks.Close()
 		for i := range planned {
@@ -171,12 +173,32 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*lay
 		Secret: secret, Layers: layers,
 	})
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	for _, n := range w.Notes {
 		log.Warn("generation: " + n)
 	}
-	return l, w.Spawns, w, nil
+	out := &madeWorld{layout: l, spawns: w.Spawns, content: w}
+	// The rotating dungeon, and the keys of its spawns and the seasons'
+	// for the game role (decision 0045).
+	_, styles := fields.LayoutOf(recs.Styles, recs.Templates)
+	if r, ok := layout.PickRotation(l, styles); ok {
+		key := rotation.RotationKey(secret, r.Dungeon).Key()
+		out.rotations = append(out.rotations, store.WorldRotation{Rotation: r, Key: key[:]})
+	}
+	sk := rotation.SeasonKey(secret).Key()
+	out.seasonKey = sk[:]
+	return out, nil
+}
+
+// madeWorld is a new procedural world's layout, spawns, content, and
+// its rotating dungeon with the derived keys (decision 0045).
+type madeWorld struct {
+	layout    *layout.Layout
+	spawns    []spawns.Planned
+	content   *content.World
+	rotations []store.WorldRotation
+	seasonKey []byte
 }
 
 // layoutText describes a layout for the operator.
@@ -236,4 +258,20 @@ func contentText(w *content.World) string {
 		}
 	}
 	return fmt.Sprintf("content: %d board quests, %d guild test quests, %d places, %d objects\n", board, guild, len(w.Places), len(w.Objects))
+}
+
+// rotationText describes a world's rotating dungeon for the operator.
+func rotationText(l *layout.Layout, rotations []store.WorldRotation) string {
+	if len(rotations) == 0 {
+		return "rotating dungeon: none; no dungeon style of the world has a rotation\n"
+	}
+	var parts []string
+	for _, r := range rotations {
+		name := r.Dungeon
+		if m := l.Map(gen.DungeonMapID(r.Dungeon, 1)); m != nil {
+			name = strings.TrimSuffix(m.Name, " F1") + " (" + r.Dungeon + ")"
+		}
+		parts = append(parts, name+", "+r.Rule.String())
+	}
+	return "rotating dungeon: " + strings.Join(parts, "; ") + ", in waserver's time zone\n"
 }

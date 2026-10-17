@@ -2924,6 +2924,27 @@ Provisional: not reviewed in proposal 0002 yet.
 | `minutes` | `integer` | 1 to 10080, as the admin screens allow. |
 | `reason` | `string` | 1 to 255 characters. |
 
+#### `testWorld:rotate(dungeon) → string`
+
+Rotates a dungeon at once, as staff force a rotation: its floors take the date of its style's next rotation after the world's time, or after the date it rotated to before, with new layouts and spawns. The points on the old floors move to the nearest town's save spot, and dungeon_rotated runs with { dungeon, date } in the world's zone. Returns the date, such as "2026-10-23". A case that runs on one of the dungeon's floors cannot rotate it, since a test world runs one map.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `dungeon` | `string` | A dungeon of the test world, by its ID: its style's name without the mod prefix, such as crypt. Its style must have a rotation. |
+
+#### `testWorld:change_region(x, y) → string, integer`
+
+Changes the region of a field at once, as staff force a world change: its fields generate again with their next season and a new biome, with new spawns. The points on them move to the region's town's save spot, and region_changed runs with { region, season } in the world's zone. Returns the region, its town's ID such as "t1", and its new season. A case that runs on one of the region's fields cannot change it.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `x` | `integer` | A field's x on the grid. The test world's field is 0, 0. |
+| `y` | `integer` | A field's y on the grid. |
+
 #### `testWorld:get_mails(player) → wa.TestMail[]`
 
 The player's mails, oldest first, after the mail sent so far arrived.
@@ -3410,6 +3431,24 @@ The object of restart_planned (review decision 36): { at, reason } when staff pl
 | `at` | `integer?` | When the server restarts, in Unix seconds. nil when the restart was cancelled. |
 | `reason` | `string?` | Why the server restarts, as staff wrote it. nil when the restart was cancelled. |
 | `cancelled` | `boolean?` | true when staff cancelled the planned restart. |
+
+### wa.DungeonRotation
+
+The object of dungeon_rotated (review decision 47).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `dungeon` | `string` | The dungeon's ID, such as crypt. |
+| `date` | `string` | The date its new floors carry in their map IDs, such as 2026-10-31: their map IDs are gen:dungeon:<dungeon>:<date>:<floor>. |
+
+### wa.RegionChange
+
+The object of region_changed (review decision 47).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `region` | `string` | The region, by its town's ID, such as t2: the fields whose nearest town is that town. |
+| `season` | `integer` | The region's new season, from 1. |
 
 ### wa.GenerationMap
 
@@ -4053,6 +4092,8 @@ Changes the value.
 | `world_event_start` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event started, on any map. Every zone's handlers run. |
 | `world_event_end` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event ended, on any map, with its result. Every zone's handlers run. |
 | `restart_planned` | mod, npc, event | `restart: wa.RestartPlan` | Staff planned a server restart from the admin screens, or cancelled it. Every zone's handlers run. At the restart time the server saves every character, disconnects every player and stops, so a handler can end a mod's event in time. |
+| `dungeon_rotated` | mod, npc, event | `rotation: wa.DungeonRotation` | A rotating dungeon got new floors, on schedule or because staff forced it. Every zone's handlers run, after the players and points of the old floors moved to the nearest town. |
+| `region_changed` | mod, npc, event | `change: wa.RegionChange` | A region's fields generated again with a new biome at the end of a season, or because staff forced it. Every zone's handlers run, after the players and points of its fields moved to the region's town. |
 | `quest_add` | mod, npc, event | `event: wa.QuestEvent` | A quest joined a player's log on the context's map: player:add_quest, or the new quest of player:change_quest. |
 | `quest_progress` | mod, npc, event | `event: wa.QuestEvent` | A kill raised a hunt objective's count, once per objective. Party members near the kill count it too, as rAthena. |
 | `quest_complete` | mod, npc, event | `event: wa.QuestEvent` | player:complete_quest marked a quest complete. |
@@ -4069,7 +4110,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`, `quest_add`, `quest_progress`, `quest_complete`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
 
 ### wa.BonusName
 

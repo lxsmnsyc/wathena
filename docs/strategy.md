@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-17)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 6 are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 7 are built.
 
 Done:
 
@@ -130,6 +130,14 @@ Done:
   - `wa.generation` with `generation.on("map")`, nodes with `child`, `stream` and `hash`, `generation.quest_template` and the permission `world.generate`. Layers add places, objects, which clients draw, and bosses. The Wayside Shrines sample mod.
   - The golden worlds of `TestGoldenContent`, the e2e test `TestProceduralContent`, in which a new Novice completes a board quest and the Swordman test with PostgreSQL, and the browser check `content`, which walks to a Kafra and a quest board.
 
+- Phase 7 step 7, rotation ([decision 0045](decisions/0045-rotation.md), [generator-v3](specs/generator-v3.md), "Rotations and seasons"), as review decision 47 approved it:
+  - One dungeon per world rotates, daily or weekly by its style, with floors that carry the date in their map IDs and the `nomemo` flag. The next floors are built before their time. At the time, the entrance leads to the new floors and the old ones go.
+  - With `procedural.seasons.days`, a season end gives the next region's fields a new biome, with the same IDs and bands. Seasons are off by default.
+  - The removal procedure of section 8.10: warnings at 10, 5 and 1 minutes and 30 seconds, players moved to the nearest town by the map graph, save and memo points moved in memory and in the database, and portals changed in the same step. A change due while the server was stopped, or one a stop cut short, happens at the start.
+  - `wactl world new` gives the game role a derived key per rotating dungeon and one for seasons (migration 00035), so `waserver` picks their spawns with the same selection code and still never reads the seed.
+  - Lua: `dungeon_rotated`, `region_changed`, `world:rotate` and `world:change_region`. The events screen lists rotations and seasons, and staff force one with `events.control` and an audit row.
+  - The e2e test `TestRotation` proves the exit criteria with PostgreSQL: the dungeon changes on schedule as the server clock moves, the player inside goes to the nearest town, and an offline player's save and memo points there follow. The browser check `rotation` loads the new floors after a rotation. A startup that failed with a database no longer stalls (`TestStartFailsAtOnce`).
+
 Open review items:
 
 - Next step 27's details to review, in proposal 0002, "Next steps".
@@ -137,6 +145,7 @@ Open review items:
 - Next step 29's details to review, and the review items of decision 0041: a Lua way to read graph distances or teleport prices, a record field for server services on NPCs, a `wa.testing` way to start on a mod's home map, the band formula in small worlds, longer names for `@renametown`, and entered maps and memo points in the data export.
 - Next step 31's details to review, and the review items of decision 0043: a Lua way to list a player's quests or read a quest record, a minimap mark for `showevent`, `questinfo`, `setquestinfo` and `open_quest_ui`, options for the quest events, and quest calls for another character.
 - Next step 32's details to review, and the review items of decision 0044: a public exp reward call, a Lua way to read a world's quests, player fields for skill points and weight, a layer's read of map cells, a places scope of fields, objects of a mod's own art, board quest limits and repeats, and whether `world.generate` should be flagged.
+- Next step 33's details to review, and the review items of decision 0045: the hooks and generation layers on rotating floors and changed fields, a Lua way to read a rotating dungeon's date or a region's season, forced changes across a restart and a cancel, new level bands with a world change, more than one rotating dungeon, and locale text and a banner for the warnings.
 - The rAthena fork's change to `build_refine`, which adds refine costs to `refine_db.json`, is not committed yet.
 - The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
@@ -153,7 +162,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 6, the generator core, generated fields, dungeons, towns and named places, the world layout, spawns with the level band fix, quests and procedural content, are built. Step 7, rotation, is next.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 7, the generator core, generated fields, dungeons, towns and named places, the world layout, spawns with the level band fix, quests and procedural content, and rotation, are built. Step 8, the economy simulator, the public seed test and the phase 7 exit check, is next.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -2905,7 +2914,14 @@ The order from here:
         - Lua: `wa.generation` and the permission `world.generate`, with `docs/generated` regenerated, and the Wayside Shrines sample mod. The client draws the layers' objects.
         - Tests: the content, store, modscript, status and client tests, `TestGoldenContent`, the modkit test that plays core's procedural NPCs on both bases, the sample's 3 `wactl mod test` cases, the e2e test `TestProceduralContent` with PostgreSQL, and the browser check `content`.
         - Left: the guilds' trial dungeon (instanced maps), the other families and third jobs, the refiner's safe, multiple and +11 refines, content in dev worlds, and the golden content on the other architecture.
-   7. Rotation: rotating dungeons and world change events through the scheduler (section 8.8), moving players, save points and memo points when a map goes away.
+   7. Rotation: rotating dungeons and world change events through the scheduler (section 8.8), moving players, save points and memo points when a map goes away. Done on 2026-10-17 ([decision 0045](decisions/0045-rotation.md), [generator-v3](specs/generator-v3.md), "Rotations and seasons", proposal 0002, review decision 47 and next step 33, server/README.md, "Rotations and world changes", and mods/README.md, "Rotations and world changes"):
+      - `server/rotation`: the timing of rotations and season ends on the server clock in the server's time zone, warnings at 10, 5 and 1 minutes and 30 seconds, forced changes after the same countdown, the next change built at once, and `Due`, the state a world starts in after a stop. `layout.Apply` turns the stored layout into the one that runs: dated floor IDs, `gen:dungeon:<id>:<date>:<floor>` with `nomemo`, from the public node `dungeon(id, date)`, and a changed region's fields with their season's node and one new biome.
+      - Dungeon styles take `rotation`, and core's four have one. `wactl world new` marks the first dungeon whose style has one, and stores it with the derived keys of its spawns and of the seasons for the game role (migration 00035). `waserver` picks rotating floors' and changed fields' spawns from them with the selection code of world creation, and still never reads the seed. `procedural.seasons.days` turns seasons on; they are off by default.
+      - The removal procedure of section 8.10: zones, the generated maps, the atlas, the places index and warps change while the server runs. Players on the old maps go to the nearest town's save spot by the map graph, and save and memo points move there, in memory for players online and in the database for every character, in the transaction that records the change. A change that came, or that a stop cut short, while the server was stopped happens at the start.
+      - Lua: the world events `dungeon_rotated` and `region_changed`, and `world:rotate` and `world:change_region` in `wa.testing`, with `docs/generated` regenerated. The Market Town's Town Guide tells of them. The events screen lists rotations and seasons, and staff force one with `events.control` and an audit row.
+      - A startup stall: a start with a database that failed after the server variables' writer began, such as one whose event named a map that does not run, waited for a signal. The waits now end the context first.
+      - Tests: the rotation package's timing, catch-up, force, season, retry and daylight saving tests, `TestGoldenRotation` and `TestRotationRules` on arm64 and amd64 under Rosetta in `scripts/check.sh gen`, the layout, places, world, zone, store, admin, adminworld, modscript, waserver, wactl and modkit tests, the Market Town's 2 new cases, the e2e tests `TestRotation` and `TestStartFailsAtOnce` with PostgreSQL, and the browser check `rotation`.
+      - Left: the hooks and layers on rotating floors and changed fields, world quests of changed regions, jail return points on removed maps, forced changes across a restart, and a run on a real amd64 machine.
    8. The economy simulator and generator checks (section 8.13), bot runs compared with the simulator, the public seed test, and the phase 7 exit check.
    Art: the generator names biome tilesets, and a table maps each tileset to textures and models. Development points the table at the operator's own build, such as one from the kRO client. A public release needs an original or licensed art pack, which is art work outside this phase. Without one, maps use placeholder textures. Steps 3 and 6, and steps 4, 5 and 7 if they need it, draft their Lua API for review before they are built.
 

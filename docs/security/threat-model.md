@@ -14,7 +14,7 @@ Status values:
 |---|---|
 | Account credentials and session tokens | Control of an account means control of its items and characters. |
 | Items and zeny | The economy. Duplication or theft ruins it for everyone. |
-| The world secret and secret seed branches | They decide spawns, loot, and quest answers in procedural worlds. |
+| The world secret and secret seed branches | They decide spawns, loot, and quest answers in procedural worlds. The game role holds only the public branch and the derived keys of rotations and seasons (decision 0045). |
 | Player private data | Email, IP addresses, chat logs, and reports. |
 | Server availability | Players cannot play during an outage, and rollbacks lose progress. |
 | Staff powers | GM commands can create items, read private data, and ban players. |
@@ -126,6 +126,8 @@ The boundaries are:
 | Predicting drops and critical hits. | Gameplay randomness uses ChaCha8 per zone, seeded from `crypto/rand`. | Decided. | Strategy 8.3 |
 | Predicting secret generation, such as loot or quest answers. | The world secret never leaves the server. Child keys come from HMAC-SHA256, so public seeds reveal nothing about secret branches. Secret branches use ChaCha8. | Done for the seed tree, with test vectors. | [rng-v1](../specs/rng-v1.md) |
 | Leaking the world secret through logs. | `rng.Node` prints as redacted. Keys are only readable through `Key()`. | Done. | `shared/rng` |
+| The game role's derived keys leak, through the database or a compromised game server. | The game role never reads `world.seed`. `wactl world new` gives it one key per rotating dungeon, `child(child(secret, "rotation"), dungeon)`, and one for seasons, `child(secret, "season")`. HMAC-SHA256 makes them one-way: a leaked key reveals the future spawns of that dungeon's floors, or of the regions' future seasons, and nothing of the other maps' spawns, the quests, the layers' nodes or the root. The game role cannot change the keys. Accepted risk: someone with a key and the public branch can compute the next rotations' and seasons' monsters, and plan farming for rare and boss spawns ahead. A key does not change once made, so a leak lasts until the world is made again. | Done. | Review decision 47, [decision 0045](../decisions/0045-rotation.md), migration 00035 |
+| A forced rotation or world change used to grief players. | Only `events.control` forces one, with the two-factor rule of every staff role, an audit row, and the 10 minute countdown with warnings to the players on the maps. Players and points move to the nearest town; no item is lost. | Done. | [Decision 0045](../decisions/0045-rotation.md) |
 
 ### Mods and the Lua runtime
 

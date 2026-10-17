@@ -7365,10 +7365,12 @@ func (b0 EventInfo_builder) Build() *EventInfo {
 
 // EventList answers GET /events.
 type EventList struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Events *[]*EventInfo          `protobuf:"bytes,1,rep,name=events,proto3"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Events    *[]*EventInfo          `protobuf:"bytes,1,rep,name=events,proto3"`
+	xxx_hidden_Rotations *[]*RotationInfo       `protobuf:"bytes,2,rep,name=rotations,proto3"`
+	xxx_hidden_Seasons   *SeasonInfo            `protobuf:"bytes,3,opt,name=seasons,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *EventList) Reset() {
@@ -7405,14 +7407,53 @@ func (x *EventList) GetEvents() []*EventInfo {
 	return nil
 }
 
+func (x *EventList) GetRotations() []*RotationInfo {
+	if x != nil {
+		if x.xxx_hidden_Rotations != nil {
+			return *x.xxx_hidden_Rotations
+		}
+	}
+	return nil
+}
+
+func (x *EventList) GetSeasons() *SeasonInfo {
+	if x != nil {
+		return x.xxx_hidden_Seasons
+	}
+	return nil
+}
+
 func (x *EventList) SetEvents(v []*EventInfo) {
 	x.xxx_hidden_Events = &v
+}
+
+func (x *EventList) SetRotations(v []*RotationInfo) {
+	x.xxx_hidden_Rotations = &v
+}
+
+func (x *EventList) SetSeasons(v *SeasonInfo) {
+	x.xxx_hidden_Seasons = v
+}
+
+func (x *EventList) HasSeasons() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Seasons != nil
+}
+
+func (x *EventList) ClearSeasons() {
+	x.xxx_hidden_Seasons = nil
 }
 
 type EventList_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Events []*EventInfo
+	// rotations are a procedural world's rotating dungeons, and seasons its
+	// world changes (decision 0045). A classic world has neither.
+	Rotations []*RotationInfo
+	Seasons   *SeasonInfo
 }
 
 func (b0 EventList_builder) Build() *EventList {
@@ -7420,6 +7461,529 @@ func (b0 EventList_builder) Build() *EventList {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Events = &b.Events
+	x.xxx_hidden_Rotations = &b.Rotations
+	x.xxx_hidden_Seasons = b.Seasons
+	return m0
+}
+
+// WorldChange is a rotation or a region's change that waits for its
+// time (decision 0045).
+type WorldChange struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_At     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=at,proto3"`
+	xxx_hidden_Forced bool                   `protobuf:"varint,2,opt,name=forced,proto3"`
+	xxx_hidden_Date   string                 `protobuf:"bytes,3,opt,name=date,proto3"`
+	xxx_hidden_Region string                 `protobuf:"bytes,4,opt,name=region,proto3"`
+	xxx_hidden_Season int32                  `protobuf:"varint,5,opt,name=season,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *WorldChange) Reset() {
+	*x = WorldChange{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorldChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorldChange) ProtoMessage() {}
+
+func (x *WorldChange) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *WorldChange) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_At
+	}
+	return nil
+}
+
+func (x *WorldChange) GetForced() bool {
+	if x != nil {
+		return x.xxx_hidden_Forced
+	}
+	return false
+}
+
+func (x *WorldChange) GetDate() string {
+	if x != nil {
+		return x.xxx_hidden_Date
+	}
+	return ""
+}
+
+func (x *WorldChange) GetRegion() string {
+	if x != nil {
+		return x.xxx_hidden_Region
+	}
+	return ""
+}
+
+func (x *WorldChange) GetSeason() int32 {
+	if x != nil {
+		return x.xxx_hidden_Season
+	}
+	return 0
+}
+
+func (x *WorldChange) SetAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_At = v
+}
+
+func (x *WorldChange) SetForced(v bool) {
+	x.xxx_hidden_Forced = v
+}
+
+func (x *WorldChange) SetDate(v string) {
+	x.xxx_hidden_Date = v
+}
+
+func (x *WorldChange) SetRegion(v string) {
+	x.xxx_hidden_Region = v
+}
+
+func (x *WorldChange) SetSeason(v int32) {
+	x.xxx_hidden_Season = v
+}
+
+func (x *WorldChange) HasAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_At != nil
+}
+
+func (x *WorldChange) ClearAt() {
+	x.xxx_hidden_At = nil
+}
+
+type WorldChange_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// at is when it happens.
+	At *timestamppb.Timestamp
+	// forced is set for a change staff forced.
+	Forced bool
+	// date is a rotation's new date. season is a region's new season, and
+	// region its town's ID.
+	Date   string
+	Region string
+	Season int32
+}
+
+func (b0 WorldChange_builder) Build() *WorldChange {
+	m0 := &WorldChange{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_At = b.At
+	x.xxx_hidden_Forced = b.Forced
+	x.xxx_hidden_Date = b.Date
+	x.xxx_hidden_Region = b.Region
+	x.xxx_hidden_Season = b.Season
+	return m0
+}
+
+// RotationInfo is a rotating dungeon of GET /events.
+type RotationInfo struct {
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Dungeon  string                 `protobuf:"bytes,1,opt,name=dungeon,proto3"`
+	xxx_hidden_Name     string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Rotation string                 `protobuf:"bytes,3,opt,name=rotation,proto3"`
+	xxx_hidden_Date     string                 `protobuf:"bytes,4,opt,name=date,proto3"`
+	xxx_hidden_Next     *WorldChange           `protobuf:"bytes,5,opt,name=next,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *RotationInfo) Reset() {
+	*x = RotationInfo{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RotationInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RotationInfo) ProtoMessage() {}
+
+func (x *RotationInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RotationInfo) GetDungeon() string {
+	if x != nil {
+		return x.xxx_hidden_Dungeon
+	}
+	return ""
+}
+
+func (x *RotationInfo) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *RotationInfo) GetRotation() string {
+	if x != nil {
+		return x.xxx_hidden_Rotation
+	}
+	return ""
+}
+
+func (x *RotationInfo) GetDate() string {
+	if x != nil {
+		return x.xxx_hidden_Date
+	}
+	return ""
+}
+
+func (x *RotationInfo) GetNext() *WorldChange {
+	if x != nil {
+		return x.xxx_hidden_Next
+	}
+	return nil
+}
+
+func (x *RotationInfo) SetDungeon(v string) {
+	x.xxx_hidden_Dungeon = v
+}
+
+func (x *RotationInfo) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *RotationInfo) SetRotation(v string) {
+	x.xxx_hidden_Rotation = v
+}
+
+func (x *RotationInfo) SetDate(v string) {
+	x.xxx_hidden_Date = v
+}
+
+func (x *RotationInfo) SetNext(v *WorldChange) {
+	x.xxx_hidden_Next = v
+}
+
+func (x *RotationInfo) HasNext() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Next != nil
+}
+
+func (x *RotationInfo) ClearNext() {
+	x.xxx_hidden_Next = nil
+}
+
+type RotationInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// dungeon is its ID, such as crypt, and name its first floor's display
+	// name without the floor.
+	Dungeon string
+	Name    string
+	// rotation says when it rotates, such as "weekly on friday at 20:00",
+	// in the server's time zone.
+	Rotation string
+	// date is the date of the floors that run.
+	Date string
+	// next is the rotation that waits, or unset.
+	Next *WorldChange
+}
+
+func (b0 RotationInfo_builder) Build() *RotationInfo {
+	m0 := &RotationInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Dungeon = b.Dungeon
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Rotation = b.Rotation
+	x.xxx_hidden_Date = b.Date
+	x.xxx_hidden_Next = b.Next
+	return m0
+}
+
+// RegionInfo is a region of GET /events: the fields whose nearest town
+// is one town.
+type RegionInfo struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Region string                 `protobuf:"bytes,1,opt,name=region,proto3"`
+	xxx_hidden_Name   string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Season int32                  `protobuf:"varint,3,opt,name=season,proto3"`
+	xxx_hidden_Fields int32                  `protobuf:"varint,4,opt,name=fields,proto3"`
+	xxx_hidden_Forced *WorldChange           `protobuf:"bytes,5,opt,name=forced,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *RegionInfo) Reset() {
+	*x = RegionInfo{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegionInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegionInfo) ProtoMessage() {}
+
+func (x *RegionInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RegionInfo) GetRegion() string {
+	if x != nil {
+		return x.xxx_hidden_Region
+	}
+	return ""
+}
+
+func (x *RegionInfo) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *RegionInfo) GetSeason() int32 {
+	if x != nil {
+		return x.xxx_hidden_Season
+	}
+	return 0
+}
+
+func (x *RegionInfo) GetFields() int32 {
+	if x != nil {
+		return x.xxx_hidden_Fields
+	}
+	return 0
+}
+
+func (x *RegionInfo) GetForced() *WorldChange {
+	if x != nil {
+		return x.xxx_hidden_Forced
+	}
+	return nil
+}
+
+func (x *RegionInfo) SetRegion(v string) {
+	x.xxx_hidden_Region = v
+}
+
+func (x *RegionInfo) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *RegionInfo) SetSeason(v int32) {
+	x.xxx_hidden_Season = v
+}
+
+func (x *RegionInfo) SetFields(v int32) {
+	x.xxx_hidden_Fields = v
+}
+
+func (x *RegionInfo) SetForced(v *WorldChange) {
+	x.xxx_hidden_Forced = v
+}
+
+func (x *RegionInfo) HasForced() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Forced != nil
+}
+
+func (x *RegionInfo) ClearForced() {
+	x.xxx_hidden_Forced = nil
+}
+
+type RegionInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// region is the town's ID, such as t2, and name the town's display
+	// name.
+	Region string
+	Name   string
+	Season int32
+	Fields int32
+	// forced is the change staff forced that waits, or unset.
+	Forced *WorldChange
+}
+
+func (b0 RegionInfo_builder) Build() *RegionInfo {
+	m0 := &RegionInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Region = b.Region
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Season = b.Season
+	x.xxx_hidden_Fields = b.Fields
+	x.xxx_hidden_Forced = b.Forced
+	return m0
+}
+
+// SeasonInfo is the world changes of GET /events.
+type SeasonInfo struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Days    int32                  `protobuf:"varint,1,opt,name=days,proto3"`
+	xxx_hidden_Started string                 `protobuf:"bytes,2,opt,name=started,proto3"`
+	xxx_hidden_Ends    int32                  `protobuf:"varint,3,opt,name=ends,proto3"`
+	xxx_hidden_Next    *WorldChange           `protobuf:"bytes,4,opt,name=next,proto3"`
+	xxx_hidden_Regions *[]*RegionInfo         `protobuf:"bytes,5,rep,name=regions,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SeasonInfo) Reset() {
+	*x = SeasonInfo{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SeasonInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SeasonInfo) ProtoMessage() {}
+
+func (x *SeasonInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SeasonInfo) GetDays() int32 {
+	if x != nil {
+		return x.xxx_hidden_Days
+	}
+	return 0
+}
+
+func (x *SeasonInfo) GetStarted() string {
+	if x != nil {
+		return x.xxx_hidden_Started
+	}
+	return ""
+}
+
+func (x *SeasonInfo) GetEnds() int32 {
+	if x != nil {
+		return x.xxx_hidden_Ends
+	}
+	return 0
+}
+
+func (x *SeasonInfo) GetNext() *WorldChange {
+	if x != nil {
+		return x.xxx_hidden_Next
+	}
+	return nil
+}
+
+func (x *SeasonInfo) GetRegions() []*RegionInfo {
+	if x != nil {
+		if x.xxx_hidden_Regions != nil {
+			return *x.xxx_hidden_Regions
+		}
+	}
+	return nil
+}
+
+func (x *SeasonInfo) SetDays(v int32) {
+	x.xxx_hidden_Days = v
+}
+
+func (x *SeasonInfo) SetStarted(v string) {
+	x.xxx_hidden_Started = v
+}
+
+func (x *SeasonInfo) SetEnds(v int32) {
+	x.xxx_hidden_Ends = v
+}
+
+func (x *SeasonInfo) SetNext(v *WorldChange) {
+	x.xxx_hidden_Next = v
+}
+
+func (x *SeasonInfo) SetRegions(v []*RegionInfo) {
+	x.xxx_hidden_Regions = &v
+}
+
+func (x *SeasonInfo) HasNext() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Next != nil
+}
+
+func (x *SeasonInfo) ClearNext() {
+	x.xxx_hidden_Next = nil
+}
+
+type SeasonInfo_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// days is procedural.seasons.days, 0 when seasons are off. started is
+	// the date they started, and ends how many season ends changed a
+	// region.
+	Days    int32
+	Started string
+	Ends    int32
+	// next is the next season end's change, or unset.
+	Next    *WorldChange
+	Regions []*RegionInfo
+}
+
+func (b0 SeasonInfo_builder) Build() *SeasonInfo {
+	m0 := &SeasonInfo{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Days = b.Days
+	x.xxx_hidden_Started = b.Started
+	x.xxx_hidden_Ends = b.Ends
+	x.xxx_hidden_Next = b.Next
+	x.xxx_hidden_Regions = &b.Regions
 	return m0
 }
 
@@ -7439,7 +8003,7 @@ type EventChange struct {
 
 func (x *EventChange) Reset() {
 	*x = EventChange{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7451,7 +8015,7 @@ func (x *EventChange) String() string {
 func (*EventChange) ProtoMessage() {}
 
 func (x *EventChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7566,7 +8130,7 @@ type EventAction struct {
 
 func (x *EventAction) Reset() {
 	*x = EventAction{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7578,7 +8142,7 @@ func (x *EventAction) String() string {
 func (*EventAction) ProtoMessage() {}
 
 func (x *EventAction) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7628,7 +8192,7 @@ type ModSwitch struct {
 
 func (x *ModSwitch) Reset() {
 	*x = ModSwitch{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7640,7 +8204,7 @@ func (x *ModSwitch) String() string {
 func (*ModSwitch) ProtoMessage() {}
 
 func (x *ModSwitch) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7741,7 +8305,7 @@ type ModZone struct {
 
 func (x *ModZone) Reset() {
 	*x = ModZone{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7753,7 +8317,7 @@ func (x *ModZone) String() string {
 func (*ModZone) ProtoMessage() {}
 
 func (x *ModZone) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7875,7 +8439,7 @@ type ModInfo struct {
 
 func (x *ModInfo) Reset() {
 	*x = ModInfo{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7887,7 +8451,7 @@ func (x *ModInfo) String() string {
 func (*ModInfo) ProtoMessage() {}
 
 func (x *ModInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8093,7 +8657,7 @@ type ModList struct {
 
 func (x *ModList) Reset() {
 	*x = ModList{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8105,7 +8669,7 @@ func (x *ModList) String() string {
 func (*ModList) ProtoMessage() {}
 
 func (x *ModList) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8168,7 +8732,7 @@ type ModSwitchRequest struct {
 
 func (x *ModSwitchRequest) Reset() {
 	*x = ModSwitchRequest{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8180,7 +8744,7 @@ func (x *ModSwitchRequest) String() string {
 func (*ModSwitchRequest) ProtoMessage() {}
 
 func (x *ModSwitchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8244,7 +8808,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8256,7 +8820,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8755,9 +9319,37 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\x13config_trigger_text\x18\x0e \x01(\tR\x11configTriggerText\x126\n" +
 	"\x17config_duration_minutes\x18\x0f \x01(\x05R\x15configDurationMinutes\x12\x16\n" +
 	"\x06failed\x18\x10 \x01(\tR\x06failed\x127\n" +
-	"\tfailed_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\bfailedAt\"@\n" +
+	"\tfailed_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\bfailedAt\"\xb6\x01\n" +
 	"\tEventList\x123\n" +
-	"\x06events\x18\x01 \x03(\v2\x1b.wathena.admin.v1.EventInfoR\x06events\"\x9f\x01\n" +
+	"\x06events\x18\x01 \x03(\v2\x1b.wathena.admin.v1.EventInfoR\x06events\x12<\n" +
+	"\trotations\x18\x02 \x03(\v2\x1e.wathena.admin.v1.RotationInfoR\trotations\x126\n" +
+	"\aseasons\x18\x03 \x01(\v2\x1c.wathena.admin.v1.SeasonInfoR\aseasons\"\x95\x01\n" +
+	"\vWorldChange\x12*\n" +
+	"\x02at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x16\n" +
+	"\x06forced\x18\x02 \x01(\bR\x06forced\x12\x12\n" +
+	"\x04date\x18\x03 \x01(\tR\x04date\x12\x16\n" +
+	"\x06region\x18\x04 \x01(\tR\x06region\x12\x16\n" +
+	"\x06season\x18\x05 \x01(\x05R\x06season\"\x9f\x01\n" +
+	"\fRotationInfo\x12\x18\n" +
+	"\adungeon\x18\x01 \x01(\tR\adungeon\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
+	"\brotation\x18\x03 \x01(\tR\brotation\x12\x12\n" +
+	"\x04date\x18\x04 \x01(\tR\x04date\x121\n" +
+	"\x04next\x18\x05 \x01(\v2\x1d.wathena.admin.v1.WorldChangeR\x04next\"\x9f\x01\n" +
+	"\n" +
+	"RegionInfo\x12\x16\n" +
+	"\x06region\x18\x01 \x01(\tR\x06region\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
+	"\x06season\x18\x03 \x01(\x05R\x06season\x12\x16\n" +
+	"\x06fields\x18\x04 \x01(\x05R\x06fields\x125\n" +
+	"\x06forced\x18\x05 \x01(\v2\x1d.wathena.admin.v1.WorldChangeR\x06forced\"\xb9\x01\n" +
+	"\n" +
+	"SeasonInfo\x12\x12\n" +
+	"\x04days\x18\x01 \x01(\x05R\x04days\x12\x18\n" +
+	"\astarted\x18\x02 \x01(\tR\astarted\x12\x12\n" +
+	"\x04ends\x18\x03 \x01(\x05R\x04ends\x121\n" +
+	"\x04next\x18\x04 \x01(\v2\x1d.wathena.admin.v1.WorldChangeR\x04next\x126\n" +
+	"\aregions\x18\x05 \x03(\v2\x1c.wathena.admin.v1.RegionInfoR\aregions\"\x9f\x01\n" +
 	"\vEventChange\x12\x13\n" +
 	"\x02on\x18\x01 \x01(\bH\x00R\x02on\x88\x01\x01\x121\n" +
 	"\atrigger\x18\x02 \x01(\v2\x17.google.protobuf.StructR\atrigger\x12)\n" +
@@ -8806,7 +9398,7 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"reauth_url\x18\x03 \x01(\tR\treauthUrlBDZBgithub.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1b\x06proto3"
 
-var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 58)
+var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
 var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*Me)(nil),                    // 0: wathena.admin.v1.Me
 	(*Role)(nil),                  // 1: wathena.admin.v1.Role
@@ -8857,51 +9449,55 @@ var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*EventOverride)(nil),         // 46: wathena.admin.v1.EventOverride
 	(*EventInfo)(nil),             // 47: wathena.admin.v1.EventInfo
 	(*EventList)(nil),             // 48: wathena.admin.v1.EventList
-	(*EventChange)(nil),           // 49: wathena.admin.v1.EventChange
-	(*EventAction)(nil),           // 50: wathena.admin.v1.EventAction
-	(*ModSwitch)(nil),             // 51: wathena.admin.v1.ModSwitch
-	(*ModZone)(nil),               // 52: wathena.admin.v1.ModZone
-	(*ModInfo)(nil),               // 53: wathena.admin.v1.ModInfo
-	(*ModList)(nil),               // 54: wathena.admin.v1.ModList
-	(*ModSwitchRequest)(nil),      // 55: wathena.admin.v1.ModSwitchRequest
-	(*Error)(nil),                 // 56: wathena.admin.v1.Error
-	nil,                           // 57: wathena.admin.v1.Item.RollsEntry
-	(*timestamppb.Timestamp)(nil), // 58: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),       // 59: google.protobuf.Struct
+	(*WorldChange)(nil),           // 49: wathena.admin.v1.WorldChange
+	(*RotationInfo)(nil),          // 50: wathena.admin.v1.RotationInfo
+	(*RegionInfo)(nil),            // 51: wathena.admin.v1.RegionInfo
+	(*SeasonInfo)(nil),            // 52: wathena.admin.v1.SeasonInfo
+	(*EventChange)(nil),           // 53: wathena.admin.v1.EventChange
+	(*EventAction)(nil),           // 54: wathena.admin.v1.EventAction
+	(*ModSwitch)(nil),             // 55: wathena.admin.v1.ModSwitch
+	(*ModZone)(nil),               // 56: wathena.admin.v1.ModZone
+	(*ModInfo)(nil),               // 57: wathena.admin.v1.ModInfo
+	(*ModList)(nil),               // 58: wathena.admin.v1.ModList
+	(*ModSwitchRequest)(nil),      // 59: wathena.admin.v1.ModSwitchRequest
+	(*Error)(nil),                 // 60: wathena.admin.v1.Error
+	nil,                           // 61: wathena.admin.v1.Item.RollsEntry
+	(*timestamppb.Timestamp)(nil), // 62: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 63: google.protobuf.Struct
 }
 var file_wathena_admin_v1_admin_proto_depIdxs = []int32{
-	58, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
+	62, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
 	2,  // 1: wathena.admin.v1.StaffList.members:type_name -> wathena.admin.v1.StaffMember
 	1,  // 2: wathena.admin.v1.StaffList.roles:type_name -> wathena.admin.v1.Role
-	58, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
-	59, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
-	58, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
+	62, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
+	63, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
+	62, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
 	5,  // 6: wathena.admin.v1.AuditPage.entries:type_name -> wathena.admin.v1.AuditEntry
-	58, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
-	58, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
-	58, // 9: wathena.admin.v1.Sanction.lifted_at:type_name -> google.protobuf.Timestamp
+	62, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
+	62, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
+	62, // 9: wathena.admin.v1.Sanction.lifted_at:type_name -> google.protobuf.Timestamp
 	9,  // 10: wathena.admin.v1.SanctionList.sanctions:type_name -> wathena.admin.v1.Sanction
-	58, // 11: wathena.admin.v1.ReportSummary.created_at:type_name -> google.protobuf.Timestamp
-	58, // 12: wathena.admin.v1.ReportSummary.closed_at:type_name -> google.protobuf.Timestamp
+	62, // 11: wathena.admin.v1.ReportSummary.created_at:type_name -> google.protobuf.Timestamp
+	62, // 12: wathena.admin.v1.ReportSummary.closed_at:type_name -> google.protobuf.Timestamp
 	12, // 13: wathena.admin.v1.ReportPage.reports:type_name -> wathena.admin.v1.ReportSummary
-	58, // 14: wathena.admin.v1.ChatLine.at:type_name -> google.protobuf.Timestamp
+	62, // 14: wathena.admin.v1.ChatLine.at:type_name -> google.protobuf.Timestamp
 	12, // 15: wathena.admin.v1.ReportDetail.report:type_name -> wathena.admin.v1.ReportSummary
 	14, // 16: wathena.admin.v1.ReportDetail.lines:type_name -> wathena.admin.v1.ChatLine
 	12, // 17: wathena.admin.v1.ReportDetail.earlier:type_name -> wathena.admin.v1.ReportSummary
 	9,  // 18: wathena.admin.v1.ReportDetail.sanctions:type_name -> wathena.admin.v1.Sanction
 	8,  // 19: wathena.admin.v1.CharacterSummary.position:type_name -> wathena.admin.v1.Position
 	9,  // 20: wathena.admin.v1.CharacterSummary.sanctions:type_name -> wathena.admin.v1.Sanction
-	58, // 21: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
-	58, // 22: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
-	58, // 23: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
+	62, // 21: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
+	62, // 22: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
+	62, // 23: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
 	17, // 24: wathena.admin.v1.AccountSummary.characters:type_name -> wathena.admin.v1.CharacterSummary
 	18, // 25: wathena.admin.v1.AccountSummary.logins:type_name -> wathena.admin.v1.LoginRecord
 	9,  // 26: wathena.admin.v1.AccountSummary.ban:type_name -> wathena.admin.v1.Sanction
 	20, // 27: wathena.admin.v1.PlayerSearch.accounts:type_name -> wathena.admin.v1.AccountSummary
 	19, // 28: wathena.admin.v1.PlayerSearch.holder:type_name -> wathena.admin.v1.Owner
-	57, // 29: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
+	61, // 29: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
 	22, // 30: wathena.admin.v1.Storage.items:type_name -> wathena.admin.v1.Item
-	58, // 31: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
+	62, // 31: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
 	22, // 32: wathena.admin.v1.Mail.items:type_name -> wathena.admin.v1.Item
 	26, // 33: wathena.admin.v1.CharacterDetail.stats:type_name -> wathena.admin.v1.Stats
 	25, // 34: wathena.admin.v1.CharacterDetail.currencies:type_name -> wathena.admin.v1.Currency
@@ -8911,55 +9507,62 @@ var file_wathena_admin_v1_admin_proto_depIdxs = []int32{
 	23, // 38: wathena.admin.v1.CharacterDetail.storages:type_name -> wathena.admin.v1.Storage
 	24, // 39: wathena.admin.v1.CharacterDetail.mails:type_name -> wathena.admin.v1.Mail
 	9,  // 40: wathena.admin.v1.CharacterDetail.sanctions:type_name -> wathena.admin.v1.Sanction
-	58, // 41: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
+	62, // 41: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
 	9,  // 42: wathena.admin.v1.CharacterDetail.ban:type_name -> wathena.admin.v1.Sanction
-	58, // 43: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
+	62, // 43: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
 	19, // 44: wathena.admin.v1.ItemMove.from:type_name -> wathena.admin.v1.Owner
 	19, // 45: wathena.admin.v1.ItemMove.to:type_name -> wathena.admin.v1.Owner
 	28, // 46: wathena.admin.v1.ItemHistory.moves:type_name -> wathena.admin.v1.ItemMove
 	19, // 47: wathena.admin.v1.ItemHistory.holder:type_name -> wathena.admin.v1.Owner
-	58, // 48: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
+	62, // 48: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
 	19, // 49: wathena.admin.v1.LogEntry.from:type_name -> wathena.admin.v1.Owner
 	19, // 50: wathena.admin.v1.LogEntry.to:type_name -> wathena.admin.v1.Owner
 	30, // 51: wathena.admin.v1.CharacterLogs.entries:type_name -> wathena.admin.v1.LogEntry
 	32, // 52: wathena.admin.v1.RestoreRequest.items:type_name -> wathena.admin.v1.RestoreItem
 	19, // 53: wathena.admin.v1.RestoredItem.from:type_name -> wathena.admin.v1.Owner
 	34, // 54: wathena.admin.v1.RestoreResult.items:type_name -> wathena.admin.v1.RestoredItem
-	58, // 55: wathena.admin.v1.ProcessView.started_at:type_name -> google.protobuf.Timestamp
+	62, // 55: wathena.admin.v1.ProcessView.started_at:type_name -> google.protobuf.Timestamp
 	36, // 56: wathena.admin.v1.WorldView.zones:type_name -> wathena.admin.v1.ZoneView
 	37, // 57: wathena.admin.v1.WorldView.process:type_name -> wathena.admin.v1.ProcessView
 	38, // 58: wathena.admin.v1.WorldView.players:type_name -> wathena.admin.v1.OnlinePlayer
 	43, // 59: wathena.admin.v1.WorldView.restart:type_name -> wathena.admin.v1.RestartPlan
-	58, // 60: wathena.admin.v1.WorldView.now:type_name -> google.protobuf.Timestamp
-	58, // 61: wathena.admin.v1.RestartRequest.at:type_name -> google.protobuf.Timestamp
-	58, // 62: wathena.admin.v1.RestartPlan.at:type_name -> google.protobuf.Timestamp
-	58, // 63: wathena.admin.v1.RestartPlan.planned_at:type_name -> google.protobuf.Timestamp
-	58, // 64: wathena.admin.v1.EventRun.scheduled:type_name -> google.protobuf.Timestamp
-	58, // 65: wathena.admin.v1.EventRun.started:type_name -> google.protobuf.Timestamp
-	58, // 66: wathena.admin.v1.EventRun.ends:type_name -> google.protobuf.Timestamp
-	58, // 67: wathena.admin.v1.EventResult.scheduled:type_name -> google.protobuf.Timestamp
-	58, // 68: wathena.admin.v1.EventResult.started:type_name -> google.protobuf.Timestamp
-	58, // 69: wathena.admin.v1.EventResult.ended:type_name -> google.protobuf.Timestamp
-	59, // 70: wathena.admin.v1.EventOverride.trigger:type_name -> google.protobuf.Struct
-	58, // 71: wathena.admin.v1.EventOverride.changed_at:type_name -> google.protobuf.Timestamp
-	59, // 72: wathena.admin.v1.EventInfo.trigger:type_name -> google.protobuf.Struct
-	58, // 73: wathena.admin.v1.EventInfo.next_run:type_name -> google.protobuf.Timestamp
+	62, // 60: wathena.admin.v1.WorldView.now:type_name -> google.protobuf.Timestamp
+	62, // 61: wathena.admin.v1.RestartRequest.at:type_name -> google.protobuf.Timestamp
+	62, // 62: wathena.admin.v1.RestartPlan.at:type_name -> google.protobuf.Timestamp
+	62, // 63: wathena.admin.v1.RestartPlan.planned_at:type_name -> google.protobuf.Timestamp
+	62, // 64: wathena.admin.v1.EventRun.scheduled:type_name -> google.protobuf.Timestamp
+	62, // 65: wathena.admin.v1.EventRun.started:type_name -> google.protobuf.Timestamp
+	62, // 66: wathena.admin.v1.EventRun.ends:type_name -> google.protobuf.Timestamp
+	62, // 67: wathena.admin.v1.EventResult.scheduled:type_name -> google.protobuf.Timestamp
+	62, // 68: wathena.admin.v1.EventResult.started:type_name -> google.protobuf.Timestamp
+	62, // 69: wathena.admin.v1.EventResult.ended:type_name -> google.protobuf.Timestamp
+	63, // 70: wathena.admin.v1.EventOverride.trigger:type_name -> google.protobuf.Struct
+	62, // 71: wathena.admin.v1.EventOverride.changed_at:type_name -> google.protobuf.Timestamp
+	63, // 72: wathena.admin.v1.EventInfo.trigger:type_name -> google.protobuf.Struct
+	62, // 73: wathena.admin.v1.EventInfo.next_run:type_name -> google.protobuf.Timestamp
 	44, // 74: wathena.admin.v1.EventInfo.runs:type_name -> wathena.admin.v1.EventRun
 	45, // 75: wathena.admin.v1.EventInfo.results:type_name -> wathena.admin.v1.EventResult
 	46, // 76: wathena.admin.v1.EventInfo.override:type_name -> wathena.admin.v1.EventOverride
-	58, // 77: wathena.admin.v1.EventInfo.failed_at:type_name -> google.protobuf.Timestamp
+	62, // 77: wathena.admin.v1.EventInfo.failed_at:type_name -> google.protobuf.Timestamp
 	47, // 78: wathena.admin.v1.EventList.events:type_name -> wathena.admin.v1.EventInfo
-	59, // 79: wathena.admin.v1.EventChange.trigger:type_name -> google.protobuf.Struct
-	58, // 80: wathena.admin.v1.ModSwitch.changed_at:type_name -> google.protobuf.Timestamp
-	58, // 81: wathena.admin.v1.ModZone.last_error_at:type_name -> google.protobuf.Timestamp
-	51, // 82: wathena.admin.v1.ModInfo.switches:type_name -> wathena.admin.v1.ModSwitch
-	52, // 83: wathena.admin.v1.ModInfo.zones:type_name -> wathena.admin.v1.ModZone
-	53, // 84: wathena.admin.v1.ModList.mods:type_name -> wathena.admin.v1.ModInfo
-	85, // [85:85] is the sub-list for method output_type
-	85, // [85:85] is the sub-list for method input_type
-	85, // [85:85] is the sub-list for extension type_name
-	85, // [85:85] is the sub-list for extension extendee
-	0,  // [0:85] is the sub-list for field type_name
+	50, // 79: wathena.admin.v1.EventList.rotations:type_name -> wathena.admin.v1.RotationInfo
+	52, // 80: wathena.admin.v1.EventList.seasons:type_name -> wathena.admin.v1.SeasonInfo
+	62, // 81: wathena.admin.v1.WorldChange.at:type_name -> google.protobuf.Timestamp
+	49, // 82: wathena.admin.v1.RotationInfo.next:type_name -> wathena.admin.v1.WorldChange
+	49, // 83: wathena.admin.v1.RegionInfo.forced:type_name -> wathena.admin.v1.WorldChange
+	49, // 84: wathena.admin.v1.SeasonInfo.next:type_name -> wathena.admin.v1.WorldChange
+	51, // 85: wathena.admin.v1.SeasonInfo.regions:type_name -> wathena.admin.v1.RegionInfo
+	63, // 86: wathena.admin.v1.EventChange.trigger:type_name -> google.protobuf.Struct
+	62, // 87: wathena.admin.v1.ModSwitch.changed_at:type_name -> google.protobuf.Timestamp
+	62, // 88: wathena.admin.v1.ModZone.last_error_at:type_name -> google.protobuf.Timestamp
+	55, // 89: wathena.admin.v1.ModInfo.switches:type_name -> wathena.admin.v1.ModSwitch
+	56, // 90: wathena.admin.v1.ModInfo.zones:type_name -> wathena.admin.v1.ModZone
+	57, // 91: wathena.admin.v1.ModList.mods:type_name -> wathena.admin.v1.ModInfo
+	92, // [92:92] is the sub-list for method output_type
+	92, // [92:92] is the sub-list for method input_type
+	92, // [92:92] is the sub-list for extension type_name
+	92, // [92:92] is the sub-list for extension extendee
+	0,  // [0:92] is the sub-list for field type_name
 }
 
 func init() { file_wathena_admin_v1_admin_proto_init() }
@@ -8968,14 +9571,14 @@ func file_wathena_admin_v1_admin_proto_init() {
 		return
 	}
 	file_wathena_admin_v1_admin_proto_msgTypes[46].OneofWrappers = []any{}
-	file_wathena_admin_v1_admin_proto_msgTypes[49].OneofWrappers = []any{}
+	file_wathena_admin_v1_admin_proto_msgTypes[53].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_admin_v1_admin_proto_rawDesc), len(file_wathena_admin_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   58,
+			NumMessages:   62,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

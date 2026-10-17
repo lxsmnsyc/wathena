@@ -68,11 +68,11 @@ func TestGoldenContent(t *testing.T) {
 	}
 	var got []goldenContent
 	for _, seed := range []string{"golden-content-seed-0000000001", "golden-content-seed-0000000002"} {
-		_, _, w, err := proceduralWorld("", "renewal", []byte(seed), g.Version)
+		pw, err := proceduralWorld("", "renewal", []byte(seed), g.Version)
 		if err != nil {
 			t.Fatal(err)
 		}
-		got = append(got, summarize(seed, w))
+		got = append(got, summarize(seed, pw.content))
 	}
 	const file = "testdata/golden-content.json"
 	if *updateContent {

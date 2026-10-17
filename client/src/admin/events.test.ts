@@ -1,7 +1,13 @@
 import { create } from '@bufbuild/protobuf';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { describe, expect, it } from 'vitest';
-import { EventInfoSchema, EventResultSchema } from '../gen/wathena/admin/v1/admin_pb';
+import {
+  EventInfoSchema,
+  EventListSchema,
+  EventResultSchema,
+  SeasonInfoSchema,
+  WorldChangeSchema,
+} from '../gen/wathena/admin/v1/admin_pb';
 import {
   type TriggerFields,
   canonical,
@@ -9,8 +15,10 @@ import {
   eventChange,
   fieldsOf,
   resultText,
+  seasonsText,
   timeLeft,
   triggerValue,
+  worldChangeText,
 } from './events';
 
 const daily: TriggerFields = {
@@ -147,5 +155,33 @@ describe('event cells', () => {
         }),
       ),
     ).toMatch(/^Admin, /);
+  });
+});
+
+describe('rotations and seasons', () => {
+  const at = timestampFromDate(new Date(2026, 9, 23, 20, 0));
+  it('says when a change waits', () => {
+    expect(worldChangeText(undefined)).toBe('');
+    const rotation = create(WorldChangeSchema, { at, date: '2026-10-23' });
+    expect(worldChangeText(rotation)).toMatch(/^2026-10-23 on .+$/);
+    const region = create(WorldChangeSchema, { at, region: 't2', season: 3, forced: true });
+    expect(worldChangeText(region)).toMatch(/^season 3 on .+, forced$/);
+  });
+
+  it('says whether seasons are on', () => {
+    expect(seasonsText(create(EventListSchema, {}))).toBe('');
+    const off = create(EventListSchema, { seasons: create(SeasonInfoSchema, { days: 0 }) });
+    expect(seasonsText(off)).toContain('Seasons are off');
+    const on = create(EventListSchema, {
+      seasons: create(SeasonInfoSchema, {
+        days: 30,
+        started: '2026-10-01',
+        ends: 1,
+        next: create(WorldChangeSchema, { at, region: 't2', season: 1 }),
+      }),
+    });
+    expect(seasonsText(on)).toMatch(
+      /^Every 30 days since 2026-10-01: 1 season end\. The next changes t2: season 1 on .+\.$/,
+    );
   });
 });

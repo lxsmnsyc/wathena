@@ -2,7 +2,9 @@
 # floors follow its style. Mods change these by name and add their own
 # (mods/README.md, "Dungeon styles"). floor_size and room_size are in
 # cells. Each floor's level band is level_step levels above the floor
-# before it.
+# before it. rotation is when a rotating dungeon of the style gets new
+# floors, in the server's time zone (decision 0045): `wactl world new`
+# makes the first dungeon of a world whose style has one rotate.
 - name: cave
   method: cave
   floors: 3
@@ -10,6 +12,7 @@
   room_size: [6, 12]
   tileset: cave
   level_step: 5
+  rotation: {every: daily, at: "04:00"}
 - name: crypt
   method: rooms
   floors: 3
@@ -17,6 +20,7 @@
   room_size: [8, 20]
   tileset: crypt
   level_step: 6
+  rotation: {every: weekly, weekday: friday, at: "20:00"}
 - name: tower
   method: rooms
   floors: 5
@@ -24,6 +28,7 @@
   room_size: [8, 16]
   tileset: tower
   level_step: 4
+  rotation: {every: daily, at: "04:00"}
 - name: ruins
   method: rooms
   floors: 2
@@ -31,3 +36,4 @@
   room_size: [10, 24]
   tileset: ruins
   level_step: 8
+  rotation: {every: weekly, weekday: monday, at: "04:00"}

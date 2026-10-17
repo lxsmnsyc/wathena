@@ -1148,3 +1148,28 @@ func (h *Headless) SetStaffRole(player int64, role string) error {
 	p.sess.staff = staff.Login{AccountName: p.Name, TwoFactor: true}
 	return h.z.Staff.StaffChanged(context.Background(), p.record.AccountID, role)
 }
+
+// WorldChanged moves the points of the test world's players on the maps
+// a change removed or replaced, as moves say, then runs the
+// dungeon_rotated or region_changed handlers, for world:rotate and
+// world:change_region (review decision 47). The maps of gone no longer
+// run, so later joins move their points too. The lines the handlers
+// send go out.
+func (h *Headless) WorldChanged(ev modscript.WorldChange, moves map[string]Relocation, gone []string) {
+	if h.z.Moved == nil {
+		h.z.Moved = &Relocations{}
+	}
+	once := &Relocations{}
+	for m, to := range moves {
+		once.Add(m, to)
+		if slices.Contains(gone, m) {
+			h.z.Moved.Add(m, to)
+		}
+	}
+	for _, p := range h.z.players {
+		h.z.relocate(p, once)
+	}
+	h.z.worldChanged(ev)
+	h.step(0)
+	h.step(0)
+}

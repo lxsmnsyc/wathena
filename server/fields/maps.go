@@ -207,9 +207,10 @@ func abs(v int) int {
 // Places returns the index of every place of the set's maps, with the
 // warps as the map graph.
 func (s *Set) Places(warps map[string][]zone.Warp) *places.Index {
-	maps := make([]places.Map, 0, len(s.fields))
+	list := s.Fields()
+	maps := make([]places.Map, 0, len(list))
 	var links []places.Link
-	for _, f := range s.fields {
+	for _, f := range list {
 		maps = append(maps, places.Map{ID: f.ID, Places: f.AllPlaces()})
 		for _, w := range warps[f.ID] {
 			links = append(links, places.Link{From: f.ID, X: w.X, Y: w.Y, To: w.To, ToX: w.ToX, ToY: w.ToY})

@@ -164,6 +164,9 @@ type testWorld struct {
 	players int
 	// events runs the world events of the world's map.
 	events *worldevent.Scheduler
+	// changes is the world's copy of the generated maps, or nil without
+	// the procedural tag (decision 0045).
+	changes *testChanges
 }
 
 // newWorld makes a headless world with the loaded mods.
@@ -172,8 +175,12 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	mods.Testing = true
 	mods.Log = log
 	mods.Places = l.placesOf(log)
+	var changes *testChanges
 	if g, err := l.generatedMaps(); err == nil && g != nil {
-		mods.Atlas, mods.Quests, mods.World = g.atlas, g.quests, g.world
+		// Each world has its own copy, which world:rotate and
+		// world:change_region change.
+		changes = newTestChanges(g)
+		mods.Places, mods.Atlas, mods.Quests, mods.World = changes.places, changes.atlas, g.quests, g.world
 		for _, n := range g.notes {
 			log.Warn("generation: " + n)
 		}
@@ -202,7 +209,7 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	if l.JobTables != nil {
 		z.Status = l.JobTables
 	}
-	return &testWorld{env: e, l: l, h: h}, nil
+	return &testWorld{env: e, l: l, h: h, changes: changes}, nil
 }
 
 var tables sync.Map // *Loaded -> *item.Table
@@ -250,11 +257,15 @@ func (w *testWorld) bind(name string) error {
 		if g == nil {
 			return errNoGenerator
 		}
-		f := g.set.Get(name)
+		set, gwarps := g.set, g.warps
+		if w.changes != nil {
+			set, gwarps = w.changes.set, w.changes.warps
+		}
+		f := set.Get(name)
 		if f == nil {
 			return fmt.Errorf("the test world has no generated map %s; it has a field, gen:field:0:0, a town per town template from gen:town:t1, and a dungeon per dungeon style", name)
 		}
-		grid, npcs, warps = f.Grid(), append(slices.Clone(npcs), g.npcs[name]...), g.warps[name]
+		grid, npcs, warps = f.Grid(), append(slices.Clone(npcs), g.npcs[name]...), gwarps[name]
 	} else {
 		var err error
 		if grid, err = w.env.Grid(asset, npcs); err != nil {
@@ -282,11 +293,17 @@ func (w *testWorld) spawnGenerated(name string) error {
 		return err
 	}
 	list, ok := g.planned[name]
+	sm := g.spawnMaps[name]
+	if w.changes != nil {
+		if l, made := w.changes.planned[name]; made {
+			list, ok, sm = l, true, w.changes.spawnMaps[name]
+		}
+	}
 	if !ok {
 		return nil
 	}
 	log := w.h.Zone().Mods.Log
-	list = zone.RunSpawnTable(w.h.Runtime(), g.spawnMaps[name], list, gamedata.SpawnIndex(w.l.Monsters, w.l.SpawnMonsters), log)
+	list = zone.RunSpawnTable(w.h.Runtime(), sm, list, gamedata.SpawnIndex(w.l.Monsters, w.l.SpawnMonsters), log)
 	list = append(slices.Clone(list), g.bosses[name]...)
 	zs, missing := gamedata.ZoneSpawns(list, w.l.Monsters)
 	for _, m := range missing {
@@ -636,6 +653,10 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 			return nil, fmt.Errorf("world:plan_restart: %w", err)
 		}
 		return nil, nil
+	case "rotate":
+		return w.rotate(args)
+	case "change_region":
+		return w.changeRegion(args)
 	case "close_storage":
 		p, _ := args[0].AsInt()
 		if err := w.h.CloseStorage(p); err != nil {

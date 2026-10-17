@@ -602,6 +602,7 @@ type World struct {
 	Mode             string
 	RngVersion       string
 	PublicNode       []byte
+	SeasonKey        []byte
 }
 
 type WorldEventProgress struct {
@@ -686,6 +687,29 @@ type WorldQuest struct {
 	BaseExp  int64
 	JobExp   int64
 	Zeny     int64
+}
+
+type WorldRegion struct {
+	Town      string
+	Season    int
+	ChangedAt pgtype.Timestamptz
+}
+
+type WorldRotation struct {
+	Dungeon    string
+	Style      string
+	Every      string
+	At         string
+	Weekday    string
+	Key        []byte
+	ActiveDate pgtype.Date
+	ChangedAt  pgtype.Timestamptz
+}
+
+type WorldSeason struct {
+	ID      bool
+	Started pgtype.Date
+	Ends    int
 }
 
 type WorldSpawn struct {

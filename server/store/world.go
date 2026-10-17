@@ -52,6 +52,12 @@ type World struct {
 	// spawn lists are not written: Spawns holds them, the layers'
 	// bosses included. LoadWorld leaves it nil: LoadContent reads it.
 	Content *content.World
+	// Rotations are a procedural world's rotating dungeons, with their
+	// keys, and SeasonKey the key of its world changes, which NewWorld
+	// writes for the game role (decision 0045). LoadWorld leaves them
+	// nil: LoadWorldChanges reads them.
+	Rotations []WorldRotation
+	SeasonKey []byte
 }
 
 // Admin is the first account that NewWorld makes. Hash is the
@@ -93,6 +99,9 @@ func NewWorld(ctx context.Context, pool *pgxpool.Pool, w World, admin Admin) (in
 		}
 		if err := insertContent(ctx, q, w.Content); err != nil {
 			return fmt.Errorf("the world's content: %w", err)
+		}
+		if err := insertWorldChanges(ctx, q, w.Rotations, w.SeasonKey); err != nil {
+			return fmt.Errorf("the world's rotations: %w", err)
 		}
 		id, err = q.CreateAdminAccount(ctx, db.CreateAdminAccountParams{Name: admin.Name, Hash: admin.Hash})
 		if errors.Is(err, pgx.ErrNoRows) {

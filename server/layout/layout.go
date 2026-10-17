@@ -163,6 +163,14 @@ type Map struct {
 	Floor, Floors int
 	// NoMemo forbids memo points on the map.
 	NoMemo bool
+	// Base and Date are a rotating floor's map ID in the stored layout,
+	// such as gen:dungeon:crypt:1, and its rotation's date, such as
+	// 2026-10-31 (decision 0045). Apply sets them; they are empty for
+	// other maps.
+	Base, Date string
+	// Season is a field's season: 0 until its region first changes
+	// (decision 0045).
+	Season int
 }
 
 // End is one end of a link: the place on a map where its warp stands,
@@ -237,6 +245,8 @@ type TownRecord struct {
 type StyleRecord struct {
 	Name  string
 	Style gen.DungeonStyle
+	// Rotation is the style's rotation, or nil (decision 0045).
+	Rotation *RotationRule
 }
 
 // HomeMap is a mod's home map (strategy section 8.12), tagged home.

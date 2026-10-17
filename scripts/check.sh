@@ -37,7 +37,8 @@
 #   gen       the map generator's golden checksums, with the WMAP
 #             hashes of generated fields, dungeon floors and towns, and
 #             their places' hashes, the golden world layouts and
-#             spawn lists, in Go
+#             spawn lists, and the golden rotations and seasons
+#             (decision 0045), in Go
 #             on this machine's
 #             architecture and on the other one (amd64 under Rosetta on
 #             an arm64 Mac), and the maps in gen.wasm in Node. The
@@ -56,8 +57,9 @@
 #             home map into a town with the world map (decision 0041),
 #             a quest with its window and NPC icon on a desktop and a
 #             phone (decision 0043), a walk to a Kafra and a quest board
-#             in a world that wactl world new made (decision 0044), and
-#             the map
+#             in a world that wactl world new made (decision 0044), a
+#             rotation that moves a player and the new floors it loads
+#             (decision 0045), and the map
 #             generator in Chromium, Firefox and WebKit. Only with all.
 #
 # Tool versions. The script runs the tools on PATH and does not install
@@ -403,6 +405,7 @@ layout_tests='^TestGoldenLayout$|^TestLayoutRules$|^TestLayoutDeterministic$'
 # spawn_tests are the golden spawn lists of new worlds (decision 0042),
 # which only wactl picks.
 spawn_tests='^TestGoldenSpawns$|^TestSpawnDeterministic$'
+rotation_tests='^TestGoldenRotation$|^TestRotationRules$'
 gen_tests='^TestGolden$|^TestGridV1Order$|^TestFieldV2$|^TestFieldV2Retries$|^TestF32Bits$|^TestDungeonV3$|^TestTownV3$|^TestFieldV3Places$|^TestMapV3Retries$'
 
 step_gen() {
@@ -412,6 +415,7 @@ step_gen() {
 	go test -count=1 -tags procedural -run "$gen_tests" -v ./shared/gen
 	go test -count=1 -tags procedural -run "$layout_tests" -v ./server/layout
 	go test -count=1 -tags procedural -run "$spawn_tests" -v ./server/spawns
+	go test -count=1 -tags procedural -run "$rotation_tests" -v ./server/rotation
 	case "$host" in
 	arm64) other=amd64 ;;
 	amd64) other=arm64 ;;
@@ -423,6 +427,7 @@ step_gen() {
 		GOARCH=$other go test -c -tags procedural -o "$bin" ./shared/gen
 		GOARCH=$other go test -c -tags procedural -o "$work/layout-$other.test" ./server/layout
 		GOARCH=$other go test -c -tags procedural -o "$work/spawns-$other.test" ./server/spawns
+		GOARCH=$other go test -c -tags procedural -o "$work/rotation-$other.test" ./server/rotation
 		if [ "$(uname -s)" = Darwin ] && [ "$other" = amd64 ]; then
 			runner=(arch -x86_64)
 		fi
@@ -430,6 +435,7 @@ step_gen() {
 			(cd shared/gen && ${runner[@]+"${runner[@]}"} "$bin" -test.count=1 -test.run "$gen_tests" -test.v)
 			(cd server/layout && ${runner[@]+"${runner[@]}"} "$work/layout-$other.test" -test.count=1 -test.run "$layout_tests" -test.v)
 			(cd server/spawns && ${runner[@]+"${runner[@]}"} "$work/spawns-$other.test" -test.count=1 -test.run "$spawn_tests" -test.v)
+			(cd server/rotation && ${runner[@]+"${runner[@]}"} "$work/rotation-$other.test" -test.count=1 -test.run "$rotation_tests" -test.v)
 		elif [ "$(uname -s)" = Darwin ]; then
 			echo "part skipped: the $other test binary does not run; an arm64 Mac needs Rosetta (softwareupdate --install-rosetta)"
 		else

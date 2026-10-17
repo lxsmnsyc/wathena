@@ -102,6 +102,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/restart"
+	"github.com/lxsmnsyc/wathena/server/rotation"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/social"
@@ -115,6 +116,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/gen"
+	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 	"github.com/lxsmnsyc/wathena/tools/convert"
 )
@@ -399,7 +401,11 @@ func runAll(name string, args []string) error {
 		spawns = map[string][]zone.Spawn{}
 	}
 	// A procedural world's fields and floors spawn the lists that wactl
-	// world new stored (decision 0042).
+	// world new stored (decision 0042), and its rotating floors and
+	// changed regions the lists of their derived keys (decision 0045).
+	if err := changedSpawns(cfg, &proc, loaded.all, log); err != nil {
+		return err
+	}
 	zoneSpawns(proc, loaded.all.Monsters, spawns, log)
 	// Every event, with whether it is on: the config's settings, which
 	// staff changes from the database go over below (decision 0031).
@@ -464,6 +470,9 @@ func runAll(name string, args []string) error {
 		log.Warn("chat lines are kept longer than the 30 days of the privacy policy", "days", cfg.Chat.LogDays)
 	}
 	items := item.New(loaded.items.Data)
+	// Where the points of removed maps go, which every zone shares
+	// (decision 0045).
+	moved := &zone.Relocations{}
 	// Server variables are shared by every zone, and written soon after
 	// they change.
 	var varStore variables.Store
@@ -475,12 +484,9 @@ func runAll(name string, args []string) error {
 		return fmt.Errorf("server variables: %w", err)
 	}
 	loaded.zone.Server = serverVars
-	varsDone := make(chan struct{})
-	go func() {
-		defer close(varsDone)
-		serverVars.Run(ctx)
-	}()
-	defer func() { <-varsDone }()
+	// The variables are written until the server stops. A return before
+	// it serves ends ctx first, so the wait cannot block the return.
+	defer background(ctx, stop, serverVars.Run)()
 	given, err := parseStartItems(cfg.StartItems)
 	if err != nil {
 		return err
@@ -501,6 +507,7 @@ func runAll(name string, args []string) error {
 		maps.Copy(warps, proc.warps)
 		idx := proc.set.Places(proc.warps)
 		loaded.zone.Places, loaded.zone.Atlas = idx, proc.atlas
+		proc.host.places, proc.host.moved = idx, moved
 		loaded.zone.Teleport = zone.TeleportPrices{Base: int64(cfg.Procedural.TeleportBase), Step: int64(cfg.Procedural.TeleportStep)}
 		for m, list := range placeNPCs(idx, loaded.all.PlaceNPCs, log) {
 			loaded.npcs[m] = append(loaded.npcs[m], list...)
@@ -537,14 +544,16 @@ func runAll(name string, args []string) error {
 		}
 		staffRoles.Load(given)
 	}
-	zones := make([]*zone.Zone, len(names))
-	monsters, warpCount, npcCount := 0, 0, 0
-	for i, n := range names {
+	// newZone makes a map's zone, at the start and for the maps that
+	// rotations and world changes add (decision 0045). late applies the
+	// settings that come after the world exists.
+	var late []func(z *zone.Zone)
+	newZone := func(n string, grid *path.Grid, sp []zone.Spawn, ws []zone.Warp, npcs []zone.NPC) *zone.Zone {
 		id := strings.TrimPrefix(n, "map/")
 		// Each zone has its own secret stream from the world's root, so
 		// no zone's randomness depends on another's (rng-v1, label
 		// zone:<map ID>).
-		z := zone.New(n, grids[i], root.Child("zone:"+id).SecretStream(), spawns[id])
+		z := zone.New(n, grid, root.Child("zone:"+id).SecretStream(), sp)
 		z.Progress, z.Status, z.Start, z.Items, z.StartItems = tables, jobs, start, items, given
 		z.Statuses = statuses
 		z.Skills, z.SkillTrees, z.SkillSettings = loaded.all.Skills, loaded.all.SkillTrees, skill.Settings{}
@@ -557,19 +566,43 @@ func runAll(name string, args []string) error {
 		}
 		z.Chat, z.Jail, z.Clock, z.Social, z.Storages = hub, jail, clock, socials, storages
 		z.Mail, z.Market, z.Autotraders = mails, stores, autotraders
-		z.Staff = staffRoles
-		z.SetWarps(warps[n])
-		z.SetNPCs(loaded.npcs[n])
+		z.Staff, z.Moved = staffRoles, moved
+		z.SetWarps(ws)
+		z.SetNPCs(npcs)
 		z.Mods = loaded.zone
-		npcCount += len(loaded.npcs[n])
 		reg.AddZone(z.Metrics)
-		zones[i] = z
+		for _, f := range late {
+			f(z)
+		}
+		return z
+	}
+	zones := make([]*zone.Zone, len(names))
+	monsters, warpCount, npcCount := 0, 0, 0
+	for i, n := range names {
+		id := strings.TrimPrefix(n, "map/")
+		zones[i] = newZone(n, grids[i], spawns[id], warps[n], loaded.npcs[n])
+		npcCount += len(loaded.npcs[n])
 		monsters += count(spawns[id])
 		warpCount += len(warps[n])
 	}
 	w, err := world.New(name, zones...)
 	if err != nil {
 		return err
+	}
+	// Rotations and world changes (decision 0045): the changes that came
+	// while the server was stopped are recorded before anyone joins, and
+	// the manager makes the later ones on the server clock.
+	var changes *rotation.Manager
+	if proc.host != nil {
+		h := proc.host
+		h.world, h.newZone = w, newZone
+		h.retire = func(z *zone.Zone) {
+			w.Retire(z)
+			reg.RemoveZone(z.Metrics)
+		}
+		if changes, err = startChanges(ctx, proc, pool, moved, log); err != nil {
+			return err
+		}
 	}
 	// World events start without staff action, on the server clock.
 	// Typed events pick fields by the level of their monsters (decision
@@ -630,6 +663,7 @@ func runAll(name string, args []string) error {
 				log.Info("mods turned off by staff", "map", z.Map, "mods", strings.Join(off, ","))
 			}
 		}
+		late = append(late, func(z *zone.Zone) { z.SetModsOff(append(slices.Clone(offAt[""]), offAt[z.Map]...)) })
 	}
 	levels := map[string]int{}
 	for id, l := range gamedata.FieldLevels(spawns) {
@@ -642,6 +676,7 @@ func runAll(name string, args []string) error {
 	for _, z := range zones {
 		z.WorldEvents = runs
 	}
+	late = append(late, func(z *zone.Zone) { z.WorldEvents = runs })
 	scheduler := worldevent.NewFrom(events, worldevent.Options{Runner: runs, Store: runStore, Location: cfg.Location,
 		Rand: eventRand, Log: log, Changed: runs.SetEvents})
 	runs.SetEvents(scheduler.Defs())
@@ -706,6 +741,7 @@ func runAll(name string, args []string) error {
 		for _, z := range zones {
 			z.Committer = storeCommitter{st}
 		}
+		late = append(late, func(z *zone.Zone) { z.Committer = storeCommitter{st} })
 		// Guild writes run in order with the commits, so a guild's row is
 		// there before a commit writes its storage (decision 0021).
 		if socialStore != nil {
@@ -731,16 +767,24 @@ func runAll(name string, args []string) error {
 	for _, sc := range loaded.zone.Scripts {
 		scriptMods = append(scriptMods, sc.Mod)
 	}
+	// The events tool lists the rotations and seasons, and forces them
+	// (decision 0045).
+	var changeTool adminworld.ChangeManager
+	if changes != nil {
+		changeTool = changes
+	}
 	staffWorld := adminworld.New(adminworld.Config{Staff: staffRoles, World: w, Store: st, Chat: hub, Items: items, Jobs: jobs,
 		StorageRecords: loaded.zone.Storages, Currencies: loaded.zone.Currencies, Quests: loaded.zone.Quests, Storages: storages, Mail: mails, Social: socials,
 		Kicker: kicker{gw, w}, Clock: clock, Log: log,
 		Tools: adminworld.Tools{Metrics: reg, Started: started, Version: version(), Restart: planner, Scheduler: scheduler, Runs: runs,
-			Events: eventConfig, Overrides: eventOverrides, Mods: loaded.set, ScriptMods: scriptMods, Switches: modSwitches}})
+			Events: eventConfig, Overrides: eventOverrides, Mods: loaded.set, ScriptMods: scriptMods, Switches: modSwitches,
+			Changes: changeTool, Atlas: proc.atlas}})
 	// GM commands give their sanctions through the same world side, and
 	// banned accounts cannot join (decision 0030).
 	for _, z := range zones {
 		z.Moderator = staffWorld
 	}
+	late = append(late, func(z *zone.Zone) { z.Moderator = staffWorld })
 	if st != nil {
 		gw.Bans = gameBans{st}
 		gw.Deletions = gameDeletions{st}
@@ -802,6 +846,9 @@ func runAll(name string, args []string) error {
 	}
 	go w.Run(ctx)
 	go scheduler.Run(ctx)
+	if changes != nil {
+		go changes.Run(ctx, clock)
+	}
 	go planner.Run(ctx)
 	go expireMail(ctx, mails, st, worldRules, clock, log)
 	if st != nil {
@@ -812,6 +859,7 @@ func runAll(name string, args []string) error {
 	if socialStore != nil {
 		// Party and friend changes are written once every zone stopped.
 		defer func() {
+			stop()
 			<-w.Stopped()
 			drain, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -823,6 +871,7 @@ func runAll(name string, args []string) error {
 	if chatLog != nil {
 		// The chat log writes what waits once every zone stopped.
 		defer func() {
+			stop()
 			<-w.Stopped()
 			drain, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -835,6 +884,7 @@ func runAll(name string, args []string) error {
 		// On shutdown every zone hands its players' last saves to the
 		// store, which then gets 10 seconds to write them.
 		defer func() {
+			stop()
 			<-w.Stopped()
 			drain, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()

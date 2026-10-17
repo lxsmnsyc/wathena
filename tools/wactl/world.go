@@ -98,9 +98,11 @@ func worldNew(args []string) error {
 		return err
 	}
 	if w.Mode == gen.ModeProcedural {
-		if w.Layout, w.Spawns, w.Content, err = proceduralWorld(*config, *ruleset, seed, generator); err != nil {
+		pw, err := proceduralWorld(*config, *ruleset, seed, generator)
+		if err != nil {
 			return err
 		}
+		w.Layout, w.Spawns, w.Content, w.Rotations, w.SeasonKey = pw.layout, pw.spawns, pw.content, pw.rotations, pw.seasonKey
 	} else if *config != "" {
 		return errors.New("--config is for a procedural world's layout; a classic world has none")
 	}
@@ -113,6 +115,7 @@ func worldNew(args []string) error {
 		fmt.Print(layoutText(w.Layout))
 		fmt.Print(spawnText(w.Spawns))
 		fmt.Print(contentText(w.Content))
+		fmt.Print(rotationText(w.Layout, w.Rotations))
 	}
 	fmt.Print(ownersHint(*admin))
 	return nil

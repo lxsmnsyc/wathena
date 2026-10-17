@@ -28,6 +28,13 @@ const waterBlock = 32
 //   - whether a field is one warp from a town, and its region: the town
 //     the fewest warps away, ties to the lower number.
 func (s *Set) SpawnMaps(l *layout.Layout, warps map[string][]zone.Warp) ([]spawns.Map, error) {
+	return SpawnMapsOf(l, warps, s.Get, nil)
+}
+
+// SpawnMapsOf is SpawnMaps for the maps that only reports, or every
+// field and floor when only is nil, with get finding the generated maps
+// (decision 0045).
+func SpawnMapsOf(l *layout.Layout, warps map[string][]zone.Warp, get func(id string) *Field, only func(id string) bool) ([]spawns.Map, error) {
 	atlas := layout.NewAtlas(l, layout.AtlasOptions{})
 	kinds := map[string]string{}
 	for _, m := range l.Maps {
@@ -50,10 +57,10 @@ func (s *Set) SpawnMaps(l *layout.Layout, warps map[string][]zone.Warp) ([]spawn
 	}
 	var out []spawns.Map
 	for _, m := range l.Maps {
-		if m.Kind != gen.KindField && m.Kind != gen.KindDungeon {
+		if m.Kind != gen.KindField && m.Kind != gen.KindDungeon || only != nil && !only(m.ID) {
 			continue
 		}
-		f := s.Get(m.ID)
+		f := get(m.ID)
 		if f == nil {
 			return nil, fmt.Errorf("the map %s is not generated", m.ID)
 		}

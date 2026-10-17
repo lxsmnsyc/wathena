@@ -84,6 +84,7 @@ type world struct {
 	announcements []string
 	restart       *admin.RestartOrder
 	eventOrders   []admin.EventOrder
+	changeOrders  []admin.ChangeOrder
 	modOrders     []admin.ModOrder
 }
 

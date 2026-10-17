@@ -18,7 +18,10 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/shared/gen"
 )
@@ -56,9 +59,17 @@ type Link struct {
 }
 
 // Index is every place of a world's generated maps, and the warps
-// between the maps.
+// between the maps. Update changes its maps while the server runs
+// (decision 0045): a place keeps its index, so handles stay, and the
+// places of a removed or replaced map are gone from Find and Nearest.
+// Its methods are safe for concurrent use.
 type Index struct {
+	mu     sync.RWMutex
 	places []Place
+	// ord is each place's place among its map's places, and gone marks
+	// the places of maps that no longer run.
+	ord  []int
+	gone []bool
 	// links are by From, then in the order given.
 	links []Link
 }
@@ -69,26 +80,66 @@ func New(maps []Map, links []Link) *Index {
 	ms := slices.Clone(maps)
 	slices.SortStableFunc(ms, func(a, b Map) int { return strings.Compare(a.ID, b.ID) })
 	x := &Index{}
-	for _, m := range ms {
-		for _, p := range m.Places {
-			x.places = append(x.places, Place{Map: m.ID, X: p.X, Y: p.Y, Tags: slices.Clone(p.Tags)})
-		}
-	}
-	x.links = slices.Clone(links)
-	slices.SortStableFunc(x.links, func(a, b Link) int { return strings.Compare(a.From, b.From) })
+	x.add(ms)
+	x.setLinks(links)
 	return x
 }
 
-// Len is the number of places.
+func (x *Index) add(ms []Map) {
+	for _, m := range ms {
+		for k, p := range m.Places {
+			x.places = append(x.places, Place{Map: m.ID, X: p.X, Y: p.Y, Tags: slices.Clone(p.Tags)})
+			x.ord, x.gone = append(x.ord, k), append(x.gone, false)
+		}
+	}
+}
+
+func (x *Index) setLinks(links []Link) {
+	x.links = slices.Clone(links)
+	slices.SortStableFunc(x.links, func(a, b Link) int { return strings.Compare(a.From, b.From) })
+}
+
+// Update removes the places of the maps of remove and of add, then adds
+// add's places after the others, and replaces the links (decision
+// 0045). Places keep their indexes.
+func (x *Index) Update(remove []string, add []Map, links []Link) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	for i, p := range x.places {
+		if slices.Contains(remove, p.Map) || slices.ContainsFunc(add, func(m Map) bool { return m.ID == p.Map }) {
+			x.gone[i] = true
+		}
+	}
+	ms := slices.Clone(add)
+	slices.SortStableFunc(ms, func(a, b Map) int { return strings.Compare(a.ID, b.ID) })
+	x.add(ms)
+	x.setLinks(links)
+}
+
+// Len is the number of places, gone ones too.
 func (x *Index) Len() int {
 	if x == nil {
 		return 0
 	}
+	x.mu.RLock()
+	defer x.mu.RUnlock()
 	return len(x.places)
 }
 
-// Place returns place i, from 0 to Len() - 1.
-func (x *Index) Place(i int) Place { return x.places[i] }
+// Place returns place i, from 0 to Len() - 1. A gone place still reads
+// as it was.
+func (x *Index) Place(i int) Place {
+	x.mu.RLock()
+	defer x.mu.RUnlock()
+	return x.places[i]
+}
+
+// Gone reports whether place i's map no longer runs.
+func (x *Index) Gone(i int) bool {
+	x.mu.RLock()
+	defer x.mu.RUnlock()
+	return x.gone[i]
+}
 
 // Scope is where Find looks: "town:any", "town:<id>", "dungeon:any",
 // "dungeon:<id>" or "map:<id>".
@@ -133,7 +184,7 @@ func (s Scope) Matches(mapID string) bool {
 		_, ok := gen.ParseTownMapID(mapID)
 		return ok && (s.id == "any" || mapID == "gen:town:"+s.id)
 	case "dungeon":
-		id, _, ok := gen.ParseDungeonMapID(mapID)
+		id, ok := dungeonOf(mapID)
 		return ok && (s.id == "any" || id == s.id)
 	case "map":
 		return mapID == s.id
@@ -147,12 +198,18 @@ func (x *Index) Find(s Scope, tag string) []int {
 	if x == nil {
 		return nil
 	}
+	x.mu.RLock()
+	defer x.mu.RUnlock()
 	var out []int
 	for i, p := range x.places {
-		if s.Matches(p.Map) && p.HasTag(tag) {
+		if !x.gone[i] && s.Matches(p.Map) && p.HasTag(tag) {
 			out = append(out, i)
 		}
 	}
+	// Places added later still come by map ID.
+	slices.SortStableFunc(out, func(a, b int) int {
+		return cmp.Or(strings.Compare(x.places[a].Map, x.places[b].Map), cmp.Compare(x.ord[a], x.ord[b]))
+	})
 	return out
 }
 
@@ -166,6 +223,8 @@ func (x *Index) Nearest(mapID string, px, py int, tag string) (int, bool) {
 	if x == nil {
 		return 0, false
 	}
+	x.mu.RLock()
+	defer x.mu.RUnlock()
 	type reach struct {
 		hops, x, y int
 	}
@@ -194,7 +253,7 @@ func (x *Index) Nearest(mapID string, px, py int, tag string) (int, bool) {
 	best, bestKey := -1, [2]int{}
 	for i, p := range x.places {
 		k := find(p.Map)
-		if k < 0 || !p.HasTag(tag) {
+		if k < 0 || x.gone[i] || !p.HasTag(tag) {
 			continue
 		}
 		dx, dy := p.X-at[k].x, p.Y-at[k].y
@@ -204,4 +263,39 @@ func (x *Index) Nearest(mapID string, px, py int, tag string) (int, bool) {
 		}
 	}
 	return best, best >= 0
+}
+
+// dungeonOf returns the dungeon ID of a floor's map ID: gen:dungeon:<id>:<floor>,
+// or a rotating floor's gen:dungeon:<id>:<date>:<floor>, whose map ID
+// carries its date (decision 0045).
+func dungeonOf(mapID string) (string, bool) {
+	if id, _, ok := gen.ParseDungeonMapID(mapID); ok {
+		return id, true
+	}
+	rest, ok := strings.CutPrefix(mapID, "gen:dungeon:")
+	if !ok {
+		return "", false
+	}
+	parts := strings.Split(rest, ":")
+	if len(parts) != 3 || !gen.ValidDungeonID(parts[0]) {
+		return "", false
+	}
+	if _, err := time.Parse("2006-01-02", parts[1]); err != nil {
+		return "", false
+	}
+	if f, err := strconv.Atoi(parts[2]); err != nil || f < 1 {
+		return "", false
+	}
+	return parts[0], true
+}
+
+// Clone returns a copy of the index, which Update changes alone, such as
+// a test world's.
+func (x *Index) Clone() *Index {
+	if x == nil {
+		return nil
+	}
+	x.mu.RLock()
+	defer x.mu.RUnlock()
+	return &Index{places: slices.Clone(x.places), ord: slices.Clone(x.ord), gone: slices.Clone(x.gone), links: slices.Clone(x.links)}
 }

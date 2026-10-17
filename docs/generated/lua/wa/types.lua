@@ -45,6 +45,8 @@
 ---| "world_event_start"
 ---| "world_event_end"
 ---| "restart_planned"
+---| "dungeon_rotated"
+---| "region_changed"
 ---| "quest_add"
 ---| "quest_progress"
 ---| "quest_complete"
@@ -1527,6 +1529,21 @@ function wa_TestWorld:buy(player, shop, items) end
 ---@param reason string 1 to 255 characters.
 function wa_TestWorld:plan_restart(minutes, reason) end
 
+---Rotates a dungeon at once, as staff force a rotation: its floors take the date of its style's next rotation after the world's time, or after the date it rotated to before, with new layouts and spawns. The points on the old floors move to the nearest town's save spot, and dungeon_rotated runs with { dungeon, date } in the world's zone. Returns the date, such as "2026-10-23". A case that runs on one of the dungeon's floors cannot rotate it, since a test world runs one map.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param dungeon string A dungeon of the test world, by its ID: its style's name without the mod prefix, such as crypt. Its style must have a rotation.
+---@return string
+function wa_TestWorld:rotate(dungeon) end
+
+---Changes the region of a field at once, as staff force a world change: its fields generate again with their next season and a new biome, with new spawns. The points on them move to the region's town's save spot, and region_changed runs with { region, season } in the world's zone. Returns the region, its town's ID such as "t1", and its new season. A case that runs on one of the region's fields cannot change it.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@param x integer A field's x on the grid. The test world's field is 0, 0.
+---@param y integer A field's y on the grid.
+---@return string, integer
+function wa_TestWorld:change_region(x, y) end
+
 ---The player's mails, oldest first, after the mail sent so far arrived.
 ---@param player wa.Player A player handle.
 ---@return wa.TestMail[]
@@ -1877,6 +1894,18 @@ local wa_WorldEvent = {}
 ---@field reason string? Why the server restarts, as staff wrote it. nil when the restart was cancelled.
 ---@field cancelled boolean? true when staff cancelled the planned restart.
 local wa_RestartPlan = {}
+
+---The object of dungeon_rotated (review decision 47).
+---@class wa.DungeonRotation
+---@field dungeon string The dungeon's ID, such as crypt.
+---@field date string The date its new floors carry in their map IDs, such as 2026-10-31: their map IDs are gen:dungeon:<dungeon>:<date>:<floor>.
+local wa_DungeonRotation = {}
+
+---The object of region_changed (review decision 47).
+---@class wa.RegionChange
+---@field region string The region, by its town's ID, such as t2: the fields whose nearest town is that town.
+---@field season integer The region's new season, from 1.
+local wa_RegionChange = {}
 
 ---The map of a generation layer: a generated field, town or dungeon floor of a new procedural world (review decision 46). It is read-only.
 ---@class wa.GenerationMap

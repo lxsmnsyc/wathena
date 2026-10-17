@@ -181,3 +181,28 @@ func (r *Runtime) FireRestartPlanned(ev RestartPlanned) {
 	}
 	r.Fire("restart_planned", Arg{"restart", script.NewTable(fields...)})
 }
+
+// WorldChange is the object of dungeon_rotated, { dungeon, date }, and
+// of region_changed, { region, season } (review decision 47). Dungeon is
+// set for a rotation, Region for a region's change.
+type WorldChange struct {
+	// Dungeon is the rotating dungeon's ID, such as crypt, and Date its
+	// new floors' date, such as 2026-10-31.
+	Dungeon, Date string
+	// Region is the region's town ID, such as t2, and Season its new
+	// season, from 1.
+	Region string
+	Season int
+}
+
+// FireWorldChange runs the handlers of dungeon_rotated or
+// region_changed.
+func (r *Runtime) FireWorldChange(ev WorldChange) {
+	if ev.Dungeon != "" {
+		r.Fire("dungeon_rotated", Arg{"rotation", script.NewTable(
+			script.KV("dungeon", script.String(ev.Dungeon)), script.KV("date", script.String(ev.Date)))})
+		return
+	}
+	r.Fire("region_changed", Arg{"change", script.NewTable(
+		script.KV("region", script.String(ev.Region)), script.KV("season", script.Int(int64(ev.Season))))})
+}

@@ -14,10 +14,14 @@ import (
 // Atlas is a world's layout while the server runs (decision 0041): the
 // maps with their display names and bands, the towns, and the distances
 // of the map graph. Every zone shares one. Display names change with
-// Rename; the rest never changes while the server runs. Its methods are
-// safe for concurrent use.
+// Rename, and the layout changes with Replace when a rotating dungeon
+// rotates or a region changes (decision 0045). Its methods are safe for
+// concurrent use.
 type Atlas struct {
-	mu   sync.RWMutex
+	mu sync.RWMutex
+	// base is the stored layout, with the current names, and l the
+	// layout that runs.
+	base *Layout
 	l    *Layout
 	at   map[string]int
 	adj  [][]int
@@ -33,7 +37,8 @@ type AtlasOptions struct {
 	// Blocked reports whether a name has a word the chat filter blocks.
 	Blocked func(name string) bool
 	// Save writes renamed maps, as one change. nil keeps renames in
-	// memory, as in a dev world.
+	// memory, as in a dev world. The maps are the stored layout's: a
+	// rotating floor's Base.
 	Save func(ctx context.Context, names []Rename) error
 }
 
@@ -45,7 +50,15 @@ type Rename struct {
 // NewAtlas makes the atlas of a layout. It keeps l and changes its
 // names on renames, so the caller must not use l afterwards.
 func NewAtlas(l *Layout, opts AtlasOptions) *Atlas {
-	a := &Atlas{l: l, at: index(l), adj: adjacency(l), opts: opts}
+	a := &Atlas{base: l, opts: opts}
+	a.set(l)
+	return a
+}
+
+// set makes l the layout that runs. The caller holds a.mu, or no other
+// goroutine has a.
+func (a *Atlas) set(l *Layout) {
+	a.l, a.at, a.adj, a.town, a.fromTown = l, index(l), adjacency(l), nil, nil
 	for i, m := range l.Maps {
 		if m.Kind == gen.KindTown {
 			a.town = append(a.town, i)
@@ -55,7 +68,45 @@ func NewAtlas(l *Layout, opts AtlasOptions) *Atlas {
 	for _, t := range a.town {
 		a.fromTown = append(a.fromTown, distances(a.adj, t))
 	}
-	return a
+}
+
+// Base returns a copy of the stored layout, with the current names, for
+// Layout.Apply.
+func (a *Atlas) Base() *Layout {
+	if a == nil {
+		return nil
+	}
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return &Layout{Maps: slices.Clone(a.base.Maps), Links: slices.Clone(a.base.Links), Home: a.base.Home, Attempt: a.base.Attempt}
+}
+
+// Layout returns a copy of the layout that runs.
+func (a *Atlas) Layout() *Layout {
+	if a == nil {
+		return nil
+	}
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return &Layout{Maps: slices.Clone(a.l.Maps), Links: slices.Clone(a.l.Links), Home: a.l.Home, Attempt: a.l.Attempt}
+}
+
+// Replace makes l the layout that runs, such as Base().Apply of a new
+// state. Its names are the base's, so a rename made since stays. The
+// caller must not use l afterwards.
+func (a *Atlas) Replace(l *Layout) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	names := map[string]string{}
+	for _, m := range a.base.Maps {
+		names[m.ID] = m.Name
+	}
+	for i, m := range l.Maps {
+		if n, ok := names[m.StoredID()]; ok {
+			l.Maps[i].Name = n
+		}
+	}
+	a.set(l)
 }
 
 // Home returns the map ID of the home area.
@@ -63,6 +114,8 @@ func (a *Atlas) Home() string {
 	if a == nil {
 		return ""
 	}
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.l.Home
 }
 
@@ -71,12 +124,12 @@ func (a *Atlas) Map(id string) (Map, bool) {
 	if a == nil {
 		return Map{}, false
 	}
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	i, ok := a.at[id]
 	if !ok {
 		return Map{}, false
 	}
-	a.mu.RLock()
-	defer a.mu.RUnlock()
 	return a.l.Maps[i], true
 }
 
@@ -95,6 +148,8 @@ func (a *Atlas) Links() []Link {
 	if a == nil {
 		return nil
 	}
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return slices.Clone(a.l.Links)
 }
 
@@ -148,7 +203,7 @@ func (a *Atlas) Town(id string) (Map, bool) {
 	return m, true
 }
 
-// townIndex returns a town's place in a.town.
+// townIndex returns a town's place in a.town. The caller holds a.mu.
 func (a *Atlas) townIndex(mapID string) int {
 	i, ok := a.at[mapID]
 	if !ok {
@@ -163,6 +218,8 @@ func (a *Atlas) Distance(from, to string) int {
 	if a == nil {
 		return -1
 	}
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	if t := a.townIndex(from); t >= 0 {
 		if j, ok := a.at[to]; ok {
 			return a.fromTown[t][j]
@@ -182,6 +239,8 @@ func (a *Atlas) NearestTown(mapID string) (Map, bool) {
 	if a == nil {
 		return Map{}, false
 	}
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	j, ok := a.at[mapID]
 	if !ok {
 		return Map{}, false
@@ -195,8 +254,6 @@ func (a *Atlas) NearestTown(mapID string) (Map, bool) {
 	if best < 0 {
 		return Map{}, false
 	}
-	a.mu.RLock()
-	defer a.mu.RUnlock()
 	return a.l.Maps[a.town[best]], true
 }
 
@@ -246,10 +303,11 @@ func (a *Atlas) Rename(ctx context.Context, town, name string) ([]Rename, error)
 	next := &Layout{Maps: slices.Clone(a.l.Maps), Links: a.l.Links, Home: a.l.Home}
 	next.Maps[a.at[t.ID]].Name = name
 	DeriveNames(next)
+	// Changes name the stored layout's maps: a rotating floor's Base.
 	var changes []Rename
 	for i, m := range next.Maps {
 		if m.Name != a.l.Maps[i].Name {
-			changes = append(changes, Rename{Map: m.ID, Name: m.Name})
+			changes = append(changes, Rename{Map: m.StoredID(), Name: m.Name})
 		}
 	}
 	// The town goes first, so the names stay unique after each row.
@@ -262,6 +320,17 @@ func (a *Atlas) Rename(ctx context.Context, town, name string) ([]Rename, error)
 		}
 	}
 	a.l.Maps = next.Maps
+	names := map[string]string{}
+	for _, c := range changes {
+		names[c.Map] = c.Name
+	}
+	base := slices.Clone(a.base.Maps)
+	for i, m := range base {
+		if n, ok := names[m.ID]; ok {
+			base[i].Name = n
+		}
+	}
+	a.base = &Layout{Maps: base, Links: a.base.Links, Home: a.base.Home, Attempt: a.base.Attempt}
 	return changes, nil
 }
 

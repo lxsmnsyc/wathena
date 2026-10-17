@@ -64,6 +64,8 @@ export interface Game {
   base: string;
   /** The game server's own URL. */
   game: string;
+  /** The server's debug address, with --dev's clock and staff endpoints. */
+  debug: string;
   stop: () => Promise<void>;
   /** The end of the server's log. */
   log: () => string;
@@ -355,6 +357,7 @@ export async function startGame(
   return {
     base: origin,
     game,
+    debug: `http://127.0.0.1:${debug}`,
     stop: async () => {
       await vite.close();
       await stopServer();

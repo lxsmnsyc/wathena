@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"slices"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -56,6 +57,14 @@ func (r *Registry) AddZone(z *Zone) {
 	r.mu.Lock()
 	r.zones = append(r.zones, z)
 	r.mu.Unlock()
+}
+
+// RemoveZone takes out a zone that stopped, such as a removed map's
+// (decision 0045).
+func (r *Registry) RemoveZone(z *Zone) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.zones = slices.DeleteFunc(r.zones, func(o *Zone) bool { return o == z })
 }
 
 // Reset starts every count again from now.

@@ -400,6 +400,7 @@ A procedural world's dungeons follow a style (strategy section 8.5, proposal 000
   room_size: [6, 12]
   tileset: tower
   level_step: 3
+  rotation: {every: daily, at: "06:00"}
 ```
 
 - `method` is `cave`, cellular automata with tunnels, or `rooms`, rooms without overlap joined by corridors with a few loops.
@@ -409,6 +410,7 @@ A procedural world's dungeons follow a style (strategy section 8.5, proposal 000
 - `tileset` is a dungeon tileset of the map generator: `cave`, `crypt`, `tower` or `ruins` in version 3. It picks the textures, the props and the light.
 - `level_step` is how many levels each floor's level band is above the floor before it, 1 to 50.
 - Each floor has an `entrance`. Every floor but the last has an `exit` in the room farthest from the entrance, and the last floor has a `boss_room` there instead. Rooms have `room` places.
+- `rotation` is optional: when a rotating dungeon of the style gets new floors, `{ every: daily, at }` or `{ every: weekly, weekday, at }`, with `at` as `HH:MM` in the server's time zone, `00:00` when left out, and `weekday` a day's name such as `friday` (review decision 47). `wactl world new` makes the first dungeon of a world whose style has a rotation rotate ("Rotations and world changes" below). Core's styles all have one.
 
 ### Town templates: data/town_templates.yml
 
@@ -1206,6 +1208,8 @@ end
 | `cast` | `cast` | Skill contexts only: the skill takes effect ("Skills" below). |
 | `world_event_start`, `world_event_end` | `event` | A run of a world event started or ended, on any map: `event` is `{ name, type, result }` ("Typed events" below). Mod, NPC and event contexts. |
 | `restart_planned` | `restart` | Staff planned a server restart, or cancelled it, in every zone: `restart` is `{ at, reason }` or `{ cancelled = true }` ("Planned restarts" below). Mod, NPC and event contexts. |
+| `dungeon_rotated` | `rotation` | A rotating dungeon got new floors, in every zone: `rotation` is `{ dungeon, date }` ("Rotations and world changes" below). Mod, NPC and event contexts. |
+| `region_changed` | `change` | A region's fields generated again with a new biome, in every zone: `change` is `{ region, season }`. Mod, NPC and event contexts. |
 
 Event contexts can listen to the events of mod contexts.
 
@@ -1674,6 +1678,40 @@ Rules:
 - At the restart's time, the server saves every character, disconnects every player and stops. Contexts end as at any stop. Data a mod keeps in `wa.variables` is saved as usual.
 - A plan lives only in the running server. A restart before its time drops it without a cancel event.
 - In `wactl mod test`, `world:plan_restart(minutes, reason)` fires it ("Testing a mod"). [examples/town-crier](examples/town-crier) tells its channel about a planned restart, and its test plans one.
+
+### Rotations and world changes
+
+A procedural world rotates one dungeon, and with seasons on, its regions change at the end of each season (strategy section 8.8, proposal 0002, review decision 47, server/README.md, "Rotations and world changes"). Every zone's mod, NPC and event contexts hear of each change:
+
+```lua
+local events = require "wa.events"
+
+return function()
+  events.on("dungeon_rotated", function(rotation)
+    -- rotation.dungeon is the dungeon's ID, such as crypt, and
+    -- rotation.date the date its new floors' map IDs carry.
+  end)
+  events.on("region_changed", function(change)
+    -- change.region is the region's town ID, such as t2, and
+    -- change.season its new season.
+  end)
+end
+```
+
+| Event | Field | Type | Meaning |
+|---|---|---|---|
+| `dungeon_rotated` | `dungeon` | string | The dungeon's ID, such as `crypt`. `places.find("dungeon:crypt", tag)` finds its floors. |
+| | `date` | string | The new floors' date, such as `2026-10-31`. Their map IDs are `gen:dungeon:<dungeon>:<date>:<floor>`. |
+| `region_changed` | `region` | string | The region's town ID, such as `t2`: the fields whose nearest town by warps is that town. |
+| | `season` | integer | The region's new season, from 1. |
+
+Rules:
+
+- The objects are read-only. The events run once per change, after the change: the new maps run, the portals lead to them, and the players and the save and memo points of the old maps moved to the nearest town's save spot.
+- A rotating dungeon's floors have the `nomemo` flag, so `/memo` refuses them. Their map IDs change at each rotation, so a mod keeps no map ID of a floor: it finds the floors with `wa.places`, or by the dungeon's ID.
+- A changed region's fields keep their map IDs, links and level bands. Their cells, places and spawns change. Places that a generation layer added to them are gone.
+- The `spawn_table` hooks and generation layers run only when a world is made, so they do not change the spawns of rotating floors and changed fields.
+- In `wactl mod test`, `world:rotate(dungeon)` and `world:change_region(x, y)` fire them ("Testing a mod"). [examples/market-town](examples/market-town)'s Town Guide tells players of the changes it heard of, and its tests rotate the cellar and change the field's region.
 
 ### Mods turned off by staff
 
@@ -2699,8 +2737,10 @@ end
 | `world:chat(player, text, { channel, to })` | The player says a line, as a client's chat: `channel` is `"public"` (the default), `"whisper"` with `to`, or a channel's name. It passes the mute, the filter and the hooks, then the `chat` event runs. |
 | `world:get_chat(player)` | The chat lines the player got so far, each `{ channel, from, text }`: `channel` is `"public"`, `"whisper"`, `"system"`, or a channel's name with its `#`. |
 | `world:plan_restart(minutes, reason)` | Plans a restart that many minutes from the world's time, 1 to 10,080, with a reason of 1 to 255 characters, as staff do on the admin screens. `restart_planned` runs with `{ at, reason }`, and the lines its handlers send go out. Nothing restarts. It is provisional. |
+| `world:rotate(dungeon)` | Rotates a dungeon of the test world at once, as staff force a rotation: its floors take the date of its style's next rotation after the world's time, or after the date it rotated to before, and `dungeon_rotated` runs. Returns the date. The dungeon's style must have a rotation, and the case must not run on one of its floors. It is provisional. |
+| `world:change_region(x, y)` | Changes the region of the field at x, y at once, as staff force a world change: its fields take their next season and a new biome, and `region_changed` runs. Returns the region's town ID and the new season. The case must not run on one of the region's fields. It is provisional. |
 
-The last five, and world events in test worlds, were added in phase 3 step 6 (proposal 0002, review decisions 16 and 17). `world:chat`, `world:get_chat`, `world:trade`, `world:close_storage`, `world:buy`, `world:get_mails` and `world:vend` came with phase 5, and review decision 32 made them stable. `world:plan_restart` came with review decision 41. A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
+The last five, and world events in test worlds, were added in phase 3 step 6 (proposal 0002, review decisions 16 and 17). `world:chat`, `world:get_chat`, `world:trade`, `world:close_storage`, `world:buy`, `world:get_mails` and `world:vend` came with phase 5, and review decision 32 made them stable. `world:plan_restart` came with review decision 41, and `world:rotate` and `world:change_region` with review decision 47. A test world runs the world events of its map, and of no map, on its clock: `world:advance` past an event's time starts it, and past its end ends it.
 | `testing.expect(value)` | Checks a value with `.to_be(x)`, `.to_equal(table)` (deep), `.to_contain(text_or_value)`, `.to_be_true()`, `.to_be_false()`, `.to_be_nil()`, or `.to_fail_with(text)` for a function that should raise an error containing the text. |
 
 A failed check stops the case and prints the file and line of the check. A case also fails when the server logs a warning that names the mod, such as a handler that failed. `wactl mod test` exits with status 1 when any case fails, so CI can run it.

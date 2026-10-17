@@ -234,3 +234,129 @@ func TestPlayersCrossMapsConcurrently(t *testing.T) {
 	cancel()
 	<-w.Stopped()
 }
+
+// recorder keeps a character's saves.
+type recorder struct {
+	mu    sync.Mutex
+	saves []character.Character
+}
+
+func (r *recorder) Save(c *character.Character, _ bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.saves = append(r.saves, *c)
+}
+
+func (r *recorder) last() character.Character {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if len(r.saves) == 0 {
+		return character.Character{}
+	}
+	return r.saves[len(r.saves)-1]
+}
+
+// waitMap reads a session's messages until a map change to a map.
+func waitMap(t *testing.T, s *zone.Session, m string) {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case msg, ok := <-s.Out:
+			if !ok {
+				t.Fatalf("the session ended before %s", m)
+			}
+			for _, e := range msg.GetFrame().GetEvents() {
+				if e.GetMapChange().GetMap() == m {
+					return
+				}
+			}
+		case <-deadline:
+			t.Fatalf("no map change to %s", m)
+		}
+	}
+}
+
+// TestRemoveAndEvacuate: a rotation adds a new map's zone while the
+// world runs, takes the old one out, moves its player to the town's
+// save spot, and moves the save and memo points of a player elsewhere
+// and of a player who logs in later (decision 0045).
+func TestRemoveAndEvacuate(t *testing.T) {
+	moved := &zone.Relocations{}
+	town, old := testZone("map/town"), testZone("map/old")
+	town.Moved, old.Moved = moved, moved
+	w, err := New("map/town", town, old)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go w.Run(ctx)
+	inside := w.NewCharacter("Inside", zone.Look{})
+	inside.Map, inside.X, inside.Y = "map/old", 5, 5
+	si, err := w.JoinCharacter(ctx, &inside, nil)
+	if err != nil || si.Map != "map/old" {
+		t.Fatalf("joined %v, %v", si, err)
+	}
+	saver := &recorder{}
+	outside := w.NewCharacter("Outside", zone.Look{})
+	outside.SaveMap, outside.SaveX, outside.SaveY = "map/old", 3, 3
+	outside.Memos = []character.Memo{{Map: "map/old", X: 1, Y: 1}, {Map: "map/town", X: 9, Y: 9}, {Map: "map/far", X: 2, Y: 2}}
+	if _, err := w.JoinCharacter(ctx, &outside, saver); err != nil {
+		t.Fatal(err)
+	}
+
+	// The new map's zone joins the running world.
+	fresh := testZone("map/new")
+	fresh.Moved = moved
+	if err := w.Add(fresh); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Add(testZone("map/new")); err == nil {
+		t.Error("a map added twice")
+	}
+	moved.Add("map/old", zone.Relocation{Map: "map/town", X: 12, Y: 13})
+	gone := w.Remove("map/old")
+	if gone != old || w.Zone("map/old") != nil || w.Remove("map/town") != nil {
+		t.Fatal("remove")
+	}
+	if n, err := old.Evacuate(ctx, "map/town", 12, 13); err != nil || n != 1 {
+		t.Fatalf("evacuated %d, %v", n, err)
+	}
+	waitMap(t, si, "map/town")
+	for _, z := range w.Zones() {
+		if err := z.Relocate(ctx, moved); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The new map runs, with nobody on it yet.
+	n, err := fresh.Players(ctx)
+	if err != nil || n != 0 {
+		t.Errorf("players on the new map %d %v", n, err)
+	}
+	w.Retire(old)
+	select {
+	case <-old.Stopped():
+	case <-time.After(5 * time.Second):
+		t.Fatal("the old zone did not stop")
+	}
+	// A login whose character was saved on the old map goes to the town.
+	late := w.NewCharacter("Late", zone.Look{})
+	late.Map, late.X, late.Y = "map/old", 5, 5
+	late.SaveMap = "map/old"
+	sl, err := w.JoinCharacter(ctx, &late, nil)
+	if err != nil || sl.Map != "map/town" {
+		t.Fatalf("a late login joined %v, %v", sl, err)
+	}
+	cancel()
+	select {
+	case <-w.Stopped():
+	case <-time.After(5 * time.Second):
+		t.Fatal("the world did not stop")
+	}
+	c := saver.last()
+	want := []character.Memo{{Map: "map/town", X: 12, Y: 13}, {Map: "map/far", X: 2, Y: 2}}
+	if c.SaveMap != "map/town" || c.SaveX != 12 || c.SaveY != 13 || len(c.Memos) != 2 || c.Memos[0] != want[0] || c.Memos[1] != want[1] {
+		t.Errorf("the last save: %s %d,%d %+v", c.SaveMap, c.SaveX, c.SaveY, c.Memos)
+	}
+}

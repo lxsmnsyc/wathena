@@ -16,9 +16,11 @@ import (
 
 	adminv1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1"
 	"github.com/lxsmnsyc/wathena/server/admin"
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/restart"
+	"github.com/lxsmnsyc/wathena/server/rotation"
 	"github.com/lxsmnsyc/wathena/server/store"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 )
@@ -58,6 +60,17 @@ type Tools struct {
 	Mods       *mod.Set
 	ScriptMods []string
 	Switches   []store.ModSwitch
+	// Changes are a procedural world's rotations and world changes, or
+	// nil, and Atlas names their maps (decision 0045).
+	Changes ChangeManager
+	Atlas   *layout.Atlas
+}
+
+// ChangeManager is what the events tool reads and forces of rotations and
+// world changes: a rotation.Manager.
+type ChangeManager interface {
+	Status() rotation.Status
+	Force(ctx context.Context, dungeon, region string) (rotation.Change, error)
 }
 
 // tools is the state of the tools.
@@ -265,6 +278,7 @@ func (w *World) configOf(name string) (worldevent.Setting, bool) {
 // Events lists the world events.
 func (w *World) Events(context.Context) (*adminv1.EventList, error) {
 	out := &adminv1.EventList{}
+	w.addChanges(out)
 	if w.cfg.Tools.Scheduler == nil {
 		return out, nil
 	}
@@ -278,6 +292,80 @@ func (w *World) Events(context.Context) (*adminv1.EventList, error) {
 	}
 	out.SetEvents(list)
 	return out, nil
+}
+
+// addChanges adds the rotations and the seasons to the events.
+func (w *World) addChanges(out *adminv1.EventList) {
+	t := w.cfg.Tools
+	if t.Changes == nil {
+		return
+	}
+	st := t.Changes.Status()
+	change := func(c *rotation.Change) *adminv1.WorldChange {
+		if c == nil {
+			return nil
+		}
+		return adminv1.WorldChange_builder{At: timestamppb.New(c.Due), Forced: c.Forced, Date: c.Date, Region: c.Region,
+			Season: int32(c.Season)}.Build() // #nosec G115 -- seasons are small.
+	}
+	var rotations []*adminv1.RotationInfo
+	for _, r := range st.Rotations {
+		name := r.Dungeon
+		if m, ok := t.Atlas.Find(layout.FloorID(r.Dungeon, r.Date, 1)); ok {
+			name = strings.TrimSuffix(m.Name, " F1")
+		}
+		rotations = append(rotations, adminv1.RotationInfo_builder{Dungeon: r.Dungeon, Name: name, Rotation: r.Rule.String(),
+			Date: r.Date, Next: change(r.Next)}.Build())
+	}
+	out.SetRotations(rotations)
+	fields := map[string]int32{}
+	if t.Atlas != nil {
+		for _, r := range layout.Regions(t.Atlas.Base()) {
+			fields[r.Town] = int32(len(r.Fields)) // #nosec G115 -- a grid has at most 1,024 fields.
+		}
+	}
+	var regions []*adminv1.RegionInfo
+	for _, r := range st.Regions {
+		name := r.Region
+		if m, ok := t.Atlas.Town(r.Region); ok {
+			name = m.Name
+		}
+		regions = append(regions, adminv1.RegionInfo_builder{Region: r.Region, Name: name, Season: int32(r.Season), // #nosec G115 -- as above.
+			Fields: fields[r.Region], Forced: change(r.Forced)}.Build())
+	}
+	out.SetSeasons(adminv1.SeasonInfo_builder{Days: int32(st.SeasonDays), Started: st.Started, Ends: int32(st.Ends), // #nosec G115 -- days are at most 366.
+		Next: change(st.Next), Regions: regions}.Build())
+}
+
+// ForceChange forces a rotation or a region's change after the
+// countdown, with its audit row (decision 0045).
+func (w *World) ForceChange(ctx context.Context, o admin.ChangeOrder) (*adminv1.EventList, error) {
+	t := w.cfg.Tools
+	if t.Changes == nil {
+		return nil, &admin.WorldError{Code: "not_found", Message: "This world has no rotating dungeons or regions."}
+	}
+	c, err := t.Changes.Force(ctx, o.Dungeon, o.Region)
+	switch {
+	case errors.Is(err, rotation.ErrNoDungeon):
+		return nil, &admin.WorldError{Code: "not_found", Message: "There is no such rotating dungeon."}
+	case errors.Is(err, rotation.ErrNoRegion):
+		return nil, &admin.WorldError{Code: "not_found", Message: "There is no such region."}
+	case err != nil:
+		return nil, err
+	}
+	action, target, args := "events.rotate", o.Dungeon, map[string]any{"date": c.Date}
+	if o.Region != "" {
+		action, target, args = "events.change_region", o.Region, map[string]any{"season": c.Season}
+	}
+	args["at"] = c.Due.UTC().Format(time.RFC3339)
+	if w.cfg.Store != nil {
+		err := w.cfg.Store.WriteAudit(ctx, store.AuditRow{AccountID: o.AccountID, AccountName: o.AccountName, Role: o.Role, Action: action,
+			Source: "admin", Target: target, Reason: o.Reason, Arguments: args})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return w.Events(ctx)
 }
 
 func (w *World) eventInfo(st worldevent.Status, results []worldevent.Result) *adminv1.EventInfo {

@@ -5,7 +5,7 @@ Generator version 3 adds dungeon floors, towns and named places (strategy sectio
 - [generator-v1](generator-v1.md) still holds for world modes, version rules, the grid, its cell types and its checksum. [generator-v2](generator-v2.md) still holds for fields.
 - The Go implementation is `shared/gen` (`maps.go`, `v3*.go`). The web client runs it as `client/src/world/gen.wasm`.
 - The golden file is [`shared/gen/testdata/golden-v3.json`](../../shared/gen/testdata/golden-v3.json).
-- Decisions [0040](../decisions/0040-dungeons-towns-places.md), [0041](../decisions/0041-world-layout.md) and [0042](../decisions/0042-spawns.md) have the reasons.
+- Decisions [0040](../decisions/0040-dungeons-towns-places.md), [0041](../decisions/0041-world-layout.md), [0042](../decisions/0042-spawns.md) and [0045](../decisions/0045-rotation.md) have the reasons.
 
 ## Seed tree
 
@@ -23,11 +23,16 @@ root (secret)
 │   │   ├── roads, buildings, decorations, heights
 │   │   ├── name(i)                a name attempt, i from 0 to 99
 │   │   └── attempt(n)             a retry, n from 1 to 7
-│   └── dungeon
-│       └── <id>                   a dungeon, such as crypt
-│           └── floor(f)           a floor's public node, f from 1
-│               ├── rooms or cave, props, materials, heights
-│               └── attempt(n)
+│   ├── dungeon
+│   │   ├── <id>                   a dungeon, such as crypt
+│   │   │   └── floor(f)           a floor's public node, f from 1
+│   │   │       ├── rooms or cave, props, materials, heights
+│   │   │       └── attempt(n)
+│   │   └── <id>(yyyymmdd)         a rotating dungeon's date (decision 0045)
+│   │       └── floor(f)           that date's floor
+│   └── region
+│       └── <town ID>
+│           └── season(n)          a region's biome of season n
 └── secret                         only `wactl world new` holds it
     ├── spawns
     │   └── <map ID>               a field's or floor's spawns (decision 0042)
@@ -37,7 +42,13 @@ root (secret)
     ├── regions
     │   └── <town ID>              a region's field bosses
     │       └── bosses
-    └── hooks                      the random stream of the spawn_table hooks
+    ├── hooks                      the random stream of the spawn_table hooks
+    ├── rotation
+    │   └── <dungeon>              the game role's key of a rotating dungeon
+    │       └── date(yyyymmdd)     the secret of a date's spawns
+    └── season                     the game role's key of world changes
+        └── <town ID>
+            └── season(n)          the secret of a region's season's spawns
 ```
 
 - `town(n) = child(public, "town", n)`. The town's ID is `t<n>` and its map ID `gen:town:t<n>`.
@@ -254,6 +265,34 @@ With `m = child(child(secret, "spawns"), <map ID>)`:
 ### Hooks
 
 Then the mods' `spawn_table` hooks run on each list, in map order, in a Lua state that ran the mods' entry scripts on no map, with the random stream `child(secret, "hooks")`. The server keeps its rules over their lists: each line's clear cells follow its monster and role, and a boss as common or uncommon is left out.
+
+## Rotations and seasons
+
+A procedural world rotates one dungeon, and with seasons on, its regions change (strategy sections 8.8 and 8.10, proposal 0002, review decision 47, [decision 0045](../decisions/0045-rotation.md)). The database keeps the layout as `wactl world new` made it, and the state: each rotating dungeon's active date and each region's season. The layout that runs is the stored one in that state, from `layout.Apply`. The rules below are those of `server/layout` and `server/rotation`; the golden rotations of `server/rotation/testdata/golden-rotation.json` hold on darwin/arm64 and darwin/amd64. The map generator's version does not change, and a client generates the new maps from the nodes the server sends, as any other.
+
+### Rotating dungeons
+
+- A dungeon style may have a rotation: daily or weekly at a time of day, in the server's time zone. `wactl world new` marks the first dungeon in the layout's order whose style has one, and keeps its rule.
+- A date is `yyyy-mm-dd`, the local date of the rotation's time in the server's time zone. Its number is `yyyymmdd` as an integer, such as 20261031.
+- The dungeon's node of a date is `child(child(public, "dungeon"), id, yyyymmdd)`: the label is the dungeon's ID and the index the date's number. Floor f's node is `child(that, "floor", f)`, generated with the params the layout keeps for floor f.
+- Floor f's map ID is `gen:dungeon:<id>:<date>:<f>`, such as `gen:dungeon:crypt:2026-10-31:2`, and it has the `nomemo` flag. Its links, name and band are the stored floor's, with the dated IDs.
+- The date that runs is the date of the rotation's latest time at or before now. A rotation is the next date's floors replacing the current date's.
+
+### Seasons
+
+- A region is the fields whose nearest town by warps is one town, ties to the lower number, named by the town's ID, as for field bosses.
+- A region in season n > 0 has one biome. Season 0's biome is the one most of its fields have, ties to the lower index. Season k's is a draw by `IntN` over the generator's biomes but season k - 1's, in index order, from the stream of `child(child(child(public, "region"), town), "season", k)`.
+- Each field of a region in season n > 0 takes that biome, and generates from `child(field(x, y), "season", n)` with its size. Its map ID, links and band stay.
+- Season ends come at 00:00 in the server's time zone, every `procedural.seasons.days` days from the date seasons started. The k-th season end changes the regions in town number order, `(k - 1) mod regions`.
+
+### Spawns
+
+The game role holds two derived keys, which `wactl world new` stores: `child(child(secret, "rotation"), dungeon)` for each rotating dungeon, and `child(secret, "season")`. Section "Spawns" above runs as at world creation, with these as its secret:
+
+- A rotating dungeon's floors of a date: `child(rotation key, "date", yyyymmdd)`, with the date's floors as the maps, so a floor's spawns come from `child(child(that, "spawns"), <dated map ID>)` and the last floor's boss from its `boss` child.
+- A region's fields in season n: `child(child(season key, town), "season", n)`, with the region's fields as the maps, so its field bosses come from that node's `regions` child.
+
+The `spawn_table` hooks and generation layers do not run on these lists.
 
 ## Server endpoints
 

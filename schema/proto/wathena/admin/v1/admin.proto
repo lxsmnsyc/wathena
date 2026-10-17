@@ -702,6 +702,65 @@ message EventInfo {
 // EventList answers GET /events.
 message EventList {
   repeated EventInfo events = 1;
+  // rotations are a procedural world's rotating dungeons, and seasons its
+  // world changes (decision 0045). A classic world has neither.
+  repeated RotationInfo rotations = 2;
+  SeasonInfo seasons = 3;
+}
+
+// WorldChange is a rotation or a region's change that waits for its
+// time (decision 0045).
+message WorldChange {
+  // at is when it happens.
+  google.protobuf.Timestamp at = 1;
+  // forced is set for a change staff forced.
+  bool forced = 2;
+  // date is a rotation's new date. season is a region's new season, and
+  // region its town's ID.
+  string date = 3;
+  string region = 4;
+  int32 season = 5;
+}
+
+// RotationInfo is a rotating dungeon of GET /events.
+message RotationInfo {
+  // dungeon is its ID, such as crypt, and name its first floor's display
+  // name without the floor.
+  string dungeon = 1;
+  string name = 2;
+  // rotation says when it rotates, such as "weekly on friday at 20:00",
+  // in the server's time zone.
+  string rotation = 3;
+  // date is the date of the floors that run.
+  string date = 4;
+  // next is the rotation that waits, or unset.
+  WorldChange next = 5;
+}
+
+// RegionInfo is a region of GET /events: the fields whose nearest town
+// is one town.
+message RegionInfo {
+  // region is the town's ID, such as t2, and name the town's display
+  // name.
+  string region = 1;
+  string name = 2;
+  int32 season = 3;
+  int32 fields = 4;
+  // forced is the change staff forced that waits, or unset.
+  WorldChange forced = 5;
+}
+
+// SeasonInfo is the world changes of GET /events.
+message SeasonInfo {
+  // days is procedural.seasons.days, 0 when seasons are off. started is
+  // the date they started, and ends how many season ends changed a
+  // region.
+  int32 days = 1;
+  string started = 2;
+  int32 ends = 3;
+  // next is the next season end's change, or unset.
+  WorldChange next = 4;
+  repeated RegionInfo regions = 5;
 }
 
 // EventChange is the body of PATCH /events/{name}. Fields that are not

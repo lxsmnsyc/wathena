@@ -66,6 +66,15 @@ type proceduralWorld struct {
 	// content is the stored content: places, objects and quests
 	// (decision 0044). A dev world has none.
 	content *content.World
+	// changes are the stored rotations and seasons, and devSecret the
+	// secret branch of a dev world, which gives its rotations' and
+	// seasons' keys (decision 0045).
+	changes   store.WorldChanges
+	devSecret *rng.Node
+	// setup is the state the world starts in, and host makes the later
+	// changes.
+	setup changeSetup
+	host  *changeHost
 }
 
 // wantsDevMaps reports whether the config lists generated maps of its
@@ -90,6 +99,7 @@ func wantsMaps(p proceduralOptions) bool { return wantsDevMaps(p) || p.DevLayout
 func fieldMaps(cfg settings, w store.World, log *slog.Logger) (proceduralWorld, error) {
 	var g gen.Generator
 	var public rng.Node
+	var devSecret *rng.Node
 	switch {
 	case w.Mode == gen.ModeProcedural:
 		g, _ = gen.Lookup(w.GeneratorVersion)
@@ -115,6 +125,8 @@ func fieldMaps(cfg settings, w store.World, log *slog.Logger) (proceduralWorld, 
 			return proceduralWorld{}, err
 		}
 		public = gen.PublicBranch(root)
+		secret := spawns.SecretBranch(root)
+		devSecret = &secret
 		log.Warn("a development procedural world without a database: its maps follow --seed", "generator", g.Version)
 	}
 	if g.Field == nil {
@@ -124,7 +136,7 @@ func fieldMaps(cfg settings, w store.World, log *slog.Logger) (proceduralWorld, 
 	if !mode.Procedural {
 		mode = gateway.WorldMode{Procedural: true, GeneratorVersion: g.Version, RNGVersion: g.RNG}
 	}
-	return proceduralWorld{mode: mode, g: g, public: public}, nil
+	return proceduralWorld{mode: mode, g: g, public: public, devSecret: devSecret}, nil
 }
 
 // loadLayout reads a procedural world's layout from the database.
@@ -145,6 +157,9 @@ func loadLayout(ctx context.Context, pool *pgxpool.Pool, w store.World, proc *pr
 	}
 	if proc.content, err = store.LoadContent(ctx, pool); err != nil {
 		return fmt.Errorf("the world's content: %w", err)
+	}
+	if proc.changes, err = store.LoadWorldChanges(ctx, pool); err != nil {
+		return fmt.Errorf("the world's rotations and seasons: %w", err)
 	}
 	return nil
 }
@@ -242,8 +257,15 @@ func addMaps(cfg settings, proc *proceduralWorld, set *mod.Set, pool *pgxpool.Po
 	if home != nil {
 		homeMap = home.Map
 	}
+	// The world runs the state its stored rotations and seasons lead to
+	// by now (decision 0045).
+	_, styles := fields.LayoutOf(recs.Styles, recs.Templates)
+	if proc.setup, err = setupChanges(cfg, proc, l, styles, time.Now(), log); err != nil {
+		return err
+	}
+	run := l.Apply(proc.public, len(proc.g.Biomes), proc.setup.state.State)
 	began := time.Now()
-	made, err := fields.GenerateLayout(proc.g, proc.public, l, homeMap)
+	made, err := fields.GenerateLayout(proc.g, proc.public, run, homeMap)
 	if err != nil {
 		return err
 	}
@@ -258,21 +280,21 @@ func addMaps(cfg settings, proc *proceduralWorld, set *mod.Set, pool *pgxpool.Po
 		}
 		log.Info("map generated", attrs...)
 	}
-	log.Info("world layout generated", "maps", len(made), "links", len(l.Links), "home", l.Home, "generator", proc.g.Version,
+	log.Info("world layout generated", "maps", len(made), "links", len(run.Links), "home", run.Home, "generator", proc.g.Version,
 		"took", time.Since(began).Round(time.Millisecond))
 	tilesets, err := fields.LoadTilesets(proc.g, p.Tilesets, fields.TemplatesOf(l)...)
 	if err != nil {
 		return err
 	}
 	proc.set = fields.NewSet(made, tilesets.JSON())
-	missing, err := proc.set.AddContent(proc.content)
+	missing, err := proc.set.AddContent(runningContent(proc.content, run))
 	if err != nil {
 		return err
 	}
 	for _, id := range missing {
 		log.Warn("the world's content names a map the world does not run; its places and objects are left out", "map", id)
 	}
-	if proc.warps, err = proc.set.LayoutWarps(l); err != nil {
+	if proc.warps, err = proc.set.LayoutWarps(run); err != nil {
 		return err
 	}
 	opts := layout.AtlasOptions{Blocked: layout.Blocked(recs.Filter)}
@@ -280,12 +302,40 @@ func addMaps(cfg settings, proc *proceduralWorld, set *mod.Set, pool *pgxpool.Po
 		opts.Save = func(ctx context.Context, names []layout.Rename) error { return store.RenameMaps(ctx, pool, names) }
 	}
 	proc.atlas = layout.NewAtlas(l, opts)
+	proc.atlas.Replace(run)
 	proc.set.SetNames(proc.atlas.Name)
-	proc.start = l.Home
-	if f := proc.set.Get(l.Home); f != nil {
+	proc.start = run.Home
+	if f := proc.set.Get(run.Home); f != nil {
 		proc.spawn, proc.hasSpawn = spawnOf(f)
 	}
 	return nil
+}
+
+// runningContent leaves out the stored content of maps that run
+// otherwise than at world creation: rotating floors and the fields of
+// changed regions (decision 0045). Their layers' places and objects
+// stood on cells that changed.
+func runningContent(w *content.World, run *layout.Layout) *content.World {
+	if w == nil {
+		return nil
+	}
+	same := func(id string) bool {
+		m := run.Map(id)
+		return m != nil && m.Season == 0
+	}
+	out := *w
+	out.Places, out.Objects = nil, nil
+	for _, p := range w.Places {
+		if same(p.Map) {
+			out.Places = append(out.Places, p)
+		}
+	}
+	for _, o := range w.Objects {
+		if same(o.Map) {
+			out.Objects = append(out.Objects, o)
+		}
+	}
+	return &out
 }
 
 // spawnOf is where new characters start on the home area: the first

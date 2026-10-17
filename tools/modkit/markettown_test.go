@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/internal/testrace"
 	"github.com/lxsmnsyc/wathena/server/mod"
 )
@@ -26,7 +27,7 @@ func TestMarketTown(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(results) != 4 {
+		if len(results) != 6 {
 			t.Errorf("%s: %d cases", base, len(results))
 		}
 		for _, r := range results {
@@ -74,5 +75,55 @@ func TestGeneratedTestWorld(t *testing.T) {
 	defer w.h.Close()
 	if err := w.bind("gen:town:t9"); err == nil || !strings.Contains(err.Error(), "no generated map gen:town:t9") {
 		t.Errorf("bind t9: %v", err)
+	}
+}
+
+// TestTestWorldChanges: world:rotate and world:change_region change a
+// test world's own copy of the generated maps, give the rotated floors
+// spawns, and refuse a change of the map the case runs on (decision
+// 0045).
+func TestTestWorldChanges(t *testing.T) {
+	testrace.SkipUnderRace(t, "it generates maps on one goroutine")
+	e := env(t)
+	l, err := e.Load(context.Background(), "../../mods/examples/market-town", "", mod.Renewal, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := e.newWorld(l, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.h.Close()
+	if err := w.bind("gen:dungeon:cellar:1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.rotate([]script.Value{script.String("cellar")}); err == nil || !strings.Contains(err.Error(), "a test world runs one map") {
+		t.Errorf("rotating the case's dungeon: %v", err)
+	}
+	if _, err := w.rotate([]script.Value{script.String("nope")}); err == nil || !strings.Contains(err.Error(), "no dungeon") {
+		t.Errorf("an unknown dungeon: %v", err)
+	}
+	out, err := w.rotate([]script.Value{script.String("crypt")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	date, _ := out[0].AsString()
+	id := "gen:dungeon:crypt:" + date + ":1"
+	if w.changes.set.Get(id) == nil || w.changes.set.Get("gen:dungeon:crypt:1") != nil || len(w.changes.planned[id]) == 0 {
+		t.Errorf("the rotated floor %s: %v", id, w.changes.planned[id])
+	}
+	g, _ := l.generatedMaps()
+	if g.set.Get("gen:dungeon:crypt:1") == nil || g.set.Get(id) != nil {
+		t.Error("the shared test world changed")
+	}
+	if _, err := w.changeRegion([]script.Value{script.Int(5), script.Int(5)}); err == nil {
+		t.Error("a field the test world lacks")
+	}
+	out, err = w.changeRegion([]script.Value{script.Int(0), script.Int(0)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if season, _ := out[1].AsInt(); season != 1 || len(w.changes.planned["gen:field:0:0"]) == 0 {
+		t.Errorf("season %v, spawns %v", out, w.changes.planned["gen:field:0:0"])
 	}
 }

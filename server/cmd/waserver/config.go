@@ -108,7 +108,21 @@ type proceduralOptions struct {
 	// the defaults, 500 and 100 zeny.
 	TeleportBase int `yaml:"teleport_base"`
 	TeleportStep int `yaml:"teleport_step"`
+	// Seasons are the world changes (decision 0045).
+	Seasons seasonOptions `yaml:"seasons"`
 }
+
+// seasonOptions turn seasons on: with Days set, a season ends every that
+// many days at 00:00 in the server's time zone, and the next region by
+// town number generates again with a new biome (proposal 0002, review
+// decision 47). 0, the default, leaves them off; staff can still change
+// a region.
+type seasonOptions struct {
+	Days int `yaml:"days"`
+}
+
+// maxSeasonDays is the longest season, a year.
+const maxSeasonDays = 366
 
 // privacyOptions are the owner's parts of the privacy notice. The page
 // shows them as plain text.
@@ -368,7 +382,7 @@ var secretKeys = map[string]string{
 // loadConfig reads a YAML config file over o. Unknown keys are errors,
 // so a typo does not pass silently.
 func loadConfig(path string, o *options) error {
-	data, err := os.ReadFile(path) // #nosec G304 -- the file the operator named.
+	data, err := os.ReadFile(path) // #nosec G304 G703 -- the file the operator named.
 	if err != nil {
 		return fmt.Errorf("config: %w", err)
 	}
@@ -582,6 +596,9 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if o.Procedural.DevLayout && wantsDevMaps(o.Procedural) {
 		bad("procedural.dev_layout", "a dev layout places its own maps; leave out --fields, --towns and --dungeons")
+	}
+	if o.Procedural.Seasons.Days < 0 || o.Procedural.Seasons.Days > maxSeasonDays {
+		bad("procedural.seasons.days", "is 0, for no seasons, to %d days", maxSeasonDays)
 	}
 	if o.Procedural.TeleportBase < 0 || o.Procedural.TeleportStep < 0 || o.Procedural.TeleportBase > 1_000_000 || o.Procedural.TeleportStep > 1_000_000 {
 		bad("procedural.teleport_base", "the teleport prices are 0 to 1000000 zeny")

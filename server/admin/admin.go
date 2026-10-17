@@ -140,6 +140,8 @@ func New(cfg Config) (*Handler, error) {
 	m.HandleFunc("POST "+Prefix+"events/{name}/start", h.call("events.control", change, h.eventAction(EventStart)))
 	m.HandleFunc("POST "+Prefix+"events/{name}/stop", h.call("events.control", change, h.eventAction(EventStop)))
 	m.HandleFunc("POST "+Prefix+"events/{name}/reset", h.call("events.control", change, h.eventAction(EventReset)))
+	m.HandleFunc("POST "+Prefix+"rotations/{dungeon}/rotate", h.call("events.control", change, h.forceChange(false)))
+	m.HandleFunc("POST "+Prefix+"regions/{region}/change", h.call("events.control", change, h.forceChange(true)))
 	m.HandleFunc("GET "+Prefix+"mods", h.call("mods.read", read, h.mods))
 	m.HandleFunc("POST "+Prefix+"mods/{id}/disable", h.call("mods.disable", change, h.switchMod(true)))
 	m.HandleFunc("POST "+Prefix+"mods/{id}/enable", h.call("mods.disable", change, h.switchMod(false)))

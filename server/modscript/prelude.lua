@@ -1982,6 +1982,14 @@ new_world, world_ids = handle_type("test world", {
 		check(type(reason) == "string", "world:plan_restart: the reason is a string that players see")
 		world_call("plan_restart", minutes, reason)
 	end,
+	rotate = function(self, dungeon)
+		check(type(dungeon) == "string", "world:rotate: want a dungeon's ID, such as \"crypt\"")
+		return (world_call("rotate", dungeon))
+	end,
+	change_region = function(self, x, y)
+		check(math_type(x) == "integer" and math_type(y) == "integer", "world:change_region: want a field's x and y, such as 0, 0")
+		return world_call("change_region", x, y)
+	end,
 	get_mails = function(self, player)
 		local id = player_ids[player]
 		check(id ~= nil, "world:get_mails: want a player from world:new_player")
@@ -2424,6 +2432,12 @@ function R.invoke(fn, ...)
 		elseif kind == "restart" then
 			-- restart_planned: { at, reason } or { cancelled = true }.
 			value = readonly("restart", value)
+		elseif kind == "rotation" then
+			-- dungeon_rotated: { dungeon, date } (review decision 47).
+			value = readonly("rotation", value)
+		elseif kind == "change" then
+			-- region_changed: { region, season } (review decision 47).
+			value = readonly("region change", value)
 		elseif kind == "trade" then
 			value = trade_object(value)
 		elseif kind == "sale" then

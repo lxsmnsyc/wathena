@@ -28,7 +28,7 @@ func (w *World) EventZone(d worldevent.Def) (*zone.Zone, error) {
 	if d.Map == "" {
 		return w.start, nil
 	}
-	z := w.zones[d.Map]
+	z := w.Zone(d.Map)
 	if z == nil {
 		return nil, fmt.Errorf("the map %s of %s does not run in this world", d.Map, d.Name)
 	}
@@ -53,7 +53,7 @@ func (w *World) CheckEvent(d worldevent.Def) error {
 		maps = d.Treasure.Maps
 	}
 	for _, m := range maps {
-		if w.zones[m] == nil {
+		if w.Zone(m) == nil {
 			return fmt.Errorf("the map %s does not run in this world", worldevent.MapID(m))
 		}
 	}
@@ -61,7 +61,7 @@ func (w *World) CheckEvent(d worldevent.Def) error {
 }
 
 func (f EventField) zone(mapName string) (*zone.Zone, error) {
-	z := f.w.zones[mapName]
+	z := f.w.Zone(mapName)
 	if z == nil {
 		return nil, fmt.Errorf("the map %s does not run in this world", worldevent.MapID(mapName))
 	}
@@ -73,7 +73,7 @@ func waitCtx(ctx context.Context) (context.Context, context.CancelFunc) {
 }
 
 // Has reports whether a map runs.
-func (f EventField) Has(mapName string) bool { return f.w.zones[mapName] != nil }
+func (f EventField) Has(mapName string) bool { return f.w.Zone(mapName) != nil }
 
 // StartMap is the world's start map.
 func (f EventField) StartMap() string { return f.w.start.Map }
@@ -171,7 +171,7 @@ func (f EventField) Announce(text string) { f.w.Announce(text, 0) }
 
 // Notice tells every zone that a run started or ended.
 func (f EventField) Notice(n worldevent.Notice) {
-	for _, z := range f.w.zones {
+	for _, z := range f.w.Zones() {
 		z.WorldEventNotice(n)
 	}
 }

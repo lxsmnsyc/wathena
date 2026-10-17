@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/shared/gen"
 )
@@ -23,6 +24,8 @@ type Style struct {
 	Name  string
 	Mod   string
 	Style gen.DungeonStyle
+	// Rotation is the style's rotation, or nil (decision 0045).
+	Rotation *layout.RotationRule
 }
 
 // Template is a town template record.
@@ -34,7 +37,7 @@ type Template struct {
 
 // Fields of the records.
 var (
-	styleFields    = []string{"method", "floors", "floor_size", "room_size", "tileset", "level_step"}
+	styleFields    = []string{"method", "floors", "floor_size", "room_size", "tileset", "level_step", "rotation"}
 	templateFields = []string{"size", "gates", "walls", "tileset", "buildings", "decorations"}
 	buildingFields = []string{"model", "footprint", "count", "places"}
 )
@@ -78,8 +81,19 @@ func strs(v any) ([]string, bool) {
 	return out, true
 }
 
+// ParseStyleRotation reads a style record's rotation, or nil when it has
+// none (decision 0045).
+func ParseStyleRotation(fields map[string]any) (*layout.RotationRule, error) {
+	v, set := fields["rotation"]
+	if !set {
+		return nil, nil
+	}
+	return layout.ParseRotation(v)
+}
+
 // ParseStyle reads a dungeon style from its record's fields and checks
-// it. room_size may be left out for caves.
+// it. room_size may be left out for caves. The rotation is
+// ParseStyleRotation's.
 func ParseStyle(fields map[string]any) (gen.DungeonStyle, error) {
 	if err := unknownField(fields, styleFields); err != nil {
 		return gen.DungeonStyle{}, err
@@ -206,7 +220,12 @@ func LoadRecords(set *mod.Set) (styles []Style, templates []Template, overlays [
 			errs = append(errs, fmt.Errorf("%s: dungeon styles %s: %w", r.Where, r.Name, err))
 			continue
 		}
-		styles = append(styles, Style{Name: r.Name, Mod: r.Mod, Style: s})
+		rot, err := ParseStyleRotation(r.Fields)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: dungeon styles %s: %w", r.Where, r.Name, err))
+			continue
+		}
+		styles = append(styles, Style{Name: r.Name, Mod: r.Mod, Style: s, Rotation: rot})
 	}
 	type footprint struct {
 		w, d     int

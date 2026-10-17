@@ -1,5 +1,6 @@
 # A dungeon style: two floors of small rooms. Each floor's level band is
-# 3 levels above the floor before it.
+# 3 levels above the floor before it. A cellar that a world rotates gets
+# new floors every day at 06:00, server time.
 - name: cellar
   method: rooms
   floors: 2
@@ -7,3 +8,4 @@
   room_size: [6, 12]
   tileset: tower
   level_step: 3
+  rotation: {every: daily, at: "06:00"}

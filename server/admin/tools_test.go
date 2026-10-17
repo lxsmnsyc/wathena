@@ -178,6 +178,25 @@ func TestEventCalls(t *testing.T) {
 	e.errorCode(gm, "POST", "events/"+name+"/start", "", action(""), http.StatusForbidden, "csrf")
 	e.errorCode(mod, "GET", "events", "", nil, http.StatusForbidden, "forbidden")
 	e.errorCode(mod, "POST", "events/"+name+"/stop", e.me(mod).GetCsrfToken(), action(""), http.StatusForbidden, "forbidden")
+
+	// Rotations and world changes (decision 0045).
+	if status, b := e.call(gm, "POST", "rotations/crypt/rotate", csrf, action("new floors for the event")); status != http.StatusOK {
+		t.Errorf("rotate: %d %s", status, b)
+	}
+	if status, b := e.call(gm, "POST", "regions/t1/change", csrf, action("")); status != http.StatusOK {
+		t.Errorf("change: %d %s", status, b)
+	}
+	e.world.mu.Lock()
+	changes := e.world.changeOrders
+	e.world.mu.Unlock()
+	if len(changes) != 2 || changes[0].Dungeon != "crypt" || changes[0].Reason != "new floors for the event" || changes[0].AccountName != "Gamemaster" ||
+		changes[1].Region != "t1" || changes[1].Dungeon != "" {
+		t.Errorf("change orders %+v", changes)
+	}
+	e.errorCode(gm, "POST", "rotations/tower/rotate", csrf, action(""), http.StatusNotFound, "not_found")
+	e.errorCode(gm, "POST", "regions/t1/change", csrf, action(strings.Repeat("r", 256)), http.StatusBadRequest, "bad_request")
+	e.errorCode(gm, "POST", "rotations/crypt/rotate", "", action(""), http.StatusForbidden, "csrf")
+	e.errorCode(mod, "POST", "regions/t1/change", e.me(mod).GetCsrfToken(), action(""), http.StatusForbidden, "forbidden")
 }
 
 // TestModCalls: GET /mods with mods.read, and turning a mod off and on

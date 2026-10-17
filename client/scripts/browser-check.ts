@@ -55,6 +55,12 @@
 //   storage place and to the quest board at its quest_board place, and
 //   reads the town's quests (decision 0044). Chromium only.
 //
+// - rotation: rotation-check.ts runs a --dev world layout whose dungeon
+//   rotates. A player inside its first floor sees the warning when the
+//   server clock nears the rotation, is moved to the town at the time,
+//   and warps into the new first floor, which the page generates
+//   (decision 0045). Chromium only.
+//
 // - gen: the map generator module (src/world/gen.wasm) gives the golden
 //   checksums of shared/gen/testdata in Chromium, Firefox and WebKit,
 //   whatever BROWSERS says (decision 0038): fields, dungeon floors and
@@ -105,6 +111,7 @@ import checkContent from './content-check.ts';
 import { checkLayout } from './layout-check.ts';
 import { checkQuests } from './quests-check.ts';
 import { checkPlaces } from './places-check.ts';
+import { checkRotation } from './rotation-check.ts';
 import type * as GeneratorModule from '../src/world/generator.ts';
 
 const repo = join(import.meta.dirname, '..', '..');
@@ -1117,6 +1124,13 @@ try {
           await checkContent(name, browser, { repo, client, ...assets }, check);
         } else {
           console.log(`skip ${name} content: the game checks run in Chromium`);
+        }
+      }
+      if (wanted('rotation')) {
+        if (name === 'chromium') {
+          await checkRotation(name, browser, { repo, client, ...assets }, check);
+        } else {
+          console.log(`skip ${name} rotation: the game checks run in Chromium`);
         }
       }
       if (wanted('exit')) {

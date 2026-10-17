@@ -468,6 +468,9 @@ type Zone struct {
 	// walkable cell nearest the map's middle. Set it before Run.
 	Spawn    [2]int
 	HasSpawn bool
+	// Moved are where the points of removed maps go, which every zone of
+	// the world shares (decision 0045). Set it before Run.
+	Moved *Relocations
 	// Metrics measures the zone's ticks. New makes it.
 	Metrics *metrics.Zone
 	// Mods are the mods' scripts and item names. Without them, no
@@ -633,6 +636,10 @@ type Zone struct {
 	notices chan worldevent.Notice
 	// restarts get planned and cancelled restarts (worldtools.go).
 	restarts chan modscript.RestartPlanned
+	// changes get rotations and region changes, and evac is where the
+	// players of a removed map go (worldchange.go).
+	changes chan modscript.WorldChange
+	evac    *evacuation
 	// modsOff are the mods that are off in the zone, and modErrors
 	// counts the mods' script errors (decision 0031).
 	modsOff   map[string]bool
@@ -746,6 +753,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		announces: make(chan announcement, 256),
 		notices:   make(chan worldevent.Notice, 64),
 		restarts:  make(chan modscript.RestartPlanned, 8),
+		changes:   make(chan modscript.WorldChange, 8),
 		modErrors: &modscript.ErrorLog{},
 		chatIn:    make(chan chatIn, 1024),
 		socialIn:  make(chan socialIn, 1024),
@@ -839,6 +847,8 @@ func (z *Zone) Run(ctx context.Context) {
 			z.worldNotice(n)
 		case ev := <-z.restarts:
 			z.restartPlanned(ev)
+		case ev := <-z.changes:
+			z.worldChanged(ev)
 		case in := <-z.chatIn:
 			z.receiveChat(in)
 		case in := <-z.socialIn:
@@ -957,6 +967,8 @@ func (z *Zone) join(p *Player) joinResult {
 	p.blocks, p.sanctions = slices.Clone(c.Blocks), slices.Clone(c.Sanctions)
 	p.currencies = maps.Clone(c.Currencies)
 	p.visited, p.memos = slices.Clone(c.Visited), slices.Clone(c.Memos)
+	// Points on a map that was removed move to its town (decision 0045).
+	z.relocate(p, z.Moved)
 	p.quests, p.questIcons = slices.Clone(c.Quests), nil
 	z.restoreCompanions(p, c)
 	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), bodyOptions(p))), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.

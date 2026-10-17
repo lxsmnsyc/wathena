@@ -206,6 +206,16 @@ func (w *world) Events(context.Context) (*adminv1.EventList, error) {
 		adminv1.EventInfo_builder{Name: "core:Field_Boss", Type: "boss", TriggerText: "daily at 20:00", DurationMinutes: 60}.Build()}}.Build(), nil
 }
 
+func (w *world) ForceChange(_ context.Context, o admin.ChangeOrder) (*adminv1.EventList, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if o.Dungeon != "crypt" && o.Region != "t1" {
+		return nil, &admin.WorldError{Code: "not_found", Message: "There is no such dungeon or region."}
+	}
+	w.changeOrders = append(w.changeOrders, o)
+	return adminv1.EventList_builder{Rotations: []*adminv1.RotationInfo{adminv1.RotationInfo_builder{Dungeon: "crypt"}.Build()}}.Build(), nil
+}
+
 func (w *world) EventAction(_ context.Context, o admin.EventOrder) (*adminv1.EventInfo, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()

@@ -953,6 +953,10 @@ var Classes = []Class{
 				Doc: "Opens a shop for the player, as player:open_shop, and buys, as the shop window's Buy. Returns true when the purchase went through, or false and the outcome, such as \"out_of_stock\", \"not_enough_items\" or \"not_enough_currency\"."},
 			{Name: "plan_restart", Params: []Param{{"minutes", "integer", "1 to 10080, as the admin screens allow."}, {"reason", "string", "1 to 255 characters."}},
 				Doc: "Plans a restart that many minutes from the test's time, as staff do on the admin screens: restart_planned runs with { at, reason } in the world's zone, and the lines its handlers send go out. Nothing restarts.", Provisional: true},
+			{Name: "rotate", Params: []Param{{"dungeon", "string", "A dungeon of the test world, by its ID: its style's name without the mod prefix, such as crypt. Its style must have a rotation."}}, Returns: "string",
+				Doc: "Rotates a dungeon at once, as staff force a rotation: its floors take the date of its style's next rotation after the world's time, or after the date it rotated to before, with new layouts and spawns. The points on the old floors move to the nearest town's save spot, and dungeon_rotated runs with { dungeon, date } in the world's zone. Returns the date, such as \"2026-10-23\". A case that runs on one of the dungeon's floors cannot rotate it, since a test world runs one map.", Provisional: true},
+			{Name: "change_region", Params: []Param{{"x", "integer", "A field's x on the grid. The test world's field is 0, 0."}, {"y", "integer", "A field's y on the grid."}}, Returns: "string, integer",
+				Doc: "Changes the region of a field at once, as staff force a world change: its fields generate again with their next season and a new biome, with new spawns. The points on them move to the region's town's save spot, and region_changed runs with { region, season } in the world's zone. Returns the region, its town's ID such as \"t1\", and its new season. A case that runs on one of the region's fields cannot change it.", Provisional: true},
 			{Name: "get_mails", Params: []Param{playerParam}, Returns: "wa.TestMail[]", Doc: "The player's mails, oldest first, after the mail sent so far arrived."},
 			{Name: "vend", Params: []Param{{"seller", "wa.Player", "Gets a cart and the Vending skill when it lacks them."}, {"buyer", "wa.Player", "Steps next to the seller."}, {"lines", "wa.TestVendLine[]", ""}}, Returns: "boolean, string?",
 				Doc: "Runs a whole vending sale, as two clients would: the seller puts each line's items in its cart and opens a shop, and the buyer buys. The shop closes after it. Returns true when the sale went through, or false and why: the vend hook's message, or an outcome such as \"not_enough_zeny\"."},
@@ -1247,6 +1251,20 @@ var Classes = []Class{
 			{"at", "integer?", "When the server restarts, in Unix seconds. nil when the restart was cancelled."},
 			{"reason", "string?", "Why the server restarts, as staff wrote it. nil when the restart was cancelled."},
 			{"cancelled", "boolean?", "true when staff cancelled the planned restart."},
+		},
+	},
+	{
+		Name: "wa.DungeonRotation", Doc: "The object of dungeon_rotated (review decision 47).",
+		Fields: []Field{
+			{"dungeon", "string", "The dungeon's ID, such as crypt."},
+			{"date", "string", "The date its new floors carry in their map IDs, such as 2026-10-31: their map IDs are gen:dungeon:<dungeon>:<date>:<floor>."},
+		},
+	},
+	{
+		Name: "wa.RegionChange", Doc: "The object of region_changed (review decision 47).",
+		Fields: []Field{
+			{"region", "string", "The region, by its town's ID, such as t2: the fields whose nearest town is that town."},
+			{"season", "integer", "The region's new season, from 1."},
 		},
 	},
 	{
@@ -1618,6 +1636,8 @@ var Events = []Event{
 	{Name: "world_event_start", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.WorldEvent", ""}}, Doc: "A run of a world event started, on any map. Every zone's handlers run."},
 	{Name: "world_event_end", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.WorldEvent", ""}}, Doc: "A run of a world event ended, on any map, with its result. Every zone's handlers run."},
 	{Name: "restart_planned", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"restart", "wa.RestartPlan", ""}}, Doc: "Staff planned a server restart from the admin screens, or cancelled it. Every zone's handlers run. At the restart time the server saves every character, disconnects every player and stops, so a handler can end a mod's event in time."},
+	{Name: "dungeon_rotated", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"rotation", "wa.DungeonRotation", ""}}, Doc: "A rotating dungeon got new floors, on schedule or because staff forced it. Every zone's handlers run, after the players and points of the old floors moved to the nearest town."},
+	{Name: "region_changed", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"change", "wa.RegionChange", ""}}, Doc: "A region's fields generated again with a new biome at the end of a season, or because staff forced it. Every zone's handlers run, after the players and points of its fields moved to the region's town."},
 	{Name: "quest_add", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.QuestEvent", ""}}, Doc: "A quest joined a player's log on the context's map: player:add_quest, or the new quest of player:change_quest."},
 	{Name: "quest_progress", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.QuestEvent", ""}}, Doc: "A kill raised a hunt objective's count, once per objective. Party members near the kill count it too, as rAthena."},
 	{Name: "quest_complete", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"event", "wa.QuestEvent", ""}}, Doc: "player:complete_quest marked a quest complete."},
