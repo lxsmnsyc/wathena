@@ -98,7 +98,7 @@ func worldNew(args []string) error {
 		return err
 	}
 	if w.Mode == gen.ModeProcedural {
-		if w.Layout, w.Spawns, err = proceduralWorld(*config, *ruleset, seed, generator); err != nil {
+		if w.Layout, w.Spawns, w.Content, err = proceduralWorld(*config, *ruleset, seed, generator); err != nil {
 			return err
 		}
 	} else if *config != "" {
@@ -112,6 +112,7 @@ func worldNew(args []string) error {
 	if w.Layout != nil {
 		fmt.Print(layoutText(w.Layout))
 		fmt.Print(spawnText(w.Spawns))
+		fmt.Print(contentText(w.Content))
 	}
 	fmt.Print(ownersHint(*admin))
 	return nil

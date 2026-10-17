@@ -106,6 +106,9 @@ type Mods struct {
 	// Quests are the quests of data/quests.yml (review decision 45).
 	// Without them a zone has no quests.
 	Quests *quest.Table
+	// World are a procedural world's quests for core's quest boards and
+	// job guilds (decision 0044), by ID. A classic world has none.
+	World []modscript.CoreQuest
 }
 
 // NPC is an NPC placed on the map by a mod's data. It shows to players.

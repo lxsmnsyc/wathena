@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-17)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 5 and step 6a are built.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and steps 1 to 6 are built.
 
 Done:
 
@@ -123,6 +123,12 @@ Done:
   - The client's quest window with timers and objectives, the active toggle, and quest icons over NPCs, with the mouse and touch.
   - The converter's quest commands: fully converted script NPCs went from 927 to 1,023 in renewal and from 754 to 790 in pre-renewal, and job change NPCs from 80 to 175 and from 63 to 99.
   - The e2e test `TestQuestFromCoreNPC` takes core's converted Dancer Kim's quest, hunts it across a relog, and turns it in, with PostgreSQL. The browser check `quests` plays the quest window and an NPC icon on a desktop and a phone.
+- Phase 7 step 6b, procedural content ([decision 0044](decisions/0044-procedural-content.md)), as review decision 46 approved it:
+  - Core's NPCs of procedural worlds stand at named places of towns: a Kafra with storage at `F_KafStor`'s rules and a fee by band, an inn with the save point, a refiner ported from `refinemain` with `refine.yml`'s costs (a new part of the `refine_db.json` extract), and tool, weapon and armor dealers whose shops follow the town's band. Classic worlds have none.
+  - Quest templates are records of `data/quest_templates.yml`. `wactl world new` gives each town 6 quest board quests of nearby monsters, items and towns, chosen with the secret branch, with rewards by band, and stores them with migration 00034. `waserver` makes a quest record of each, with IDs from 900,000. Each town's quest board offers them.
+  - One job guild per class family, in the low towns, with hunt and collect tests and a talk that changes a Novice into a first job and a first job into a second job, by rAthena's job and skill point rules. Reborn players change without a test. The Valkyrie stands in the largest town of the highest band.
+  - `wa.generation` with `generation.on("map")`, nodes with `child`, `stream` and `hash`, `generation.quest_template` and the permission `world.generate`. Layers add places, objects, which clients draw, and bosses. The Wayside Shrines sample mod.
+  - The golden worlds of `TestGoldenContent`, the e2e test `TestProceduralContent`, in which a new Novice completes a board quest and the Swordman test with PostgreSQL, and the browser check `content`, which walks to a Kafra and a quest board.
 
 Open review items:
 
@@ -130,6 +136,8 @@ Open review items:
 - Next step 28's details to review, and the review items of decision 0040: a `wa.testing` way to pick a test world's template, mods' own tilesets and props, a floor's level band in Lua, and whether an NPC placed by tag without a match is a warning.
 - Next step 29's details to review, and the review items of decision 0041: a Lua way to read graph distances or teleport prices, a record field for server services on NPCs, a `wa.testing` way to start on a mod's home map, the band formula in small worlds, longer names for `@renametown`, and entered maps and memo points in the data export.
 - Next step 31's details to review, and the review items of decision 0043: a Lua way to list a player's quests or read a quest record, a minimap mark for `showevent`, `questinfo`, `setquestinfo` and `open_quest_ui`, options for the quest events, and quest calls for another character.
+- Next step 32's details to review, and the review items of decision 0044: a public exp reward call, a Lua way to read a world's quests, player fields for skill points and weight, a layer's read of map cells, a places scope of fields, objects of a mod's own art, board quest limits and repeats, and whether `world.generate` should be flagged.
+- The rAthena fork's change to `build_refine`, which adds refine costs to `refine_db.json`, is not committed yet.
 - The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
@@ -145,7 +153,7 @@ Known issues:
 Next:
 
 1. The user's test of touch input on a real phone, with the steps in decision 0034, "Test on a real phone".
-2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 5, the generator core, generated fields, dungeons, towns and named places, the world layout, and spawns with the level band fix, are built, and so is step 6a, quests. Step 6b, procedural content, is next, as review decision 46 approved it.
+2. Phase 7, procedural mode (section 15, "Phase 7 in full"), started on 2026-10-16. Steps 1 to 6, the generator core, generated fields, dungeons, towns and named places, the world layout, spawns with the level band fix, quests and procedural content, are built. Step 7, rotation, is next.
 
 The converter review of review decision 32 stays open, and so do the items review decision 41 left for later: signature checks with trusted keys (phase 9), Ogg and MP3 sounds, pack map folders and zones that run mods' maps, and the inventory expansion voucher window.
 
@@ -2890,7 +2898,13 @@ The order from here:
         - The converter's quest commands, with 96 more fully converted script NPCs in renewal and 36 more in pre-renewal.
         - Tests: the quest package, store, zone, Lua, export, converter and golden tests, the Hunting Board's 6 `wactl mod test` cases, the e2e test `TestQuestFromCoreNPC` with PostgreSQL, and the browser check `quests`.
         - Left: `questinfo`, `setquestinfo` and `open_quest_ui`, quest icon art, and achievements.
-      - 6b. Procedural content: services, quest templates, job guilds, rebirth and `wa.generation`.
+      - 6b. Procedural content: services, quest templates, job guilds, rebirth and `wa.generation`. Done on 2026-10-17 ([decision 0044](decisions/0044-procedural-content.md), proposal 0002, review decision 46 and next step 32, server/README.md, "Procedural content", client/README.md, "Procedural worlds", and mods/README.md, "Quest templates", "Generation layers" and "Core's NPCs"):
+        - `server/content`: generation layers on every generated map, with snapped places, tileset props as objects, and bosses after the spawn hooks; each town's quest board place and 6 quests from the quest templates and its nearby fields' stored spawns, drawn from the town's secret node, with rewards by band; a guild per class family in the three lowest towns, with a hunt and a collect test per stage near levels 10 and 45; and the rebirth place in the largest town of the highest band.
+        - Migration 00034 with `world_places`, `world_objects` and `world_quests`, written by `wactl world new` and read by `waserver`, which makes quest records with IDs from 900,000, adds the places, and lists the objects in the map info. Core's town templates gain a guild hall, and the 6 golden layouts changed.
+        - Core's NPCs of procedural worlds, placed by tag: the Kafra and the inn on core's converted `F_Kafra` and `F_InnMaid`, the refiner on `refinemain` with `refine.yml`'s costs from a new part of the fork's `refine_db.json` extract, dealers with shops by band, the quest board, six guild masters and the Valkyrie. They reach the world's quests, exp rewards, skill points, weight and the refiner through `wa.internal`.
+        - Lua: `wa.generation` and the permission `world.generate`, with `docs/generated` regenerated, and the Wayside Shrines sample mod. The client draws the layers' objects.
+        - Tests: the content, store, modscript, status and client tests, `TestGoldenContent`, the modkit test that plays core's procedural NPCs on both bases, the sample's 3 `wactl mod test` cases, the e2e test `TestProceduralContent` with PostgreSQL, and the browser check `content`.
+        - Left: the guilds' trial dungeon (instanced maps), the other families and third jobs, the refiner's safe, multiple and +11 refines, content in dev worlds, and the golden content on the other architecture.
    7. Rotation: rotating dungeons and world change events through the scheduler (section 8.8), moving players, save points and memo points when a map goes away.
    8. The economy simulator and generator checks (section 8.13), bot runs compared with the simulator, the public seed test, and the phase 7 exit check.
    Art: the generator names biome tilesets, and a table maps each tileset to textures and models. Development points the table at the operator's own build, such as one from the kRO client. A public release needs an original or licensed art pack, which is art work outside this phase. Without one, maps use placeholder textures. Steps 3 and 6, and steps 4, 5 and 7 if they need it, draft their Lua API for review before they are built.

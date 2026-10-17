@@ -649,6 +649,45 @@ type WorldMap struct {
 	Nomemo      bool
 }
 
+type WorldObject struct {
+	MapID  string
+	Ord    int
+	Model  string
+	X      int
+	Y      int
+	Turn   int
+	Source string
+}
+
+type WorldPlace struct {
+	MapID  string
+	Ord    int
+	X      int
+	Y      int
+	Tags   []string
+	Source string
+}
+
+type WorldQuest struct {
+	ID       int
+	Town     string
+	Purpose  string
+	Guild    string
+	Stage    string
+	Step     int
+	Template string
+	Kind     string
+	Title    string
+	Monster  string
+	Item     string
+	Count    int
+	DropRate int
+	ToTown   pgtype.Text
+	BaseExp  int64
+	JobExp   int64
+	Zeny     int64
+}
+
 type WorldSpawn struct {
 	MapID     string
 	Ord       int

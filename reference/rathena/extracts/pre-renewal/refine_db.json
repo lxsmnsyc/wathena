@@ -1,8 +1,8 @@
 {
-	"rathena_git_hash": "003599e1c09c31c1bb123cb5b7b0278055eddcc0",
+	"rathena_git_hash": "28488df0427f1522754decb136e036e87f05496d",
 	"mode": "pre-renewal",
 	"max_refine": 10,
-	"note": "refine.yml as RefineDatabase loads it, without costs and chances. group is the refine type: Armor, Weapon, Shadow_Armor or Shadow_Weapon. level is the item's armor level or weapon level (1 for shadow gear). Each refine level has bonus and random_bonus in hundredths, as s_refine_level_info; status_calc_pc adds bonus / 100 to weapon ATK and bonus to the refine DEF sum, and random_bonus / 100 is the overrefine maximum. A refine level the file does not list has no entry.",
+	"note": "refine.yml as RefineDatabase loads it. group is the refine type: Armor, Weapon, Shadow_Armor or Shadow_Weapon. level is the item's armor level or weapon level (1 for shadow gear). Each refine level has bonus and random_bonus in hundredths, as s_refine_level_info; status_calc_pc adds bonus / 100 to weapon ATK and bonus to the refine DEF sum, and random_bonus / 100 is the overrefine maximum. normal is the Normal cost type of the refine level, and is absent when the level has no Normal chance. Its rate is the success chance out of 10000, price is the zeny it costs, material is the AegisName of the ore it takes, and breaking_rate is the chance out of 10000 that a failure breaks the item. The cost of refining an item from +r to +r+1 is the normal of refine level r+1, as findLevelInfo reads it. An item at max_refine cannot be refined. Other cost types are left out. A refine level the file does not list has no entry.",
 	"groups": [
 		{
 			"group": "Armor",
@@ -11,52 +11,112 @@
 				{
 					"level": 1,
 					"bonus": 70,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 2,
 					"bonus": 140,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 3,
 					"bonus": 210,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 4,
 					"bonus": 280,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 5,
 					"bonus": 350,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 6000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 6,
 					"bonus": 420,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 4000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 7,
 					"bonus": 490,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 4000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 8,
 					"bonus": 560,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 2000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 9,
 					"bonus": 630,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 2000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 10,
 					"bonus": 700,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 1000,
+						"price": 2000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				}
 			]
 		},
@@ -67,52 +127,112 @@
 				{
 					"level": 1,
 					"bonus": 200,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 2,
 					"bonus": 400,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 3,
 					"bonus": 600,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 4,
 					"bonus": 800,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 5,
 					"bonus": 1000,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 6,
 					"bonus": 1200,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 7,
 					"bonus": 1400,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 8,
 					"bonus": 1600,
-					"random_bonus": 300
+					"random_bonus": 300,
+					"normal": {
+						"rate": 6000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 9,
 					"bonus": 1800,
-					"random_bonus": 600
+					"random_bonus": 600,
+					"normal": {
+						"rate": 4000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 10,
 					"bonus": 2000,
-					"random_bonus": 900
+					"random_bonus": 900,
+					"normal": {
+						"rate": 2000,
+						"price": 50,
+						"material": "Phracon",
+						"breaking_rate": 10000
+					}
 				}
 			]
 		},
@@ -123,52 +243,112 @@
 				{
 					"level": 1,
 					"bonus": 300,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 2,
 					"bonus": 600,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 3,
 					"bonus": 900,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 4,
 					"bonus": 1200,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 5,
 					"bonus": 1500,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 6,
 					"bonus": 1800,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 7,
 					"bonus": 2100,
-					"random_bonus": 500
+					"random_bonus": 500,
+					"normal": {
+						"rate": 6000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 8,
 					"bonus": 2400,
-					"random_bonus": 1000
+					"random_bonus": 1000,
+					"normal": {
+						"rate": 4000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 9,
 					"bonus": 2700,
-					"random_bonus": 1500
+					"random_bonus": 1500,
+					"normal": {
+						"rate": 2000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 10,
 					"bonus": 3000,
-					"random_bonus": 2000
+					"random_bonus": 2000,
+					"normal": {
+						"rate": 2000,
+						"price": 200,
+						"material": "Emveretarcon",
+						"breaking_rate": 10000
+					}
 				}
 			]
 		},
@@ -179,52 +359,112 @@
 				{
 					"level": 1,
 					"bonus": 500,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 2,
 					"bonus": 1000,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 3,
 					"bonus": 1500,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 4,
 					"bonus": 2000,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 5,
 					"bonus": 2500,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 6,
 					"bonus": 3000,
-					"random_bonus": 800
+					"random_bonus": 800,
+					"normal": {
+						"rate": 6000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 7,
 					"bonus": 3500,
-					"random_bonus": 1600
+					"random_bonus": 1600,
+					"normal": {
+						"rate": 5000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 8,
 					"bonus": 4000,
-					"random_bonus": 2400
+					"random_bonus": 2400,
+					"normal": {
+						"rate": 2000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 9,
 					"bonus": 4500,
-					"random_bonus": 3200
+					"random_bonus": 3200,
+					"normal": {
+						"rate": 2000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 10,
 					"bonus": 5000,
-					"random_bonus": 4000
+					"random_bonus": 4000,
+					"normal": {
+						"rate": 2000,
+						"price": 5000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				}
 			]
 		},
@@ -235,52 +475,112 @@
 				{
 					"level": 1,
 					"bonus": 700,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 2,
 					"bonus": 1400,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 3,
 					"bonus": 2100,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 4,
 					"bonus": 2800,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 5,
 					"bonus": 3500,
-					"random_bonus": 1300
+					"random_bonus": 1300,
+					"normal": {
+						"rate": 6000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 6,
 					"bonus": 4200,
-					"random_bonus": 2600
+					"random_bonus": 2600,
+					"normal": {
+						"rate": 4000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 7,
 					"bonus": 4900,
-					"random_bonus": 3900
+					"random_bonus": 3900,
+					"normal": {
+						"rate": 4000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 8,
 					"bonus": 5600,
-					"random_bonus": 5200
+					"random_bonus": 5200,
+					"normal": {
+						"rate": 2000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 9,
 					"bonus": 6300,
-					"random_bonus": 6500
+					"random_bonus": 6500,
+					"normal": {
+						"rate": 2000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 10,
 					"bonus": 7000,
-					"random_bonus": 7800
+					"random_bonus": 7800,
+					"normal": {
+						"rate": 1000,
+						"price": 20000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				}
 			]
 		},
@@ -291,52 +591,112 @@
 				{
 					"level": 1,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 2,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 3,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 4,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 5,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 6000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 6,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 4000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 7,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 4000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 8,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 2000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 9,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 2000,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 10,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 900,
+						"price": 10000,
+						"material": "Elunium",
+						"breaking_rate": 10000
+					}
 				}
 			]
 		},
@@ -347,52 +707,112 @@
 				{
 					"level": 1,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 2,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 3,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 4,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 10000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 0
+					}
 				},
 				{
 					"level": 5,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 6000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 6,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 4000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 7,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 4000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 8,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 2000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 9,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 2000,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				},
 				{
 					"level": 10,
 					"bonus": 0,
-					"random_bonus": 0
+					"random_bonus": 0,
+					"normal": {
+						"rate": 900,
+						"price": 10000,
+						"material": "Oridecon",
+						"breaking_rate": 10000
+					}
 				}
 			]
 		}

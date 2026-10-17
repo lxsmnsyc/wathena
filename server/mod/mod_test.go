@@ -593,17 +593,18 @@ func TestScriptsAndModulePaths(t *testing.T) {
 // TestSampleMod loads mods/examples, which the docs point mod authors to.
 func TestSampleMod(t *testing.T) {
 	s, err := resolve(t, filepath.Join("..", "..", "mods", "examples"), Config{Approve: map[string][]string{
-		"example.halloween":     {"player.give_items", "player.give_zeny", "world.announce", "events.schedule", "events.control", "rules.override"},
-		"example.wolf-pack":     {"rules.override"},
-		"example.lucky-clover":  {"rules.override", "items.modify_rolls", "player.give_items"},
-		"example.town-crier":    {"rules.override"},
-		"example.desperado":     {"player.give_items"},
-		"example.party-hall":    {"party.manage"},
-		"example.guild-hall":    {"guild.manage"},
-		"example.bank":          {"player.give_items", "rules.override", "player.expand_limits"},
-		"example.arena":         {"mail.send", "rules.override"},
-		"example.mossy-fields":  {"spawns.modify"},
-		"example.hunting-board": {"player.give_items", "player.give_zeny"},
+		"example.halloween":       {"player.give_items", "player.give_zeny", "world.announce", "events.schedule", "events.control", "rules.override"},
+		"example.wolf-pack":       {"rules.override"},
+		"example.lucky-clover":    {"rules.override", "items.modify_rolls", "player.give_items"},
+		"example.town-crier":      {"rules.override"},
+		"example.desperado":       {"player.give_items"},
+		"example.party-hall":      {"party.manage"},
+		"example.guild-hall":      {"guild.manage"},
+		"example.bank":            {"player.give_items", "rules.override", "player.expand_limits"},
+		"example.arena":           {"mail.send", "rules.override"},
+		"example.mossy-fields":    {"spawns.modify"},
+		"example.hunting-board":   {"player.give_items", "player.give_zeny"},
+		"example.wayside-shrines": {"world.generate"},
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -628,11 +629,11 @@ func TestSampleMod(t *testing.T) {
 		t.Errorf("hat ID %d", items.IDs["example.halloween:Pumpkin_Hat"])
 	}
 	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 112, true })
-	if err != nil || len(npcs) != 20 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
+	if err != nil || len(npcs) != 21 || npcs[5].DisplayName != "Greeter" || npcs[5].Script != "scripts/npc/greeter.lua" {
 		t.Errorf("npcs %+v, %v", npcs, err)
 	}
-	// The Market Town's NPCs and one Hunt Master stand at places, not on
-	// a map.
+	// The Market Town's NPCs, one Hunt Master and the Shrine Keeper
+	// stand at places, not on a map.
 	placed := 0
 	for _, n := range npcs {
 		if n.Place != nil {
@@ -642,7 +643,7 @@ func TestSampleMod(t *testing.T) {
 			}
 		}
 	}
-	if placed != 3 {
+	if placed != 4 {
 		t.Errorf("%d NPCs by place", placed)
 	}
 	// The cookie stand is a shop that only scripts open.

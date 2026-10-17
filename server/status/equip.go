@@ -73,7 +73,8 @@ func FromRolled(b *bonus.Bonus, roll func(name string) (int, bool)) Bonus {
 	return out
 }
 
-// RefineData is refine_db.json: rAthena's refine.yml without costs.
+// RefineData is refine_db.json: rAthena's refine.yml with the Normal cost
+// of each refine level. Other cost types are left out.
 type RefineData struct {
 	Mode      string `json:"mode"`
 	MaxRefine int    `json:"max_refine"`
@@ -84,14 +85,27 @@ type RefineData struct {
 			Level       int `json:"level"`
 			Bonus       int `json:"bonus"`
 			RandomBonus int `json:"random_bonus"`
+			// Normal is nil when the level has no Normal chance.
+			Normal *RefineCost `json:"normal"`
 		} `json:"refine_levels"`
 	} `json:"groups"`
 }
 
+// RefineCost is s_refine_cost of the Normal cost type. Rate and
+// BreakingRate are out of 10000. Price is in zeny. Material is the
+// AegisName of the ore the refine takes.
+type RefineCost struct {
+	Rate         int    `json:"rate"`
+	Price        int    `json:"price"`
+	Material     string `json:"material"`
+	BreakingRate int    `json:"breaking_rate"`
+}
+
 // refineInfo is s_refine_level_info: bonus and randombonus_max, in
-// hundredths.
+// hundredths, and the Normal cost. normal is nil when there is none.
 type refineInfo struct {
 	bonus, randomBonus int
+	normal             *RefineCost
 }
 
 // refineKey is a refine type and an item level.
@@ -120,7 +134,7 @@ func (t *Tables) SetRefine(d *RefineData) error {
 			r.levels[k] = m
 		}
 		for _, l := range g.RefineLevels {
-			m[l.Level] = refineInfo{l.Bonus, l.RandomBonus}
+			m[l.Level] = refineInfo{l.Bonus, l.RandomBonus, l.Normal}
 		}
 	}
 	t.refine = r
@@ -136,6 +150,27 @@ func (t *Tables) MaxRefine() int {
 		return 20
 	}
 	return 10
+}
+
+// RefineCost is the Normal cost of refining an item from refine to
+// refine+1, as RefineDatabase::findLevelInfo finds it. weapon picks the
+// Weapon refine type over Armor. level is the weapon level or armor level.
+// The cost is in the refine level refine+1 of refine.yml. It returns false
+// at or above MAX_REFINE, for a negative refine, or when the table has no
+// Normal chance there.
+func (t *Tables) RefineCost(weapon bool, level, refine int) (RefineCost, bool) {
+	if t.refine == nil || refine < 0 || refine >= t.refine.max {
+		return RefineCost{}, false
+	}
+	k := refineKey{"armor", level}
+	if weapon {
+		k.group = "weapon"
+	}
+	info, ok := t.refine.levels[k][refine+1]
+	if !ok || info.normal == nil {
+		return RefineCost{}, false
+	}
+	return *info.normal, true
 }
 
 // currentRefine is RefineDatabase::findCurrentLevelInfo: the bonus of an

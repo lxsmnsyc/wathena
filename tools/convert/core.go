@@ -6,6 +6,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
+	contentcore "github.com/lxsmnsyc/wathena/server/content/core"
 	"github.com/lxsmnsyc/wathena/server/currency"
 	gencore "github.com/lxsmnsyc/wathena/server/fields/core"
 	layoutcore "github.com/lxsmnsyc/wathena/server/layout/core"
@@ -20,8 +21,8 @@ import (
 // channels and chat filter from server/chat, and its currencies from
 // server/currency, its sample world events from server/worldevent, and
 // its dungeon styles and town templates from server/fields/core, its
-// naming styles from server/layout/core, and its spawn themes from
-// server/spawns/core.
+// naming styles from server/layout/core, its spawn themes from
+// server/spawns/core, and its quest templates from server/content/core.
 //
 //go:embed core
 var coreFiles embed.FS
@@ -31,6 +32,14 @@ var coreFiles embed.FS
 const coreNPCs = `# Core's own NPCs, written for wAthena.
 - {name: "Job Master#prontera", map: prontera, x: 151, y: 191, direction: south, sprite: "1_M_JOBGUIDER", display_name: Job Master, script: scripts/npcs/job_master.lua}
 `
+
+// proceduralNPCs are the data/npcs.yml records of core's NPCs of
+// procedural worlds (decision 0044): services, quest boards, job guilds
+// and the rebirth NPC, placed by tag, and the dealers' shops. Their
+// scripts are under core/scripts/procedural.
+//
+//go:embed procedural_npcs.yml
+var proceduralNPCs string
 
 // addCoreFiles adds core's own files to the converted ones, and its NPCs
 // to data/npcs.yml.
@@ -46,7 +55,7 @@ func addCoreFiles(out map[string]string) {
 		out[path[len("core/"):]] = string(b)
 		return nil
 	})
-	out["data/npcs.yml"] += coreNPCs
+	out["data/npcs.yml"] += coreNPCs + proceduralNPCs
 	for _, k := range []companion.Kind{companion.Companions, companion.Mounts} {
 		if b, err := companion.CoreFiles.ReadFile("core/" + k.File); err == nil {
 			out[k.File] = string(b)
@@ -65,6 +74,9 @@ func addCoreFiles(out map[string]string) {
 	}
 	if b, err := spawncore.Files.ReadFile(spawncore.ThemesFile); err == nil {
 		out[mod.SpawnThemeKind.File] = string(b)
+	}
+	if b, err := contentcore.Files.ReadFile(contentcore.TemplatesFile); err == nil {
+		out[mod.QuestTemplateKind.File] = string(b)
 	}
 	if b, err := worldevent.CoreFiles.ReadFile("core/" + worldevent.File); err == nil {
 		out[worldevent.File] = string(b)

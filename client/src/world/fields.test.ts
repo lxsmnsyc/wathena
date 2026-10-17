@@ -6,6 +6,7 @@ import {
   type FieldGenerator,
   type FieldInfo,
   isGenerated,
+  layerObjects,
   loadField,
   loadTilesets,
 } from './fields';
@@ -308,4 +309,23 @@ describe('isGenerated', () => {
 
 it('hex writes lowercase digits', () => {
   expect(hex(new Uint8Array([0, 255, 16]))).toBe('00ff10');
+});
+
+describe('layerObjects', () => {
+  // A map of 4 × 3 cells that all stand at height 2.
+  const map = decodeWMap(readFileSync(new URL('client/src/formats/testdata/sample.wmap', repo)));
+  it('places each model on its cell, turned', () => {
+    const m = { ...map, width: 4, height: 3, cellHeights: new Float32Array(4 * 3 * 4).fill(2) };
+    const out = layerObjects(m, [
+      { model: 'model/gen/forest/rock', x: 1, y: 2 },
+      { model: 'model/gen/forest/rock', x: 0, y: 0, turn: 1 },
+      { model: 'model/gen/forest/rock', x: 9, y: 0 },
+    ]);
+    expect(out).toHaveLength(2);
+    expect(Array.from(out[0]!.matrix)).toEqual([
+      1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1.5, 2, -2.5, 1,
+    ]);
+    expect(Array.from(out[1]!.matrix.slice(0, 3))).toEqual([0, 0, -1]);
+    expect(out[1]!.model).toBe('model/gen/forest/rock');
+  });
 });

@@ -96,6 +96,11 @@ type Field struct {
 	Field     gen.Field
 	// Checksum is the grid's checksum, WMAPSum the WMAP's SHA-256.
 	Checksum, WMAPSum [32]byte
+	// Added are the places that procedural content and generation
+	// layers added, after the generated ones, and Objects the layers'
+	// objects (decision 0044). AddContent sets them.
+	Added   []gen.Place
+	Objects []Object
 
 	gzOnce sync.Once
 	gz     []byte
@@ -255,8 +260,30 @@ type Info struct {
 	Floors  int    `json:"floors,omitempty"`
 	Levels  []int  `json:"levels,omitempty"`
 	// Places are the map's named places. They are public layout, which
-	// the client can make itself, so the checks may read them here.
+	// the client can make itself, so the checks may read them here. The
+	// places that content and generation layers added follow the
+	// generated ones.
 	Places []InfoPlace `json:"places,omitempty"`
+	// Objects are what generation layers put on the map (decision 0044):
+	// the client draws each model at its cell.
+	Objects []InfoObject `json:"objects,omitempty"`
+}
+
+// InfoObject is an object in Info: a model's asset name, such as
+// model/gen/forest/rock, a cell, and 0 to 3 quarter turns.
+type InfoObject struct {
+	Model string `json:"model"`
+	X     int    `json:"x"`
+	Y     int    `json:"y"`
+	Turn  int    `json:"turn,omitempty"`
+}
+
+// Object is an object of a generation layer on a map: a prop of the
+// map's tileset.
+type Object struct {
+	// Model is the model's asset name, such as model/gen/forest/rock.
+	Model      string
+	X, Y, Turn int
 }
 
 // InfoPlace is a named place in Info.
@@ -283,8 +310,11 @@ func (f *Field) Info() Info {
 	if f.Key == [32]byte{} {
 		in.Key = ""
 	}
-	for _, p := range f.Field.Places {
+	for _, p := range f.AllPlaces() {
 		in.Places = append(in.Places, InfoPlace{Tags: p.Tags, X: p.X, Y: p.Y})
+	}
+	for _, o := range f.Objects {
+		in.Objects = append(in.Objects, InfoObject(o))
 	}
 	return in
 }

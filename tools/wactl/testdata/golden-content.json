@@ -1,0 +1,34 @@
+[
+  {
+    "seed": "golden-content-seed-0000000001",
+    "boardQuests": 30,
+    "guildQuests": 24,
+    "places": 12,
+    "guilds": [
+      "swordman gen:town:t1",
+      "mage gen:town:t4",
+      "archer gen:town:t2",
+      "acolyte gen:town:t1",
+      "merchant gen:town:t4",
+      "thief gen:town:t2"
+    ],
+    "rebirth": "gen:town:t3",
+    "checksum": "67259b8803f44af4d23d53727e2aa4963a5b2240519ea391fba1f7c6701d5b89"
+  },
+  {
+    "seed": "golden-content-seed-0000000002",
+    "boardQuests": 30,
+    "guildQuests": 24,
+    "places": 12,
+    "guilds": [
+      "swordman gen:town:t1",
+      "mage gen:town:t3",
+      "archer gen:town:t2",
+      "acolyte gen:town:t1",
+      "merchant gen:town:t3",
+      "thief gen:town:t2"
+    ],
+    "rebirth": "gen:town:t5",
+    "checksum": "1a01414ab9536754e66ec8cae7c3be6efe9279b6872d84907c871ada68bf7b82"
+  }
+]

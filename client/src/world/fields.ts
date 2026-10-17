@@ -8,6 +8,7 @@
 // decision 43).
 
 import { type Fetch, sha256 } from '../assets/store';
+import { type MapObject, type WMap, cellHeight } from '../formats/wmap';
 
 /** Whether a map name is a generated map's ID, such as gen:field:3:-1. */
 export function isGenerated(name: string): boolean {
@@ -44,6 +45,82 @@ export interface FieldInfo {
   wmap: string;
   wmapSha256: string;
   wmapBytes: number;
+  /**
+   * The objects that the server's generation layers put on the map
+   * (decision 0044): props of the map's tileset, drawn at their cells.
+   * They are not in the generated map, so the client adds them.
+   */
+  objects?: LayerObject[];
+}
+
+/** An object of a generation layer, from the map's info. */
+export interface LayerObject {
+  /** The model's asset name, such as model/gen/forest/rock. */
+  model: string;
+  x: number;
+  y: number;
+  /** Quarter turns, 0 to 3. */
+  turn?: number;
+}
+
+function isLayerObject(v: unknown): v is LayerObject {
+  if (typeof v !== 'object' || v === null) {
+    return false;
+  }
+  const s = (k: string): unknown => Reflect.get(v, k);
+  const turn = s('turn');
+  return (
+    typeof s('model') === 'string' &&
+    String(s('model')).startsWith('model/') &&
+    Number.isInteger(s('x')) &&
+    Number.isInteger(s('y')) &&
+    (turn === undefined || (Number.isInteger(turn) && Number(turn) >= 0 && Number(turn) <= 3))
+  );
+}
+
+/**
+ * The map objects of a generated map's layer objects: each model stands
+ * on the middle of its cell, at the ground's height, turned by its
+ * quarter turns, as the generator places its own props. Objects off the
+ * map are left out.
+ */
+export function layerObjects(map: WMap, list: readonly LayerObject[] | undefined): MapObject[] {
+  const out: MapObject[] = [];
+  for (const o of list ?? []) {
+    if (o.x < 0 || o.y < 0 || o.x >= map.width || o.y >= map.height) {
+      continue;
+    }
+    const angle = ((o.turn ?? 0) * Math.PI) / 2;
+    const c = Math.round(Math.cos(angle));
+    const s = Math.round(Math.sin(angle));
+    const x = o.x + 0.5;
+    const y = o.y + 0.5;
+    out.push({
+      model: o.model,
+      matrix: new Float32Array([
+        c,
+        0,
+        0 - s,
+        0,
+        0,
+        1,
+        0,
+        0,
+        s,
+        0,
+        c,
+        0,
+        x,
+        cellHeight(map, x, y),
+        -y,
+        1,
+      ]),
+      animType: 0,
+      animSpeed: 1,
+      blockType: 0,
+    });
+  }
+  return out;
 }
 
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -65,9 +142,11 @@ function isFieldInfo(v: unknown): v is FieldInfo {
   const keyOK = HEX64.test(String(s('key'))) || (kind === 'home' && s('key') === undefined);
   const displayName = s('displayName');
   const levels = s('levels');
+  const objects = s('objects');
   const extrasOK =
     (displayName === undefined || typeof displayName === 'string') &&
-    (levels === undefined || (Array.isArray(levels) && levels.every((l) => Number.isInteger(l))));
+    (levels === undefined || (Array.isArray(levels) && levels.every((l) => Number.isInteger(l)))) &&
+    (objects === undefined || (Array.isArray(objects) && objects.every(isLayerObject)));
   return (
     kindOK &&
     keyOK &&

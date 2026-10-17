@@ -1,0 +1,17 @@
+# A mod of tests only, for modkit's TestProceduralContent (decision
+# 0044): the test writes its cases with the test world's quests, and
+# runs them against core's NPCs of procedural worlds.
+id: test.content-check
+name: Content Check
+version: 0.1.0
+api: 1.0
+description: Tests of core's quest boards, job guilds, rebirth NPC and town services in a procedural test world.
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - game.read

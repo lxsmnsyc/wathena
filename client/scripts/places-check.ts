@@ -86,120 +86,129 @@ export async function placesOf(game: string, id: string): Promise<InfoPlace[]> {
  * farthest cell of it up to 7 steps ahead whose middle is well inside
  * the canvas. It returns why when there is none.
  */
-async function nextStep(page: Page, target: [number, number]): Promise<[number, number] | string> {
-  return page.evaluate((to) => {
-    const v: unknown = Reflect.get(globalThis, 'viewer');
-    const call = (name: string, ...args: unknown[]): unknown => {
-      const f: unknown = typeof v === 'object' && v !== null ? Reflect.get(v, name) : undefined;
-      return typeof f === 'function' ? Reflect.apply(f, v, args) : undefined;
-    };
-    const m: unknown = call('map');
-    const me: unknown = call('selfCell');
-    if (typeof m !== 'object' || m === null || !Array.isArray(me)) {
-      return 'no map or no player';
-    }
-    const w = Number(Reflect.get(m, 'width'));
-    const h = Number(Reflect.get(m, 'height'));
-    const flags: unknown = Reflect.get(m, 'cellFlags');
-    if (!(flags instanceof Uint8Array)) {
-      return 'no cell flags';
-    }
-    const others: unknown = call('units');
-    const near = (x: number, y: number): boolean =>
-      Array.isArray(others) &&
-      others.some((u: unknown) => {
-        if (typeof u !== 'object' || u === null || Reflect.get(u, 'self') === true) {
-          return false;
-        }
-        const cell: unknown = Reflect.get(u, 'cell');
-        return (
-          Array.isArray(cell) &&
-          Math.abs(Number(cell[0]) - x) <= 2 &&
-          Math.abs(Number(cell[1]) - y) <= 2
-        );
-      });
-    const [sx, sy] = [Number(me[0]), Number(me[1])];
-    const start = sy * w + sx;
-    const goal = to[1] * w + to[0];
-    const pathTo = (avoid: boolean): number[] | undefined => {
-      const open = (x: number, y: number): boolean =>
-        x >= 0 &&
-        y >= 0 &&
-        x < w &&
-        y < h &&
-        ((flags[y * w + x] ?? 0) & 1) !== 0 &&
-        (!avoid ||
-          !near(x, y) ||
-          Math.max(Math.abs(x - to[0]), Math.abs(y - to[1])) <= 2 ||
-          Math.max(Math.abs(x - sx), Math.abs(y - sy)) <= 1);
-      const prev = new Int32Array(w * h).fill(-1);
-      prev[start] = start;
-      const queue = [start];
-      for (let q = 0; q < queue.length && prev[goal] === -1; q++) {
-        const c = queue[q]!;
-        const x = c % w;
-        const y = Math.floor(c / w);
-        for (const [dx, dy] of [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1],
-        ]) {
-          const nx = x + dx!;
-          const ny = y + dy!;
-          if (open(nx, ny) && prev[ny * w + nx] === -1) {
-            prev[ny * w + nx] = c;
-            queue.push(ny * w + nx);
+async function nextStep(
+  page: Page,
+  target: [number, number],
+  clearance: number,
+): Promise<[number, number] | string> {
+  return page.evaluate(
+    ([to, clear]) => {
+      const v: unknown = Reflect.get(globalThis, 'viewer');
+      const call = (name: string, ...args: unknown[]): unknown => {
+        const f: unknown = typeof v === 'object' && v !== null ? Reflect.get(v, name) : undefined;
+        return typeof f === 'function' ? Reflect.apply(f, v, args) : undefined;
+      };
+      const m: unknown = call('map');
+      const me: unknown = call('selfCell');
+      if (typeof m !== 'object' || m === null || !Array.isArray(me)) {
+        return 'no map or no player';
+      }
+      const w = Number(Reflect.get(m, 'width'));
+      const h = Number(Reflect.get(m, 'height'));
+      const flags: unknown = Reflect.get(m, 'cellFlags');
+      if (!(flags instanceof Uint8Array)) {
+        return 'no cell flags';
+      }
+      const others: unknown = call('units');
+      const near = (x: number, y: number): boolean =>
+        Array.isArray(others) &&
+        others.some((u: unknown) => {
+          if (typeof u !== 'object' || u === null || Reflect.get(u, 'self') === true) {
+            return false;
+          }
+          const cell: unknown = Reflect.get(u, 'cell');
+          return (
+            Array.isArray(cell) &&
+            Math.abs(Number(cell[0]) - x) <= clear &&
+            Math.abs(Number(cell[1]) - y) <= clear
+          );
+        });
+      const [sx, sy] = [Number(me[0]), Number(me[1])];
+      const start = sy * w + sx;
+      const goal = to[1] * w + to[0];
+      const pathTo = (avoid: boolean): number[] | undefined => {
+        const open = (x: number, y: number): boolean =>
+          x >= 0 &&
+          y >= 0 &&
+          x < w &&
+          y < h &&
+          ((flags[y * w + x] ?? 0) & 1) !== 0 &&
+          (!avoid ||
+            !near(x, y) ||
+            Math.max(Math.abs(x - to[0]), Math.abs(y - to[1])) <= clear ||
+            Math.max(Math.abs(x - sx), Math.abs(y - sy)) <= 1);
+        const prev = new Int32Array(w * h).fill(-1);
+        prev[start] = start;
+        const queue = [start];
+        for (let q = 0; q < queue.length && prev[goal] === -1; q++) {
+          const c = queue[q]!;
+          const x = c % w;
+          const y = Math.floor(c / w);
+          for (const [dx, dy] of [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1],
+          ]) {
+            const nx = x + dx!;
+            const ny = y + dy!;
+            if (open(nx, ny) && prev[ny * w + nx] === -1) {
+              prev[ny * w + nx] = c;
+              queue.push(ny * w + nx);
+            }
           }
         }
+        if (prev[goal] === -1) {
+          return undefined;
+        }
+        const out: number[] = [];
+        for (let c = goal; c !== start; c = prev[c]!) {
+          out.push(c);
+        }
+        return out.reverse();
+      };
+      const path = pathTo(true) ?? pathTo(false);
+      if (path === undefined) {
+        return 'no path';
       }
-      if (prev[goal] === -1) {
-        return undefined;
+      const canvas = document.querySelector('canvas')?.getBoundingClientRect();
+      for (let i = Math.min(path.length, 7) - 1; i >= 0; i--) {
+        const c = path[i]!;
+        const x = c % w;
+        const y = Math.floor(c / w);
+        if (near(x, y) && i < path.length - 1) {
+          continue;
+        }
+        const at: unknown = call('screenOfCell', x, y);
+        if (
+          canvas !== undefined &&
+          Array.isArray(at) &&
+          Number(at[0]) > canvas.left + 60 &&
+          Number(at[0]) < canvas.right - 60 &&
+          Number(at[1]) > canvas.top + 100 &&
+          Number(at[1]) < canvas.bottom - 100
+        ) {
+          return [x, y];
+        }
       }
-      const out: number[] = [];
-      for (let c = goal; c !== start; c = prev[c]!) {
-        out.push(c);
-      }
-      return out.reverse();
-    };
-    const path = pathTo(true) ?? pathTo(false);
-    if (path === undefined) {
-      return 'no path';
-    }
-    const canvas = document.querySelector('canvas')?.getBoundingClientRect();
-    for (let i = Math.min(path.length, 7) - 1; i >= 0; i--) {
-      const c = path[i]!;
-      const x = c % w;
-      const y = Math.floor(c / w);
-      if (near(x, y) && i < path.length - 1) {
-        continue;
-      }
-      const at: unknown = call('screenOfCell', x, y);
-      if (
-        canvas !== undefined &&
-        Array.isArray(at) &&
-        Number(at[0]) > canvas.left + 60 &&
-        Number(at[0]) < canvas.right - 60 &&
-        Number(at[1]) > canvas.top + 100 &&
-        Number(at[1]) < canvas.bottom - 100
-      ) {
-        return [x, y];
-      }
-    }
-    return `no cell of the first 7 of a path of ${path.length} is clear on the screen`;
-  }, target);
+      return `no cell of the first 7 of a path of ${path.length} is clear on the screen`;
+    },
+    [target, clearance] as const,
+  );
 }
 
 /**
  * Walks toward a cell in legs of up to 7 cells, each a click on the
  * ground, until the player stands within reach of it, or a warp loads
- * another map. It returns the legs.
+ * another map. It returns the legs. The clicks keep clearance cells
+ * from other units where they can, 2 by default.
  */
 export async function walk(
   page: Page,
   target: [number, number],
   reach: number,
   until: () => Promise<boolean>,
+  clearance = 2,
 ): Promise<string[]> {
   const legs: string[] = [];
   for (let leg = 0; leg < 40; leg++) {
@@ -214,7 +223,7 @@ export async function walk(
     if (Math.max(Math.abs(from[0] - target[0]), Math.abs(from[1] - target[1])) <= reach) {
       return legs;
     }
-    const to = await nextStep(page, target);
+    const to = await nextStep(page, target, clearance);
     if (typeof to === 'string') {
       throw new Error(`no way from ${from} to ${target}: ${to}, after ${legs.join(', ')}`);
     }

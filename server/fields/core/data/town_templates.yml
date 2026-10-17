@@ -4,7 +4,8 @@
 # the named places at its door, where NPC records with a place stand.
 # A building with places must fit, or the town is made again. Every core
 # template has a teleport place, where the teleport service stands
-# (review decision 43).
+# (review decision 43), and a guild hall, where `wactl world new` puts
+# the job guilds a town hosts (decision 0044).
 - name: hamlet
   size: 96
   gates: 2
@@ -16,7 +17,8 @@
     - {model: inn, footprint: [8, 8], places: [inn]}
     - {model: storehouse, footprint: [6, 6], places: [storage, teleport]}
     - {model: tool_shop, footprint: [6, 6], places: ["shop:tool"]}
-    - {model: house, footprint: [6, 6], count: 10}
+    - {model: guild_hall, footprint: [8, 8], places: [guild]}
+    - {model: house, footprint: [6, 6], count: 8}
 - name: village
   size: 128
   gates: 3
@@ -31,7 +33,8 @@
     - {model: weapon_shop, footprint: [6, 6], places: ["shop:weapon"]}
     - {model: armor_shop, footprint: [6, 6], places: ["shop:armor"]}
     - {model: chapel, footprint: [8, 10], places: [healer]}
-    - {model: house, footprint: [6, 6], count: 16}
+    - {model: guild_hall, footprint: [8, 8], places: [guild]}
+    - {model: house, footprint: [6, 6], count: 14}
     - {model: cottage, footprint: [4, 4], count: 12}
 - name: city
   size: 192
@@ -48,6 +51,7 @@
     - {model: armor_shop, footprint: [6, 6], places: ["shop:armor"]}
     - {model: chapel, footprint: [8, 10], places: [healer]}
     - {model: warp_tower, footprint: [6, 6], places: [teleport]}
+    - {model: guild_hall, footprint: [8, 8], places: [guild]}
     - {model: manor, footprint: [10, 8], count: 6}
     - {model: house, footprint: [6, 6], count: 40}
     - {model: cottage, footprint: [4, 4], count: 30}

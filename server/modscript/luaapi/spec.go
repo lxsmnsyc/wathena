@@ -308,6 +308,17 @@ var Modules = []Module{
 		},
 	},
 	{
+		Name: "wa.generation", Local: "generation",
+		Doc: "Generation layers (review decision 46): mod code that runs when wactl world new makes a procedural world, on the server only, and in the test worlds of wactl mod test. A layer adds named places, objects and bosses to each generated map. It cannot change terrain cells, which the client generates. Both calls need world.generate. In a running zone they record what they get, and nothing runs it.",
+		Funcs: []Func{
+			{Name: "on", Params: []Param{{"event", `"map"`, "The event: \"map\", once on each generated field, town and dungeon floor, in the layout's order."},
+				{"layer", "fun(map: wa.GenerationMap, node: wa.GenerationNode): wa.GenerationResult?", "Gets the map and the layer's node, and returns nil or what to add."}},
+				Doc: "Adds a generation layer in a mod context. The mods' layers run in load order. A layer has no other source of randomness than its node: wa.random raises an error while it runs. A layer that fails is logged and left out.", Permission: "world.generate"},
+			{Name: "quest_template", Params: []Param{{"record", "table", "A record of data/quest_templates.yml with its name, such as { name = \"shrine_hunt\", kind = \"hunt\", title = \"Hunt {count} {monster}\", count = { 5, 10 } }. The name gets the mod's prefix."}},
+				Doc: "Adds a quest template, which the world's quest boards and job guilds draw from as from the records. Call it in an entry script or a layer. A bad record or a second template of the name raises an error.", Permission: "world.generate"},
+		},
+	},
+	{
 		Name: "wa.variables", Local: "variables",
 		Doc:   "Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID.",
 		Funcs: variableFuncs(),
@@ -674,6 +685,21 @@ var Classes = []Class{
 			{Name: "get_tags", Returns: "string[]", Doc: "The place's tags, its main tag first, such as { \"gate\", \"gate:south\" }."},
 			{Name: "get_area", Returns: "string", Doc: "The place's area: its map ID without gen:, such as \"town:t7\", \"dungeon:crypt:2\" or \"field:3:-1\"."},
 			{Name: "get_band", Returns: "integer, integer", Doc: "The level band of the place's map, its lowest and highest level (review decision 43). A place of a map without a band raises an error.", Permission: "game.read"},
+		},
+	},
+	{
+		Name: "wa.GenerationNode", Handle: "generation_node", Doc: "A generation layer's node of the seed tree's secret branch, its own for each mod and map (strategy section 8.2). It works only while the layer runs, and gives the same values for the same world each time.",
+		Methods: []Func{
+			{Name: "child", Params: []Param{{"label", "string", "1 to 64 bytes, such as \"shrines\"."}}, Returns: "wa.GenerationNode", Doc: "A child node. Each label gives its own values, and the order of calls does not matter."},
+			{Name: "stream", Returns: "wa.GenerationStream", Doc: "A stream of numbers from the node. Two streams of one node give the same numbers."},
+			{Name: "hash", Params: []Param{{"x", "integer", ""}, {"y", "integer", ""}}, Returns: "integer", Doc: "A number for a cell, the same for the same node and cell, from all 64 bits."},
+		},
+	},
+	{
+		Name: "wa.GenerationStream", Handle: "generation_stream", Doc: "A stream of numbers of a generation node, from the node's secret ChaCha8 stream (strategy section 8.2).",
+		Methods: []Func{
+			{Name: "integer", Params: []Param{{"minimum", "integer", ""}, {"maximum", "integer", ""}}, Returns: "integer", Doc: "The next whole number from minimum to maximum."},
+			{Name: "chance", Params: []Param{{"numerator", "integer", ""}, {"denominator", "integer", "Above 0."}}, Returns: "boolean", Doc: "True with a chance of numerator in denominator."},
 		},
 	},
 	{
@@ -1221,6 +1247,45 @@ var Classes = []Class{
 			{"at", "integer?", "When the server restarts, in Unix seconds. nil when the restart was cancelled."},
 			{"reason", "string?", "Why the server restarts, as staff wrote it. nil when the restart was cancelled."},
 			{"cancelled", "boolean?", "true when staff cancelled the planned restart."},
+		},
+	},
+	{
+		Name: "wa.GenerationMap", Doc: "The map of a generation layer: a generated field, town or dungeon floor of a new procedural world (review decision 46). It is read-only.",
+		Fields: []Field{
+			{"id", "string", "The map ID, such as gen:field:3:1, gen:town:t2 or gen:dungeon:crypt:2."},
+			{"kind", `"field"|"town"|"dungeon"`, ""},
+			{"biome", "string", "A field's biome, such as forest, or a town's or a floor's tileset, such as crypt."},
+			{"tileset", "string", "The tileset whose props objects name."},
+			{"band", "integer[]", "The level band: the lowest and the highest level."},
+			{"width", "integer", "The map's width in cells."},
+			{"height", "integer", "The map's height in cells."},
+			{"places", "wa.GenerationPlace[]", "The map's generated places, in the generator's order."},
+		},
+	},
+	{
+		Name: "wa.GenerationPlace", Doc: "A named place of a generation layer's map, or one a layer returns: its tags, the main tag first, and its cell. The server moves a returned place to the nearest open ground within 8 cells, or leaves it out.",
+		Fields: []Field{{"tags", "string[]", "1 to 8 tags of 1 to 64 lowercase letters, digits, _, -, . and :."}, {"x", "integer", ""}, {"y", "integer", ""}},
+	},
+	{
+		Name: "wa.GenerationObject", Doc: "An object a generation layer puts on its map. Clients draw it from the map's info. It does not block the cell.",
+		Fields: []Field{{"model", "string", "A prop of the map's tileset, such as rock or well."}, {"x", "integer", "A cell of the map."}, {"y", "integer", ""}, {"turn", "integer?", "0 to 3 quarter turns. 0 by default."}},
+	},
+	{
+		Name: "wa.GenerationBoss", Doc: "A boss a generation layer adds to its field's or dungeon floor's spawns, one monster. The server keeps it 30 cells from warps to towns.",
+		Fields: []Field{
+			{"monster", "integer", "A monster from monsters.id."},
+			{"role", `"mini_boss"|"field_boss"`, ""},
+			{"x", "integer?", "Its cell, with y: it appears within 3 cells of the nearest open ground. Left out, anywhere on the map."},
+			{"y", "integer?", ""},
+			{"respawn", "integer?", "Milliseconds before it comes back, 1,000 to 268,435,455. 45 minutes for a mini boss and 90 for a field boss by default."},
+		},
+	},
+	{
+		Name: "wa.GenerationResult", Doc: "What a generation layer adds to its map. Each list is optional.",
+		Fields: []Field{
+			{"places", "wa.GenerationPlace[]?", "At most 32."},
+			{"objects", "wa.GenerationObject[]?", "At most 256."},
+			{"bosses", "wa.GenerationBoss[]?", "At most 8."},
 		},
 	},
 	{

@@ -1,6 +1,6 @@
 import { Group } from 'three';
 import type { AssetStore } from '../assets/store';
-import { type WMap, decodeWMap } from '../formats/wmap';
+import { type MapObject, type WMap, decodeWMap } from '../formats/wmap';
 import { EffectCache } from './effects';
 import buildGround from './ground';
 import { lightUniforms } from './light';
@@ -26,18 +26,23 @@ export default class MapScene {
    * Loads a map. The ground shows as soon as the map file arrives, and
    * textures and models appear as they load. ready resolves when all
    * have loaded or failed. A generated field gives its WMAP as data
-   * instead of a name in the build.
+   * instead of a name in the build. extra adds objects to the map's own,
+   * such as a generated map's layer objects, from the map's cells.
    */
   static async load(
     store: AssetStore,
     name: string,
     given?: Uint8Array,
+    extra?: (map: WMap) => MapObject[],
   ): Promise<{ scene: MapScene; ready: Promise<void> }> {
     const data = given ?? (await store.bytes(name, 'map'));
     if (data === undefined) {
       throw new Error(`map ${name} is not in the build`);
     }
     const map = decodeWMap(data);
+    if (extra !== undefined) {
+      map.objects.push(...extra(map));
+    }
     const textures = new TextureCache(store);
     const light = lightUniforms(map.light);
     const models = new ModelCache(store, textures, light);

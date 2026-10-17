@@ -287,6 +287,17 @@ spawns:
 
 `go run ./tools/spawntags` writes core's spawn tags, `server/spawns/core/data/spawn_tags.yml`, from rAthena's spawn files in `reference/rathena`. `go run ./tools/spawntags -check` fails when the file is not current.
 
+### Procedural content
+
+A procedural world's town services, quest boards, job guilds, rebirth NPC and the mods' generation layers come with the world (docs/decisions/0044-procedural-content.md, proposal 0002, review decision 46, mods/README.md, "Quest templates", "Generation layers" and "Core's NPCs"):
+
+- `wactl world new` runs the mods' `wa.generation` layers once on every generated field, town and dungeon floor, after the `spawn_table` hooks, in the hooks' Lua state, each layer with its own node of the secret branch. Their places and objects, and their bosses as spawn lines, are kept.
+- It then picks each town's 6 quest board quests from the quest templates and the stored spawns of the town's fields within 2 warps, further when none fits, with the town's secret node. Rewards scale with the town's band. Each class family's guild goes to one of the three lowest towns, near its `guild` place, with a hunt and a collect quest for the first and the second job tests, of monsters near levels 10 and 45. A `rebirth` place goes to the largest town of the highest band, and a `quest_board` place near each square.
+- It writes `world_places`, `world_objects` and `world_quests` (migration 00034) with the layout, and the bosses into `world_spawns`. It prints how many quests, places and objects the world has, and the layers' notes.
+- `waserver` reads them as the game role. The places join their maps' places, for NPC records with `place` and `wa.places`, and `/gen/maps/<id>.json` lists them with the objects, which clients draw. Each quest becomes a quest record with its ID, from 900,000, named by its ID as core's are. A quest whose monster or item no longer loads is left out with a warning. The log says `world content loaded`.
+- Core's NPCs of procedural worlds stand at the places: a Kafra at `storage`, an Innkeeper at `inn`, a Refiner at `blacksmith`, dealers at `shop:tool`, `shop:weapon` and `shop:armor`, the Quest Board, the guild masters and the Valkyrie. They reach the world's quests, quest rewards, skill points, weight and the refiner through `wa.internal`, which only core may require.
+- Dev worlds without a database have no content: no quest boards, guilds or rebirth NPC. Their services stand at the templates' places.
+
 ### Running with accounts
 
 Without `--dev`, `waserver` needs both database URLs. It serves the account pages under `/account/` and accepts only game tickets:

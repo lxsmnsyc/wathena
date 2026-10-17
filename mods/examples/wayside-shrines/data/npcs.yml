@@ -1,0 +1,3 @@
+# The Shrine Keeper stands at every shrine the generation layer added to
+# a town (mods/README.md, "Generation layers").
+- {name: Shrine Keeper, place: {scope: "town:any", tag: shrine}, direction: south, sprite: 4_M_SAGE_A, script: scripts/npc/keeper.lua}

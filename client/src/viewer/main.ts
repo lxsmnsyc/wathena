@@ -22,7 +22,7 @@ import { setArt } from '../assets/art';
 import { httpOrigin, loadClientData } from '../data/clientData';
 import { AudioSystem } from '../audio/audio';
 import Soundscape from '../audio/soundscape';
-import { cellHeight, walkable } from '../formats/wmap';
+import { type MapObject, type WMap, cellHeight, walkable } from '../formats/wmap';
 import MapScene from '../render/map';
 import { SpriteCache, SpriteView } from '../render/sprites';
 import { Character } from '../render/characters';
@@ -44,7 +44,13 @@ import { accountPage, accountURL, fetchTicket } from '../net/account';
 import gameServerURL from '../net/server';
 import { Connection, disconnectDelay, disconnectText } from '../net/connection';
 import { Pathfinder } from '../world/pathfinder';
-import { type LoadedField, isGenerated, loadField, loadTilesets } from '../world/fields';
+import {
+  type LoadedField,
+  isGenerated,
+  layerObjects,
+  loadField,
+  loadTilesets,
+} from '../world/fields';
 import { generateInWorker } from '../world/fieldGenerator';
 import { Bubbles, ChatLog, ChatRate, chatLine, isTyping } from './chat';
 import { type ChatAction, parseChatInput } from './chatCommands';
@@ -451,6 +457,7 @@ async function show(name: string, at?: [number, number]): Promise<boolean> {
     // the asset build (decision 0039).
     let given: Uint8Array | undefined;
     let infoName: string | undefined;
+    let extra: ((m: WMap) => MapObject[]) | undefined;
     if (isGenerated(name)) {
       if (fieldLoader === undefined) {
         throw new Error(`${name} is a generated map, and this world is not procedural`);
@@ -458,6 +465,8 @@ async function show(name: string, at?: [number, number]): Promise<boolean> {
       const f = await fieldLoader(name);
       given = f.wmap;
       infoName = f.info.displayName;
+      const objects = f.info.objects;
+      extra = (m) => layerObjects(m, objects);
       const kind = f.info.kind ?? 'field';
       const biome = kind === 'field' ? f.info.biomeName : (f.info.name ?? '');
       fieldLoads.push({
@@ -478,6 +487,7 @@ async function show(name: string, at?: [number, number]): Promise<boolean> {
       store,
       name.includes('/') || isGenerated(name) ? name : `map/${name}`,
       given,
+      extra,
     );
     if (id !== loading) {
       return false;

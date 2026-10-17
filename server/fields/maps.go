@@ -210,7 +210,7 @@ func (s *Set) Places(warps map[string][]zone.Warp) *places.Index {
 	maps := make([]places.Map, 0, len(s.fields))
 	var links []places.Link
 	for _, f := range s.fields {
-		maps = append(maps, places.Map{ID: f.ID, Places: f.Field.Places})
+		maps = append(maps, places.Map{ID: f.ID, Places: f.AllPlaces()})
 		for _, w := range warps[f.ID] {
 			links = append(links, places.Link{From: f.ID, X: w.X, Y: w.Y, To: w.To, ToX: w.ToX, ToY: w.ToY})
 		}

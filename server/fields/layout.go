@@ -254,3 +254,13 @@ func TemplatesOf(l *layout.Layout) []Template {
 	}
 	return out
 }
+
+// MapsOf returns the generated maps by map ID, for content (decision
+// 0044).
+func MapsOf(list []*Field) map[string]*gen.Field {
+	out := make(map[string]*gen.Field, len(list))
+	for _, f := range list {
+		out[f.ID] = &f.Field
+	}
+	return out
+}

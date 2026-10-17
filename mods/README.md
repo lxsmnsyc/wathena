@@ -16,6 +16,7 @@ A mod adds or changes game content without changes to the server (strategy secti
 - [examples/market-town](examples/market-town) is for procedural worlds: a town template with a lamp shop, a dungeon style, and NPCs that stand at named places instead of a map and a cell ("Places" below).
 - [examples/home-village](examples/home-village) is for procedural worlds: a home map in the map folder format, where new characters start, and a naming style for grassland towns ("Home maps" and "Naming styles" below).
 - [examples/hunting-board](examples/hunting-board) has a hunt quest as a record, and the Hunt Master, who gives it, shows a quest icon, counts the kills left and pays for it, in classic and procedural worlds ("Quests" below).
+- [examples/wayside-shrines](examples/wayside-shrines) is for procedural worlds: a generation layer that adds a shrine to every town, a ring of stones and a guarding mini boss to every field, and a quest template, with an NPC at the layer's places ("Generation layers" and "Quest templates" below).
 - `wactl mod new` makes a new mod that passes `wactl mod validate` and `wactl mod test` ("Tools" below).
 
 Server owners install mods in the folder that `mods.dir` names. [server/README.md](../server/README.md), "Mods", covers the server side.
@@ -242,6 +243,7 @@ Each limit has a range:
 | `events.control` | Needs the owner's approval. It starts and stops world events at any time with `wa.world_events` (review decision 31). |
 | `player.expand_limits` | Needs the owner's approval. It raises and lowers a player's inventory, cart and storage slots with `player:expand`, within the ruleset's limits (review decision 32). |
 | `spawns.modify` | Needs the owner's approval. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
+| `world.generate` | Needs the owner's approval. It adds generation layers and quest templates with `wa.generation`, which add places, objects, bosses and quests to a new procedural world (review decision 46). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -438,6 +440,8 @@ A procedural world's towns follow a template. Core has `hamlet`, `village` and `
 A template that cannot make a town in 8 tries stops the server and fails `wactl mod validate`.
 
 Every core template has a `teleport` place, where the server's teleport service stands (decision 0041). A mod's template needs one for the service to stand in its towns.
+
+Every core template also has a `guild_hall` with a `guild` place, where `wactl world new` puts the job guilds a town hosts (decision 0044). A town without one gets its guilds beside its square. Core's service NPCs stand at the places `storage`, `inn`, `blacksmith`, `shop:tool`, `shop:weapon` and `shop:armor` ("Core's NPCs" below), so a mod's template with those places gets those services.
 
 ### Naming styles: data/naming_styles.yml
 
@@ -964,6 +968,44 @@ Quests, as rAthena's `quest_db.yml` (proposal 0002, review decision 45). Core's 
   - Without it, it counts every kill that passes its filters: `min_level` and `max_level` (a `max_level` alone makes `min_level` 1), `race`, `size` and `element` (names of `wa.races`, `wa.sizes` and `wa.elements`), `map` (the player's map, such as `prt_fild08` or `gen:field:2:3`), and `monsters`, a list that the monster must be in. `map_name` is the text the quest window shows.
 - `drops` are items each kill gives while the quest is active or inactive, straight to the inventory: `monster` (every monster when left out), `item`, `count` (1 by default; more only for items that stack), and `rate` out of 10,000. A drop that does not fit is lost, and the player is told.
 - A field set on a record replaces the whole field, as for other records: setting `targets` replaces every objective.
+
+### Quest templates: data/quest_templates.yml
+
+When `wactl world new` makes a procedural world, each town's quest board offers quests that templates make from the monsters of its nearby fields, and each job guild's tests come from them too (proposal 0002, review decision 46, decision 0044). Core has `hunt`, `thin_out`, `collect`, `delivery` and `message`. A mod changes them by name and adds its own.
+
+```yaml
+- name: mushroom_patrol
+  kind: hunt
+  title: "Clear {count} {monster} from the paths"
+  count: [15, 30]
+  roles: [common]
+  reward: 150
+  weight: 2
+- name: herbs
+  kind: collect
+  title: "Bring {count} {item} to the healer"
+  count: [3, 8]
+  drop_rate: 5000
+  uses: [board, guild]
+- name: letter
+  kind: delivery
+  title: "Take a letter to {town}"
+  item: Delivery_Box
+  reward: 60
+```
+
+- `kind` is `hunt`, `collect` or `delivery`. It is required.
+  - A hunt asks for `count` kills of a monster that spawns on the town's nearby fields.
+  - A collect quest asks for `count` of an etc item that such a monster drops. While the quest is in the log, each kill of the monster gives the item at `drop_rate` out of 10,000, 3,000 by default, as a quest's `drops`. The board takes the items.
+  - A delivery goes to one of the 3 towns nearest by warps. With `item`, the board gives that item, and the board of the other town takes it.
+- `title` is the quest's title, 1 to 255 characters, where `{count}`, `{monster}`, `{item}` and `{town}` become the quest's count and names. It is required.
+- `count` is a number or a range `[lowest, highest]`, 1 to 1,000. Hunt and collect templates need it.
+- `roles` are the spawn roles of the monsters it may name, `[common, uncommon]` by default. Boss monsters are never named.
+- `reward` is the reward in percent, 0 to 1,000, 100 by default. At 100 a quest gives a tenth of the base exp from its town's lowest level to the next, three quarters of that as job exp, and 50 zeny per level.
+- `weight` is the chance among the templates a board or a guild draws from, 1 to 1,000, 1 by default.
+- `uses` is `[board]` by default. With `guild`, the job guilds' tests draw their hunt and their collect quest from the template. A delivery serves boards only, and a guild test gives no reward.
+- A world's quests are chosen once, from the stored spawns and the seed's secret branch, and kept. A changed template changes no made world.
+- `generation.quest_template(record)` adds a template from a script ("Generation layers" below).
 
 Kinds not overlaid yet: spawns and achievements.
 
@@ -1805,7 +1847,9 @@ The places of each kind of map:
 |---|---|
 | Field | `portal` with `portal:south`, `portal:east`, `portal:north` or `portal:west`, and `clearing` |
 | Dungeon floor | `entrance`, `exit` (not on the last floor), `boss_room` (the last floor only), and `room` |
-| Town | `square`, `gate` and `portal` with their side, such as `gate:north`, and the `places` of the template's buildings |
+| Town | `square`, `gate` and `portal` with their side, such as `gate:north`, and the `places` of the template's buildings. A world that `wactl world new` made adds `quest_board` near each square, `guild:<family>` such as `guild:swordman` near the `guild` place of the guilds' towns, and `rebirth` near the square of the largest town of the highest band (decision 0044) |
+
+Places that generation layers add join their maps' places, after the generated ones ("Generation layers" below).
 
 Town IDs are `t1`, `t2` and on. A dungeon's ID is its style's name without the mod prefix, such as `crypt`, then `crypt-2` and on for more of one style. A mod's home map has its own `places.yaml`, and its scope is `"map:gen:home:<id>"`.
 
@@ -1877,6 +1921,43 @@ end
 - The player marks quests active or inactive in the quest window. Inactive quests still count kills, as in rAthena.
 - The events `quest_add` (a new quest, also the new quest of `change_quest`), `quest_progress` (once per objective a kill raised) and `quest_complete` get `{ player, quest, id }`, where `quest` is the record's full name and `id` its ID. `quest_progress` adds `objective`, `count` and `goal`. They run in mod, NPC and event contexts of the player's map.
 - A log entry whose record is gone, such as a removed mod's quest, stays saved and hidden, and comes back with the mod.
+
+### Generation layers
+
+A mod adds a generation layer with `wa.generation` (proposal 0002, review decision 46, decision 0044). It runs when `wactl world new` makes a procedural world, on the server only, once on every generated field, town and dungeon floor, and returns places, objects and bosses to add to the map. [examples/wayside-shrines](examples/wayside-shrines) uses each part.
+
+```lua
+local generation = require "wa.generation"
+local monsters = require "wa.monsters"
+
+return function()
+  generation.on("map", function(map, node)
+    if map.kind ~= "field" then
+      return nil
+    end
+    local s = node:child("stones"):stream()
+    local x, y = map.width // 2, map.height // 2
+    return {
+      places = { { tags = { "stone_ring" }, x = x, y = y } },
+      objects = { { model = "rock", x = x + 3, y = y, turn = s:integer(0, 3) } },
+      bosses = { { monster = monsters.id "VAGABOND_WOLF", role = "mini_boss", x = x, y = y } },
+    }
+  end)
+  generation.quest_template { name = "offerings", kind = "collect", title = "Bring {count} {item}", count = { 3, 6 } }
+end
+```
+
+- `generation.on("map", function(map, node) ... end)` adds a layer. The event is `"map"`. Layers run in the mods' load order, each mod's in the order they came. Call it in an entry script's setup function.
+- `map` is read-only: `id`, `kind` (`"field"`, `"town"` or `"dungeon"`), `biome` (a field's biome, or a town's or floor's tileset), `tileset`, `band` as `{ lowest, highest }`, `width`, `height`, and `places`, the generated places, each `{ tags, x, y }`.
+- `node` is the layer's own node of the seed tree's secret branch, for that mod and map: `node:child(label)` is a child node, `node:stream()` a stream with `stream:integer(minimum, maximum)` and `stream:chance(numerator, denominator)`, and `node:hash(x, y)` a number for a cell. The same world gives the same values each time. A layer has no other source of randomness: `wa.random` raises an error while it runs. A node works only while its layer runs.
+- A layer returns nil or a table with any of:
+  - `places`: at most 32 places `{ tags, x, y }`, 1 to 8 tags each, of 1 to 64 lowercase letters, digits, `_`, `-`, `.` and `:`. A place moves to the nearest open ground within 8 cells, or is left out. NPC records with `place` stand at them, and `wa.places` finds them.
+  - `objects`: at most 256 objects `{ model, x, y, turn }`: a prop of the map's tileset, such as `rock`, `tree` or `well` (the props of [generator-v2](../docs/specs/generator-v2.md) and [generator-v3](../docs/specs/generator-v3.md) for each tileset), on the map, with 0 to 3 quarter turns. Clients draw them from the map's info. They do not block their cells.
+  - `bosses`: at most 8 bosses `{ monster, role, x, y, respawn }`, on a field or a dungeon floor: a monster from `monsters.id` as `mini_boss` or `field_boss`, one each, within 3 cells of the nearest open ground to `x` and `y`, or anywhere without them. `respawn` is milliseconds, 45 minutes for a mini boss and 90 for a field boss by default. They join the map's spawn list after the `spawn_table` hooks, and keep 30 cells from warps to towns.
+- A layer cannot change terrain cells, which every client generates itself.
+- `generation.quest_template(record)` adds a quest template, a record as `data/quest_templates.yml` has them with its `name`, which gets the mod's prefix. Call it in an entry script or a layer. A bad record raises an error.
+- Both calls need `world.generate`. A layer that fails, or returns what the rules refuse, is logged and left out. `wactl world new` prints the notes.
+- In a running server the calls record what they get, and nothing runs it: the world's content was made once. In `wactl mod test`, the test world's layers run once when the test world is made, and its quest boards and guilds follow.
 
 ### Spawning monsters
 
@@ -2512,7 +2593,17 @@ go run ./tools/wactl convert npcs --mode renewal --out /tmp/core-npcs
 
 To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`. Kafra pushcart rental says it is not available yet.
 
-Core also has NPCs of its own, written for wAthena: the Job Master (see "Job changes and resets"). The converter maps `jobchange` to `player:change_job` with `force`, `jobchange Job_Novice_High` and the `resetlvl(1)` after it to `player:rebirth`, `resetskill` and `resetstatus` to the reset calls, and the `Upper` parameter to the job tests. The coverage report of each mode is in [docs/generated](../docs/generated).
+Core also has NPCs of its own, written for wAthena: the Job Master (see "Job changes and resets"), and the NPCs of procedural worlds (decision 0044), which stand at named places and so never appear in a classic world:
+
+- The Kafra Employee at each town's `storage` place runs core's converted `F_Kafra` with storage only, so `F_KafStor`'s rules hold: Basic Skill level 6, the Free Ticket for Kafra Storage, and a fee of 40 zeny below level 20, 20 more for each 20 levels of the town's band, up to 100.
+- The Innkeeper at `inn` runs core's converted `F_InnMaid`: Save sets the save point at the player's cell, and a rest heals fully for 5,000 zeny.
+- The Refiner at `blacksmith` refines worn equipment as rAthena's `refinemain`: up to +9, with `refine.yml`'s price, ore and chance, and a failure destroys the item.
+- The Tool, Weapon and Armor Dealers at `shop:tool`, `shop:weapon` and `shop:armor` open the core shops `shop_<kind>_<tier>`, one tier per 20 levels of the town's band.
+- The Quest Board at `quest_board` offers the town's quests, takes them back done for their reward, ends deliveries from other towns, and lets a quest be given up or taken again.
+- A guild master per class family at `guild:<family>` runs the guild's tests: a Novice at job level 10 with Basic Skill level 9 hunts, collects and talks to become its first job, and a first job at job level 40 with no skill points left does the same for its second jobs. A High Novice and a transcendent first job change without a test.
+- The Valkyrie at `rebirth` follows `npc/jobs/valkyrie.txt`: a second class at base level 99 and job level 50 with no items, zeny, cart, falcon, mount or skill points left becomes a High Novice, with a Knife and a Cotton Shirt.
+
+Their scripts are under `scripts/procedural/`. The converter maps `jobchange` to `player:change_job` with `force`, `jobchange Job_Novice_High` and the `resetlvl(1)` after it to `player:rebirth`, `resetskill` and `resetstatus` to the reset calls, and the `Upper` parameter to the job tests. The coverage report of each mode is in [docs/generated](../docs/generated).
 
 ## Tools
 

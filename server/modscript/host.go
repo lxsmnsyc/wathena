@@ -599,9 +599,16 @@ func (r *Runtime) monstersID(c *script.Call) error {
 	return nil
 }
 
+// errNoRandom is wa.random's error in a generation layer, whose node is
+// its only source of randomness (strategy section 8.7).
+var errNoRandom = errors.New("wa.random does not run in a generation layer; draw from the layer's node: node:stream()")
+
 func (r *Runtime) randomInteger(c *script.Call) error {
 	if err := r.mutating("random.integer"); err != nil {
 		return err
+	}
+	if r.generating() {
+		return errNoRandom
 	}
 	lo, hi := c.Int(0), c.Int(1)
 	if hi-lo < 0 || hi-lo >= 1<<62 {
@@ -614,6 +621,9 @@ func (r *Runtime) randomInteger(c *script.Call) error {
 func (r *Runtime) randomChance(c *script.Call) error {
 	if err := r.mutating("random.chance"); err != nil {
 		return err
+	}
+	if r.generating() {
+		return errNoRandom
 	}
 	num, den := c.Int(0), c.Int(1)
 	if den <= 0 || den >= 1<<62 {

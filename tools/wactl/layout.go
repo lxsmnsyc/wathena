@@ -10,6 +10,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
+	"github.com/lxsmnsyc/wathena/server/content"
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/layout"
@@ -69,41 +70,46 @@ func readWorldConfig(path string) (worldConfig, error) {
 //     and warps.
 //   - The spawns come from the secret branch of the seed, which only this
 //     command holds, then the mods' spawn_table hooks change them.
-func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*layout.Layout, []spawns.Planned, error) {
+//   - The content follows (decision 0044): the mods' generation layers
+//     run on every generated map, then each town's quests, the job
+//     guilds and the rebirth place come from the stored spawns and the
+//     quest templates, with the secret branch. The returned spawns hold
+//     the layers' bosses.
+func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*layout.Layout, []spawns.Planned, *content.World, error) {
 	g, ok := gen.Lookup(version)
 	if !ok || !g.Makes(gen.KindTown) {
-		return nil, nil, fmt.Errorf("map generator %d makes no towns; a world layout needs generator 3 or later", version)
+		return nil, nil, nil, fmt.Errorf("map generator %d makes no towns; a world layout needs generator 3 or later", version)
 	}
 	c, err := readWorldConfig(configPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	core, err := spawns.LoadCore()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	settings, err := c.Spawns.Resolve(core.Densities)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	root, err := rng.NewRoot(seed)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	var found []*mod.Mod
 	if c.Mods.Dir != "" {
 		if found, err = mod.Discover(c.Mods.Dir); err != nil {
-			return nil, nil, fmt.Errorf("mods.dir: %w", err)
+			return nil, nil, nil, fmt.Errorf("mods.dir: %w", err)
 		}
 	}
 	mode := reference.Mode(ruleset)
 	base, ok := mod.ModeBase(ruleset)
 	if !ok {
-		return nil, nil, fmt.Errorf("the ruleset %q is not renewal or pre-renewal", ruleset)
+		return nil, nil, nil, fmt.Errorf("the ruleset %q is not renewal or pre-renewal", ruleset)
 	}
 	env, err := modkit.LoadEnv(mode, "")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	// The mods' log goes to standard error at warning level, as the
 	// operator runs this command once.
@@ -113,16 +119,16 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*lay
 	loaded, err := gamedata.LoadMods(ctx, found, mod.Config{Base: base, Ruleset: c.Mods.Ruleset, Approve: c.Mods.Approve,
 		Disable: c.Mods.Disable, Strict: c.Mods.Strict}, mode, env.Items, env.Monsters, env.Tables, env.Jobs, &mod.MemoryIDs{}, env.Core, log)
 	if err != nil {
-		return nil, nil, fmt.Errorf("mods: %w", err)
+		return nil, nil, nil, fmt.Errorf("mods: %w", err)
 	}
 	recs, err := fields.LoadLayoutRecords(loaded.Set, g)
 	if err != nil {
-		return nil, nil, fmt.Errorf("mods: %w", err)
+		return nil, nil, nil, fmt.Errorf("mods: %w", err)
 	}
 	public := gen.PublicBranch(root)
 	l, home, err := fields.BuildLayout(recs, g, public, c.Procedural.Layout, c.Procedural.FieldSize)
 	if err != nil {
-		return nil, nil, fmt.Errorf("the world layout: %w", err)
+		return nil, nil, nil, fmt.Errorf("the world layout: %w", err)
 	}
 	var homeMap *mapfolder.Map
 	if home != nil {
@@ -130,32 +136,47 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*lay
 	}
 	made, err := fields.GenerateLayout(g, public, l, homeMap)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	set := fields.NewSet(made, nil)
 	warps, err := set.LayoutWarps(l)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	maps, err := set.SpawnMaps(l, warps)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	planned := spawns.Plan(spawns.SecretBranch(root), maps, spawns.NewPool(loaded.SpawnMonsters, loaded.SpawnThemes), settings)
-	if zone.HasSpawnHooks(loaded.Zone) {
+	secret := spawns.SecretBranch(root)
+	planned := spawns.Plan(secret, maps, spawns.NewPool(loaded.SpawnMonsters, loaded.SpawnThemes), settings)
+	idx := gamedata.SpawnIndex(loaded.Monsters, loaded.SpawnMonsters)
+	var layers content.Layers
+	if zone.HasSpawnHooks(loaded.Zone) || zone.HasGeneration(loaded.Zone) {
 		// The hooks' state has a random stream of its own, from the
-		// secret branch, so a hook's draws repeat for the seed.
-		hooks, err := zone.NewSpawnHooks(loaded.Zone, spawns.SecretBranch(root).Child("hooks").Key())
+		// secret branch, so a hook's draws repeat for the seed. The
+		// generation layers run in the same state, each with its node.
+		hooks, err := zone.NewSpawnHooks(loaded.Zone, secret.Child("hooks").Key())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
-		idx := gamedata.SpawnIndex(loaded.Monsters, loaded.SpawnMonsters)
+		defer hooks.Close()
 		for i := range planned {
 			planned[i].Spawns = hooks.Run(maps[i], planned[i].Spawns, idx, log)
 		}
-		hooks.Close()
+		layers = hooks.Layers(secret, idx)
 	}
-	return l, planned, nil
+	w, err := content.Generate(content.Input{
+		Generator: g, Layout: l, Maps: fields.MapsOf(made), SpawnMaps: maps, Spawns: planned,
+		SpawnMonsters: idx.Monsters, Data: gamedata.ContentData(loaded), Templates: loaded.QuestTemplates,
+		Secret: secret, Layers: layers,
+	})
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	for _, n := range w.Notes {
+		log.Warn("generation: " + n)
+	}
+	return l, w.Spawns, w, nil
 }
 
 // layoutText describes a layout for the operator.
@@ -199,4 +220,20 @@ func spawnText(planned []spawns.Planned) string {
 		}
 	}
 	return fmt.Sprintf("spawns: %d maps, %d lines, %d monsters of %d kinds, %d bosses\n", len(planned), lines, monsters, len(species), bosses)
+}
+
+// contentText describes a world's content for the operator.
+func contentText(w *content.World) string {
+	if w == nil {
+		return ""
+	}
+	board, guild := 0, 0
+	for _, q := range w.Quests {
+		if q.Purpose == content.PurposeBoard {
+			board++
+		} else {
+			guild++
+		}
+	}
+	return fmt.Sprintf("content: %d board quests, %d guild test quests, %d places, %d objects\n", board, guild, len(w.Places), len(w.Objects))
 }

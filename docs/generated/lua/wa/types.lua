@@ -1004,6 +1004,41 @@ function wa_Place:get_area() end
 ---@return integer, integer
 function wa_Place:get_band() end
 
+---A generation layer's node of the seed tree's secret branch, its own for each mod and map (strategy section 8.2). It works only while the layer runs, and gives the same values for the same world each time.
+---@class wa.GenerationNode
+local wa_GenerationNode = {}
+
+---A child node. Each label gives its own values, and the order of calls does not matter.
+---@param label string 1 to 64 bytes, such as "shrines".
+---@return wa.GenerationNode
+function wa_GenerationNode:child(label) end
+
+---A stream of numbers from the node. Two streams of one node give the same numbers.
+---@return wa.GenerationStream
+function wa_GenerationNode:stream() end
+
+---A number for a cell, the same for the same node and cell, from all 64 bits.
+---@param x integer
+---@param y integer
+---@return integer
+function wa_GenerationNode:hash(x, y) end
+
+---A stream of numbers of a generation node, from the node's secret ChaCha8 stream (strategy section 8.2).
+---@class wa.GenerationStream
+local wa_GenerationStream = {}
+
+---The next whole number from minimum to maximum.
+---@param minimum integer
+---@param maximum integer
+---@return integer
+function wa_GenerationStream:integer(minimum, maximum) end
+
+---True with a chance of numerator in denominator.
+---@param numerator integer
+---@param denominator integer Above 0.
+---@return boolean
+function wa_GenerationStream:chance(numerator, denominator) end
+
 ---A town of the world layout, from wa.towns (review decision 43). Two handles of one town are equal.
 ---@class wa.Town
 local wa_Town = {}
@@ -1842,6 +1877,49 @@ local wa_WorldEvent = {}
 ---@field reason string? Why the server restarts, as staff wrote it. nil when the restart was cancelled.
 ---@field cancelled boolean? true when staff cancelled the planned restart.
 local wa_RestartPlan = {}
+
+---The map of a generation layer: a generated field, town or dungeon floor of a new procedural world (review decision 46). It is read-only.
+---@class wa.GenerationMap
+---@field id string The map ID, such as gen:field:3:1, gen:town:t2 or gen:dungeon:crypt:2.
+---@field kind "field"|"town"|"dungeon"
+---@field biome string A field's biome, such as forest, or a town's or a floor's tileset, such as crypt.
+---@field tileset string The tileset whose props objects name.
+---@field band integer[] The level band: the lowest and the highest level.
+---@field width integer The map's width in cells.
+---@field height integer The map's height in cells.
+---@field places wa.GenerationPlace[] The map's generated places, in the generator's order.
+local wa_GenerationMap = {}
+
+---A named place of a generation layer's map, or one a layer returns: its tags, the main tag first, and its cell. The server moves a returned place to the nearest open ground within 8 cells, or leaves it out.
+---@class wa.GenerationPlace
+---@field tags string[] 1 to 8 tags of 1 to 64 lowercase letters, digits, _, -, . and :.
+---@field x integer
+---@field y integer
+local wa_GenerationPlace = {}
+
+---An object a generation layer puts on its map. Clients draw it from the map's info. It does not block the cell.
+---@class wa.GenerationObject
+---@field model string A prop of the map's tileset, such as rock or well.
+---@field x integer A cell of the map.
+---@field y integer
+---@field turn integer? 0 to 3 quarter turns. 0 by default.
+local wa_GenerationObject = {}
+
+---A boss a generation layer adds to its field's or dungeon floor's spawns, one monster. The server keeps it 30 cells from warps to towns.
+---@class wa.GenerationBoss
+---@field monster integer A monster from monsters.id.
+---@field role "mini_boss"|"field_boss"
+---@field x integer? Its cell, with y: it appears within 3 cells of the nearest open ground. Left out, anywhere on the map.
+---@field y integer?
+---@field respawn integer? Milliseconds before it comes back, 1,000 to 268,435,455. 45 minutes for a mini boss and 90 for a field boss by default.
+local wa_GenerationBoss = {}
+
+---What a generation layer adds to its map. Each list is optional.
+---@class wa.GenerationResult
+---@field places wa.GenerationPlace[]? At most 32.
+---@field objects wa.GenerationObject[]? At most 256.
+---@field bosses wa.GenerationBoss[]? At most 8.
+local wa_GenerationResult = {}
 
 ---The map of the spawn_table hook: a field or a dungeon floor of a new procedural world (review decision 44). It is read-only.
 ---@class wa.SpawnMap

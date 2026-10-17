@@ -15,6 +15,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
+	"github.com/lxsmnsyc/wathena/server/content"
 	"github.com/lxsmnsyc/wathena/server/currency"
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -67,6 +68,11 @@ type Mods struct {
 	SpawnMonsters     []spawns.Monster
 	SpawnThemes       []spawns.Theme
 	SpawnThemeOverlay *mod.Overlay
+	// QuestTemplates are the quest templates: core's with the mods'
+	// data/quest_templates.yml (review decision 46). `wactl world new`
+	// makes a world's quests from them. Their overlay joins
+	// GeneratedOverlays.
+	QuestTemplates []content.Template
 	// Tables are the exp and drop tables, which also know mod items.
 	Tables *progression.Tables
 	// Events are the world events of data/events.yml, and EventOverlay
@@ -380,6 +386,14 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	}
 	out.GeneratedOverlays = append(out.GeneratedOverlays, out.SpawnThemeOverlay)
 	out.SpawnMonsters = SpawnMonsters(out.Monsters, core.Constants)
+	var templateOverlay *mod.Overlay
+	if out.QuestTemplates, templateOverlay, err = QuestTemplates(out); err != nil {
+		return nil, err
+	}
+	for _, n := range templateOverlay.Notes {
+		log.Warn("mods: " + n)
+	}
+	out.GeneratedOverlays = append(out.GeneratedOverlays, templateOverlay)
 	names := eventNames{
 		item: func(name string) (uint32, bool) {
 			id, ok := merged.IDs[name]

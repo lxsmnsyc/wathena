@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/lxsmnsyc/wathena/server/content"
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/gateway"
@@ -62,6 +63,9 @@ type proceduralWorld struct {
 	// spawns are the stored spawn lists of the fields and dungeon
 	// floors, by map ID (decision 0042). A dev world has none.
 	spawns map[string][]spawns.Spawn
+	// content is the stored content: places, objects and quests
+	// (decision 0044). A dev world has none.
+	content *content.World
 }
 
 // wantsDevMaps reports whether the config lists generated maps of its
@@ -139,6 +143,30 @@ func loadLayout(ctx context.Context, pool *pgxpool.Pool, w store.World, proc *pr
 	if proc.spawns, err = store.LoadSpawns(ctx, pool); err != nil {
 		return fmt.Errorf("the world's spawns: %w", err)
 	}
+	if proc.content, err = store.LoadContent(ctx, pool); err != nil {
+		return fmt.Errorf("the world's content: %w", err)
+	}
+	return nil
+}
+
+// worldQuests makes the quest records of a world's stored quests, adds
+// them to the quests every zone reads, and gives the zones the quests of
+// core's boards and guilds (decision 0044). A quest whose monster or item
+// no longer loads is left out with a warning.
+func worldQuests(proc proceduralWorld, loaded *mods, log *slog.Logger) error {
+	if proc.content == nil {
+		return nil
+	}
+	recs, world, missing := gamedata.WorldQuests(proc.content, loaded.all.Monsters, loaded.items)
+	for _, m := range missing {
+		log.Warn("a world quest names a monster or an item that does not load; the quest is left out", "quest", m)
+	}
+	t, err := gamedata.WithWorldQuests(loaded.zone.Quests, recs)
+	if err != nil {
+		return err
+	}
+	loaded.zone.Quests, loaded.all.Quests, loaded.zone.World = t, t, world
+	log.Info("world content loaded", "quests", len(recs), "places", len(proc.content.Places), "objects", len(proc.content.Objects))
 	return nil
 }
 
@@ -237,6 +265,13 @@ func addMaps(cfg settings, proc *proceduralWorld, set *mod.Set, pool *pgxpool.Po
 		return err
 	}
 	proc.set = fields.NewSet(made, tilesets.JSON())
+	missing, err := proc.set.AddContent(proc.content)
+	if err != nil {
+		return err
+	}
+	for _, id := range missing {
+		log.Warn("the world's content names a map the world does not run; its places and objects are left out", "map", id)
+	}
 	if proc.warps, err = proc.set.LayoutWarps(l); err != nil {
 		return err
 	}

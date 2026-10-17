@@ -32,6 +32,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decisions 27 and 32). Read-only. Its calls need no permission. An unknown name raises an error that lists the valid names. |
 | [`wa.places`](#waplaces) | Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil. |
 | [`wa.towns`](#watowns) | The towns of the world layout (review decision 43): each with an ID such as t7, a display name, a map and a level band. A classic world has no towns: list returns an empty list, and nearest and get nil. |
+| [`wa.generation`](#wageneration) | Generation layers (review decision 46): mod code that runs when wactl world new makes a procedural world, on the server only, and in the test worlds of wactl mod test. A layer adds named places, objects and bosses to each generated map. It cannot change terrain cells, which the client generates. Both calls need world.generate. In a running zone they record what they get, and nothing runs it. |
 | [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
 | [`wa.integers`](#waintegers) | Integer division that rounds as C does, toward zero, for scripts converted from rAthena. |
@@ -643,6 +644,35 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `id` | `string` | A town's ID, such as "t7". Another form raises an error. |
+
+### wa.generation
+
+```lua
+local generation = require "wa.generation"
+```
+
+Generation layers (review decision 46): mod code that runs when wactl world new makes a procedural world, on the server only, and in the test worlds of wactl mod test. A layer adds named places, objects and bosses to each generated map. It cannot change terrain cells, which the client generates. Both calls need world.generate. In a running zone they record what they get, and nothing runs it.
+
+#### `generation.on(event, layer?)`
+
+Adds a generation layer in a mod context. The mods' layers run in load order. A layer has no other source of randomness than its node: wa.random raises an error while it runs. A layer that fails is logged and left out.
+
+Permission: `world.generate`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `event` | `"map"` | The event: "map", once on each generated field, town and dungeon floor, in the layout's order. |
+| `layer` | `fun(map: wa.GenerationMap, node: wa.GenerationNode): wa.GenerationResult?` | Gets the map and the layer's node, and returns nil or what to add. |
+
+#### `generation.quest_template(record)`
+
+Adds a quest template, which the world's quest boards and job guilds draw from as from the records. Call it in an entry script or a layer. A bad record or a second template of the name raises an error.
+
+Permission: `world.generate`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `record` | `table` | A record of data/quest_templates.yml with its name, such as { name = "shrine_hunt", kind = "hunt", title = "Hunt {count} {monster}", count = { 5, 10 } }. The name gets the mod's prefix. |
 
 ### wa.variables
 
@@ -2178,6 +2208,53 @@ The level band of the place's map, its lowest and highest level (review decision
 
 Permission: `game.read`.
 
+### wa.GenerationNode
+
+A generation layer's node of the seed tree's secret branch, its own for each mod and map (strategy section 8.2). It works only while the layer runs, and gives the same values for the same world each time.
+
+#### `generationNode:child(label) → wa.GenerationNode`
+
+A child node. Each label gives its own values, and the order of calls does not matter.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `label` | `string` | 1 to 64 bytes, such as "shrines". |
+
+#### `generationNode:stream() → wa.GenerationStream`
+
+A stream of numbers from the node. Two streams of one node give the same numbers.
+
+#### `generationNode:hash(x, y) → integer`
+
+A number for a cell, the same for the same node and cell, from all 64 bits.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+
+### wa.GenerationStream
+
+A stream of numbers of a generation node, from the node's secret ChaCha8 stream (strategy section 8.2).
+
+#### `generationStream:integer(minimum, maximum) → integer`
+
+The next whole number from minimum to maximum.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `minimum` | `integer` |  |
+| `maximum` | `integer` |  |
+
+#### `generationStream:chance(numerator, denominator) → boolean`
+
+True with a chance of numerator in denominator.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `numerator` | `integer` |  |
+| `denominator` | `integer` | Above 0. |
+
 ### wa.Town
 
 A town of the world layout, from wa.towns (review decision 43). Two handles of one town are equal.
@@ -3333,6 +3410,64 @@ The object of restart_planned (review decision 36): { at, reason } when staff pl
 | `at` | `integer?` | When the server restarts, in Unix seconds. nil when the restart was cancelled. |
 | `reason` | `string?` | Why the server restarts, as staff wrote it. nil when the restart was cancelled. |
 | `cancelled` | `boolean?` | true when staff cancelled the planned restart. |
+
+### wa.GenerationMap
+
+The map of a generation layer: a generated field, town or dungeon floor of a new procedural world (review decision 46). It is read-only.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | `string` | The map ID, such as gen:field:3:1, gen:town:t2 or gen:dungeon:crypt:2. |
+| `kind` | `"field"\|"town"\|"dungeon"` |  |
+| `biome` | `string` | A field's biome, such as forest, or a town's or a floor's tileset, such as crypt. |
+| `tileset` | `string` | The tileset whose props objects name. |
+| `band` | `integer[]` | The level band: the lowest and the highest level. |
+| `width` | `integer` | The map's width in cells. |
+| `height` | `integer` | The map's height in cells. |
+| `places` | `wa.GenerationPlace[]` | The map's generated places, in the generator's order. |
+
+### wa.GenerationPlace
+
+A named place of a generation layer's map, or one a layer returns: its tags, the main tag first, and its cell. The server moves a returned place to the nearest open ground within 8 cells, or leaves it out.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `tags` | `string[]` | 1 to 8 tags of 1 to 64 lowercase letters, digits, _, -, . and :. |
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+
+### wa.GenerationObject
+
+An object a generation layer puts on its map. Clients draw it from the map's info. It does not block the cell.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `model` | `string` | A prop of the map's tileset, such as rock or well. |
+| `x` | `integer` | A cell of the map. |
+| `y` | `integer` |  |
+| `turn` | `integer?` | 0 to 3 quarter turns. 0 by default. |
+
+### wa.GenerationBoss
+
+A boss a generation layer adds to its field's or dungeon floor's spawns, one monster. The server keeps it 30 cells from warps to towns.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `monster` | `integer` | A monster from monsters.id. |
+| `role` | `"mini_boss"\|"field_boss"` |  |
+| `x` | `integer?` | Its cell, with y: it appears within 3 cells of the nearest open ground. Left out, anywhere on the map. |
+| `y` | `integer?` |  |
+| `respawn` | `integer?` | Milliseconds before it comes back, 1,000 to 268,435,455. 45 minutes for a mini boss and 90 for a field boss by default. |
+
+### wa.GenerationResult
+
+What a generation layer adds to its map. Each list is optional.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `places` | `wa.GenerationPlace[]?` | At most 32. |
+| `objects` | `wa.GenerationObject[]?` | At most 256. |
+| `bosses` | `wa.GenerationBoss[]?` | At most 8. |
 
 ### wa.SpawnMap
 

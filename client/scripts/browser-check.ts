@@ -48,6 +48,13 @@
 //   turns it in. A phone page with touch takes it and marks it inactive
 //   (decision 0043). Chromium only.
 //
+// - content: content-check.ts makes a small procedural world with a
+//   wactl built with -tags procedural, in a database of
+//   WATHENA_TEST_DATABASE_URL, and runs it on a waserver built with the
+//   tag. A player in the first town walks to the Kafra Employee at the
+//   storage place and to the quest board at its quest_board place, and
+//   reads the town's quests (decision 0044). Chromium only.
+//
 // - gen: the map generator module (src/world/gen.wasm) gives the golden
 //   checksums of shared/gen/testdata in Chromium, Firefox and WebKit,
 //   whatever BROWSERS says (decision 0038): fields, dungeon floors and
@@ -94,6 +101,7 @@ import {
 } from './game-check.ts';
 import { checkExit } from './exit-check.ts';
 import { checkFields } from './field-check.ts';
+import checkContent from './content-check.ts';
 import { checkLayout } from './layout-check.ts';
 import { checkQuests } from './quests-check.ts';
 import { checkPlaces } from './places-check.ts';
@@ -1102,6 +1110,13 @@ try {
           await checkQuests(name, browser, { repo, client, ...assets }, check);
         } else {
           console.log(`skip ${name} quests: the game checks run in Chromium`);
+        }
+      }
+      if (wanted('content')) {
+        if (name === 'chromium') {
+          await checkContent(name, browser, { repo, client, ...assets }, check);
+        } else {
+          console.log(`skip ${name} content: the game checks run in Chromium`);
         }
       }
       if (wanted('exit')) {

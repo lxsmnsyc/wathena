@@ -1,0 +1,23 @@
+# A sample mod for procedural worlds (proposal 0002, review decision 46):
+# a generation layer that adds places, objects and bosses to a new
+# world's maps, a quest template, and an NPC that stands at the layer's
+# places. mods/README.md, "Generation layers", explains each part.
+id: example.wayside-shrines
+name: Wayside Shrines
+version: 0.1.0
+api: 1.0
+description: Puts a shrine with a keeper in every town of a new procedural world, a ring of stones in every field with a Vagabond Wolf to guard it, and a quest board quest that asks for offerings.
+authors:
+  - name: wAthena contributors
+license: GPL-3.0-or-later
+depends:
+  - id: core
+    version: ">=0.1"
+supports:
+  rulesets:
+    base: [renewal, pre_renewal]
+permissions:
+  - game.read
+  - world.generate
+scripts:
+  - scripts/main.lua

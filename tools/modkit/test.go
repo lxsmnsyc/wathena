@@ -173,7 +173,10 @@ func (e *Env) newWorld(l *Loaded, log *slog.Logger) (*testWorld, error) {
 	mods.Log = log
 	mods.Places = l.placesOf(log)
 	if g, err := l.generatedMaps(); err == nil && g != nil {
-		mods.Atlas = g.atlas
+		mods.Atlas, mods.Quests, mods.World = g.atlas, g.quests, g.world
+		for _, n := range g.notes {
+			log.Warn("generation: " + n)
+		}
 	}
 	mods.Server = variables.NewServer(nil, log)
 	id := l.Mod.ID()
@@ -284,6 +287,7 @@ func (w *testWorld) spawnGenerated(name string) error {
 	}
 	log := w.h.Zone().Mods.Log
 	list = zone.RunSpawnTable(w.h.Runtime(), g.spawnMaps[name], list, gamedata.SpawnIndex(w.l.Monsters, w.l.SpawnMonsters), log)
+	list = append(slices.Clone(list), g.bosses[name]...)
 	zs, missing := gamedata.ZoneSpawns(list, w.l.Monsters)
 	for _, m := range missing {
 		log.Warn("a spawn names a monster that does not exist", "map", name, "monster", m)

@@ -7,10 +7,14 @@ import (
 	"path"
 	"sync"
 
+	"github.com/lxsmnsyc/wathena/server/content"
 	"github.com/lxsmnsyc/wathena/server/fields"
+	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mapfolder"
+	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/places"
+	"github.com/lxsmnsyc/wathena/server/quest"
 	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/gen"
@@ -31,6 +35,11 @@ import (
 // NPC records with a place stand at their places. Each field and floor
 // has the spawn list of the test world's secret branch, which the mods'
 // spawn_table hooks change when a case first runs on it (decision 0042).
+// The test world's content comes as `wactl world new` makes a world's
+// (decision 0044): the mods' generation layers run once on every
+// generated map, in a Lua state of their own, and the quest boards,
+// job guilds and rebirth place follow from the spawn lists before the
+// hooks. The layers' bosses join a list after its hooks ran.
 
 // TestWorldLabel is the world secret of the test worlds' generated maps.
 // It is public on purpose, so every run makes the same maps.
@@ -51,6 +60,14 @@ type generated struct {
 	// inputs and list, by map ID, before the hooks (decision 0042).
 	spawnMaps map[string]spawns.Map
 	planned   map[string][]spawns.Spawn
+	// bosses are the generation layers' bosses, by map ID, and quests
+	// the quests with the world's, and world those of core's boards and
+	// guilds (decision 0044).
+	bosses map[string][]spawns.Spawn
+	quests *quest.Table
+	world  []modscript.CoreQuest
+	// notes are what the layers did that the rules left out.
+	notes []string
 }
 
 type genResult struct {
@@ -115,9 +132,8 @@ func (l *Loaded) makeGenerated() (*generated, error) {
 	if err != nil {
 		return nil, err
 	}
-	idx := set.Places(warps)
-	out := &generated{set: set, places: idx, warps: warps, npcs: map[string][]zone.NPC{}, atlas: layout.NewAtlas(lay, layout.AtlasOptions{}),
-		spawnMaps: map[string]spawns.Map{}, planned: map[string][]spawns.Spawn{}}
+	out := &generated{set: set, warps: warps, npcs: map[string][]zone.NPC{}, atlas: layout.NewAtlas(lay, layout.AtlasOptions{}),
+		spawnMaps: map[string]spawns.Map{}, planned: map[string][]spawns.Spawn{}, bosses: map[string][]spawns.Spawn{}}
 	sm, err := set.SpawnMaps(lay, warps)
 	if err != nil {
 		return nil, err
@@ -130,9 +146,16 @@ func (l *Loaded) makeGenerated() (*generated, error) {
 	if err != nil {
 		return nil, err
 	}
-	for i, p := range spawns.Plan(spawns.SecretBranch(root), sm, spawns.NewPool(l.SpawnMonsters, l.SpawnThemes), st) {
+	secret := spawns.SecretBranch(root)
+	planned := spawns.Plan(secret, sm, spawns.NewPool(l.SpawnMonsters, l.SpawnThemes), st)
+	for i, p := range planned {
 		out.spawnMaps[p.Map], out.planned[p.Map] = sm[i], p.Spawns
 	}
+	if err := l.makeContent(out, g, lay, made, sm, planned, secret); err != nil {
+		return nil, err
+	}
+	idx := set.Places(warps)
+	out.places = idx
 	for _, pn := range l.PlaceNPCs {
 		for _, i := range idx.Find(pn.Place.Scope, pn.Place.Tag) {
 			p := idx.Place(i)
@@ -200,4 +223,44 @@ func (l *Loaded) checkMaps() []string {
 		}
 	}
 	return out
+}
+
+// makeContent makes the test world's content, as `wactl world new` makes
+// a world's: the layers, then the quests and places. It adds the places
+// and objects to the maps.
+func (l *Loaded) makeContent(out *generated, g gen.Generator, lay *layout.Layout, made []*fields.Field, sm []spawns.Map,
+	planned []spawns.Planned, secret rng.Node) error {
+	idx := gamedata.SpawnIndex(l.Monsters, l.SpawnMonsters)
+	var layers content.Layers
+	if zone.HasGeneration(l.Zone) {
+		state, err := zone.NewSpawnHooks(l.Zone, secret.Child("hooks").Key())
+		if err != nil {
+			return err
+		}
+		defer state.Close()
+		layers = state.Layers(secret, idx)
+	}
+	w, err := content.Generate(content.Input{
+		Generator: g, Layout: lay, Maps: fields.MapsOf(made), SpawnMaps: sm, Spawns: planned,
+		SpawnMonsters: idx.Monsters, Data: gamedata.ContentData(l.Mods), Templates: l.QuestTemplates,
+		Secret: secret, Layers: layers,
+	})
+	if err != nil {
+		return err
+	}
+	out.notes = w.Notes
+	for i, p := range w.Spawns {
+		if n := len(planned[i].Spawns); len(p.Spawns) > n {
+			out.bosses[p.Map] = p.Spawns[n:]
+		}
+	}
+	if _, err := out.set.AddContent(w); err != nil {
+		return err
+	}
+	recs, world, _ := gamedata.WorldQuests(w, l.Monsters, l.Items)
+	if out.quests, err = gamedata.WithWorldQuests(l.Quests, recs); err != nil {
+		return err
+	}
+	out.world = world
+	return nil
 }

@@ -17,6 +17,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/constants"
+	"github.com/lxsmnsyc/wathena/server/content"
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/places"
@@ -163,7 +164,7 @@ type Runtime struct {
 	fns  struct {
 		loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref
 		loadTests, runCase, describe, runHooks, condition                         *script.Ref
-		statusBonuses                                                             *script.Ref
+		statusBonuses, runGeneration                                              *script.Ref
 	}
 	nextID int64
 
@@ -235,6 +236,12 @@ type Runtime struct {
 	// reloadedOff are the mods reloaded while off, whose monster and
 	// skill contexts start again when they are turned on.
 	reloadedOff map[string]bool
+	// generation are the generation layers, genTemplates the quest
+	// templates of generation.quest_template, and gen the nodes and
+	// streams of the layer that runs, or nil (generation.go).
+	generation   []*genLayer
+	genTemplates []content.Template
+	gen          *genState
 }
 
 // Context owns what a setup function and its handlers create
@@ -504,6 +511,12 @@ func (r *Runtime) init() error {
 		{"player_staff", r.playerStaff},
 		{"guild_field", r.guildField},
 		{"core_guild_storage_log", r.coreGuildStorageLog},
+		{"core_world_quests", r.coreWorldQuests},
+		{"core_give_exp", r.coreGiveExp},
+		{"core_skill_points", r.coreSkillPoints},
+		{"core_weight", r.coreWeight},
+		{"core_refine_info", r.coreRefineInfo},
+		{"core_refine", r.coreRefine},
 		{"guild_call", r.guildCall},
 		{"guilds_create", r.guildsCreate},
 		{"guilds_find", r.guildsFind},
@@ -522,6 +535,13 @@ func (r *Runtime) init() error {
 		{"maps_display_name", r.mapsDisplayName},
 		{"player_quest", r.playerQuestCall},
 		{"npc_show_quest_icon", r.npcShowQuestIcon},
+		{"generation_on", r.generationOn},
+		{"generation_quest_template", r.generationQuestTemplate},
+		{"gen_node_child", r.genNodeChild},
+		{"gen_node_stream", r.genNodeStream},
+		{"gen_node_hash", r.genNodeHash},
+		{"gen_stream_integer", r.genStreamInteger},
+		{"gen_stream_chance", r.genStreamChance},
 	}
 	if r.opts.Testing {
 		host = append(host, struct {
@@ -566,6 +586,7 @@ func (r *Runtime) init() error {
 		{"run_hooks", &r.fns.runHooks},
 		{"check_condition", &r.fns.condition},
 		{"status_bonuses", &r.fns.statusBonuses},
+		{"run_generation", &r.fns.runGeneration},
 	} {
 		ref, err := r.s.Keep(tab.Get(f.name))
 		if err != nil {

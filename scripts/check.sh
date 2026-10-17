@@ -55,7 +55,9 @@
 #             a town and a dungeon floor (decision 0040), a walk from a
 #             home map into a town with the world map (decision 0041),
 #             a quest with its window and NPC icon on a desktop and a
-#             phone (decision 0043), and the map
+#             phone (decision 0043), a walk to a Kafra and a quest board
+#             in a world that wactl world new made (decision 0044), and
+#             the map
 #             generator in Chromium, Firefox and WebKit. Only with all.
 #
 # Tool versions. The script runs the tools on PATH and does not install

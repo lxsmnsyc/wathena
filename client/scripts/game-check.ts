@@ -110,6 +110,13 @@ export interface GameOptions {
    * beside the layout's maps. fieldSize sets --field-size.
    */
   layout?: boolean;
+  /**
+   * A waserver built with -tags procedural, for a procedural world that
+   * `wactl world new` made in the database of env (decision 0044).
+   * placeholder/map runs beside the world's maps, for the fixture's
+   * events.
+   */
+  procedural?: boolean;
 }
 
 /**
@@ -232,7 +239,11 @@ export async function startGame(
   build: string,
   opts: GameOptions = {},
 ): Promise<Game> {
-  const waserver = buildServer(repo, dir, opts.fields !== undefined || opts.layout === true);
+  const waserver = buildServer(
+    repo,
+    dir,
+    opts.fields !== undefined || opts.layout === true || opts.procedural === true,
+  );
   const mods = installMods(repo, dir, wactl, opts.mods ?? []);
   const config = join(dir, `waserver-${opts.name ?? 'game'}.yml`);
   writeFileSync(
@@ -267,6 +278,7 @@ export async function startGame(
       ...(opts.layout === true
         ? ['--layout', '--field-size', String(opts.fieldSize ?? 160), '--maps', 'placeholder/map']
         : []),
+      ...(opts.procedural === true ? ['--maps', 'placeholder/map'] : []),
       ...(dev
         ? ['--dev', '--seed', 'browser-check', '--start-job', opts.startJob ?? '1:50:40']
         : ['--play-url', `${origin}/`]),
@@ -306,7 +318,7 @@ export async function startGame(
     serving,
     new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error('waserver did not start in 120 seconds'));
+        reject(new Error(`waserver did not start in 120 seconds:\n${log.slice(-3000)}`));
       }, 120_000);
     }),
   ]);

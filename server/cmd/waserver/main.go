@@ -368,6 +368,9 @@ func runAll(name string, args []string) error {
 	if err := addMaps(cfg, &proc, loaded.set, pool, log); err != nil {
 		return err
 	}
+	if err := worldQuests(proc, loaded, log); err != nil {
+		return err
+	}
 	name, assetMaps, names, err := worldMaps(cfg, proc)
 	if err != nil {
 		return err

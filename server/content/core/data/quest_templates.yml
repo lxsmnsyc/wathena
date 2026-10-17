@@ -1,0 +1,41 @@
+# Core's quest templates (proposal 0002, review decision 46, decision
+# 0044). Mods change these by name and add their own
+# (mods/README.md, "Quest templates"). When `wactl world new` makes a
+# procedural world, each town's quest board draws its quests from the
+# templates with uses: [board], and each job guild's tests from those
+# with uses: [guild]. A title's {count}, {monster}, {item} and {town}
+# become the quest's numbers and names.
+- name: hunt
+  kind: hunt
+  title: "Hunt {count} {monster}"
+  count: [10, 25]
+  roles: [common, uncommon]
+  reward: 100
+  weight: 4
+  uses: [board, guild]
+- name: thin_out
+  kind: hunt
+  title: "Thin out the {monster}"
+  count: [25, 40]
+  roles: [common]
+  reward: 150
+  weight: 2
+- name: collect
+  kind: collect
+  title: "Bring {count} {item}"
+  count: [5, 12]
+  roles: [common, uncommon]
+  reward: 120
+  weight: 3
+  uses: [board, guild]
+- name: delivery
+  kind: delivery
+  title: "Deliver a parcel to {town}"
+  item: Delivery_Box
+  reward: 80
+  weight: 2
+- name: message
+  kind: delivery
+  title: "Carry a message to {town}"
+  reward: 50
+  weight: 1

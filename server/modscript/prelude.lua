@@ -1455,6 +1455,167 @@ api["wa.towns"] = readonly("wa.towns", {
 	end,
 })
 
+-- Generation layers (proposal 0002, review decision 46): wa.generation.
+-- A layer runs on every generated map when `wactl world new` makes a
+-- procedural world, with a node of the seed tree's secret branch. The
+-- node and its streams work only while the layer runs.
+local new_gen_stream, gen_stream_ids
+new_gen_stream, gen_stream_ids = handle_type("generation_stream", {
+	integer = function(self, minimum, maximum)
+		check(math_type(minimum) == "integer" and math_type(maximum) == "integer",
+			"stream:integer: minimum and maximum must be integers")
+		check(minimum <= maximum, "stream:integer: minimum is above maximum")
+		return (call(H.gen_stream_integer, gen_stream_ids[self], minimum, maximum))
+	end,
+	chance = function(self, numerator, denominator)
+		check(math_type(numerator) == "integer" and math_type(denominator) == "integer",
+			"stream:chance: numerator and denominator must be integers")
+		check(denominator > 0, "stream:chance: the denominator must be above 0")
+		return (call(H.gen_stream_chance, gen_stream_ids[self], numerator, denominator))
+	end,
+})
+
+local new_gen_node, gen_node_ids
+new_gen_node, gen_node_ids = handle_type("generation_node", {
+	child = function(self, label)
+		check(type(label) == "string" and #label >= 1 and #label <= 64, "node:child: the label must be text of 1 to 64 bytes")
+		return new_gen_node(call(H.gen_node_child, gen_node_ids[self], label))
+	end,
+	stream = function(self)
+		return new_gen_stream(call(H.gen_node_stream, gen_node_ids[self]))
+	end,
+	hash = function(self, x, y)
+		check(math_type(x) == "integer" and math_type(y) == "integer", "node:hash: x and y must be integers")
+		return (call(H.gen_node_hash, gen_node_ids[self], x, y))
+	end,
+})
+
+api["wa.generation"] = readonly("wa.generation", {
+	on = function(event, fn)
+		check(event == "map", 'generation.on: the event is "map"')
+		check(type(fn) == "function", "generation.on: want a function(map, node)")
+		call(H.generation_on, event, fn)
+	end,
+	quest_template = function(record)
+		check(type(record) == "table", "generation.quest_template: want a record, such as { name = \"shrine_hunt\", kind = \"hunt\", title = \"Hunt {count} {monster}\", count = { 5, 10 } }")
+		call(H.generation_quest_template, record)
+	end,
+})
+
+-- gen_map makes the read-only map object of a generation layer.
+local function gen_map(m)
+	local places = {}
+	for i, p in ipairs(m.places) do
+		local tags = {}
+		for k, t in ipairs(p.tags) do
+			tags[k] = t
+		end
+		places[i] = readonly("place", { tags = readonly("tags", tags), x = p.x, y = p.y })
+	end
+	return readonly("generation map", {
+		id = m.id, kind = m.kind, biome = m.biome, tileset = m.tileset,
+		band = readonly("band", { m.band[1], m.band[2] }),
+		width = m.width, height = m.height,
+		places = readonly("places", places),
+	})
+end
+
+local gen_result_fields = { places = true, objects = true, bosses = true }
+local gen_limits = { places = 32, objects = 256, bosses = 8 }
+local gen_entry_fields = {
+	places = { tags = true, x = true, y = true },
+	objects = { model = true, x = true, y = true, turn = true },
+	bosses = { monster = true, role = true, x = true, y = true, respawn = true },
+}
+
+-- gen_result checks what a layer returned, nil or { places, objects,
+-- bosses }, and copies it as plain tables.
+local function gen_result(r)
+	local want = "a generation layer returns nil or { places, objects, bosses }"
+	if r == nil then
+		return {}
+	end
+	if type(r) ~= "table" then
+		error(want, 0)
+	end
+	for k in pairs(r) do
+		if not gen_result_fields[k] then
+			error(want .. "; " .. tostring(k) .. " is not one of them", 0)
+		end
+	end
+	local out = {}
+	for key in pairs(gen_result_fields) do
+		local list = r[key]
+		if list ~= nil then
+			if type(list) ~= "table" then
+				error(key .. " must be a list", 0)
+			end
+			local n = 0
+			for _ in pairs(list) do
+				n = n + 1
+			end
+			if n ~= #list or n > gen_limits[key] then
+				error(key .. " must be a list of at most " .. gen_limits[key], 0)
+			end
+			local copy = {}
+			for i, e in ipairs(list) do
+				local where = key .. " " .. i
+				if type(e) ~= "table" then
+					error(where .. " must be a table", 0)
+				end
+				for k in pairs(e) do
+					if not gen_entry_fields[key][k] then
+						error(where .. ": " .. tostring(k) .. " is not a field", 0)
+					end
+				end
+				local c = {}
+				for k in pairs(gen_entry_fields[key]) do
+					c[k] = e[k]
+				end
+				local has_cell = c.x ~= nil or c.y ~= nil
+				if key ~= "bosses" or has_cell then
+					if math_type(c.x) ~= "integer" or math_type(c.y) ~= "integer" or c.x < 0 or c.y < 0 or c.x > 1024 or c.y > 1024 then
+						error(where .. ": x and y must be integers from 0 to 1024", 0)
+					end
+				end
+				if key == "places" then
+					if type(c.tags) ~= "table" or #c.tags < 1 or #c.tags > 8 then
+						error(where .. ": tags must be a list of 1 to 8 tags", 0)
+					end
+					local tags = {}
+					for t, tag in ipairs(c.tags) do
+						if type(tag) ~= "string" then
+							error(where .. ": each tag must be text", 0)
+						end
+						tags[t] = tag
+					end
+					c.tags = tags
+				elseif key == "objects" then
+					if type(c.model) ~= "string" then
+						error(where .. ": model must be the name of a prop of the map's tileset", 0)
+					end
+					if c.turn ~= nil and (math_type(c.turn) ~= "integer" or c.turn < 0 or c.turn > 3) then
+						error(where .. ": turn must be 0 to 3 quarter turns", 0)
+					end
+				else
+					if math_type(c.monster) ~= "integer" then
+						error(where .. ": monster must be a monster ID from monsters.id", 0)
+					end
+					if c.role ~= "mini_boss" and c.role ~= "field_boss" then
+						error(where .. ": role must be mini_boss or field_boss", 0)
+					end
+					if c.respawn ~= nil and (math_type(c.respawn) ~= "integer" or c.respawn < 1000 or c.respawn > 0xfffffff) then
+						error(where .. ": respawn must be milliseconds from 1000 to 268435455", 0)
+					end
+				end
+				copy[i] = c
+			end
+			out[key] = copy
+		end
+	end
+	return out
+end
+
 -- The world's ruleset (proposal 0002, review decisions 27 and 32): its
 -- limits, flags and rules, read-only.
 api["wa.rules"] = readonly("wa.rules", {
@@ -2045,6 +2206,39 @@ local core_internal = readonly("wa.internal", {
 		local id = player_ids[player]
 		check(id ~= nil, "guild_storage_log: want a player handle")
 		call(H.core_guild_storage_log, id)
+	end,
+	-- The procedural NPCs of decision 0044: the world's quests, quest
+	-- rewards, skill points for the job guilds, and the refiner.
+	world_quests = function()
+		return call(H.core_world_quests)
+	end,
+	give_exp = function(player, base, job)
+		local id = player_ids[player]
+		check(id ~= nil, "give_exp: want a player handle")
+		check(math_type(base) == "integer" and math_type(job) == "integer", "give_exp: base and job must be integers")
+		call(H.core_give_exp, id, base, job)
+	end,
+	skill_points = function(player)
+		local id = player_ids[player]
+		check(id ~= nil, "skill_points: want a player handle")
+		return (call(H.core_skill_points, id))
+	end,
+	weight = function(player)
+		local id = player_ids[player]
+		check(id ~= nil, "weight: want a player handle")
+		return (call(H.core_weight, id))
+	end,
+	refine_info = function(player, slot)
+		local id = player_ids[player]
+		check(id ~= nil, "refine_info: want a player handle")
+		check(type(slot) == "string", "refine_info: the slot must be a string, such as \"right_hand\"")
+		return call(H.core_refine_info, id, slot)
+	end,
+	refine = function(player, slot)
+		local id = player_ids[player]
+		check(id ~= nil, "refine: want a player handle")
+		check(type(slot) == "string", "refine: the slot must be a string, such as \"right_hand\"")
+		return (call(H.core_refine, id, slot))
 	end,
 })
 
@@ -3014,6 +3208,12 @@ function R.describe()
 	end
 	handles.expectation = expectation
 	return { modules = modules, handles = handles }
+end
+
+-- run_generation runs one generation layer on a map, with its node
+-- handle, and returns its checked result.
+function R.run_generation(fn, fields, node)
+	return gen_result(fn(gen_map(fields), new_gen_node(node)))
 end
 
 -- is_protected reports whether a value is a read-only table, for tests.

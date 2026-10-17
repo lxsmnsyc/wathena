@@ -27,6 +27,8 @@
 --     player:expand and answers with the new value.
 --   - "!trainer" places a Training Dummy, worth a level, next to the
 --     speaker, and "!slayer" a Slayer, which kills the speaker.
+--   - "!spawn <monster>" places a monster by its name, such as PORING,
+--     next to the speaker, for the quests of procedural worlds.
 -- Each command but "!guild level" answers with a system line that starts
 -- with "e2e <name>:". restart_planned tells the map's players about a
 -- planned restart, with a line that starts with "e2e restart:". A trade hook and a vend hook refuse Contraband. The
@@ -146,6 +148,10 @@ local commands = {
   end,
   trainer = function(player)
     spawning.monsters { monster = TRAINER, amount = 1, x = player.x + 1, y = player.y }
+    return true
+  end,
+  spawn = function(player, words)
+    spawning.monsters { monster = monsters.id(words[2]), amount = 1, x = player.x, y = player.y, area = 2 }
     return true
   end,
   slayer = function(player)
