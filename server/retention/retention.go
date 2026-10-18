@@ -11,7 +11,9 @@
 //     that wait for a review.
 //
 // Only one process runs the job at a time: each run takes a PostgreSQL
-// advisory lock, and a run that finds it taken does nothing.
+// advisory lock, and a run that finds it taken does nothing. A run that
+// holds the lock records itself in the table retention_status, so the
+// status shows the last run of any process, and survives a restart.
 package retention
 
 import (
@@ -41,11 +43,23 @@ type Periods struct {
 // Defaults are the periods of strategy section 7.10.
 var Defaults = Periods{LoginIPDays: 90, ChatDays: 30, ItemLogDays: 180, AuditDays: 730}
 
-// MinDays and MaxDays bound each period.
+// MinDays and MaxDays bound each period. The item and zeny logs and the
+// audit log have MinLogDays instead of MinDays: drop_old_log_partitions
+// and delete_old_staff_audit refuse a cutoff later than 30 days ago.
 const (
-	MinDays = 1
-	MaxDays = 3650
+	MinDays    = 1
+	MinLogDays = 30
+	MaxDays    = 3650
 )
+
+// MinDaysOf returns the shortest period of a kind.
+func MinDaysOf(kind string) int {
+	switch kind {
+	case KindItemLog, KindZenyLog, KindAudit:
+		return MinLogDays
+	}
+	return MinDays
+}
 
 // Every is how often the job runs.
 const Every = 24 * time.Hour
@@ -126,18 +140,19 @@ type Status struct {
 	Periods Periods
 	// LastRun is when the last run started, and LastSuccess when the
 	// last run that deleted everything it had to started. Both are zero
-	// before the first.
+	// before the first. They are of the last run of any process.
 	LastRun, LastSuccess time.Time
-	// NextRun is when the next run starts, or zero when the job does
+	// NextRun is when this process runs next, or zero when the job does
 	// not run.
 	NextRun time.Time
 	// LastError is the last run's error, or "".
 	LastError string
-	// Skipped is set when the last run found the lock taken: another
-	// process ran the job.
+	// Skipped is set when this process's last run found the lock taken:
+	// another process ran the job.
 	Skipped bool
-	// Last counts the rows the last run deleted, by kind. Total counts
-	// them since the process started.
+	// Last counts the rows the last run of any process deleted, by
+	// kind. Total counts the rows this process deleted since it
+	// started.
 	Last, Total map[string]int64
 	// Partitions are the month partitions the last run dropped.
 	Partitions int
@@ -159,8 +174,25 @@ func (j *Job) log() *slog.Logger {
 	return slog.Default()
 }
 
-// Status returns a copy of the job's status.
-func (j *Job) Status() Status {
+// Status returns the job's status. The last run, its counts and its
+// errors come from retention_status, so they show a run of another
+// process, and a run from before a restart. NextRun, Skipped and Total
+// are this process's. On a database error, Status returns the status of
+// this process's runs alone, with the error.
+func (j *Job) Status(ctx context.Context) (Status, error) {
+	s := j.local()
+	run, ok, err := store.LoadRetentionRun(ctx, j.Game)
+	if err != nil || !ok {
+		return s, err
+	}
+	s.LastRun, s.LastSuccess, s.LastError, s.Partitions = run.Start, run.LastSuccess, run.Error, run.Partitions
+	s.Last = map[string]int64{KindLoginIPs: run.LoginIPs, KindChat: run.Chat, KindItemLog: run.ItemLog,
+		KindZenyLog: run.ZenyLog, KindAudit: run.Audit}
+	return s, nil
+}
+
+// local returns a copy of the status of this process's runs.
+func (j *Job) local() Status {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	s := j.status
@@ -268,6 +300,16 @@ func (j *Job) RunOnce(ctx context.Context) (Result, error) {
 		j.log().Info("the retention job deleted old data", args...)
 	}
 	j.finish(start, res, runErr)
+	// The run is recorded while the lock still holds, so two processes
+	// never write it at once.
+	run := store.RetentionRun{Start: start, LoginIPs: res.Deleted[KindLoginIPs], Chat: res.Deleted[KindChat],
+		ItemLog: res.Deleted[KindItemLog], ZenyLog: res.Deleted[KindZenyLog], Audit: res.Deleted[KindAudit], Partitions: res.Partitions}
+	if runErr != nil {
+		run.Error = runErr.Error()
+	}
+	if err := store.SaveRetentionRun(context.WithoutCancel(ctx), j.Game, run); err != nil {
+		j.log().Warn("the retention job could not record its run", "err", err)
+	}
 	return res, runErr
 }
 
@@ -276,12 +318,14 @@ func (j *Job) finish(start time.Time, res Result, err error) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	s := &j.status
-	s.LastRun, s.Skipped, s.LastError = start, res.Skipped, ""
-	if err != nil {
-		s.LastError = err.Error()
-	}
+	// A skip is not a run: the run of the other process shows instead.
+	s.Skipped = res.Skipped
 	if res.Skipped {
 		return
+	}
+	s.LastRun, s.LastError = start, ""
+	if err != nil {
+		s.LastError = err.Error()
 	}
 	if s.Total == nil {
 		s.Total = map[string]int64{}
@@ -297,13 +341,14 @@ func (j *Job) finish(start time.Time, res Result, err error) {
 
 // WritePrometheus writes the job's metrics in the Prometheus text
 // format:
-//   - wathena_retention_deleted_rows_total{kind}: the rows deleted since
-//     the process started.
+//   - wathena_retention_deleted_rows_total{kind}: the rows this process
+//     deleted since it started.
 //   - wathena_retention_last_success_timestamp_seconds: the start of the
-//     last run that deleted everything it had to, as Unix seconds, or 0
-//     before the first.
-func (j *Job) WritePrometheus(w io.Writer) error {
-	s := j.Status()
+//     last run of any process that deleted everything it had to, as Unix
+//     seconds, or 0 before the first. When retention_status cannot be
+//     read, it is this process's last success.
+func (j *Job) WritePrometheus(ctx context.Context, w io.Writer) error {
+	s, _ := j.Status(ctx)
 	var b strings.Builder
 	b.WriteString("# HELP wathena_retention_deleted_rows_total Rows the retention job deleted since the process started, by kind.\n")
 	b.WriteString("# TYPE wathena_retention_deleted_rows_total counter\n")

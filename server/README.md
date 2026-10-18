@@ -484,7 +484,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `chat.burst`, `chat.refill` | none | `5`, `1s` | Chat rate limits: lines at once, and the time for one more. See "Chat and moderation". |
 | `chat.new_character_burst`, `chat.new_character_refill`, `chat.new_character_period` | none | `3`, `3s`, `1h` | Lower limits for a character's first period after it was made. A period of `0s` turns them off. |
 | `chat.log_days` | none | none | Deprecated: use `retention.chat_days`. It still works, with a warning. Set with a different `retention.chat_days`, it is an error. |
-| `retention.login_ip_days`, `retention.chat_days`, `retention.item_log_days`, `retention.audit_days` | none | `90`, `30`, `180`, `730` | Days the server keeps login records with IP addresses, chat lines, the item and zeny logs, and the GM audit log. Each is 1 to 3650. A period longer than its default logs a warning at start and shows one on the admin World screen. See "Retention". |
+| `retention.login_ip_days`, `retention.chat_days`, `retention.item_log_days`, `retention.audit_days` | none | `90`, `30`, `180`, `730` | Days the server keeps login records with IP addresses, chat lines, the item and zeny logs, and the GM audit log. `login_ip_days` and `chat_days` are 1 to 3650. `item_log_days` and `audit_days` are 30 to 3650. A period longer than its default logs a warning at start and shows one on the admin World screen. See "Retention". |
 | `jail.map`, `jail.cells` | none | `sec_pri`, `[[49, 75], [24, 75]]` | Where jailed players go, as rAthena's `MAP_JAIL` and `pc_jail`. A jail map that does not run logs a warning. |
 | `staff.owners` | none | none | Account names with the `owner` role. See "Staff and admin tools". |
 | `staff.roles` | none | `admin`, `game_master`, `moderator` | Role names and their permissions. A list replaces the defaults. |
@@ -560,11 +560,13 @@ How it runs:
 
 - At start and every 24 hours, in `waserver`, with a database.
 - Each run takes a PostgreSQL advisory lock for its session first. When another process holds it, the run logs that and does nothing, so only one process runs the job.
-- The game role deletes chat lines and runs `drop_old_log_partitions`. The account role deletes login records and runs `delete_old_staff_audit`. Both functions run with the rights of the schema's owner, as `ensure_log_partitions` does, so the game role still cannot drop tables and the account role still cannot delete audit rows. Both refuse a cutoff less than a day ago. Migration 00036 adds them.
+- The game role deletes chat lines and runs `drop_old_log_partitions`. The account role deletes login records and runs `delete_old_staff_audit`. Both functions run with the rights of the schema's owner, as `ensure_log_partitions` does, so the game role still cannot drop tables and the account role still cannot delete audit rows. Both refuse a cutoff less than 30 days ago. Migration 00036 adds them, and migration 00037 sets the 30 days.
 - With `--dev` there is no account role, so login records and the audit log are left.
 - Each run logs the rows it deleted by kind: `login_ips`, `chat`, `item_log`, `zeny_log` and `audit`, and the month partitions it dropped. A failed kind is logged, and the others still run.
-- The admin API's `GET /retention` and the World screen show the periods, the last run and the rows deleted.
-- With `debug_addr`, `GET /debug/wathena/metrics/prometheus` serves its metrics in the Prometheus text format: `wathena_retention_deleted_rows_total{kind}`, the rows deleted since the process started, and `wathena_retention_last_success_timestamp_seconds`, the start of the last run without errors.
+- Each run that holds the lock records itself in the table `retention_status`: its start, the start of the last run without errors, the rows it deleted by kind, the month partitions it dropped, and its errors. The game role writes the one row. A run that skips writes nothing. Migration 00037 adds the table.
+- The admin API's `GET /retention` and the World screen show the periods and the last run from `retention_status`. So they show a run of another process, and a run from before a restart. The rows deleted since the start are those of the process that answers.
+- With `debug_addr`, `GET /debug/wathena/metrics/prometheus` serves its metrics in the Prometheus text format: `wathena_retention_deleted_rows_total{kind}`, the rows this process deleted since it started, and `wathena_retention_last_success_timestamp_seconds`, the start of the last run without errors in any process, from `retention_status`.
+- The IP search of the admin API and the data export of the account page look back `login_ip_days`, so they find every login record the server keeps.
 
 Backups made before a delete still hold the data, for up to 4 weeks with the default schedule (see "Backups"). The privacy page says so.
 
@@ -1012,7 +1014,7 @@ The admin API is JSON at `/admin/api/v1/` on the account service's origin. The m
 | `DELETE /staff/{account}` | `staff.assign` | Takes an account's role away. `?reason=` is optional. |
 | `GET /audit` | `audit.read` | Audit rows, newest first. Filters: `account`, `action`, `target`, `since`, `until`, `review` (`pending` or `reviewed`) and `needs_review` (`true` or `false`). Pages: `limit` (1 to 100) and `before_id`. |
 | `POST /audit/{id}/review` | `audit.review` | Reviews a row marked for review: `{"verdict": "ok", "note": "..."}`, or `flag` with a note. No one reviews their own row. Needs no recent login. |
-| `GET /players` | `players.read` | Accounts with their characters, online state, position, last login and sanctions. One of `name` (a prefix of an account or a character name), `id` (an account or a character ID), `serial` (its holder) or `ip` (a CIDR range of the logins of the last 90 days, with `players.read_ip`). Pages: `limit` (1 to 50) and `cursor`. |
+| `GET /players` | `players.read` | Accounts with their characters, online state, position, last login and sanctions. One of `name` (a prefix of an account or a character name), `id` (an account or a character ID), `serial` (its holder) or `ip` (a CIDR range of the logins of the last `retention.login_ip_days`, with `players.read_ip`). Pages: `limit` (1 to 50) and `cursor`. |
 | `GET /characters/{id}` | `players.read` | A character's details. An online one is read from its zone. |
 | `GET /characters/{id}/logs` | `items.history` | The character's item and zeny log, newest first. Filters: `since` and `until`. Pages: `limit` (1 to 100) and `cursor`. |
 | `GET /items/{serial}/history` | `items.history` | Every move of the serial, following splits and merges both ways, oldest first, with where it is now. |
@@ -1024,7 +1026,7 @@ The admin API is JSON at `/admin/api/v1/` on the account service's origin. The m
 | `DELETE /sanctions/{id}` | the kind's | Lifts a mute, a jail or a ban early. `?reason=` is required. A ban needs a login from the last 10 minutes, and a permanent ban also `moderation.ban_permanent` (review decision 40). |
 | `GET /sanctions` | any `moderation.*` | Sanctions, newest first. Filters: `character` (its sanctions and its account's bans), `account`, `kind` and `active=true`. Pages: `limit` (1 to 100) and `before_id`. |
 | `GET /world` | `world.read` | Each zone's map, players, monsters and ticks of the last minute (p50, p99, maximum, ticks over 10 ms), the process's CPU, memory, goroutines, uptime and version, the players online (at most 1,000 listed), the planned restart and the server clock. |
-| `GET /retention` | `world.read` | The retention periods in effect with their defaults, the job's last run, its last successful run and next run, its last error, whether another process ran it, the rows the last run deleted and those deleted since the start, by kind, the month partitions dropped, and a warning for each period above its default (decision 0049). |
+| `GET /retention` | `world.read` | The retention periods in effect with their defaults, the job's last run and last successful run in any process (from `retention_status`), this process's next run, the last run's error, whether this process skipped its last run since another process ran the job, the rows the last run deleted and those this process deleted since it started, by kind, the month partitions dropped, and a warning for each period above its default (decision 0049). |
 | `POST /announce` | `world.announce` | `{"text": "...", "map": "prontera"}`. An empty map is the world. The text is 1 to 255 characters. |
 | `POST /restart` | `world.restart` | Plans a restart: `{"at": "2026-10-13T22:00:00Z", "reason": "update", "message": "New maps arrive!"}`, 1 minute to 7 days ahead. Needs a login from the last 10 minutes. |
 | `DELETE /restart` | `world.restart` | Cancels the planned restart. `?reason=` is optional. Needs a login from the last 10 minutes. |
@@ -1098,7 +1100,7 @@ Restores (decision 0029):
 - The holder loses an open trade, and a vending shop loses the lines of the stack.
 - The world side is `server/adminworld`. The admin API reaches it through `admin.World`.
 
-Logins of the account pages are kept in `account_logins`, with their IP address, for the IP search (migration 00024). The retention job deletes rows older than `retention.login_ip_days`, 90 by default (see "Retention"). The IP search and the account page still look back 90 days at most.
+Logins of the account pages are kept in `account_logins`, with their IP address, for the IP search (migration 00024). The retention job deletes rows older than `retention.login_ip_days`, 90 by default (see "Retention"). The IP search and the data export look back `retention.login_ip_days` too.
 
 The GM audit log is `staff_audit` (migration 00023). Each staff action adds a row with the time, the account, the role, the action, the target, the arguments, the reason and a review mark. Reviews go in `staff_audit_reviews`, with the verdict `ok` or `flag` and a note (migration 00024). The game and account roles can add rows, and neither can change or delete them. Only the account role reads them. Rows are kept 2 years; the deletion job comes with phase 8. To read the newest rows in psql:
 

@@ -2,9 +2,9 @@
 
 - Status: proposed.
 - Date: 2026-10-18.
-- Code: [server/retention](../../server/retention) (`retention.go`, `retention_test.go`), [server/store](../../server/store) (`retention.go`, `retention_test.go`, `chat.go`, `migrations/00036_retention.sql`, `queries/retention.sql`, `queries/accounts.sql`), [server/cmd/waserver](../../server/cmd/waserver) (`config.go`, `fields.go`, `main.go`, `retention.go`, `retention_test.go`), [server/account](../../server/account) (`privacy.go`), [server/admin](../../server/admin) (`retention.go`, `retention_test.go`, `admin.go`), [schema/proto/wathena/admin/v1/admin.proto](../../schema/proto/wathena/admin/v1/admin.proto), [client/src/admin](../../client/src/admin) (`api.ts`, `world.ts`), [deploy/compose/waserver.yml](../../deploy/compose/waserver.yml), [scripts/compose-smoke.sh](../../scripts/compose-smoke.sh).
+- Code: [server/retention](../../server/retention) (`retention.go`, `retention_test.go`), [server/store](../../server/store) (`retention.go`, `retention_test.go`, `chat.go`, `migrations/00036_retention.sql`, `migrations/00037_retention_floor.sql`, `accountpage.sql`, `queries/retention.sql`, `queries/accounts.sql`), [server/cmd/waserver](../../server/cmd/waserver) (`config.go`, `fields.go`, `main.go`, `retention.go`, `retention_test.go`), [server/account](../../server/account) (`privacy.go`, `export.go`), [server/admin](../../server/admin) (`retention.go`, `retention_test.go`, `admin.go`, `players.go`), [schema/proto/wathena/admin/v1/admin.proto](../../schema/proto/wathena/admin/v1/admin.proto), [client/src/admin](../../client/src/admin) (`api.ts`, `world.ts`), [deploy/compose/waserver.yml](../../deploy/compose/waserver.yml), [scripts/compose-smoke.sh](../../scripts/compose-smoke.sh).
 - Phase 8 step 3 (strategy section 15, "Phase 8"), strategy section 7.10, and review decision 49 of [proposal 0002](../proposals/0002-lua-api.md).
-- Lua API: none. Protocol: none. Admin API: `GET /admin/api/v1/retention`. Settings: the `retention` and `classic` blocks of `waserver.yml`. Migration: 00036.
+- Lua API: none. Protocol: none. Admin API: `GET /admin/api/v1/retention`. Settings: the `retention` and `classic` blocks of `waserver.yml`. Migrations: 00036, and 00037 (see "Later changes").
 
 ## Context
 
@@ -153,13 +153,49 @@ None.
 
 ## Left
 
-- The status is in memory per process. A second process shows no counts, and a restart forgets them. A table of runs would fix both.
-- The IP search, the account page's recent logins and the data export still look back 90 days at most. With `login_ip_days` above 90, the export leaves out the older records it keeps.
 - The other measurements in the Prometheus format.
-- The smoke test was not run for this step, since the disk was too full to build the images (2026-10-18).
+
+## Later changes
+
+The user approved these follow-ups on 2026-10-18. No Lua API changes.
+
+### A floor of 30 days for the logs
+
+- Migration 00037 replaces `drop_old_log_partitions` and `delete_old_staff_audit` with `CREATE OR REPLACE`. Each now refuses a cutoff later than 30 days ago, with "the cutoff ... is less than 30 days ago". Before, the floor was a day. Migration 00036 is unchanged.
+- The functions count 30 days as 720 hours, as the job counts a day as 24 hours.
+- `CREATE OR REPLACE` keeps the owner, `SECURITY DEFINER` and the grants. The down migration puts back the floor of a day.
+- `retention.item_log_days` and `retention.audit_days` are now 30 to 3650 days. A value below 30 is a config error: "is 30 to 3650 days". `retention.login_ip_days`, `retention.chat_days` and `chat.log_days` stay 1 to 3650. `retention.MinLogDays` and `retention.MinDaysOf` hold the minimums.
+- So a compromised game process can drop log data only from before 30 days ago, and the account role can delete audit rows only from before 30 days ago.
+
+### The IP lookback follows login_ip_days
+
+- The admin API's IP search (`GET /players?ip=`) looks back `retention.login_ip_days`, for the accounts and for the logins it lists. `admin.Config.LoginIPDays` carries the value. 0 is `admin.DefaultLoginDays`, 90.
+- The data export of the account page takes its login records from the query `RecentLogins`, which now takes the start time. The account service gives it `Privacy.LoginIPDays`, the period the privacy page shows. 0 is 90 days. The account page has no other list of logins.
+- So the search and the export find every login record the server keeps, with `login_ip_days` above or below 90.
+
+### The job's status in a table
+
+- Migration 00037 adds `retention_status`, with one row: `last_run`, `last_success`, the rows deleted by kind (`login_ips`, `chat`, `item_log`, `zeny_log`, `audit`), `partitions` and `last_error`, at most 4,000 characters.
+- A run that holds the lock writes the row after its deletes, before it lets the lock go. So two processes never write it at once. `last_success` moves to the run's start only when the run had no errors.
+- A run that skips writes nothing. In memory, a skip now sets only `skipped`, not the last run.
+- `Job.Status` reads the row. The last run, the last success, the counts of the last run, the partitions and the error come from it. The next run, `skipped` and the counts since the start are the process's own. On a database error, `GET /retention` answers `unavailable`.
+- `wathena_retention_last_success_timestamp_seconds` comes from the row too. When the row cannot be read, it is the process's own last success. `wathena_retention_deleted_rows_total` stays per process, as a counter.
+- The game role gets `SELECT`, `INSERT` and `UPDATE` on the table. It has no `DELETE`. The account role and other roles get no rights. The job writes the row on the game role's pool, which holds the lock, and reads it on the same pool.
+- The World screen says "The retention job has not run yet." before the first run in any process. When this process skipped, it says so after the last run. The table's column is "Deleted since this server started".
+
+### Tests
+
+- `server/store`: `TestDropOldLogs` checks that the game role's call with a cutoff an hour, 29 days, and a minute less than 30 days ago fails, and 30 days ago works. `TestDeleteOldAudit` checks the same for the account role, with now and 29 days ago.
+- `server/retention`, `TestJob`: a skip leaves no last run. Another job, as another process or a restart, reads the last run, its success and its counts from the table, with no counts of its own. Its skip leaves the row as it was. The game role cannot delete the row, and the account role cannot read it. A run with `item_log_days` of 29 records the error, and keeps the last success.
+- `server/admin`: `TestIPSearchLookback` with the default, 30 and 120 days, and logins 60 and 100 days ago. `TestRetentionCall` answers `unavailable` when the status cannot be read.
+- `server/account`, `TestExportLoginLookback`: with the default, 60 and 120 days, and logins 70 and 100 days ago.
+- `server/cmd/waserver`, `TestRetentionConfig`: 29 days for `item_log_days` and `audit_days` is an error, 30 days and 1 day for the others are allowed.
+- `client/src/admin/world.test.ts`: the run lines with and without a skip.
+
+### Left after these changes
+
+- A server clock ahead of the database clock with a period of exactly 30 days: the job's cutoff can fall less than 720 hours before the database's `now()`, and the function refuses the run. The run logs the error and the next run tries again.
 
 ## Review items
 
 - Whether `world.read` is the right permission for `GET /retention`.
-- Whether the data export and the IP search should follow `login_ip_days`.
-- Whether to keep a table of runs, so every process and a restart show the last run.

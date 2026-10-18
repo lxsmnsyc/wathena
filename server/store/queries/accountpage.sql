@@ -17,10 +17,10 @@ ON CONFLICT (account_id) DO UPDATE SET exported_at = EXCLUDED.exported_at
 WHERE account_exports.exported_at <= now() - interval '1 day';
 
 -- name: RecentLogins :many
--- RecentLogins are the account's login records of the last 90 days,
+-- RecentLogins are the account's login records since a time,
 -- newest first.
 SELECT at, ip, user_agent FROM account_logins
-WHERE account_id = @account_id AND at > now() - interval '90 days'
+WHERE account_id = @account_id AND at > @since
 ORDER BY at DESC, id DESC;
 
 -- name: AccountDeletion :one

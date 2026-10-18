@@ -12,21 +12,26 @@ import (
 )
 
 // GET /retention (world.read) shows the retention periods in effect and
-// what the retention job did in this process (decision 0049). It is
-// read-only, and writes no audit row.
+// the last run of the retention job, in any process (decision 0049). It
+// is read-only, and writes no audit row.
 
 // Retention is what the API needs from the retention job.
 // *retention.Job is one.
 type Retention interface {
-	Status() retention.Status
+	Status(ctx context.Context) (retention.Status, error)
 }
 
-func (h *Handler) retention(_ context.Context, w http.ResponseWriter, _ *http.Request, _ caller) {
+func (h *Handler) retention(ctx context.Context, w http.ResponseWriter, r *http.Request, _ caller) {
 	if h.cfg.Retention == nil {
 		h.fail(w, http.StatusServiceUnavailable, "unavailable", "The retention job does not run in this process.")
 		return
 	}
-	h.write(w, http.StatusOK, RetentionStatus(h.cfg.Retention.Status()))
+	s, err := h.cfg.Retention.Status(ctx)
+	if err != nil {
+		h.unavailable(w, r, err)
+		return
+	}
+	h.write(w, http.StatusOK, RetentionStatus(s))
 }
 
 // RetentionStatus is GET /retention's answer for a job's status.

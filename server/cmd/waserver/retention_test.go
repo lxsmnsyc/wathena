@@ -36,17 +36,23 @@ func TestRetentionConfig(t *testing.T) {
 	if err != nil || st.Retention != retention.Defaults || len(st.Warnings) != 0 {
 		t.Fatalf("defaults: %+v %v %v", st.Retention, st.Warnings, err)
 	}
-	st, err = configWith(t, "retention:\n  login_ip_days: 30\n  chat_days: 7\n  item_log_days: 3650\n  audit_days: 1\n")
-	if err != nil || st.Retention != (retention.Periods{LoginIPDays: 30, ChatDays: 7, ItemLogDays: 3650, AuditDays: 1}) {
+	st, err = configWith(t, "retention:\n  login_ip_days: 1\n  chat_days: 1\n  item_log_days: 3650\n  audit_days: 30\n")
+	if err != nil || st.Retention != (retention.Periods{LoginIPDays: 1, ChatDays: 1, ItemLogDays: 3650, AuditDays: 30}) {
 		t.Fatalf("set: %+v %v", st.Retention, err)
 	}
 	// Longer than the default warns.
 	if len(st.Warnings) != 1 || !hasWarning(st, "retention.item_log_days is 3650 days") {
 		t.Errorf("warnings %v", st.Warnings)
 	}
-	for _, bad := range []string{"login_ip_days: 0", "chat_days: -1", "item_log_days: 3651", "audit_days: 0"} {
+	// The item and zeny logs and the audit log keep at least 30 days,
+	// the others at least 1.
+	for bad, want := range map[string]string{
+		"login_ip_days: 0": "is 1 to 3650 days", "chat_days: -1": "is 1 to 3650 days",
+		"item_log_days: 3651": "is 30 to 3650 days", "item_log_days: 29": "is 30 to 3650 days",
+		"audit_days: 0": "is 30 to 3650 days", "audit_days: 29": "is 30 to 3650 days",
+	} {
 		key := "retention." + strings.SplitN(bad, ":", 2)[0]
-		if _, err := configWith(t, "retention:\n  "+bad+"\n"); err == nil || !strings.Contains(err.Error(), key+": is 1 to 3650 days") {
+		if _, err := configWith(t, "retention:\n  "+bad+"\n"); err == nil || !strings.Contains(err.Error(), key+": "+want) {
 			t.Errorf("%s: %v", bad, err)
 		}
 	}

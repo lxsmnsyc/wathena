@@ -490,6 +490,19 @@ type ReportLine struct {
 	LineID   pgtype.UUID
 }
 
+type RetentionStatus struct {
+	ID          bool
+	LastRun     pgtype.Timestamptz
+	LastSuccess pgtype.Timestamptz
+	LoginIps    int64
+	Chat        int64
+	ItemLog     int64
+	ZenyLog     int64
+	Audit       int64
+	Partitions  int
+	LastError   string
+}
+
 type Sanction struct {
 	ID          int64
 	CharacterID pgtype.Int8

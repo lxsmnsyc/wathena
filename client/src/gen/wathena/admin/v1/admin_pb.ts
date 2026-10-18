@@ -2244,8 +2244,9 @@ export type RetentionKind = Message<"wathena.admin.v1.RetentionKind"> & {
   defaultDays: number;
 
   /**
-   * last_deleted counts the rows the last run deleted.
-   * deleted_since_start counts them since the server started.
+   * last_deleted counts the rows the last run of any process deleted.
+   * deleted_since_start counts the rows this server process deleted
+   * since it started.
    *
    * @generated from field: int64 last_deleted = 4;
    */
@@ -2265,8 +2266,9 @@ export const RetentionKindSchema: GenMessage<RetentionKind> = /*@__PURE__*/
   messageDesc(file_wathena_admin_v1_admin, 40);
 
 /**
- * RetentionStatus answers GET /retention: the periods in effect and what
- * the retention job did in this process.
+ * RetentionStatus answers GET /retention: the periods in effect and the
+ * last run of the retention job. The last run comes from the table
+ * retention_status, so it can be a run of another process.
  *
  * @generated from message wathena.admin.v1.RetentionStatus
  */
@@ -2278,8 +2280,8 @@ export type RetentionStatus = Message<"wathena.admin.v1.RetentionStatus"> & {
 
   /**
    * last_run is when the last run started, and last_success when the
-   * last run that deleted everything it had to started. Unset before
-   * the first.
+   * last run that deleted everything it had to started, in any
+   * process. Unset before the first.
    *
    * @generated from field: google.protobuf.Timestamp last_run = 2;
    */
@@ -2291,7 +2293,7 @@ export type RetentionStatus = Message<"wathena.admin.v1.RetentionStatus"> & {
   lastSuccess?: Timestamp | undefined;
 
   /**
-   * next_run is when the next run starts.
+   * next_run is when this process runs the job next.
    *
    * @generated from field: google.protobuf.Timestamp next_run = 4;
    */
@@ -2305,8 +2307,8 @@ export type RetentionStatus = Message<"wathena.admin.v1.RetentionStatus"> & {
   lastError: string;
 
   /**
-   * skipped is set when the last run found another process running the
-   * job, which holds its lock.
+   * skipped is set when this process's last run found another process
+   * running the job, which holds its lock.
    *
    * @generated from field: bool skipped = 6;
    */

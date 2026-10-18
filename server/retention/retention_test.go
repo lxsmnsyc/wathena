@@ -72,8 +72,9 @@ func TestJob(t *testing.T) {
 	if err != nil || !res.Skipped || len(res.Deleted) != 0 {
 		t.Fatalf("a run while the lock is held: %+v %v", res, err)
 	}
-	if s := j.Status(); !s.Skipped || s.LastRun.IsZero() || !s.LastSuccess.IsZero() {
-		t.Errorf("status after a skip: %+v", s)
+	// A skip is not a run: there is no last run yet.
+	if s, err := j.Status(ctx); err != nil || !s.Skipped || !s.LastRun.IsZero() || !s.LastSuccess.IsZero() {
+		t.Errorf("status after a skip: %+v %v", s, err)
 	}
 	unlock()
 
@@ -94,16 +95,41 @@ func TestJob(t *testing.T) {
 	if texts != "held new" {
 		t.Errorf("chat lines left: %q, want the open report's and the new one", texts)
 	}
-	s := j.Status()
+	s, err := j.Status(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if s.Skipped || s.LastSuccess.IsZero() || s.LastError != "" || s.Total[retention.KindChat] != 2 || s.Last[retention.KindAudit] != 1 {
 		t.Errorf("status %+v", s)
 	}
+	ran := s.LastRun
+
+	// Another process, or this one after a restart, shows the run from
+	// retention_status, with no counts of its own.
+	other := &retention.Job{Game: game, Account: account, Periods: retention.Defaults, Log: slog.New(slog.DiscardHandler)}
+	if o, err := other.Status(ctx); err != nil || !o.LastRun.Equal(ran) || !o.LastSuccess.Equal(ran) || o.Last[retention.KindChat] != 2 ||
+		o.Last[retention.KindAudit] != 1 || o.Total[retention.KindChat] != 0 || o.Skipped {
+		t.Errorf("status in another process: %+v %v", o, err)
+	}
+	// A run that skips records nothing.
+	unlock, ok, err = store.LockRetention(ctx, game)
+	if err != nil || !ok {
+		t.Fatalf("lock: %v %v", ok, err)
+	}
+	if res, err := other.RunOnce(ctx); err != nil || !res.Skipped {
+		t.Fatalf("a skip in another process: %+v %v", res, err)
+	}
+	unlock()
+	if o, err := other.Status(ctx); err != nil || !o.Skipped || !o.LastRun.Equal(ran) || o.Last[retention.KindChat] != 2 {
+		t.Errorf("status after a skip in another process: %+v %v", o, err)
+	}
+
 	// A second run deletes nothing more, and the totals stay.
 	if res, err := j.RunOnce(ctx); err != nil || res.Deleted[retention.KindChat] != 0 {
 		t.Errorf("second run: %+v %v", res, err)
 	}
 	var b strings.Builder
-	if err := j.WritePrometheus(&b); err != nil {
+	if err := j.WritePrometheus(ctx, &b); err != nil {
 		t.Fatal(err)
 	}
 	for _, line := range []string{
@@ -114,6 +140,29 @@ func TestJob(t *testing.T) {
 		if !slices.Contains(strings.Split(b.String(), "\n"), line) {
 			t.Errorf("metrics lack %q:\n%s", line, b.String())
 		}
+	}
+
+	// The game role only reads and writes the row, and the account role
+	// has no rights on it.
+	if _, err := game.Exec(ctx, "DELETE FROM retention_status"); err == nil {
+		t.Error("the game role deleted the retention status")
+	}
+	if _, err := account.Exec(ctx, "SELECT * FROM retention_status"); err == nil {
+		t.Error("the account role read the retention status")
+	}
+
+	// A run with errors keeps the last success, and records the error:
+	// here the item and zeny logs with 29 days, which the function
+	// refuses.
+	p := retention.Defaults
+	p.ItemLogDays = 29
+	short := &retention.Job{Game: game, Account: account, Periods: p, Log: slog.New(slog.DiscardHandler)}
+	if _, err := short.RunOnce(ctx); err == nil || !strings.Contains(err.Error(), "less than 30 days ago") {
+		t.Errorf("a run with 29 days of logs: %v", err)
+	}
+	if o, err := other.Status(ctx); err != nil || !strings.Contains(o.LastError, "less than 30 days ago") || o.LastRun.Equal(o.LastSuccess) ||
+		o.LastSuccess.IsZero() {
+		t.Errorf("status after a failed run: %+v %v", o, err)
 	}
 
 	// Without the account pool, the login records and the audit log are

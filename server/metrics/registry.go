@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"slices"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -10,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
+	"slices"
 	"strings"
 	"sync"
 	"text/tabwriter"

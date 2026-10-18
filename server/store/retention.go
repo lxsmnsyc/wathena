@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/lxsmnsyc/wathena/server/store/db"
@@ -118,4 +120,57 @@ func DeleteOldAudit(ctx context.Context, pool *pgxpool.Pool, before time.Time) (
 	ctx, cancel := context.WithTimeout(ctx, retentionTimeout)
 	defer cancel()
 	return db.New(pool).DeleteOldStaffAudit(ctx, timestamp(before))
+}
+
+// RetentionRun is what one run of the retention job did, as
+// retention_status keeps it.
+type RetentionRun struct {
+	// Start is when the run started. LastSuccess is when the last run
+	// without errors started, or zero before one. SaveRetentionRun sets
+	// it from Start and Error.
+	Start, LastSuccess time.Time
+	// The rows deleted, by kind.
+	LoginIPs, Chat, ItemLog, ZenyLog, Audit int64
+	// Partitions are the month partitions dropped.
+	Partitions int
+	// Error is the run's errors, or "".
+	Error string
+}
+
+// maxRetentionError is the longest error retention_status keeps, in
+// characters.
+const maxRetentionError = 4000
+
+// SaveRetentionRun records a run in retention_status. pool is the game
+// role's.
+func SaveRetentionRun(ctx context.Context, pool *pgxpool.Pool, r RetentionRun) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	msg := r.Error
+	if runes := []rune(msg); len(runes) > maxRetentionError {
+		msg = string(runes[:maxRetentionError])
+	}
+	return db.New(pool).SaveRetentionRun(ctx, db.SaveRetentionRunParams{LastRun: timestamp(r.Start), LastError: msg,
+		LoginIps: r.LoginIPs, Chat: r.Chat, ItemLog: r.ItemLog, ZenyLog: r.ZenyLog, Audit: r.Audit, Partitions: r.Partitions})
+}
+
+// LoadRetentionRun returns the last run that retention_status keeps,
+// from any process. ok is false before the first run. pool is the game
+// role's.
+func LoadRetentionRun(ctx context.Context, pool *pgxpool.Pool) (r RetentionRun, ok bool, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	row, err := db.New(pool).RetentionRun(ctx)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return r, false, nil
+	}
+	if err != nil {
+		return r, false, err
+	}
+	r = RetentionRun{Start: row.LastRun.Time, LoginIPs: row.LoginIps, Chat: row.Chat, ItemLog: row.ItemLog,
+		ZenyLog: row.ZenyLog, Audit: row.Audit, Partitions: row.Partitions, Error: row.LastError}
+	if row.LastSuccess.Valid {
+		r.LastSuccess = row.LastSuccess.Time
+	}
+	return r, true, nil
 }

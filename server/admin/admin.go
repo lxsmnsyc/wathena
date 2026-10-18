@@ -92,7 +92,10 @@ type Config struct {
 	Owners []string
 	// Retention is the retention job, for GET /retention. It may be nil.
 	Retention Retention
-	Log       *slog.Logger
+	// LoginIPDays is retention.login_ip_days: how far back an IP search
+	// looks. 0 is DefaultLoginDays.
+	LoginIPDays int
+	Log         *slog.Logger
 }
 
 // Handler serves the admin API.

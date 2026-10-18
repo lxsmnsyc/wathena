@@ -132,11 +132,15 @@ describe('retention', () => {
   it('writes the last run', () => {
     const at = timestampFromDate(new Date('2026-10-18T03:00:00Z'));
     expect(retentionRunText(create(RetentionStatusSchema, {}))).toBe(
-      'The retention job has not run yet in this process.',
+      'The retention job has not run yet.',
     );
-    expect(
-      retentionRunText(create(RetentionStatusSchema, { lastRun: at, skipped: true })),
-    ).toContain('another process');
+    expect(retentionRunText(create(RetentionStatusSchema, { skipped: true }))).toBe(
+      'The retention job has not run yet. This server skipped its last run, since another process ran the job.',
+    );
+    // Another process's run, while this one skipped.
+    const skipped = retentionRunText(create(RetentionStatusSchema, { lastRun: at, skipped: true }));
+    expect(skipped).toContain('deleted old data.');
+    expect(skipped).toContain('another process ran the job');
     expect(
       retentionRunText(create(RetentionStatusSchema, { lastRun: at, lastError: 'chat: timeout' })),
     ).toContain('failed: chat: timeout');
@@ -144,6 +148,6 @@ describe('retention', () => {
       create(RetentionStatusSchema, { lastRun: at, partitionsDropped: 2, nextRun: at }),
     );
     expect(ok).toContain('deleted old data. It dropped 2 month partitions');
-    expect(ok).toContain('The next run is at');
+    expect(ok).toContain('The next run here is at');
   });
 });

@@ -117,6 +117,8 @@ type options struct {
 	limits func(*account.Limits)
 	// retention is GET /retention's job, or nil for none.
 	retention admin.Retention
+	// loginIPDays is retention.login_ip_days, or 0 for the default.
+	loginIPDays int
 }
 
 func setup(t *testing.T, o options) *env {
@@ -156,7 +158,7 @@ func setup(t *testing.T, o options) *env {
 		owners = []string{"Owner"}
 	}
 	h, err := admin.New(admin.Config{Pool: acct, Auth: svc, World: e.world, Roles: roles, Owners: owners, Retention: o.retention,
-		Log: slog.New(slog.DiscardHandler)})
+		LoginIPDays: o.loginIPDays, Log: slog.New(slog.DiscardHandler)})
 	if err != nil {
 		t.Fatal(err)
 	}

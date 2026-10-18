@@ -408,3 +408,40 @@ func TestReviews(t *testing.T) {
 		t.Errorf("review audit row %q", got)
 	}
 }
+
+// TestIPSearchLookback: an IP search finds the logins of the last
+// login_ip_days, below and above the default of 90 (decision 0049).
+func TestIPSearchLookback(t *testing.T) {
+	for _, c := range []struct {
+		days int
+		want string
+	}{
+		{0, "Days60"},
+		{30, ""},
+		{120, "Days60,Days100"},
+	} {
+		e := setup(t, options{loginIPDays: c.days})
+		owner := e.staffer("Owner")
+		// Days60 signs up first, so it has the lower account ID.
+		for _, l := range []struct {
+			name string
+			days int
+		}{{"Days60", 60}, {"Days100", 100}} {
+			name, days := l.name, l.days
+			e.signup(name)
+			if _, err := e.admin.Exec(context.Background(), `INSERT INTO account_logins (account_id, at, ip)
+				SELECT id, now() - make_interval(days => $2), '198.51.100.7' FROM accounts WHERE name = $1`, name, days); err != nil {
+				t.Fatal(err)
+			}
+		}
+		p := get(e, owner, "players?ip=198.51.100.0/24", &adminv1.PlayerSearch{})
+		if got := accountNames(p); got != c.want {
+			t.Errorf("login_ip_days %d: %q, want %q", c.days, got, c.want)
+		}
+		for _, a := range p.GetAccounts() {
+			if len(a.GetLogins()) != 1 {
+				t.Errorf("login_ip_days %d: %s has logins %v", c.days, a.GetAccount(), a.GetLogins())
+			}
+		}
+	}
+}

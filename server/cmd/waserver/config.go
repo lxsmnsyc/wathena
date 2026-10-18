@@ -704,20 +704,21 @@ func validate(o options, s secrets) (settings, error) {
 func checkRetention(o options, bad func(key, format string, args ...any), warn func(string)) retention.Periods {
 	p := retention.Defaults
 	for _, v := range []struct {
-		key  string
+		kind string
 		days *int
 		to   *int
 	}{
-		{"retention.login_ip_days", o.Retention.LoginIPDays, &p.LoginIPDays},
-		{"retention.chat_days", o.Retention.ChatDays, &p.ChatDays},
-		{"retention.item_log_days", o.Retention.ItemLogDays, &p.ItemLogDays},
-		{"retention.audit_days", o.Retention.AuditDays, &p.AuditDays},
+		{retention.KindLoginIPs, o.Retention.LoginIPDays, &p.LoginIPDays},
+		{retention.KindChat, o.Retention.ChatDays, &p.ChatDays},
+		{retention.KindItemLog, o.Retention.ItemLogDays, &p.ItemLogDays},
+		{retention.KindAudit, o.Retention.AuditDays, &p.AuditDays},
 	} {
 		if v.days == nil {
 			continue
 		}
-		if *v.days < retention.MinDays || *v.days > retention.MaxDays {
-			bad(v.key, "is %d to %d days", retention.MinDays, retention.MaxDays)
+		// The item and zeny logs and the audit log keep at least 30 days.
+		if lo := retention.MinDaysOf(v.kind); *v.days < lo || *v.days > retention.MaxDays {
+			bad(retention.Key(v.kind), "is %d to %d days", lo, retention.MaxDays)
 			continue
 		}
 		*v.to = *v.days

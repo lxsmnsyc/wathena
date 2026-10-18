@@ -417,9 +417,14 @@ func (q *Queries) LastExport(ctx context.Context, accountID int64) (pgtype.Times
 
 const recentLogins = `-- name: RecentLogins :many
 SELECT at, ip, user_agent FROM account_logins
-WHERE account_id = $1 AND at > now() - interval '90 days'
+WHERE account_id = $1 AND at > $2
 ORDER BY at DESC, id DESC
 `
+
+type RecentLoginsParams struct {
+	AccountID int64
+	Since     pgtype.Timestamptz
+}
 
 type RecentLoginsRow struct {
 	At        pgtype.Timestamptz
@@ -427,10 +432,10 @@ type RecentLoginsRow struct {
 	UserAgent string
 }
 
-// RecentLogins are the account's login records of the last 90 days,
+// RecentLogins are the account's login records since a time,
 // newest first.
-func (q *Queries) RecentLogins(ctx context.Context, accountID int64) ([]RecentLoginsRow, error) {
-	rows, err := q.db.Query(ctx, recentLogins, accountID)
+func (q *Queries) RecentLogins(ctx context.Context, arg RecentLoginsParams) ([]RecentLoginsRow, error) {
+	rows, err := q.db.Query(ctx, recentLogins, arg.AccountID, arg.Since)
 	if err != nil {
 		return nil, err
 	}

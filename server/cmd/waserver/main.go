@@ -834,7 +834,7 @@ func runAll(name string, args []string) error {
 		// The admin API runs on the account service's origin and pool. It
 		// reaches the world in this process through staffWorld.
 		adminAPI, err = admin.New(admin.Config{Pool: pool, Auth: accounts, World: staffWorld, Roles: cfg.Roles,
-			Owners: cfg.Staff.Owners, Retention: retentionStatus, Log: log})
+			Owners: cfg.Staff.Owners, Retention: retentionStatus, LoginIPDays: cfg.Retention.LoginIPDays, Log: log})
 		if err != nil {
 			return err
 		}

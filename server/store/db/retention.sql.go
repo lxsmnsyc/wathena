@@ -74,6 +74,42 @@ func (q *Queries) DropOldLogPartitions(ctx context.Context, cutoff pgtype.Timest
 	return items, nil
 }
 
+const retentionRun = `-- name: RetentionRun :one
+SELECT last_run, last_success, login_ips, chat, item_log, zeny_log, audit, partitions, last_error
+FROM retention_status WHERE id
+`
+
+type RetentionRunRow struct {
+	LastRun     pgtype.Timestamptz
+	LastSuccess pgtype.Timestamptz
+	LoginIps    int64
+	Chat        int64
+	ItemLog     int64
+	ZenyLog     int64
+	Audit       int64
+	Partitions  int
+	LastError   string
+}
+
+// RetentionRun is the last run of retention_status. It has no row
+// before the first run.
+func (q *Queries) RetentionRun(ctx context.Context) (RetentionRunRow, error) {
+	row := q.db.QueryRow(ctx, retentionRun)
+	var i RetentionRunRow
+	err := row.Scan(
+		&i.LastRun,
+		&i.LastSuccess,
+		&i.LoginIps,
+		&i.Chat,
+		&i.ItemLog,
+		&i.ZenyLog,
+		&i.Audit,
+		&i.Partitions,
+		&i.LastError,
+	)
+	return i, err
+}
+
 const retentionUnlock = `-- name: RetentionUnlock :one
 SELECT pg_advisory_unlock((1::bigint << 61) | 1)::boolean AS unlocked
 `
@@ -84,6 +120,44 @@ func (q *Queries) RetentionUnlock(ctx context.Context) (bool, error) {
 	var unlocked bool
 	err := row.Scan(&unlocked)
 	return unlocked, err
+}
+
+const saveRetentionRun = `-- name: SaveRetentionRun :exec
+INSERT INTO retention_status (id, last_run, last_success, login_ips, chat, item_log, zeny_log, audit, partitions, last_error)
+VALUES (true, $1, CASE WHEN $2::text = '' THEN $1::timestamptz END,
+    $3, $4, $5, $6, $7, $8, $2::text)
+ON CONFLICT (id) DO UPDATE SET last_run = EXCLUDED.last_run,
+    last_success = COALESCE(EXCLUDED.last_success, retention_status.last_success),
+    login_ips = EXCLUDED.login_ips, chat = EXCLUDED.chat, item_log = EXCLUDED.item_log,
+    zeny_log = EXCLUDED.zeny_log, audit = EXCLUDED.audit, partitions = EXCLUDED.partitions,
+    last_error = EXCLUDED.last_error
+`
+
+type SaveRetentionRunParams struct {
+	LastRun    pgtype.Timestamptz
+	LastError  string
+	LoginIps   int64
+	Chat       int64
+	ItemLog    int64
+	ZenyLog    int64
+	Audit      int64
+	Partitions int
+}
+
+// SaveRetentionRun records a run in retention_status. last_success
+// moves to the run's start only when the run had no errors.
+func (q *Queries) SaveRetentionRun(ctx context.Context, arg SaveRetentionRunParams) error {
+	_, err := q.db.Exec(ctx, saveRetentionRun,
+		arg.LastRun,
+		arg.LastError,
+		arg.LoginIps,
+		arg.Chat,
+		arg.ItemLog,
+		arg.ZenyLog,
+		arg.Audit,
+		arg.Partitions,
+	)
+	return err
 }
 
 const tryRetentionLock = `-- name: TryRetentionLock :one

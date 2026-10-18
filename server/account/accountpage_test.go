@@ -594,3 +594,33 @@ func TestOwnerCannotAskForDeletion(t *testing.T) {
 		t.Errorf("an owner's request: %d %s", resp.StatusCode, body)
 	}
 }
+
+// TestExportLoginLookback: the export holds the login records of the
+// last login_ip_days, below and above the default of 90 (decision 0049).
+func TestExportLoginLookback(t *testing.T) {
+	for _, c := range []struct{ days, want int }{{0, 1}, {60, 0}, {120, 2}} {
+		e := setup(t, func(cfg *account.Config) {
+			withGame(newFakeGame())(cfg)
+			cfg.Privacy.LoginIPDays = c.days
+		})
+		e.signup(e.c, "Alice_1", password)
+		if _, err := e.admin.Exec(context.Background(), `INSERT INTO account_logins (account_id, at, ip)
+			SELECT id, now() - make_interval(days => d), '198.51.100.7' FROM accounts, unnest(ARRAY[70, 100]) AS d WHERE name = 'Alice_1'`); err != nil {
+			t.Fatal(err)
+		}
+		resp, b := e.download(e.c)
+		var ex account.Export
+		if resp.StatusCode != http.StatusOK || json.Unmarshal(b, &ex) != nil {
+			t.Fatalf("login_ip_days %d: export %d %s", c.days, resp.StatusCode, b)
+		}
+		n := 0
+		for _, l := range ex.Logins {
+			if l.IP == "198.51.100.7" {
+				n++
+			}
+		}
+		if n != c.want {
+			t.Errorf("login_ip_days %d: %d old login records, want %d", c.days, n, c.want)
+		}
+	}
+}

@@ -611,27 +611,29 @@ message RetentionKind {
   // retention.item_log_days.
   int32 days = 2;
   int32 default_days = 3;
-  // last_deleted counts the rows the last run deleted.
-  // deleted_since_start counts them since the server started.
+  // last_deleted counts the rows the last run of any process deleted.
+  // deleted_since_start counts the rows this server process deleted
+  // since it started.
   int64 last_deleted = 4;
   int64 deleted_since_start = 5;
 }
 
-// RetentionStatus answers GET /retention: the periods in effect and what
-// the retention job did in this process.
+// RetentionStatus answers GET /retention: the periods in effect and the
+// last run of the retention job. The last run comes from the table
+// retention_status, so it can be a run of another process.
 message RetentionStatus {
   repeated RetentionKind kinds = 1;
   // last_run is when the last run started, and last_success when the
-  // last run that deleted everything it had to started. Unset before
-  // the first.
+  // last run that deleted everything it had to started, in any
+  // process. Unset before the first.
   google.protobuf.Timestamp last_run = 2;
   google.protobuf.Timestamp last_success = 3;
-  // next_run is when the next run starts.
+  // next_run is when this process runs the job next.
   google.protobuf.Timestamp next_run = 4;
   // last_error is the last run's error, or empty.
   string last_error = 5;
-  // skipped is set when the last run found another process running the
-  // job, which holds its lock.
+  // skipped is set when this process's last run found another process
+  // running the job, which holds its lock.
   bool skipped = 6;
   // partitions_dropped are the month partitions of the item and zeny
   // logs that the last run dropped.

@@ -10,8 +10,8 @@ import (
 // Prometheus text format, at /debug/wathena/metrics/prometheus on the
 // debug address (decision 0049).
 func prometheusHandler(j *retention.Job) http.HandlerFunc {
-	return func(w http.ResponseWriter, _ *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
-		_ = j.WritePrometheus(w)
+		_ = j.WritePrometheus(r.Context(), w)
 	}
 }

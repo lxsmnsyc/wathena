@@ -153,8 +153,9 @@ type Config struct {
 	// connections of an account set to be deleted (decision 0032).
 	// Without it, those sections say they are not available.
 	Game Game
-	// Privacy is the privacy notice's contact details, text and chat log
-	// retention.
+	// Privacy is the privacy notice's contact details, text and the
+	// retention periods. The data export's login records follow its
+	// LoginIPDays.
 	Privacy Privacy
 	// Owners are the account names of staff.owners. Such an account
 	// cannot ask for deletion while the config names it: a new account

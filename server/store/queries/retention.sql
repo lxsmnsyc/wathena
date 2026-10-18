@@ -29,3 +29,21 @@ SELECT delete_old_staff_audit(@cutoff::timestamptz)::bigint AS deleted;
 -- time.
 DELETE FROM account_logins
 WHERE id IN (SELECT l.id FROM account_logins l WHERE l.at < @before LIMIT 10000);
+
+-- name: SaveRetentionRun :exec
+-- SaveRetentionRun records a run in retention_status. last_success
+-- moves to the run's start only when the run had no errors.
+INSERT INTO retention_status (id, last_run, last_success, login_ips, chat, item_log, zeny_log, audit, partitions, last_error)
+VALUES (true, @last_run, CASE WHEN @last_error::text = '' THEN @last_run::timestamptz END,
+    @login_ips, @chat, @item_log, @zeny_log, @audit, @partitions, @last_error::text)
+ON CONFLICT (id) DO UPDATE SET last_run = EXCLUDED.last_run,
+    last_success = COALESCE(EXCLUDED.last_success, retention_status.last_success),
+    login_ips = EXCLUDED.login_ips, chat = EXCLUDED.chat, item_log = EXCLUDED.item_log,
+    zeny_log = EXCLUDED.zeny_log, audit = EXCLUDED.audit, partitions = EXCLUDED.partitions,
+    last_error = EXCLUDED.last_error;
+
+-- name: RetentionRun :one
+-- RetentionRun is the last run of retention_status. It has no row
+-- before the first run.
+SELECT last_run, last_success, login_ips, chat, item_log, zeny_log, audit, partitions, last_error
+FROM retention_status WHERE id;

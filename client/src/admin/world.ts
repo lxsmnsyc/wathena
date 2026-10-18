@@ -153,7 +153,7 @@ const RETENTION_NAMES: Record<string, string> = {
   audit: 'Staff audit log',
 };
 
-/** A retention kind's row: data, kept, default, last run, since start. */
+/** A retention kind's row: data, kept, default, last run, since this server started. */
 export function retentionRow(k: RetentionKind): string[] {
   const days = (n: number): string => (n === 1 ? '1 day' : `${String(n)} days`);
   return [
@@ -167,21 +167,21 @@ export function retentionRow(k: RetentionKind): string[] {
 
 /** The retention job's last run for people. */
 export function retentionRunText(s: RetentionStatus): string {
+  const next = s.nextRun === undefined ? '' : ` The next run here is at ${when(s.nextRun)}.`;
+  const skipped = s.skipped
+    ? ' This server skipped its last run, since another process ran the job.'
+    : '';
   if (s.lastRun === undefined) {
-    return 'The retention job has not run yet in this process.';
-  }
-  const next = s.nextRun === undefined ? '' : ` The next run is at ${when(s.nextRun)}.`;
-  if (s.skipped) {
-    return `The last run at ${when(s.lastRun)} found the job running in another process, and skipped.${next}`;
+    return `The retention job has not run yet.${skipped}${next}`;
   }
   const dropped =
     s.partitionsDropped > 0
       ? ` It dropped ${String(s.partitionsDropped)} month partitions of the logs.`
       : '';
   if (s.lastError !== '') {
-    return `The last run at ${when(s.lastRun)} failed: ${s.lastError}.${dropped}${next}`;
+    return `The last run at ${when(s.lastRun)} failed: ${s.lastError}.${dropped}${skipped}${next}`;
   }
-  return `The last run at ${when(s.lastRun)} deleted old data.${dropped}${next}`;
+  return `The last run at ${when(s.lastRun)} deleted old data.${dropped}${skipped}${next}`;
 }
 
 /** The screen's state, kept while it shows. */
@@ -368,7 +368,7 @@ function retentionPanel(ctx: Context): HTMLElement {
     'Kept',
     'Default',
     'Deleted by the last run',
-    'Deleted since the start',
+    'Deleted since this server started',
   ]);
   panel.append(el('h3', 'Retention'), warnings, run, kinds.table);
   ctx.run(

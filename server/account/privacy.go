@@ -20,8 +20,13 @@ type Privacy struct {
 	// The retention periods in effect, in days (the retention block,
 	// decision 0049). Each is the default of strategy section 7.10 when
 	// 0: 90, 30, 180 and 730 days.
+	// LoginIPDays is also how far back the data export looks for login
+	// records, so it holds every record the server keeps.
 	LoginIPDays, ChatLogDays, ItemLogDays, AuditDays int
 }
+
+// loginDays is the login records' period in effect.
+func (p Privacy) loginDays() int { return orDefault(p.LoginIPDays, 90) }
 
 // retentionRow is one line of the retention table.
 type retentionRow struct {
@@ -65,7 +70,7 @@ func (s *Service) retention() []retentionRow {
 	chat := orDefault(p.ChatLogDays, 30)
 	return []retentionRow{
 		{"Account name, password hash and two-factor settings", "Life of the account", "Deleted with the account."},
-		{"Login records with IP addresses", days(orDefault(p.LoginIPDays, 90)), "Used to find ban evasion."},
+		{"Login records with IP addresses", days(p.loginDays()), "Used to find ban evasion."},
 		{"Login sessions", "Up to " + days(int(s.cfg.SessionLifetime.Hours()/24)), "Ended at logout, or after " + days(int(s.cfg.SessionIdle.Hours()/24)) + " unused."},
 		{"Characters, items, mail and block lists", "Life of the account", "Deleted with the account."},
 		{"Chat lines", days(chat), "Lines that an open report holds are kept until the report closes. A deleted account's lines go with it."},

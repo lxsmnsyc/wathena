@@ -40,10 +40,21 @@ const (
 	// MaxRestoreItems is the most serials of one restore: the mail's
 	// slots go up to 20.
 	MaxRestoreItems = 20
-	// LoginDays is how far back an IP search looks (strategy section
-	// 7.10).
-	LoginDays = 90
+	// DefaultLoginDays is how far back an IP search looks without
+	// Config.LoginIPDays: the default of retention.login_ip_days
+	// (strategy section 7.10).
+	DefaultLoginDays = 90
 )
+
+// loginSince is the oldest login an IP search finds: login_ip_days ago,
+// so the search finds every record the retention job keeps.
+func (h *Handler) loginSince() pgtype.Timestamptz {
+	days := h.cfg.LoginIPDays
+	if days <= 0 {
+		days = DefaultLoginDays
+	}
+	return pgtype.Timestamptz{Time: time.Now().Add(-time.Duration(days) * 24 * time.Hour), Valid: true}
+}
 
 // worldOnly answers unavailable when the API has no world.
 func (h *Handler) worldOnly(w http.ResponseWriter) bool {
@@ -206,7 +217,7 @@ func (h *Handler) searchPlayers(ctx context.Context, w http.ResponseWriter, r *h
 			bad("ip is an address or a range in CIDR form, such as 203.0.113.0/24.")
 			return
 		}
-		since := pgtype.Timestamptz{Time: time.Now().Add(-LoginDays * 24 * time.Hour), Valid: true}
+		since := h.loginSince()
 		ids, err := h.q.SearchAccountsByIP(ctx, db.SearchAccountsByIPParams{Cidr: cidr, Since: since, AfterID: after, MaxRows: max})
 		if err != nil {
 			h.unavailable(w, r, err)
@@ -262,7 +273,7 @@ func (h *Handler) summaries(ctx context.Context, accounts []accountRow, cidr net
 	}
 	var logins []db.LoginsByIPRow
 	if cidr.IsValid() {
-		since := pgtype.Timestamptz{Time: time.Now().Add(-LoginDays * 24 * time.Hour), Valid: true}
+		since := h.loginSince()
 		if logins, err = h.q.LoginsByIP(ctx, db.LoginsByIPParams{Ids: ids, Cidr: cidr, Since: since}); err != nil {
 			return nil, err
 		}

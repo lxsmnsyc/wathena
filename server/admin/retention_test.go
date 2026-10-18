@@ -1,6 +1,8 @@
 package admin_test
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -10,9 +12,12 @@ import (
 )
 
 // fakeRetention is a retention job's status.
-type fakeRetention struct{ status retention.Status }
+type fakeRetention struct {
+	status retention.Status
+	err    error
+}
 
-func (f fakeRetention) Status() retention.Status { return f.status }
+func (f fakeRetention) Status(context.Context) (retention.Status, error) { return f.status, f.err }
 
 // TestRetentionCall: GET /retention needs world.read, with the session,
 // the role and the two-factor rules of every call, and shows the
@@ -21,7 +26,7 @@ func TestRetentionCall(t *testing.T) {
 	ran := time.Date(2026, 10, 18, 3, 0, 0, 0, time.UTC)
 	p := retention.Defaults
 	p.ChatDays = 45
-	job := fakeRetention{retention.Status{Periods: p, LastRun: ran, LastSuccess: ran, NextRun: ran.Add(24 * time.Hour),
+	job := fakeRetention{status: retention.Status{Periods: p, LastRun: ran, LastSuccess: ran, NextRun: ran.Add(24 * time.Hour),
 		Last: map[string]int64{retention.KindChat: 12, retention.KindAudit: 1}, Total: map[string]int64{retention.KindChat: 40},
 		Partitions: 2, Warnings: p.Warnings()}}
 	e := setup(t, options{limits: manyCalls, retention: job})
@@ -53,7 +58,10 @@ func TestRetentionCall(t *testing.T) {
 	// It is read-only: there is no other call at the path.
 	e.errorCode(gm, "POST", "retention", e.me(gm).GetCsrfToken(), nil, http.StatusNotFound, "not_found")
 
-	// Without a job, it answers unavailable.
+	// Without a job, or when the job's status cannot be read, it answers
+	// unavailable.
 	e = setup(t, options{limits: manyCalls})
+	e.errorCode(e.withRole("Gamemaster", "game_master"), "GET", "retention", "", nil, http.StatusServiceUnavailable, "unavailable")
+	e = setup(t, options{limits: manyCalls, retention: fakeRetention{err: errors.New("the database is gone")}})
 	e.errorCode(e.withRole("Gamemaster", "game_master"), "GET", "retention", "", nil, http.StatusServiceUnavailable, "unavailable")
 }

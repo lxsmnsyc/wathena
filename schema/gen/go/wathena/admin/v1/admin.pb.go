@@ -6315,8 +6315,9 @@ type RetentionKind_builder struct {
 	// retention.item_log_days.
 	Days        int32
 	DefaultDays int32
-	// last_deleted counts the rows the last run deleted.
-	// deleted_since_start counts them since the server started.
+	// last_deleted counts the rows the last run of any process deleted.
+	// deleted_since_start counts the rows this server process deleted
+	// since it started.
 	LastDeleted       int64
 	DeletedSinceStart int64
 }
@@ -6333,8 +6334,9 @@ func (b0 RetentionKind_builder) Build() *RetentionKind {
 	return m0
 }
 
-// RetentionStatus answers GET /retention: the periods in effect and what
-// the retention job did in this process.
+// RetentionStatus answers GET /retention: the periods in effect and the
+// last run of the retention job. The last run comes from the table
+// retention_status, so it can be a run of another process.
 type RetentionStatus struct {
 	state                        protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Kinds             *[]*RetentionKind      `protobuf:"bytes,1,rep,name=kinds,proto3"`
@@ -6502,16 +6504,16 @@ type RetentionStatus_builder struct {
 
 	Kinds []*RetentionKind
 	// last_run is when the last run started, and last_success when the
-	// last run that deleted everything it had to started. Unset before
-	// the first.
+	// last run that deleted everything it had to started, in any
+	// process. Unset before the first.
 	LastRun     *timestamppb.Timestamp
 	LastSuccess *timestamppb.Timestamp
-	// next_run is when the next run starts.
+	// next_run is when this process runs the job next.
 	NextRun *timestamppb.Timestamp
 	// last_error is the last run's error, or empty.
 	LastError string
-	// skipped is set when the last run found another process running the
-	// job, which holds its lock.
+	// skipped is set when this process's last run found another process
+	// running the job, which holds its lock.
 	Skipped bool
 	// partitions_dropped are the month partitions of the item and zeny
 	// logs that the last run dropped.

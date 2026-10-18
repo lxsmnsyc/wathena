@@ -101,9 +101,15 @@ func TestDropOldLogs(t *testing.T) {
 			t.Errorf("the game role ran %q", q)
 		}
 	}
-	// A cutoff less than a day ago is refused.
-	if _, _, err := store.DropOldLogs(ctx, game, time.Now().Add(-time.Hour)); err == nil || !strings.Contains(err.Error(), "less than a day ago") {
-		t.Errorf("a recent cutoff: %v", err)
+	// A cutoff less than 30 days ago is refused (migration 00037). 30
+	// days ago works.
+	for _, ago := range []time.Duration{time.Hour, 29 * 24 * time.Hour, 30*24*time.Hour - time.Minute} {
+		if _, _, err := store.DropOldLogs(ctx, game, time.Now().Add(-ago)); err == nil || !strings.Contains(err.Error(), "less than 30 days ago") {
+			t.Errorf("a cutoff %v ago: %v", ago, err)
+		}
+	}
+	if _, _, err := store.DropOldLogs(ctx, game, time.Now().Add(-30*24*time.Hour)); err != nil {
+		t.Errorf("a cutoff 30 days ago: %v", err)
 	}
 	// Other roles cannot run it.
 	account := storetest.As(t, admin, "wathena_account")
@@ -174,8 +180,15 @@ func TestDeleteOldAudit(t *testing.T) {
 	if _, err := store.DeleteOldAudit(ctx, game, old); err == nil {
 		t.Error("the game role deleted audit rows")
 	}
-	if _, err := store.DeleteOldAudit(ctx, account, time.Now()); err == nil {
-		t.Error("a cutoff of now was accepted")
+	// A cutoff less than 30 days ago is refused (migration 00037). 30
+	// days ago works.
+	for _, ago := range []time.Duration{0, 29 * 24 * time.Hour} {
+		if _, err := store.DeleteOldAudit(ctx, account, time.Now().Add(-ago)); err == nil || !strings.Contains(err.Error(), "less than 30 days ago") {
+			t.Errorf("a cutoff %v ago: %v", ago, err)
+		}
+	}
+	if _, err := store.DeleteOldAudit(ctx, account, time.Now().Add(-30*24*time.Hour)); err != nil {
+		t.Errorf("a cutoff 30 days ago: %v", err)
 	}
 }
 

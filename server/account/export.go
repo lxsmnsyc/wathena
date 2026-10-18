@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/lxsmnsyc/wathena/server/store/db"
 )
 
 // The data export (decision 0032). A player downloads one JSON file
@@ -38,7 +41,8 @@ type Export struct {
 	Version    int           `json:"version"`
 	ExportedAt time.Time     `json:"exported_at"`
 	Account    ExportAccount `json:"account"`
-	// Logins are the login records of the last 90 days.
+	// Logins are the login records of the last login_ip_days: every
+	// record the server keeps.
 	Logins []ExportLogin `json:"logins"`
 	// Storages are the account's storages, which its characters share.
 	Storages []ExportStorage `json:"storages"`
@@ -336,7 +340,8 @@ func (s *Service) buildExport(ctx context.Context, account int64) (*Export, erro
 	if err != nil {
 		return nil, err
 	}
-	logins, err := s.q.RecentLogins(ctx, account)
+	since := time.Now().Add(-time.Duration(s.cfg.Privacy.loginDays()) * 24 * time.Hour)
+	logins, err := s.q.RecentLogins(ctx, db.RecentLoginsParams{AccountID: account, Since: pgtype.Timestamptz{Time: since, Valid: true}})
 	if err != nil {
 		return nil, err
 	}

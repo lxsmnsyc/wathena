@@ -1453,12 +1453,16 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
 35. Build review decision 49: retention jobs and the Compose config (phase 8 step 3), with the `retention` block of `waserver.yml`, one daily retention job in `waserver`, the functions `drop_old_log_partitions` and `delete_old_staff_audit`, `GET /admin/api/v1/retention`, the periods on the privacy page, and the `classic:` block for `maps` and `start_map`. No Lua API changes. Done on 2026-10-18 ([decision 0049](../decisions/0049-retention.md)). Details to review:
    - An explicit 0 in the `retention` block is an error, as any value outside 1 to 3650. A key left out takes the default. `chat.log_days` with the same value as `retention.chat_days` is allowed, with the warning.
    - The job takes the session advisory lock `(1 << 61) | 1` on a connection of the game pool for the whole run, so the deletes can run in batches. Bit 61 marks the server's jobs, as bit 62 marks account storages. No other daily job had a guard against two processes.
-   - Each kind runs even when another fails. A run without errors counts as the last success. The status and the counts are in memory per process.
+   - Each kind runs even when another fails. A run without errors counts as the last success. The last run is kept in `retention_status`. The counts since the start are per process.
    - A month partition is one named `<log>_YYYY_MM`, as `ensure_log_partitions` names them. It is dropped when its month ends at or before the cutoff, in UTC. The rows are counted before the drop. A drop waits at most 10 seconds for a lock.
-   - Both functions refuse a cutoff later than a day ago. The game role can now drop log data older than a day through its function.
+   - Both functions refuse a cutoff later than 30 days ago (migration 00037). The game role can now drop log data older than 30 days through its function.
    - A flagged review counts as a review, so an old flagged row goes.
    - `GET /retention` needs `world.read`, the World screen's permission. It writes no audit row.
    - The metrics are `wathena_retention_deleted_rows_total{kind}` and `wathena_retention_last_success_timestamp_seconds`, at `/debug/wathena/metrics/prometheus` on the debug address. The server's other measurements stay JSON.
    - `--map` and `--maps` win over the `classic` block in both modes. A procedural world still reads the deprecated top-level keys.
    - The privacy page shows 730 days as "2 years", and its backups row says "Up to 4 weeks".
-   - Review items: a table of runs, so every process and a restart show the last one, and whether the IP search and the data export should follow `login_ip_days`.
+   - Later changes, approved on 2026-10-18 (decision 0049, "Later changes"):
+     - Migration 00037 sets the floor of `drop_old_log_partitions` and `delete_old_staff_audit` to 30 days. `retention.item_log_days` and `retention.audit_days` are 30 to 3650 days. `login_ip_days` and `chat_days` stay 1 to 3650.
+     - The admin IP search and the data export look back `login_ip_days`, not a fixed 90 days.
+     - The table `retention_status` keeps the last run, its counts by kind and its errors. The job writes it as the game role. `GET /retention` reads it, so it shows a run of another process, and a run from before a restart.
+   - Review items: whether `world.read` is the right permission for `GET /retention`.
