@@ -50,7 +50,7 @@ Run these in `deploy/compose`.
    - The client folder needs its `DATA.INI` and the GRF files it names. A kRO client takes about 21 minutes on 8 cores and gives 112,000 assets.
    - Run the same command again after a client update. Unchanged assets come from the build's cache.
    - To use a build you already have, set `WATHENA_ASSETS` in `.env` to its absolute path instead. The user 65532 must be able to read it.
-   - For a test without game files, use `--source placeholder`, and set `start_map: placeholder/map` and `mode: none` in `waserver.yml`.
+   - For a test without game files, use `--source placeholder`. For a classic world, also set `start_map: placeholder/map` in the `classic` block and `mode: none` in `waserver.yml`.
 5. World. Make the world and the first account. The password is read from standard input, so it stays out of the shell history and process lists:
 
    ```text
@@ -70,8 +70,11 @@ Run these in `deploy/compose`.
 ### Settings
 
 - `.env` sets the domain, the host ports, the images, where the assets are, and the edge network. `.env.example` explains each one.
-- `waserver.yml` sets the game: the maps, the start map, the rAthena mode and the captcha. server/README.md, "All-in-one", lists every key.
+- `waserver.yml` sets the game: the rAthena mode, the captcha, and in its `classic` block the maps and the start map of a classic world. A procedural world runs its generated maps and ignores the `classic` block, so the file works in both world modes. server/README.md, "All-in-one", lists every key.
+- `start_map` and `maps` at the top level of `waserver.yml` still work, with a warning at start. Move them into the `classic` block. A procedural world fails to start with `maps: all` at the top level.
 - Fill in `privacy.contact` and `privacy.text` in `waserver.yml`. Players read them on `/account/privacy`, with the retention periods in effect. Players can download their data and delete their accounts on `/account/data`. You are responsible for following the laws that apply to you, such as the GDPR.
+- The `retention` block of `waserver.yml` sets how many days the server keeps login records with IP addresses (90), chat lines (30), the item and zeny logs (180) and the GM audit log (730). Each is 1 to 3650. `waserver` deletes older data once a day, at start and every 24 hours. A period longer than the default logs a warning and shows one on the admin World screen. Shorter periods need no notice. `chat.log_days` still works, with a warning: move it to `retention.chat_days`. server/README.md, "Retention", has the details.
+- Backups keep data that the retention job deleted since, for up to 4 weeks with the default schedule (see "Backups"). The privacy page says so.
 - `docker-compose.yml` passes `--public-url` and `--trusted-proxies` from `.env`.
 - Change a setting, then run `docker compose up -d --wait`.
 

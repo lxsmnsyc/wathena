@@ -429,13 +429,15 @@ func placeNPCs(idx *places.Index, list []gamedata.PlaceNPC, log *slog.Logger) ma
 }
 
 // worldMaps returns the start map, the asset maps to run and the map
-// names of every zone, asset maps first. In a procedural world, the
-// start map is the home area unless --map names a generated map, and
-// asset maps run only when --maps lists them.
+// names of every zone, asset maps first. A classic world reads the
+// classic block (decision 0049). In a procedural world, which ignores
+// that block, the start map is the home area unless --map names a
+// generated map, and asset maps run only when --maps lists them.
 func worldMaps(cfg settings, proc proceduralWorld) (start string, assetMaps, all []string, err error) {
-	start = assetName(cfg.StartMap)
 	if proc.set == nil {
-		assetMaps, err = selectMaps(cfg.Assets, start, joinList(cfg.Maps))
+		classicStart, classicMaps := cfg.classicMaps()
+		start = assetName(classicStart)
+		assetMaps, err = selectMaps(cfg.Assets, start, joinList(classicMaps))
 		return start, assetMaps, assetMaps, err
 	}
 	start = proc.start
@@ -445,7 +447,7 @@ func worldMaps(cfg settings, proc proceduralWorld) (start string, assetMaps, all
 	if len(cfg.Maps) > 0 {
 		for _, n := range cfg.Maps {
 			if n == "all" {
-				return "", nil, nil, errors.New("--maps all does not run in a procedural world; list the asset maps")
+				return "", nil, nil, errors.New("--maps all does not run in a procedural world; list the asset maps, or move maps into the classic block, which procedural worlds ignore")
 			}
 			assetMaps = append(assetMaps, assetName(n))
 		}

@@ -138,7 +138,8 @@ type CreateSessionParams struct {
 
 // CreateSession makes a login session. factors names what the player
 // proved to open it, such as {password,totp} or {passkey}. It also
-// writes the login record, which outlives the session for 90 days.
+// writes the login record, which outlives the session until the
+// retention job deletes it, after retention.login_ip_days.
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createSession,
 		arg.TokenHash,
@@ -211,8 +212,6 @@ WITH t AS (
     DELETE FROM account_pending_logins WHERE expires_at <= now()
 ), w AS (
     DELETE FROM account_webauthn_ceremonies WHERE expires_at <= now()
-), l AS (
-    DELETE FROM account_logins WHERE at <= now() - interval '90 days'
 ), s AS (
     DELETE FROM account_sessions
     WHERE expires_at <= now() OR revoked_at IS NOT NULL
@@ -223,8 +222,9 @@ SELECT count(*) FROM s
 `
 
 // DeleteExpired removes expired tickets, pending logins and passkey
-// ceremonies, sessions that expired or were revoked, and login records
-// older than 90 days. It returns how many sessions went.
+// ceremonies, and sessions that expired or were revoked. It returns how
+// many sessions went. The retention job deletes old login records
+// (decision 0049).
 func (q *Queries) DeleteExpired(ctx context.Context, idle pgtype.Interval) (int64, error) {
 	row := q.db.QueryRow(ctx, deleteExpired, idle)
 	var count int64

@@ -17,9 +17,10 @@ type Privacy struct {
 	// such as an email address. Text is the owner's own notice. The page
 	// shows both as plain text, with paragraphs at blank lines.
 	Contact, Text string
-	// ChatLogDays is how many days chat lines are kept (chat.log_days).
-	// 30 when 0.
-	ChatLogDays int
+	// The retention periods in effect, in days (the retention block,
+	// decision 0049). Each is the default of strategy section 7.10 when
+	// 0: 90, 30, 180 and 730 days.
+	LoginIPDays, ChatLogDays, ItemLogDays, AuditDays int
 }
 
 // retentionRow is one line of the retention table.
@@ -39,28 +40,40 @@ func paragraphs(text string) []string {
 }
 
 func days(n int) string {
-	if n == 1 {
+	switch {
+	case n == 1:
 		return "1 day"
+	case n == 365:
+		return "1 year"
+	case n%365 == 0:
+		return strconv.Itoa(n/365) + " years"
 	}
 	return strconv.Itoa(n) + " days"
 }
 
+// orDefault is n, or def when n is 0.
+func orDefault(n, def int) int {
+	if n <= 0 {
+		return def
+	}
+	return n
+}
+
 // retention lists what the server keeps and for how long.
 func (s *Service) retention() []retentionRow {
-	chat := s.cfg.Privacy.ChatLogDays
-	if chat <= 0 {
-		chat = 30
-	}
+	p := s.cfg.Privacy
+	chat := orDefault(p.ChatLogDays, 30)
 	return []retentionRow{
 		{"Account name, password hash and two-factor settings", "Life of the account", "Deleted with the account."},
-		{"Login records with IP addresses", "90 days", "Used to find ban evasion."},
+		{"Login records with IP addresses", days(orDefault(p.LoginIPDays, 90)), "Used to find ban evasion."},
 		{"Login sessions", "Up to " + days(int(s.cfg.SessionLifetime.Hours()/24)), "Ended at logout, or after " + days(int(s.cfg.SessionIdle.Hours()/24)) + " unused."},
 		{"Characters, items, mail and block lists", "Life of the account", "Deleted with the account."},
 		{"Chat lines", days(chat), "Lines that an open report holds are kept until the report closes. A deleted account's lines go with it."},
 		{"Reports", "Kept", "A report keeps the reporter's and the target's character IDs and names, also after an account is deleted."},
 		{"Sanctions", "Life of the account", "The staff audit log keeps a record of each sanction."},
-		{"Item and zeny logs", "180 days", "Needed to trace duplication and theft. They keep character IDs after an account is deleted. The job that deletes old lines comes in a later version, so until then lines are kept."},
-		{"Staff audit log", "2 years", "Records what staff did, with the IDs of the accounts and characters they acted on. The job that deletes old rows comes in a later version."},
+		{"Item and zeny logs", days(orDefault(p.ItemLogDays, 180)), "Needed to trace duplication and theft. They keep character IDs after an account is deleted. Old lines are deleted a month at a time, so a line may be kept up to 31 days longer."},
+		{"Staff audit log", days(orDefault(p.AuditDays, 730)), "Records what staff did, with the IDs of the accounts and characters they acted on. A row that waits for a staff review is kept until it is reviewed."},
+		{"Backups", "Up to 4 weeks", "Backups are encrypted copies of the data above. With the default backup schedule, data deleted from the server stays in backups for up to 4 weeks."},
 	}
 }
 

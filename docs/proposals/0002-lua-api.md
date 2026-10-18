@@ -1450,3 +1450,15 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - Each scheduled run removes hidden temporary files of wactl's pattern, `.world-<time>.<extension>.<random>.tmp`, older than 24 hours.
    - Every `wactl` command reads the embedded reference data, so a release `wactl world new` makes a procedural world outside the repository. The Compose smoke test makes a procedural world again.
    - Review items: skipping a backup the scheduled verify already checked, and a time of day for the schedule.
+35. Build review decision 49: retention jobs and the Compose config (phase 8 step 3), with the `retention` block of `waserver.yml`, one daily retention job in `waserver`, the functions `drop_old_log_partitions` and `delete_old_staff_audit`, `GET /admin/api/v1/retention`, the periods on the privacy page, and the `classic:` block for `maps` and `start_map`. No Lua API changes. Done on 2026-10-18 ([decision 0049](../decisions/0049-retention.md)). Details to review:
+   - An explicit 0 in the `retention` block is an error, as any value outside 1 to 3650. A key left out takes the default. `chat.log_days` with the same value as `retention.chat_days` is allowed, with the warning.
+   - The job takes the session advisory lock `(1 << 61) | 1` on a connection of the game pool for the whole run, so the deletes can run in batches. Bit 61 marks the server's jobs, as bit 62 marks account storages. No other daily job had a guard against two processes.
+   - Each kind runs even when another fails. A run without errors counts as the last success. The status and the counts are in memory per process.
+   - A month partition is one named `<log>_YYYY_MM`, as `ensure_log_partitions` names them. It is dropped when its month ends at or before the cutoff, in UTC. The rows are counted before the drop. A drop waits at most 10 seconds for a lock.
+   - Both functions refuse a cutoff later than a day ago. The game role can now drop log data older than a day through its function.
+   - A flagged review counts as a review, so an old flagged row goes.
+   - `GET /retention` needs `world.read`, the World screen's permission. It writes no audit row.
+   - The metrics are `wathena_retention_deleted_rows_total{kind}` and `wathena_retention_last_success_timestamp_seconds`, at `/debug/wathena/metrics/prometheus` on the debug address. The server's other measurements stay JSON.
+   - `--map` and `--maps` win over the `classic` block in both modes. A procedural world still reads the deprecated top-level keys.
+   - The privacy page shows 730 days as "2 years", and its backups row says "Up to 4 weeks".
+   - Review items: a table of runs, so every process and a restart show the last one, and whether the IP search and the data export should follow `login_ip_days`.

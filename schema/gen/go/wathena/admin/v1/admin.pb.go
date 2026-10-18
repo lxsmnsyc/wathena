@@ -6212,6 +6212,329 @@ func (b0 WorldView_builder) Build() *WorldView {
 	return m0
 }
 
+// RetentionKind is one kind of data that the retention job deletes
+// (decision 0049).
+type RetentionKind struct {
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kind              string                 `protobuf:"bytes,1,opt,name=kind,proto3"`
+	xxx_hidden_Days              int32                  `protobuf:"varint,2,opt,name=days,proto3"`
+	xxx_hidden_DefaultDays       int32                  `protobuf:"varint,3,opt,name=default_days,json=defaultDays,proto3"`
+	xxx_hidden_LastDeleted       int64                  `protobuf:"varint,4,opt,name=last_deleted,json=lastDeleted,proto3"`
+	xxx_hidden_DeletedSinceStart int64                  `protobuf:"varint,5,opt,name=deleted_since_start,json=deletedSinceStart,proto3"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
+}
+
+func (x *RetentionKind) Reset() {
+	*x = RetentionKind{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetentionKind) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetentionKind) ProtoMessage() {}
+
+func (x *RetentionKind) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RetentionKind) GetKind() string {
+	if x != nil {
+		return x.xxx_hidden_Kind
+	}
+	return ""
+}
+
+func (x *RetentionKind) GetDays() int32 {
+	if x != nil {
+		return x.xxx_hidden_Days
+	}
+	return 0
+}
+
+func (x *RetentionKind) GetDefaultDays() int32 {
+	if x != nil {
+		return x.xxx_hidden_DefaultDays
+	}
+	return 0
+}
+
+func (x *RetentionKind) GetLastDeleted() int64 {
+	if x != nil {
+		return x.xxx_hidden_LastDeleted
+	}
+	return 0
+}
+
+func (x *RetentionKind) GetDeletedSinceStart() int64 {
+	if x != nil {
+		return x.xxx_hidden_DeletedSinceStart
+	}
+	return 0
+}
+
+func (x *RetentionKind) SetKind(v string) {
+	x.xxx_hidden_Kind = v
+}
+
+func (x *RetentionKind) SetDays(v int32) {
+	x.xxx_hidden_Days = v
+}
+
+func (x *RetentionKind) SetDefaultDays(v int32) {
+	x.xxx_hidden_DefaultDays = v
+}
+
+func (x *RetentionKind) SetLastDeleted(v int64) {
+	x.xxx_hidden_LastDeleted = v
+}
+
+func (x *RetentionKind) SetDeletedSinceStart(v int64) {
+	x.xxx_hidden_DeletedSinceStart = v
+}
+
+type RetentionKind_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// kind is login_ips, chat, item_log, zeny_log or audit.
+	Kind string
+	// days is how long the server keeps it, and default_days the period
+	// of strategy section 7.10. item_log and zeny_log share
+	// retention.item_log_days.
+	Days        int32
+	DefaultDays int32
+	// last_deleted counts the rows the last run deleted.
+	// deleted_since_start counts them since the server started.
+	LastDeleted       int64
+	DeletedSinceStart int64
+}
+
+func (b0 RetentionKind_builder) Build() *RetentionKind {
+	m0 := &RetentionKind{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kind = b.Kind
+	x.xxx_hidden_Days = b.Days
+	x.xxx_hidden_DefaultDays = b.DefaultDays
+	x.xxx_hidden_LastDeleted = b.LastDeleted
+	x.xxx_hidden_DeletedSinceStart = b.DeletedSinceStart
+	return m0
+}
+
+// RetentionStatus answers GET /retention: the periods in effect and what
+// the retention job did in this process.
+type RetentionStatus struct {
+	state                        protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kinds             *[]*RetentionKind      `protobuf:"bytes,1,rep,name=kinds,proto3"`
+	xxx_hidden_LastRun           *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_run,json=lastRun,proto3"`
+	xxx_hidden_LastSuccess       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_success,json=lastSuccess,proto3"`
+	xxx_hidden_NextRun           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=next_run,json=nextRun,proto3"`
+	xxx_hidden_LastError         string                 `protobuf:"bytes,5,opt,name=last_error,json=lastError,proto3"`
+	xxx_hidden_Skipped           bool                   `protobuf:"varint,6,opt,name=skipped,proto3"`
+	xxx_hidden_PartitionsDropped int32                  `protobuf:"varint,7,opt,name=partitions_dropped,json=partitionsDropped,proto3"`
+	xxx_hidden_Warnings          []string               `protobuf:"bytes,8,rep,name=warnings,proto3"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
+}
+
+func (x *RetentionStatus) Reset() {
+	*x = RetentionStatus{}
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetentionStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetentionStatus) ProtoMessage() {}
+
+func (x *RetentionStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RetentionStatus) GetKinds() []*RetentionKind {
+	if x != nil {
+		if x.xxx_hidden_Kinds != nil {
+			return *x.xxx_hidden_Kinds
+		}
+	}
+	return nil
+}
+
+func (x *RetentionStatus) GetLastRun() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_LastRun
+	}
+	return nil
+}
+
+func (x *RetentionStatus) GetLastSuccess() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_LastSuccess
+	}
+	return nil
+}
+
+func (x *RetentionStatus) GetNextRun() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_NextRun
+	}
+	return nil
+}
+
+func (x *RetentionStatus) GetLastError() string {
+	if x != nil {
+		return x.xxx_hidden_LastError
+	}
+	return ""
+}
+
+func (x *RetentionStatus) GetSkipped() bool {
+	if x != nil {
+		return x.xxx_hidden_Skipped
+	}
+	return false
+}
+
+func (x *RetentionStatus) GetPartitionsDropped() int32 {
+	if x != nil {
+		return x.xxx_hidden_PartitionsDropped
+	}
+	return 0
+}
+
+func (x *RetentionStatus) GetWarnings() []string {
+	if x != nil {
+		return x.xxx_hidden_Warnings
+	}
+	return nil
+}
+
+func (x *RetentionStatus) SetKinds(v []*RetentionKind) {
+	x.xxx_hidden_Kinds = &v
+}
+
+func (x *RetentionStatus) SetLastRun(v *timestamppb.Timestamp) {
+	x.xxx_hidden_LastRun = v
+}
+
+func (x *RetentionStatus) SetLastSuccess(v *timestamppb.Timestamp) {
+	x.xxx_hidden_LastSuccess = v
+}
+
+func (x *RetentionStatus) SetNextRun(v *timestamppb.Timestamp) {
+	x.xxx_hidden_NextRun = v
+}
+
+func (x *RetentionStatus) SetLastError(v string) {
+	x.xxx_hidden_LastError = v
+}
+
+func (x *RetentionStatus) SetSkipped(v bool) {
+	x.xxx_hidden_Skipped = v
+}
+
+func (x *RetentionStatus) SetPartitionsDropped(v int32) {
+	x.xxx_hidden_PartitionsDropped = v
+}
+
+func (x *RetentionStatus) SetWarnings(v []string) {
+	x.xxx_hidden_Warnings = v
+}
+
+func (x *RetentionStatus) HasLastRun() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_LastRun != nil
+}
+
+func (x *RetentionStatus) HasLastSuccess() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_LastSuccess != nil
+}
+
+func (x *RetentionStatus) HasNextRun() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_NextRun != nil
+}
+
+func (x *RetentionStatus) ClearLastRun() {
+	x.xxx_hidden_LastRun = nil
+}
+
+func (x *RetentionStatus) ClearLastSuccess() {
+	x.xxx_hidden_LastSuccess = nil
+}
+
+func (x *RetentionStatus) ClearNextRun() {
+	x.xxx_hidden_NextRun = nil
+}
+
+type RetentionStatus_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Kinds []*RetentionKind
+	// last_run is when the last run started, and last_success when the
+	// last run that deleted everything it had to started. Unset before
+	// the first.
+	LastRun     *timestamppb.Timestamp
+	LastSuccess *timestamppb.Timestamp
+	// next_run is when the next run starts.
+	NextRun *timestamppb.Timestamp
+	// last_error is the last run's error, or empty.
+	LastError string
+	// skipped is set when the last run found another process running the
+	// job, which holds its lock.
+	Skipped bool
+	// partitions_dropped are the month partitions of the item and zeny
+	// logs that the last run dropped.
+	PartitionsDropped int32
+	// warnings name the periods that are longer than the defaults.
+	Warnings []string
+}
+
+func (b0 RetentionStatus_builder) Build() *RetentionStatus {
+	m0 := &RetentionStatus{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kinds = &b.Kinds
+	x.xxx_hidden_LastRun = b.LastRun
+	x.xxx_hidden_LastSuccess = b.LastSuccess
+	x.xxx_hidden_NextRun = b.NextRun
+	x.xxx_hidden_LastError = b.LastError
+	x.xxx_hidden_Skipped = b.Skipped
+	x.xxx_hidden_PartitionsDropped = b.PartitionsDropped
+	x.xxx_hidden_Warnings = b.Warnings
+	return m0
+}
+
 // AnnounceRequest is the body of POST /announce.
 type AnnounceRequest struct {
 	state           protoimpl.MessageState `protogen:"opaque.v1"`
@@ -6223,7 +6546,7 @@ type AnnounceRequest struct {
 
 func (x *AnnounceRequest) Reset() {
 	*x = AnnounceRequest{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[40]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6235,7 +6558,7 @@ func (x *AnnounceRequest) String() string {
 func (*AnnounceRequest) ProtoMessage() {}
 
 func (x *AnnounceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[40]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6297,7 +6620,7 @@ type AnnounceResult struct {
 
 func (x *AnnounceResult) Reset() {
 	*x = AnnounceResult{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[41]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6309,7 +6632,7 @@ func (x *AnnounceResult) String() string {
 func (*AnnounceResult) ProtoMessage() {}
 
 func (x *AnnounceResult) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[41]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6370,7 +6693,7 @@ type RestartRequest struct {
 
 func (x *RestartRequest) Reset() {
 	*x = RestartRequest{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[42]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6382,7 +6705,7 @@ func (x *RestartRequest) String() string {
 func (*RestartRequest) ProtoMessage() {}
 
 func (x *RestartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[42]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6476,7 +6799,7 @@ type RestartPlan struct {
 
 func (x *RestartPlan) Reset() {
 	*x = RestartPlan{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[43]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6488,7 +6811,7 @@ func (x *RestartPlan) String() string {
 func (*RestartPlan) ProtoMessage() {}
 
 func (x *RestartPlan) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[43]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6625,7 +6948,7 @@ type EventRun struct {
 
 func (x *EventRun) Reset() {
 	*x = EventRun{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[44]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6637,7 +6960,7 @@ func (x *EventRun) String() string {
 func (*EventRun) ProtoMessage() {}
 
 func (x *EventRun) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[44]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6746,7 +7069,7 @@ type EventResult struct {
 
 func (x *EventResult) Reset() {
 	*x = EventResult{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[45]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6758,7 +7081,7 @@ func (x *EventResult) String() string {
 func (*EventResult) ProtoMessage() {}
 
 func (x *EventResult) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[45]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6882,7 +7205,7 @@ type EventOverride struct {
 
 func (x *EventOverride) Reset() {
 	*x = EventOverride{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[46]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6894,7 +7217,7 @@ func (x *EventOverride) String() string {
 func (*EventOverride) ProtoMessage() {}
 
 func (x *EventOverride) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[46]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7049,7 +7372,7 @@ type EventInfo struct {
 
 func (x *EventInfo) Reset() {
 	*x = EventInfo{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[47]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7061,7 +7384,7 @@ func (x *EventInfo) String() string {
 func (*EventInfo) ProtoMessage() {}
 
 func (x *EventInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[47]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7375,7 +7698,7 @@ type EventList struct {
 
 func (x *EventList) Reset() {
 	*x = EventList{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[48]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7387,7 +7710,7 @@ func (x *EventList) String() string {
 func (*EventList) ProtoMessage() {}
 
 func (x *EventList) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[48]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7481,7 +7804,7 @@ type WorldChange struct {
 
 func (x *WorldChange) Reset() {
 	*x = WorldChange{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7493,7 +7816,7 @@ func (x *WorldChange) String() string {
 func (*WorldChange) ProtoMessage() {}
 
 func (x *WorldChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[49]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7610,7 +7933,7 @@ type RotationInfo struct {
 
 func (x *RotationInfo) Reset() {
 	*x = RotationInfo{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7622,7 +7945,7 @@ func (x *RotationInfo) String() string {
 func (*RotationInfo) ProtoMessage() {}
 
 func (x *RotationInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[50]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7742,7 +8065,7 @@ type RegionInfo struct {
 
 func (x *RegionInfo) Reset() {
 	*x = RegionInfo{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7754,7 +8077,7 @@ func (x *RegionInfo) String() string {
 func (*RegionInfo) ProtoMessage() {}
 
 func (x *RegionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[51]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7870,7 +8193,7 @@ type SeasonInfo struct {
 
 func (x *SeasonInfo) Reset() {
 	*x = SeasonInfo{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7882,7 +8205,7 @@ func (x *SeasonInfo) String() string {
 func (*SeasonInfo) ProtoMessage() {}
 
 func (x *SeasonInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[52]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8003,7 +8326,7 @@ type EventChange struct {
 
 func (x *EventChange) Reset() {
 	*x = EventChange{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8015,7 +8338,7 @@ func (x *EventChange) String() string {
 func (*EventChange) ProtoMessage() {}
 
 func (x *EventChange) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[53]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8130,7 +8453,7 @@ type EventAction struct {
 
 func (x *EventAction) Reset() {
 	*x = EventAction{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8142,7 +8465,7 @@ func (x *EventAction) String() string {
 func (*EventAction) ProtoMessage() {}
 
 func (x *EventAction) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[54]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8192,7 +8515,7 @@ type ModSwitch struct {
 
 func (x *ModSwitch) Reset() {
 	*x = ModSwitch{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8204,7 +8527,7 @@ func (x *ModSwitch) String() string {
 func (*ModSwitch) ProtoMessage() {}
 
 func (x *ModSwitch) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[55]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8305,7 +8628,7 @@ type ModZone struct {
 
 func (x *ModZone) Reset() {
 	*x = ModZone{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8317,7 +8640,7 @@ func (x *ModZone) String() string {
 func (*ModZone) ProtoMessage() {}
 
 func (x *ModZone) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[56]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8439,7 +8762,7 @@ type ModInfo struct {
 
 func (x *ModInfo) Reset() {
 	*x = ModInfo{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[57]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8451,7 +8774,7 @@ func (x *ModInfo) String() string {
 func (*ModInfo) ProtoMessage() {}
 
 func (x *ModInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[57]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8657,7 +8980,7 @@ type ModList struct {
 
 func (x *ModList) Reset() {
 	*x = ModList{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[58]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8669,7 +8992,7 @@ func (x *ModList) String() string {
 func (*ModList) ProtoMessage() {}
 
 func (x *ModList) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[58]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8732,7 +9055,7 @@ type ModSwitchRequest struct {
 
 func (x *ModSwitchRequest) Reset() {
 	*x = ModSwitchRequest{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[59]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8744,7 +9067,7 @@ func (x *ModSwitchRequest) String() string {
 func (*ModSwitchRequest) ProtoMessage() {}
 
 func (x *ModSwitchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[59]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8808,7 +9131,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[60]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8820,7 +9143,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_admin_v1_admin_proto_msgTypes[60]
+	mi := &file_wathena_admin_v1_admin_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9263,7 +9586,23 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\aplayers\x18\x03 \x03(\v2\x1e.wathena.admin.v1.OnlinePlayerR\aplayers\x12%\n" +
 	"\x0eplayers_online\x18\x04 \x01(\x05R\rplayersOnline\x127\n" +
 	"\arestart\x18\x05 \x01(\v2\x1d.wathena.admin.v1.RestartPlanR\arestart\x12,\n" +
-	"\x03now\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\"7\n" +
+	"\x03now\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x03now\"\xad\x01\n" +
+	"\rRetentionKind\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04days\x18\x02 \x01(\x05R\x04days\x12!\n" +
+	"\fdefault_days\x18\x03 \x01(\x05R\vdefaultDays\x12!\n" +
+	"\flast_deleted\x18\x04 \x01(\x03R\vlastDeleted\x12.\n" +
+	"\x13deleted_since_start\x18\x05 \x01(\x03R\x11deletedSinceStart\"\xf9\x02\n" +
+	"\x0fRetentionStatus\x125\n" +
+	"\x05kinds\x18\x01 \x03(\v2\x1f.wathena.admin.v1.RetentionKindR\x05kinds\x125\n" +
+	"\blast_run\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\alastRun\x12=\n" +
+	"\flast_success\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\vlastSuccess\x125\n" +
+	"\bnext_run\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\anextRun\x12\x1d\n" +
+	"\n" +
+	"last_error\x18\x05 \x01(\tR\tlastError\x12\x18\n" +
+	"\askipped\x18\x06 \x01(\bR\askipped\x12-\n" +
+	"\x12partitions_dropped\x18\a \x01(\x05R\x11partitionsDropped\x12\x1a\n" +
+	"\bwarnings\x18\b \x03(\tR\bwarnings\"7\n" +
 	"\x0fAnnounceRequest\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x10\n" +
 	"\x03map\x18\x02 \x01(\tR\x03map\"6\n" +
@@ -9398,7 +9737,7 @@ const file_wathena_admin_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"reauth_url\x18\x03 \x01(\tR\treauthUrlBDZBgithub.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1b\x06proto3"
 
-var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
+var file_wathena_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 64)
 var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*Me)(nil),                    // 0: wathena.admin.v1.Me
 	(*Role)(nil),                  // 1: wathena.admin.v1.Role
@@ -9440,64 +9779,66 @@ var file_wathena_admin_v1_admin_proto_goTypes = []any{
 	(*ProcessView)(nil),           // 37: wathena.admin.v1.ProcessView
 	(*OnlinePlayer)(nil),          // 38: wathena.admin.v1.OnlinePlayer
 	(*WorldView)(nil),             // 39: wathena.admin.v1.WorldView
-	(*AnnounceRequest)(nil),       // 40: wathena.admin.v1.AnnounceRequest
-	(*AnnounceResult)(nil),        // 41: wathena.admin.v1.AnnounceResult
-	(*RestartRequest)(nil),        // 42: wathena.admin.v1.RestartRequest
-	(*RestartPlan)(nil),           // 43: wathena.admin.v1.RestartPlan
-	(*EventRun)(nil),              // 44: wathena.admin.v1.EventRun
-	(*EventResult)(nil),           // 45: wathena.admin.v1.EventResult
-	(*EventOverride)(nil),         // 46: wathena.admin.v1.EventOverride
-	(*EventInfo)(nil),             // 47: wathena.admin.v1.EventInfo
-	(*EventList)(nil),             // 48: wathena.admin.v1.EventList
-	(*WorldChange)(nil),           // 49: wathena.admin.v1.WorldChange
-	(*RotationInfo)(nil),          // 50: wathena.admin.v1.RotationInfo
-	(*RegionInfo)(nil),            // 51: wathena.admin.v1.RegionInfo
-	(*SeasonInfo)(nil),            // 52: wathena.admin.v1.SeasonInfo
-	(*EventChange)(nil),           // 53: wathena.admin.v1.EventChange
-	(*EventAction)(nil),           // 54: wathena.admin.v1.EventAction
-	(*ModSwitch)(nil),             // 55: wathena.admin.v1.ModSwitch
-	(*ModZone)(nil),               // 56: wathena.admin.v1.ModZone
-	(*ModInfo)(nil),               // 57: wathena.admin.v1.ModInfo
-	(*ModList)(nil),               // 58: wathena.admin.v1.ModList
-	(*ModSwitchRequest)(nil),      // 59: wathena.admin.v1.ModSwitchRequest
-	(*Error)(nil),                 // 60: wathena.admin.v1.Error
-	nil,                           // 61: wathena.admin.v1.Item.RollsEntry
-	(*timestamppb.Timestamp)(nil), // 62: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),       // 63: google.protobuf.Struct
+	(*RetentionKind)(nil),         // 40: wathena.admin.v1.RetentionKind
+	(*RetentionStatus)(nil),       // 41: wathena.admin.v1.RetentionStatus
+	(*AnnounceRequest)(nil),       // 42: wathena.admin.v1.AnnounceRequest
+	(*AnnounceResult)(nil),        // 43: wathena.admin.v1.AnnounceResult
+	(*RestartRequest)(nil),        // 44: wathena.admin.v1.RestartRequest
+	(*RestartPlan)(nil),           // 45: wathena.admin.v1.RestartPlan
+	(*EventRun)(nil),              // 46: wathena.admin.v1.EventRun
+	(*EventResult)(nil),           // 47: wathena.admin.v1.EventResult
+	(*EventOverride)(nil),         // 48: wathena.admin.v1.EventOverride
+	(*EventInfo)(nil),             // 49: wathena.admin.v1.EventInfo
+	(*EventList)(nil),             // 50: wathena.admin.v1.EventList
+	(*WorldChange)(nil),           // 51: wathena.admin.v1.WorldChange
+	(*RotationInfo)(nil),          // 52: wathena.admin.v1.RotationInfo
+	(*RegionInfo)(nil),            // 53: wathena.admin.v1.RegionInfo
+	(*SeasonInfo)(nil),            // 54: wathena.admin.v1.SeasonInfo
+	(*EventChange)(nil),           // 55: wathena.admin.v1.EventChange
+	(*EventAction)(nil),           // 56: wathena.admin.v1.EventAction
+	(*ModSwitch)(nil),             // 57: wathena.admin.v1.ModSwitch
+	(*ModZone)(nil),               // 58: wathena.admin.v1.ModZone
+	(*ModInfo)(nil),               // 59: wathena.admin.v1.ModInfo
+	(*ModList)(nil),               // 60: wathena.admin.v1.ModList
+	(*ModSwitchRequest)(nil),      // 61: wathena.admin.v1.ModSwitchRequest
+	(*Error)(nil),                 // 62: wathena.admin.v1.Error
+	nil,                           // 63: wathena.admin.v1.Item.RollsEntry
+	(*timestamppb.Timestamp)(nil), // 64: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),       // 65: google.protobuf.Struct
 }
 var file_wathena_admin_v1_admin_proto_depIdxs = []int32{
-	62, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
+	64, // 0: wathena.admin.v1.StaffMember.given_at:type_name -> google.protobuf.Timestamp
 	2,  // 1: wathena.admin.v1.StaffList.members:type_name -> wathena.admin.v1.StaffMember
 	1,  // 2: wathena.admin.v1.StaffList.roles:type_name -> wathena.admin.v1.Role
-	62, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
-	63, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
-	62, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
+	64, // 3: wathena.admin.v1.AuditEntry.at:type_name -> google.protobuf.Timestamp
+	65, // 4: wathena.admin.v1.AuditEntry.arguments:type_name -> google.protobuf.Struct
+	64, // 5: wathena.admin.v1.AuditEntry.reviewed_at:type_name -> google.protobuf.Timestamp
 	5,  // 6: wathena.admin.v1.AuditPage.entries:type_name -> wathena.admin.v1.AuditEntry
-	62, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
-	62, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
-	62, // 9: wathena.admin.v1.Sanction.lifted_at:type_name -> google.protobuf.Timestamp
+	64, // 7: wathena.admin.v1.Sanction.started_at:type_name -> google.protobuf.Timestamp
+	64, // 8: wathena.admin.v1.Sanction.ends_at:type_name -> google.protobuf.Timestamp
+	64, // 9: wathena.admin.v1.Sanction.lifted_at:type_name -> google.protobuf.Timestamp
 	9,  // 10: wathena.admin.v1.SanctionList.sanctions:type_name -> wathena.admin.v1.Sanction
-	62, // 11: wathena.admin.v1.ReportSummary.created_at:type_name -> google.protobuf.Timestamp
-	62, // 12: wathena.admin.v1.ReportSummary.closed_at:type_name -> google.protobuf.Timestamp
+	64, // 11: wathena.admin.v1.ReportSummary.created_at:type_name -> google.protobuf.Timestamp
+	64, // 12: wathena.admin.v1.ReportSummary.closed_at:type_name -> google.protobuf.Timestamp
 	12, // 13: wathena.admin.v1.ReportPage.reports:type_name -> wathena.admin.v1.ReportSummary
-	62, // 14: wathena.admin.v1.ChatLine.at:type_name -> google.protobuf.Timestamp
+	64, // 14: wathena.admin.v1.ChatLine.at:type_name -> google.protobuf.Timestamp
 	12, // 15: wathena.admin.v1.ReportDetail.report:type_name -> wathena.admin.v1.ReportSummary
 	14, // 16: wathena.admin.v1.ReportDetail.lines:type_name -> wathena.admin.v1.ChatLine
 	12, // 17: wathena.admin.v1.ReportDetail.earlier:type_name -> wathena.admin.v1.ReportSummary
 	9,  // 18: wathena.admin.v1.ReportDetail.sanctions:type_name -> wathena.admin.v1.Sanction
 	8,  // 19: wathena.admin.v1.CharacterSummary.position:type_name -> wathena.admin.v1.Position
 	9,  // 20: wathena.admin.v1.CharacterSummary.sanctions:type_name -> wathena.admin.v1.Sanction
-	62, // 21: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
-	62, // 22: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
-	62, // 23: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
+	64, // 21: wathena.admin.v1.LoginRecord.at:type_name -> google.protobuf.Timestamp
+	64, // 22: wathena.admin.v1.AccountSummary.created_at:type_name -> google.protobuf.Timestamp
+	64, // 23: wathena.admin.v1.AccountSummary.last_login:type_name -> google.protobuf.Timestamp
 	17, // 24: wathena.admin.v1.AccountSummary.characters:type_name -> wathena.admin.v1.CharacterSummary
 	18, // 25: wathena.admin.v1.AccountSummary.logins:type_name -> wathena.admin.v1.LoginRecord
 	9,  // 26: wathena.admin.v1.AccountSummary.ban:type_name -> wathena.admin.v1.Sanction
 	20, // 27: wathena.admin.v1.PlayerSearch.accounts:type_name -> wathena.admin.v1.AccountSummary
 	19, // 28: wathena.admin.v1.PlayerSearch.holder:type_name -> wathena.admin.v1.Owner
-	61, // 29: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
+	63, // 29: wathena.admin.v1.Item.rolls:type_name -> wathena.admin.v1.Item.RollsEntry
 	22, // 30: wathena.admin.v1.Storage.items:type_name -> wathena.admin.v1.Item
-	62, // 31: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
+	64, // 31: wathena.admin.v1.Mail.sent_at:type_name -> google.protobuf.Timestamp
 	22, // 32: wathena.admin.v1.Mail.items:type_name -> wathena.admin.v1.Item
 	26, // 33: wathena.admin.v1.CharacterDetail.stats:type_name -> wathena.admin.v1.Stats
 	25, // 34: wathena.admin.v1.CharacterDetail.currencies:type_name -> wathena.admin.v1.Currency
@@ -9507,62 +9848,66 @@ var file_wathena_admin_v1_admin_proto_depIdxs = []int32{
 	23, // 38: wathena.admin.v1.CharacterDetail.storages:type_name -> wathena.admin.v1.Storage
 	24, // 39: wathena.admin.v1.CharacterDetail.mails:type_name -> wathena.admin.v1.Mail
 	9,  // 40: wathena.admin.v1.CharacterDetail.sanctions:type_name -> wathena.admin.v1.Sanction
-	62, // 41: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
+	64, // 41: wathena.admin.v1.CharacterDetail.created_at:type_name -> google.protobuf.Timestamp
 	9,  // 42: wathena.admin.v1.CharacterDetail.ban:type_name -> wathena.admin.v1.Sanction
-	62, // 43: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
+	64, // 43: wathena.admin.v1.ItemMove.at:type_name -> google.protobuf.Timestamp
 	19, // 44: wathena.admin.v1.ItemMove.from:type_name -> wathena.admin.v1.Owner
 	19, // 45: wathena.admin.v1.ItemMove.to:type_name -> wathena.admin.v1.Owner
 	28, // 46: wathena.admin.v1.ItemHistory.moves:type_name -> wathena.admin.v1.ItemMove
 	19, // 47: wathena.admin.v1.ItemHistory.holder:type_name -> wathena.admin.v1.Owner
-	62, // 48: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
+	64, // 48: wathena.admin.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
 	19, // 49: wathena.admin.v1.LogEntry.from:type_name -> wathena.admin.v1.Owner
 	19, // 50: wathena.admin.v1.LogEntry.to:type_name -> wathena.admin.v1.Owner
 	30, // 51: wathena.admin.v1.CharacterLogs.entries:type_name -> wathena.admin.v1.LogEntry
 	32, // 52: wathena.admin.v1.RestoreRequest.items:type_name -> wathena.admin.v1.RestoreItem
 	19, // 53: wathena.admin.v1.RestoredItem.from:type_name -> wathena.admin.v1.Owner
 	34, // 54: wathena.admin.v1.RestoreResult.items:type_name -> wathena.admin.v1.RestoredItem
-	62, // 55: wathena.admin.v1.ProcessView.started_at:type_name -> google.protobuf.Timestamp
+	64, // 55: wathena.admin.v1.ProcessView.started_at:type_name -> google.protobuf.Timestamp
 	36, // 56: wathena.admin.v1.WorldView.zones:type_name -> wathena.admin.v1.ZoneView
 	37, // 57: wathena.admin.v1.WorldView.process:type_name -> wathena.admin.v1.ProcessView
 	38, // 58: wathena.admin.v1.WorldView.players:type_name -> wathena.admin.v1.OnlinePlayer
-	43, // 59: wathena.admin.v1.WorldView.restart:type_name -> wathena.admin.v1.RestartPlan
-	62, // 60: wathena.admin.v1.WorldView.now:type_name -> google.protobuf.Timestamp
-	62, // 61: wathena.admin.v1.RestartRequest.at:type_name -> google.protobuf.Timestamp
-	62, // 62: wathena.admin.v1.RestartPlan.at:type_name -> google.protobuf.Timestamp
-	62, // 63: wathena.admin.v1.RestartPlan.planned_at:type_name -> google.protobuf.Timestamp
-	62, // 64: wathena.admin.v1.EventRun.scheduled:type_name -> google.protobuf.Timestamp
-	62, // 65: wathena.admin.v1.EventRun.started:type_name -> google.protobuf.Timestamp
-	62, // 66: wathena.admin.v1.EventRun.ends:type_name -> google.protobuf.Timestamp
-	62, // 67: wathena.admin.v1.EventResult.scheduled:type_name -> google.protobuf.Timestamp
-	62, // 68: wathena.admin.v1.EventResult.started:type_name -> google.protobuf.Timestamp
-	62, // 69: wathena.admin.v1.EventResult.ended:type_name -> google.protobuf.Timestamp
-	63, // 70: wathena.admin.v1.EventOverride.trigger:type_name -> google.protobuf.Struct
-	62, // 71: wathena.admin.v1.EventOverride.changed_at:type_name -> google.protobuf.Timestamp
-	63, // 72: wathena.admin.v1.EventInfo.trigger:type_name -> google.protobuf.Struct
-	62, // 73: wathena.admin.v1.EventInfo.next_run:type_name -> google.protobuf.Timestamp
-	44, // 74: wathena.admin.v1.EventInfo.runs:type_name -> wathena.admin.v1.EventRun
-	45, // 75: wathena.admin.v1.EventInfo.results:type_name -> wathena.admin.v1.EventResult
-	46, // 76: wathena.admin.v1.EventInfo.override:type_name -> wathena.admin.v1.EventOverride
-	62, // 77: wathena.admin.v1.EventInfo.failed_at:type_name -> google.protobuf.Timestamp
-	47, // 78: wathena.admin.v1.EventList.events:type_name -> wathena.admin.v1.EventInfo
-	50, // 79: wathena.admin.v1.EventList.rotations:type_name -> wathena.admin.v1.RotationInfo
-	52, // 80: wathena.admin.v1.EventList.seasons:type_name -> wathena.admin.v1.SeasonInfo
-	62, // 81: wathena.admin.v1.WorldChange.at:type_name -> google.protobuf.Timestamp
-	49, // 82: wathena.admin.v1.RotationInfo.next:type_name -> wathena.admin.v1.WorldChange
-	49, // 83: wathena.admin.v1.RegionInfo.forced:type_name -> wathena.admin.v1.WorldChange
-	49, // 84: wathena.admin.v1.SeasonInfo.next:type_name -> wathena.admin.v1.WorldChange
-	51, // 85: wathena.admin.v1.SeasonInfo.regions:type_name -> wathena.admin.v1.RegionInfo
-	63, // 86: wathena.admin.v1.EventChange.trigger:type_name -> google.protobuf.Struct
-	62, // 87: wathena.admin.v1.ModSwitch.changed_at:type_name -> google.protobuf.Timestamp
-	62, // 88: wathena.admin.v1.ModZone.last_error_at:type_name -> google.protobuf.Timestamp
-	55, // 89: wathena.admin.v1.ModInfo.switches:type_name -> wathena.admin.v1.ModSwitch
-	56, // 90: wathena.admin.v1.ModInfo.zones:type_name -> wathena.admin.v1.ModZone
-	57, // 91: wathena.admin.v1.ModList.mods:type_name -> wathena.admin.v1.ModInfo
-	92, // [92:92] is the sub-list for method output_type
-	92, // [92:92] is the sub-list for method input_type
-	92, // [92:92] is the sub-list for extension type_name
-	92, // [92:92] is the sub-list for extension extendee
-	0,  // [0:92] is the sub-list for field type_name
+	45, // 59: wathena.admin.v1.WorldView.restart:type_name -> wathena.admin.v1.RestartPlan
+	64, // 60: wathena.admin.v1.WorldView.now:type_name -> google.protobuf.Timestamp
+	40, // 61: wathena.admin.v1.RetentionStatus.kinds:type_name -> wathena.admin.v1.RetentionKind
+	64, // 62: wathena.admin.v1.RetentionStatus.last_run:type_name -> google.protobuf.Timestamp
+	64, // 63: wathena.admin.v1.RetentionStatus.last_success:type_name -> google.protobuf.Timestamp
+	64, // 64: wathena.admin.v1.RetentionStatus.next_run:type_name -> google.protobuf.Timestamp
+	64, // 65: wathena.admin.v1.RestartRequest.at:type_name -> google.protobuf.Timestamp
+	64, // 66: wathena.admin.v1.RestartPlan.at:type_name -> google.protobuf.Timestamp
+	64, // 67: wathena.admin.v1.RestartPlan.planned_at:type_name -> google.protobuf.Timestamp
+	64, // 68: wathena.admin.v1.EventRun.scheduled:type_name -> google.protobuf.Timestamp
+	64, // 69: wathena.admin.v1.EventRun.started:type_name -> google.protobuf.Timestamp
+	64, // 70: wathena.admin.v1.EventRun.ends:type_name -> google.protobuf.Timestamp
+	64, // 71: wathena.admin.v1.EventResult.scheduled:type_name -> google.protobuf.Timestamp
+	64, // 72: wathena.admin.v1.EventResult.started:type_name -> google.protobuf.Timestamp
+	64, // 73: wathena.admin.v1.EventResult.ended:type_name -> google.protobuf.Timestamp
+	65, // 74: wathena.admin.v1.EventOverride.trigger:type_name -> google.protobuf.Struct
+	64, // 75: wathena.admin.v1.EventOverride.changed_at:type_name -> google.protobuf.Timestamp
+	65, // 76: wathena.admin.v1.EventInfo.trigger:type_name -> google.protobuf.Struct
+	64, // 77: wathena.admin.v1.EventInfo.next_run:type_name -> google.protobuf.Timestamp
+	46, // 78: wathena.admin.v1.EventInfo.runs:type_name -> wathena.admin.v1.EventRun
+	47, // 79: wathena.admin.v1.EventInfo.results:type_name -> wathena.admin.v1.EventResult
+	48, // 80: wathena.admin.v1.EventInfo.override:type_name -> wathena.admin.v1.EventOverride
+	64, // 81: wathena.admin.v1.EventInfo.failed_at:type_name -> google.protobuf.Timestamp
+	49, // 82: wathena.admin.v1.EventList.events:type_name -> wathena.admin.v1.EventInfo
+	52, // 83: wathena.admin.v1.EventList.rotations:type_name -> wathena.admin.v1.RotationInfo
+	54, // 84: wathena.admin.v1.EventList.seasons:type_name -> wathena.admin.v1.SeasonInfo
+	64, // 85: wathena.admin.v1.WorldChange.at:type_name -> google.protobuf.Timestamp
+	51, // 86: wathena.admin.v1.RotationInfo.next:type_name -> wathena.admin.v1.WorldChange
+	51, // 87: wathena.admin.v1.RegionInfo.forced:type_name -> wathena.admin.v1.WorldChange
+	51, // 88: wathena.admin.v1.SeasonInfo.next:type_name -> wathena.admin.v1.WorldChange
+	53, // 89: wathena.admin.v1.SeasonInfo.regions:type_name -> wathena.admin.v1.RegionInfo
+	65, // 90: wathena.admin.v1.EventChange.trigger:type_name -> google.protobuf.Struct
+	64, // 91: wathena.admin.v1.ModSwitch.changed_at:type_name -> google.protobuf.Timestamp
+	64, // 92: wathena.admin.v1.ModZone.last_error_at:type_name -> google.protobuf.Timestamp
+	57, // 93: wathena.admin.v1.ModInfo.switches:type_name -> wathena.admin.v1.ModSwitch
+	58, // 94: wathena.admin.v1.ModInfo.zones:type_name -> wathena.admin.v1.ModZone
+	59, // 95: wathena.admin.v1.ModList.mods:type_name -> wathena.admin.v1.ModInfo
+	96, // [96:96] is the sub-list for method output_type
+	96, // [96:96] is the sub-list for method input_type
+	96, // [96:96] is the sub-list for extension type_name
+	96, // [96:96] is the sub-list for extension extendee
+	0,  // [0:96] is the sub-list for field type_name
 }
 
 func init() { file_wathena_admin_v1_admin_proto_init() }
@@ -9570,15 +9915,15 @@ func file_wathena_admin_v1_admin_proto_init() {
 	if File_wathena_admin_v1_admin_proto != nil {
 		return
 	}
-	file_wathena_admin_v1_admin_proto_msgTypes[46].OneofWrappers = []any{}
-	file_wathena_admin_v1_admin_proto_msgTypes[53].OneofWrappers = []any{}
+	file_wathena_admin_v1_admin_proto_msgTypes[48].OneofWrappers = []any{}
+	file_wathena_admin_v1_admin_proto_msgTypes[55].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_admin_v1_admin_proto_rawDesc), len(file_wathena_admin_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   62,
+			NumMessages:   64,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

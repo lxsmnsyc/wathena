@@ -115,6 +115,8 @@ type options struct {
 	roles  map[string][]string
 	owners []string
 	limits func(*account.Limits)
+	// retention is GET /retention's job, or nil for none.
+	retention admin.Retention
 }
 
 func setup(t *testing.T, o options) *env {
@@ -153,7 +155,8 @@ func setup(t *testing.T, o options) *env {
 	if owners == nil {
 		owners = []string{"Owner"}
 	}
-	h, err := admin.New(admin.Config{Pool: acct, Auth: svc, World: e.world, Roles: roles, Owners: owners, Log: slog.New(slog.DiscardHandler)})
+	h, err := admin.New(admin.Config{Pool: acct, Auth: svc, World: e.world, Roles: roles, Owners: owners, Retention: o.retention,
+		Log: slog.New(slog.DiscardHandler)})
 	if err != nil {
 		t.Fatal(err)
 	}

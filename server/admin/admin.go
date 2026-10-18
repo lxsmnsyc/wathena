@@ -17,7 +17,8 @@
 // GET /items/{serial}/history, POST /restore and POST
 // /audit/{id}/review. Step 3 (decision 0030) has the report queue and
 // the sanctions (moderation.go). Step 4 (decision 0031) has the world,
-// events and mods tools (tools.go).
+// events and mods tools (tools.go). Phase 8 step 3 (decision 0049) has
+// GET /retention (retention.go).
 //
 // The API reaches the world through World, so a distributed build can
 // put the world service behind the network.
@@ -89,7 +90,9 @@ type Config struct {
 	// Roles are the configured roles, and Owners the config's owners.
 	Roles  *staff.Roles
 	Owners []string
-	Log    *slog.Logger
+	// Retention is the retention job, for GET /retention. It may be nil.
+	Retention Retention
+	Log       *slog.Logger
 }
 
 // Handler serves the admin API.
@@ -132,6 +135,7 @@ func New(cfg Config) (*Handler, error) {
 	m.HandleFunc("DELETE "+Prefix+"sanctions/{id}", h.call(anyModeration, change, h.liftSanction))
 	m.HandleFunc("GET "+Prefix+"sanctions", h.call(anyModeration, read, h.searchSanctions))
 	m.HandleFunc("GET "+Prefix+"world", h.call("world.read", read, h.worldView))
+	m.HandleFunc("GET "+Prefix+"retention", h.call("world.read", read, h.retention))
 	m.HandleFunc("POST "+Prefix+"announce", h.call("world.announce", change, h.announce))
 	m.HandleFunc("POST "+Prefix+"restart", h.call("world.restart", changeRecent, h.planRestart))
 	m.HandleFunc("DELETE "+Prefix+"restart", h.call("world.restart", changeRecent, h.cancelRestart))

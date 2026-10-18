@@ -18,7 +18,8 @@ import (
 
 // Block lists and sanctions are saved with the character. The chat log
 // and reports are written by ChatLog, on its own goroutine (decision
-// 0018).
+// 0018). The retention job deletes old lines (DeleteOldChatLines,
+// decision 0049).
 
 func timestamp(t time.Time) pgtype.Timestamptz { return pgtype.Timestamptz{Time: t, Valid: true} }
 
@@ -101,22 +102,14 @@ const (
 	// DefaultChatQueue is how many lines and reports may wait for the
 	// database. More are dropped, and the drops are logged.
 	DefaultChatQueue = 10_000
-	// DefaultChatRetention is how long chat lines are kept (strategy
-	// section 7.10).
-	DefaultChatRetention = 30 * 24 * time.Hour
 	// chatBatch is the most lines one transaction writes.
 	chatBatch = 500
 	// chatFlush is how long a line waits for others to join its batch.
 	chatFlush = time.Second
-	// retentionInterval is how often old lines are deleted.
-	retentionInterval = 12 * time.Hour
 )
 
 // ChatLogOptions configure a ChatLog.
 type ChatLogOptions struct {
-	// Retention is how long lines are kept, except those of open
-	// reports. DefaultChatRetention when 0.
-	Retention time.Duration
 	// Queue is DefaultChatQueue when 0.
 	Queue int
 	Log   *slog.Logger
@@ -127,13 +120,12 @@ type ChatLogOptions struct {
 // are written in the order they came, so a report's lines are in the
 // log before the report.
 type ChatLog struct {
-	pool      *pgxpool.Pool
-	q         *db.Queries
-	log       *slog.Logger
-	retention time.Duration
-	in        chan chatItem
-	stop      chan struct{}
-	done      sync.WaitGroup
+	pool *pgxpool.Pool
+	q    *db.Queries
+	log  *slog.Logger
+	in   chan chatItem
+	stop chan struct{}
+	done sync.WaitGroup
 
 	mu      sync.Mutex
 	dropped int
@@ -146,12 +138,9 @@ type chatItem struct {
 
 // NewChatLog starts a chat log on a pool. Close stops it.
 func NewChatLog(pool *pgxpool.Pool, opt ChatLogOptions) *ChatLog {
-	l := &ChatLog{pool: pool, q: db.New(pool), log: opt.Log, retention: opt.Retention, stop: make(chan struct{})}
+	l := &ChatLog{pool: pool, q: db.New(pool), log: opt.Log, stop: make(chan struct{})}
 	if l.log == nil {
 		l.log = slog.Default()
-	}
-	if l.retention <= 0 {
-		l.retention = DefaultChatRetention
 	}
 	n := opt.Queue
 	if n <= 0 {
@@ -159,7 +148,6 @@ func NewChatLog(pool *pgxpool.Pool, opt ChatLogOptions) *ChatLog {
 	}
 	l.in = make(chan chatItem, n)
 	l.done.Go(l.write)
-	l.done.Go(l.expire)
 	return l
 }
 
@@ -299,37 +287,6 @@ func writeReport(ctx context.Context, q *db.Queries, r *chat.Report) error {
 		lp.LineIds = append(lp.LineIds, uuidOf(ln.ID))
 	}
 	return q.InsertReportLines(ctx, lp)
-}
-
-// expire deletes old lines at start and every retentionInterval.
-func (l *ChatLog) expire() {
-	t := time.NewTicker(retentionInterval)
-	defer t.Stop()
-	for {
-		if _, err := l.DeleteOld(context.Background(), time.Now().Add(-l.retention)); err != nil {
-			l.log.Warn("cannot delete old chat lines", "err", err)
-		}
-		select {
-		case <-t.C:
-		case <-l.stop:
-			return
-		}
-	}
-}
-
-// DeleteOld deletes the lines from before a time, except those of open
-// reports, and returns how many went.
-func (l *ChatLog) DeleteOld(ctx context.Context, before time.Time) (int64, error) {
-	var total int64
-	for {
-		ctx, cancel := context.WithTimeout(ctx, saveTimeout)
-		n, err := l.q.DeleteOldChatLines(ctx, timestamp(before))
-		cancel()
-		total += n
-		if err != nil || n < 10000 {
-			return total, err
-		}
-	}
 }
 
 // StoredReport is a saved report with its chat lines.

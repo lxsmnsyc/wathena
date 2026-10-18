@@ -102,6 +102,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/restart"
+	"github.com/lxsmnsyc/wathena/server/retention"
 	"github.com/lxsmnsyc/wathena/server/rotation"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -249,6 +250,9 @@ func runAll(name string, args []string) error {
 	}
 	defer func() { _ = files.Close() }()
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	for _, w := range cfg.Warnings {
+		log.Warn("config: " + w)
+	}
 	log.Info("lua runtime ready", "lua", script.LuaVersion, "backend", script.Backend)
 	web, clientFrom, err := loadClient(cfg)
 	if err != nil {
@@ -442,9 +446,6 @@ func runAll(name string, args []string) error {
 	jail := zone.Jail{Map: assetName(cfg.Jail.Map), Cells: cfg.Jail.Cells}
 	if !slices.Contains(names, jail.Map) {
 		log.Warn("the jail map does not run: jailed players stay where they are and cannot warp", "jail", jail.Map)
-	}
-	if cfg.Chat.LogDays > 30 {
-		log.Warn("chat lines are kept longer than the 30 days of the privacy policy", "days", cfg.Chat.LogDays)
 	}
 	items := item.New(loaded.items.Data)
 	// Where the points of removed maps go, which every zone shares
@@ -731,13 +732,21 @@ func runAll(name string, args []string) error {
 	var chatLog *store.ChatLog
 	memoryLog := &chat.MemoryLog{}
 	if pool != nil {
-		chatLog = store.NewChatLog(pool, store.ChatLogOptions{Retention: time.Duration(cfg.Chat.LogDays) * 24 * time.Hour, Log: log})
+		chatLog = store.NewChatLog(pool, store.ChatLogOptions{Log: log})
 		hub.Log = chatLog
 	} else {
 		hub.Log = memoryLog
 	}
 	var accounts *account.Service
 	var adminAPI *admin.Handler
+	// The retention job deletes old login records, chat lines, log
+	// partitions and audit rows once a day (decision 0049). It needs the
+	// account role's pool for the login records and the audit log, so it
+	// starts once that pool is open, or without it with --dev.
+	var retentionJob *retention.Job
+	if pool != nil {
+		retentionJob = &retention.Job{Game: pool, Periods: cfg.Retention, Log: log}
+	}
 	// The world side of the admin API: online players from their zones,
 	// offline ones and the logs from the database, and restores
 	// (decision 0029).
@@ -791,9 +800,10 @@ func runAll(name string, args []string) error {
 			CheckName: hub.Filter.CheckName, Guilds: accountGuilds{socials}, Closed: planner.Closed,
 			// The account page asks the world about block lists, reports,
 			// sanctions and exports (decision 0032).
-			Game:    staffWorld.AccountPage(),
-			Privacy: account.Privacy{Contact: cfg.Privacy.Contact, Text: cfg.Privacy.Text, ChatLogDays: cfg.Chat.LogDays},
-			Owners:  cfg.Staff.Owners,
+			Game: staffWorld.AccountPage(),
+			Privacy: account.Privacy{Contact: cfg.Privacy.Contact, Text: cfg.Privacy.Text, LoginIPDays: cfg.Retention.LoginIPDays,
+				ChatLogDays: cfg.Retention.ChatDays, ItemLogDays: cfg.Retention.ItemLogDays, AuditDays: cfg.Retention.AuditDays},
+			Owners: cfg.Staff.Owners,
 			NewCharacter: func(name string, look account.Look) character.Character {
 				sex := uint32(0)
 				if look.Male {
@@ -814,10 +824,17 @@ func runAll(name string, args []string) error {
 		// (decision 0036).
 		staffWorld.SetSessions(accounts)
 		go accounts.Run(ctx)
+		// The retention job deletes login records and audit rows as the
+		// account role, and the admin API shows it.
+		var retentionStatus admin.Retention
+		if retentionJob != nil {
+			retentionJob.Account = pool
+			retentionStatus = retentionJob
+		}
 		// The admin API runs on the account service's origin and pool. It
 		// reaches the world in this process through staffWorld.
 		adminAPI, err = admin.New(admin.Config{Pool: pool, Auth: accounts, World: staffWorld, Roles: cfg.Roles,
-			Owners: cfg.Staff.Owners, Log: log})
+			Owners: cfg.Staff.Owners, Retention: retentionStatus, Log: log})
 		if err != nil {
 			return err
 		}
@@ -828,6 +845,9 @@ func runAll(name string, args []string) error {
 		go changes.Run(ctx, clock)
 	}
 	go planner.Run(ctx)
+	if retentionJob != nil {
+		go retentionJob.Run(ctx)
+	}
 	go expireMail(ctx, mails, st, worldRules, clock, log)
 	if st != nil {
 		restoreAutotraders(ctx, st, gw.Characters, w, rules.MarketOrDefault(worldRules), log)
@@ -895,6 +915,9 @@ func runAll(name string, args []string) error {
 	if cfg.DebugAddr != "" {
 		dbg := http.NewServeMux()
 		dbg.Handle("/", reg.Handler())
+		if retentionJob != nil {
+			dbg.Handle("GET /debug/wathena/metrics/prometheus", prometheusHandler(retentionJob))
+		}
 		if cfg.Dev {
 			// Mod reloads and the item audit are for development only.
 			dbg.Handle("POST /debug/wathena/mods/reload", reloadHandler(loaded.set, w, log))

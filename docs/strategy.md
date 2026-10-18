@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, was built the same day.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, and step 3, retention jobs and the Compose config, were built the same day.
 
 Done:
 
@@ -159,6 +159,13 @@ Done:
   - `--every` runs as a long-lived process and prunes to the newest backup of each of the last 7 days and 4 ISO weeks by default.
   - `wactl world verify-backup` restores a backup into a temporary database as a role with only `CREATEDB`, checks it against the manifest, and drops it. `wactl world restore` decrypts, and plain backups still restore.
   - Compose has a `backup` service and an opt-in `backup-verify` service, which puts the identity on the server.
+
+- Phase 8 step 3, retention jobs and the Compose config ([decision 0049](decisions/0049-retention.md)):
+  - The `retention` block of `waserver.yml` sets the days for login IP addresses (90), chat lines (30), the item and zeny logs (180) and the GM audit log (730), each 1 to 3650. A period above its default warns at start and on the admin World screen. `chat.log_days` still works, with a warning.
+  - One job in `waserver`, at start and every 24 hours, behind a PostgreSQL advisory lock, deletes each kind and logs the counts. Item and zeny log months are dropped whole through the `SECURITY DEFINER` function `drop_old_log_partitions`, and audit rows through `delete_old_staff_audit`, which keeps rows that wait for a review. The chat and login cleanups moved into it.
+  - `GET /admin/api/v1/retention` (`world.read`) and the World screen show the periods, the last run and the counts. The debug address serves Prometheus metrics of the job.
+  - The privacy page shows the periods in effect, the backups row and the note that item logs may be kept up to 31 days longer.
+  - `maps` and `start_map` moved into a `classic:` block that procedural worlds ignore, so the default Compose config runs both world modes. The old keys still work, with a warning.
 
 Open review items:
 
@@ -1455,10 +1462,10 @@ Privacy:
 | Account email | Life of the account | Used for login recovery and notices only. |
 | IP addresses on login records | 90 days | Needed for ban evasion checks. Then deleted. |
 | Chat logs | 30 days | Kept longer only when attached to a report, until the report is closed. |
-| Item and zeny logs | 180 days | Needed to trace duplication and theft. |
-| GM audit logs | 2 years | Needed to review staff actions. |
+| Item and zeny logs | 180 days | Needed to trace duplication and theft. Deleted a month at a time, so kept up to 31 days longer. |
+| GM audit logs | 2 years | Needed to review staff actions. A row that waits for a review is kept until it is reviewed. |
 
-Server owners can shorten these periods. Lengthening them is a setting with a warning in the admin tools.
+Server owners can shorten these periods. Lengthening them is a setting with a warning in the admin tools. The `retention` block of `waserver.yml` sets them, and a daily job deletes older data ([decision 0049](decisions/0049-retention.md)). Backups keep deleted data for up to 4 weeks with the default schedule (section 7.8).
 
 Player rights:
 
@@ -3268,6 +3275,12 @@ Progress:
   - Restore tests: `wactl world verify-backup` restores into a temporary database as the role `wathena_verify`, which has only `CREATEDB`, checks the hash, the migrations and the counts, and drops the database. By default it runs on the owner's machine. The opt-in `backup-verify` Compose service runs it on the server, and the guide warns that the server then holds the identity.
   - Compose: a `backup` service with a `backups` volume and the recipients from a secret. The smoke test makes an encrypted backup, verifies it and restores it.
   - Copies to other machines, an admin screen for backups and point-in-time recovery are out of scope.
+- Step 3 is built (2026-10-18), [decision 0049](decisions/0049-retention.md):
+  - Retention jobs: the `retention` block sets each period of section 7.10, 1 to 3650 days, with a warning above the defaults. One job in `waserver` deletes login records, chat lines (except those of open reports), item and zeny log months and audit rows (except those that wait for a review), at start and every 24 hours. An advisory lock keeps it to one process.
+  - Database rights: `drop_old_log_partitions` and `delete_old_staff_audit` are `SECURITY DEFINER` functions, as `ensure_log_partitions` is. The game role still cannot drop tables, and the account role still cannot delete audit rows.
+  - Visibility: the job logs its counts, exports Prometheus metrics of the rows deleted and the last success on the debug address, and `GET /admin/api/v1/retention` (`world.read`) shows the periods and the last run on the World screen.
+  - Privacy page: the periods in effect, the backups row, and the 31 days of the item logs.
+  - Compose config: `maps` and `start_map` are in a `classic:` block that procedural worlds ignore, so `deploy/compose/waserver.yml` runs both modes, and the smoke test uses it.
 
 ### Phase 9: Modding ecosystem
 

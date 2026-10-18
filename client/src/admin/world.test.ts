@@ -1,7 +1,12 @@
 import { create } from '@bufbuild/protobuf';
 import { timestampDate, timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { describe, expect, it } from 'vitest';
-import { RestartPlanSchema, ZoneViewSchema } from '../gen/wathena/admin/v1/admin_pb';
+import {
+  RestartPlanSchema,
+  RetentionKindSchema,
+  RetentionStatusSchema,
+  ZoneViewSchema,
+} from '../gen/wathena/admin/v1/admin_pb';
 import {
   announceError,
   bytesText,
@@ -10,6 +15,8 @@ import {
   msText,
   planText,
   restartRequest,
+  retentionRow,
+  retentionRunText,
   shownZones,
   uptimeText,
 } from './world';
@@ -104,5 +111,39 @@ describe('restartRequest', () => {
 describe('localInput', () => {
   it('writes a datetime-local value in the viewer time zone', () => {
     expect(localInput(new Date(2026, 0, 2, 3, 4, 59))).toBe('2026-01-02T03:04');
+  });
+});
+
+describe('retention', () => {
+  it('writes a kind as a row', () => {
+    const k = create(RetentionKindSchema, {
+      kind: 'chat',
+      days: 45,
+      defaultDays: 30,
+      lastDeleted: 12n,
+      deletedSinceStart: 40n,
+    });
+    expect(retentionRow(k)).toEqual(['Chat lines', '45 days', '30 days', '12', '40']);
+    expect(
+      retentionRow(create(RetentionKindSchema, { kind: 'new_kind', days: 1, defaultDays: 1 }))[0],
+    ).toBe('new_kind');
+  });
+
+  it('writes the last run', () => {
+    const at = timestampFromDate(new Date('2026-10-18T03:00:00Z'));
+    expect(retentionRunText(create(RetentionStatusSchema, {}))).toBe(
+      'The retention job has not run yet in this process.',
+    );
+    expect(
+      retentionRunText(create(RetentionStatusSchema, { lastRun: at, skipped: true })),
+    ).toContain('another process');
+    expect(
+      retentionRunText(create(RetentionStatusSchema, { lastRun: at, lastError: 'chat: timeout' })),
+    ).toContain('failed: chat: timeout');
+    const ok = retentionRunText(
+      create(RetentionStatusSchema, { lastRun: at, partitionsDropped: 2, nextRun: at }),
+    );
+    expect(ok).toContain('deleted old data. It dropped 2 month partitions');
+    expect(ok).toContain('The next run is at');
   });
 });

@@ -1,7 +1,8 @@
 // The world screen (decision 0031): the zones with their last minute of
 // ticks, the process, the players online, the announcement box and the
 // restart planner with its countdown. The dashboard loads again every 5
-// seconds while the screen shows.
+// seconds while the screen shows. The retention periods and the
+// retention job's last run show below, loaded once (decision 0049).
 
 import { create } from '@bufbuild/protobuf';
 import { timestampDate, timestampFromDate } from '@bufbuild/protobuf/wkt';
@@ -9,6 +10,8 @@ import {
   type RestartPlan,
   type RestartRequest,
   RestartRequestSchema,
+  type RetentionKind,
+  type RetentionStatus,
   type WorldView,
   type ZoneView,
 } from '../gen/wathena/admin/v1/admin_pb';
@@ -139,6 +142,46 @@ export function planText(p: RestartPlan): string {
 export function localInput(d: Date): string {
   const pad = (n: number): string => String(n).padStart(2, '0');
   return `${String(d.getFullYear())}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** The data of each retention kind, for people. */
+const RETENTION_NAMES: Record<string, string> = {
+  login_ips: 'Login records with IP addresses',
+  chat: 'Chat lines',
+  item_log: 'Item log',
+  zeny_log: 'Zeny log',
+  audit: 'Staff audit log',
+};
+
+/** A retention kind's row: data, kept, default, last run, since start. */
+export function retentionRow(k: RetentionKind): string[] {
+  const days = (n: number): string => (n === 1 ? '1 day' : `${String(n)} days`);
+  return [
+    RETENTION_NAMES[k.kind] ?? k.kind,
+    days(k.days),
+    days(k.defaultDays),
+    String(k.lastDeleted),
+    String(k.deletedSinceStart),
+  ];
+}
+
+/** The retention job's last run for people. */
+export function retentionRunText(s: RetentionStatus): string {
+  if (s.lastRun === undefined) {
+    return 'The retention job has not run yet in this process.';
+  }
+  const next = s.nextRun === undefined ? '' : ` The next run is at ${when(s.nextRun)}.`;
+  if (s.skipped) {
+    return `The last run at ${when(s.lastRun)} found the job running in another process, and skipped.${next}`;
+  }
+  const dropped =
+    s.partitionsDropped > 0
+      ? ` It dropped ${String(s.partitionsDropped)} month partitions of the logs.`
+      : '';
+  if (s.lastError !== '') {
+    return `The last run at ${when(s.lastRun)} failed: ${s.lastError}.${dropped}${next}`;
+  }
+  return `The last run at ${when(s.lastRun)} deleted old data.${dropped}${next}`;
 }
 
 /** The screen's state, kept while it shows. */
@@ -281,6 +324,7 @@ export function renderWorld(ctx: Context, section: HTMLElement): void {
     }
   };
 
+  section.append(retentionPanel(ctx));
   if (ctx.can('world.announce')) {
     tools.append(announceForm(ctx, maps));
   }
@@ -312,6 +356,36 @@ export function renderWorld(ctx: Context, section: HTMLElement): void {
     showCountdown();
   }, 1000);
   ctx.run(loop());
+}
+
+/** The retention periods and the job's last run, loaded once. */
+function retentionPanel(ctx: Context): HTMLElement {
+  const panel = el('div', '', 'admin-retention');
+  const run = el('p');
+  const warnings = el('ul', '', 'admin-error');
+  const kinds = table([
+    'Data',
+    'Kept',
+    'Default',
+    'Deleted by the last run',
+    'Deleted since the start',
+  ]);
+  panel.append(el('h3', 'Retention'), warnings, run, kinds.table);
+  ctx.run(
+    (async () => {
+      const r = await ctx.api.retention();
+      if (!r.ok) {
+        run.textContent = r.message;
+        return;
+      }
+      const s = r.value;
+      warnings.replaceChildren(...s.warnings.map((w) => el('li', w)));
+      run.textContent = retentionRunText(s);
+      run.className = s.lastError === '' ? '' : 'admin-error';
+      kinds.body.replaceChildren(...s.kinds.map((k) => row(retentionRow(k))));
+    })(),
+  );
+  return panel;
 }
 
 /** The announcement box: a line, and a map or the world. */

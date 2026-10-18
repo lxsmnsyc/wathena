@@ -7,9 +7,9 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1;adminv1";
 
-// The admin API's messages (decisions 0028, 0029, 0030 and 0031). The API
-// is JSON at /admin/api/v1/, in the protobuf JSON form of these messages,
-// with lowerCamelCase field names.
+// The admin API's messages (decisions 0028, 0029, 0030, 0031 and
+// 0049). The API is JSON at /admin/api/v1/, in the protobuf JSON form of
+// these messages, with lowerCamelCase field names.
 
 // Me answers GET /me: who the session is and what it may do.
 message Me {
@@ -599,6 +599,45 @@ message WorldView {
   RestartPlan restart = 5;
   // now is the server clock.
   google.protobuf.Timestamp now = 6;
+}
+
+// RetentionKind is one kind of data that the retention job deletes
+// (decision 0049).
+message RetentionKind {
+  // kind is login_ips, chat, item_log, zeny_log or audit.
+  string kind = 1;
+  // days is how long the server keeps it, and default_days the period
+  // of strategy section 7.10. item_log and zeny_log share
+  // retention.item_log_days.
+  int32 days = 2;
+  int32 default_days = 3;
+  // last_deleted counts the rows the last run deleted.
+  // deleted_since_start counts them since the server started.
+  int64 last_deleted = 4;
+  int64 deleted_since_start = 5;
+}
+
+// RetentionStatus answers GET /retention: the periods in effect and what
+// the retention job did in this process.
+message RetentionStatus {
+  repeated RetentionKind kinds = 1;
+  // last_run is when the last run started, and last_success when the
+  // last run that deleted everything it had to started. Unset before
+  // the first.
+  google.protobuf.Timestamp last_run = 2;
+  google.protobuf.Timestamp last_success = 3;
+  // next_run is when the next run starts.
+  google.protobuf.Timestamp next_run = 4;
+  // last_error is the last run's error, or empty.
+  string last_error = 5;
+  // skipped is set when the last run found another process running the
+  // job, which holds its lock.
+  bool skipped = 6;
+  // partitions_dropped are the month partitions of the item and zeny
+  // logs that the last run dropped.
+  int32 partitions_dropped = 7;
+  // warnings name the periods that are longer than the defaults.
+  repeated string warnings = 8;
 }
 
 // AnnounceRequest is the body of POST /announce.

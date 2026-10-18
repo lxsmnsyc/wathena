@@ -99,7 +99,8 @@ func (g *fakeGame) Deleting(_ context.Context, _ int64, text string) {
 func withGame(g *fakeGame) func(*account.Config) {
 	return func(c *account.Config) {
 		c.Game = g
-		c.Privacy = account.Privacy{Contact: "privacy@example.com", Text: "We run this server for fun.\n\nAsk us <anything>.", ChatLogDays: 45}
+		c.Privacy = account.Privacy{Contact: "privacy@example.com", Text: "We run this server for fun.\n\nAsk us <anything>.", ChatLogDays: 45,
+			LoginIPDays: 60}
 	}
 }
 
@@ -542,17 +543,26 @@ func TestBannedAccountMayAskForDeletion(t *testing.T) {
 	}
 }
 
+// TestPrivacyPage: the owner's text, and the retention periods in
+// effect with the backups and the item log notes (decision 0049).
 func TestPrivacyPage(t *testing.T) {
 	e := setup(t, withGame(newFakeGame()))
 	body, _ := e.page(e.c, "/account/privacy")
-	for _, want := range []string{"privacy@example.com", "We run this server for fun.", "Ask us &lt;anything&gt;.", "45 days",
-		"90 days", "180 days", "2 years", "14 days"} {
+	for _, want := range []string{"privacy@example.com", "We run this server for fun.", "Ask us &lt;anything&gt;.",
+		// The configured chat and login periods, and the defaults of the
+		// item logs and the audit log.
+		"<td>Chat lines</td><td>45 days</td>", "<td>Login records with IP addresses</td><td>60 days</td>",
+		"<td>Item and zeny logs</td><td>180 days</td>", "<td>Staff audit log</td><td>2 years</td>", "14 days",
+		"<td>Backups</td><td>Up to 4 weeks</td>", "stays in backups for up to 4 weeks",
+		"may be kept up to 31 days longer", "kept until it is reviewed"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the privacy page lacks %q: %s", want, body)
 		}
 	}
-	if strings.Contains(body, "<anything>") {
-		t.Error("the owner's text is not escaped")
+	for _, gone := range []string{"<anything>", "later version", "90 days"} {
+		if strings.Contains(body, gone) {
+			t.Errorf("the privacy page has %q", gone)
+		}
 	}
 }
 

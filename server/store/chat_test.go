@@ -10,7 +10,7 @@ import (
 )
 
 // TestChatLogAndReports writes lines and a report, and checks that the
-// retention keeps the lines of an open report only.
+// retention job's delete keeps the lines of an open report only.
 func TestChatLogAndReports(t *testing.T) {
 	_, game := migrated(t)
 	ctx := timeout(t)
@@ -33,7 +33,7 @@ func TestChatLogAndReports(t *testing.T) {
 	if err := l.Close(closeCtx); err != nil {
 		t.Fatal(err)
 	}
-	l = store.NewChatLog(game, store.ChatLogOptions{Retention: time.Hour})
+	l = store.NewChatLog(game, store.ChatLogOptions{})
 	defer func() { _ = l.Close(context.Background()) }()
 	reports, err := l.Reports(ctx, 10)
 	if err != nil {
@@ -46,8 +46,8 @@ func TestChatLogAndReports(t *testing.T) {
 	if r.Status != "open" || r.Target != "Alice" || r.Line != lines[1].ID || len(r.Context) != 2 || r.Context[1].Text != "rude" {
 		t.Errorf("report %+v", r)
 	}
-	// Old lines go, except those of the open report. The new log's
-	// own retention run may have deleted them already.
+	// Old lines go, except those of the open report (the retention
+	// job's delete, decision 0049).
 	left := func() int {
 		var n int
 		if err := game.QueryRow(ctx, `SELECT count(*) FROM chat_log`).Scan(&n); err != nil {
@@ -55,13 +55,13 @@ func TestChatLogAndReports(t *testing.T) {
 		}
 		return n
 	}
-	if _, err := l.DeleteOld(ctx, time.Now().Add(-30*24*time.Hour)); err != nil || left() != 2 {
+	if _, err := store.DeleteOldChatLines(ctx, game, time.Now().Add(-30*24*time.Hour)); err != nil || left() != 2 {
 		t.Errorf("%d lines left, %v; want the report's 2", left(), err)
 	}
 	if ok, err := l.CloseReport(ctx, r.ID); err != nil || !ok {
 		t.Fatalf("close: %v %v", ok, err)
 	}
-	if n, err := l.DeleteOld(ctx, time.Now().Add(-30*24*time.Hour)); err != nil || n != 2 || left() != 0 {
+	if n, err := store.DeleteOldChatLines(ctx, game, time.Now().Add(-30*24*time.Hour)); err != nil || n != 2 || left() != 0 {
 		t.Errorf("deleted %d, %v after closing; want 2", n, err)
 	}
 	reports, _ = l.Reports(ctx, 10)

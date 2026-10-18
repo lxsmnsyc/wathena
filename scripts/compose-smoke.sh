@@ -26,17 +26,11 @@ work=$(mktemp -d "$PWD/smoke.XXXXXX")
 export COMPOSE_PROJECT_NAME=wathena-smoke
 export WATHENA_DOMAIN=localhost WATHENA_HTTP_PORT=18080 WATHENA_HTTPS_PORT=18443
 export WATHENA_EDGE_SUBNET=${WATHENA_EDGE_SUBNET:-172.30.81.0/24} WATHENA_PROXY_IP=${WATHENA_PROXY_IP:-172.30.81.10}
-export WATHENA_CONFIG="$work/waserver.yml"
 # The test's backup key, so the secrets of a local stack stay as they are.
 export WATHENA_BACKUP_RECIPIENTS="$work/backup_recipients" WATHENA_BACKUP_IDENTITY="$work/backup_identity"
-# A procedural world runs its generated maps, so the config names no
-# maps.
-cat >"$WATHENA_CONFIG" <<'EOF'
-listen: 0.0.0.0:8300
-assets: /srv/assets
-mode: renewal
-EOF
-chmod 644 "$WATHENA_CONFIG"
+# The stack runs the default waserver.yml. Its maps are in the classic
+# block, which the procedural world ignores (decision 0049).
+export WATHENA_CONFIG=./waserver.yml
 compose() { docker compose --env-file .env.example "$@"; }
 cleanup() {
 	status=$?

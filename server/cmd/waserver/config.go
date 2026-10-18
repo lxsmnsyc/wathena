@@ -23,6 +23,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/retention"
 	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
@@ -36,32 +37,40 @@ type options struct {
 	Listen    string `yaml:"listen"`
 	PublicURL string `yaml:"public_url"`
 	// Origins is nil when neither the file nor a flag set it.
-	Origins        *list      `yaml:"origins"`
-	PlayURL        string     `yaml:"play_url"`
-	TrustedProxies list       `yaml:"trusted_proxies"`
-	Assets         string     `yaml:"assets"`
-	ClientDir      string     `yaml:"client_dir"`
-	StartMap       string     `yaml:"start_map"`
-	Maps           list       `yaml:"maps"`
-	Mode           string     `yaml:"mode"`
-	Captcha        string     `yaml:"captcha"`
-	Dev            bool       `yaml:"dev"`
-	Build          string     `yaml:"build"`
-	StartItems     string     `yaml:"start_items"`
-	StartJob       string     `yaml:"start_job"`
-	Seed           string     `yaml:"seed"`
-	DebugAddr      string     `yaml:"debug_addr"`
-	ProfileDir     string     `yaml:"profile_dir"`
-	Mods           modOptions `yaml:"mods"`
+	Origins        *list  `yaml:"origins"`
+	PlayURL        string `yaml:"play_url"`
+	TrustedProxies list   `yaml:"trusted_proxies"`
+	Assets         string `yaml:"assets"`
+	ClientDir      string `yaml:"client_dir"`
+	// StartMap and Maps at the top level are deprecated for classic
+	// worlds: classic.start_map and classic.maps replace them. Flags set
+	// these, and procedural worlds still read them.
+	StartMap string `yaml:"start_map"`
+	Maps     list   `yaml:"maps"`
+	// Classic are the settings that only classic worlds read (decision
+	// 0049).
+	Classic    classicOptions `yaml:"classic"`
+	Mode       string         `yaml:"mode"`
+	Captcha    string         `yaml:"captcha"`
+	Dev        bool           `yaml:"dev"`
+	Build      string         `yaml:"build"`
+	StartItems string         `yaml:"start_items"`
+	StartJob   string         `yaml:"start_job"`
+	Seed       string         `yaml:"seed"`
+	DebugAddr  string         `yaml:"debug_addr"`
+	ProfileDir string         `yaml:"profile_dir"`
+	Mods       modOptions     `yaml:"mods"`
 	// ShutdownCountdown is how long players are warned before the server
 	// stops on SIGTERM or an interrupt. 0 stops at once.
 	ShutdownCountdown time.Duration `yaml:"shutdown_countdown"`
 	// TimeZone is the server's time zone, as an IANA name such as
 	// Asia/Manila. Schedules and world events match their times there.
 	TimeZone string `yaml:"time_zone"`
-	// Chat are the chat rate limits and the chat log's retention
-	// (decision 0018).
+	// Chat are the chat rate limits (decision 0018).
 	Chat chatOptions `yaml:"chat"`
+	// Retention are the days the server keeps data that it deletes after
+	// a time (decision 0049).
+	Retention retentionOptions `yaml:"retention"`
 	// Jail is where jailed players go.
 	Jail jailOptions `yaml:"jail"`
 	// Staff are the staff owners and roles (decision 0028).
@@ -75,6 +84,44 @@ type options struct {
 	// 0042). `wactl world new --config` reads them; waserver only checks
 	// them, since a made world keeps its spawns.
 	Spawns spawns.Settings `yaml:"spawns"`
+
+	// given records the deprecated keys that the file set and the map
+	// flags given, such as "file:start_map" and "flag:map".
+	given map[string]bool
+}
+
+// classicOptions are the maps of a classic world. A procedural world
+// runs its generated maps and ignores them, so one config file serves
+// both modes.
+type classicOptions struct {
+	// StartMap is where new characters start, prontera by default.
+	StartMap string `yaml:"start_map"`
+	// Maps lists the maps to run, or all for every map in the asset
+	// build. Empty runs the start map alone.
+	Maps list `yaml:"maps"`
+}
+
+// classicMaps returns a classic world's start map and maps: the flags',
+// else the classic block's, else the deprecated top-level keys', else
+// prontera alone.
+func (o options) classicMaps() (string, list) {
+	start, maps := o.StartMap, o.Maps
+	if o.Classic.StartMap != "" && !o.given["flag:map"] {
+		start = o.Classic.StartMap
+	}
+	if o.Classic.Maps != nil && !o.given["flag:maps"] {
+		maps = o.Classic.Maps
+	}
+	return start, maps
+}
+
+// retentionOptions are the retention periods in days. Nil takes the
+// default of strategy section 7.10 (retention.Defaults).
+type retentionOptions struct {
+	LoginIPDays *int `yaml:"login_ip_days"`
+	ChatDays    *int `yaml:"chat_days"`
+	ItemLogDays *int `yaml:"item_log_days"`
+	AuditDays   *int `yaml:"audit_days"`
 }
 
 // proceduralOptions are the generated fields' settings.
@@ -154,8 +201,8 @@ type privacyOptions struct {
 // moderation").
 type chatOptions struct {
 	chat.Limits `yaml:",inline"`
-	// LogDays is how many days chat lines are kept, except those of open
-	// reports. 30 by default, as strategy section 7.10.
+	// LogDays is deprecated: retention.chat_days replaces it. 0 when the
+	// file does not set it.
 	LogDays int `yaml:"log_days"`
 }
 
@@ -219,7 +266,7 @@ func defaultOptions() options {
 		Captcha:  "none",
 		Build:    "all_1",
 		TimeZone: "UTC",
-		Chat:     chatOptions{Limits: chat.DefaultLimits(), LogDays: 30},
+		Chat:     chatOptions{Limits: chat.DefaultLimits()},
 		Jail:     jailOptions{Map: "sec_pri", Cells: [][2]int{{49, 75}, {24, 75}}},
 
 		ShutdownCountdown: 10 * time.Second,
@@ -328,8 +375,10 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.ClientDir = f.ClientDir
 		case "map":
 			o.StartMap = f.StartMap
+			o.give("flag:map")
 		case "maps":
 			o.Maps = splitList(*maps)
+			o.give("flag:maps")
 		case "addr":
 			o.Listen = f.Listen
 		case "dev":
@@ -416,7 +465,20 @@ func loadConfig(path string, o *options) error {
 	if err := dec.Decode(o); err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("config %s: %w", path, err)
 	}
+	for _, k := range []string{"start_map", "maps"} {
+		if _, ok := keys[k]; ok {
+			o.give("file:" + k)
+		}
+	}
 	return nil
+}
+
+// give records a deprecated key or a map flag in o.given.
+func (o *options) give(key string) {
+	if o.given == nil {
+		o.given = map[string]bool{}
+	}
+	o.given[key] = true
 }
 
 // settings are the checked options.
@@ -433,6 +495,12 @@ type settings struct {
 	Location *time.Location
 	// Roles are the checked staff roles.
 	Roles *staff.Roles
+	// Retention are the retention periods in effect.
+	Retention retention.Periods
+	// Warnings are problems that do not stop the server, such as
+	// deprecated keys and retention periods longer than the defaults.
+	// waserver logs them at start.
+	Warnings []string
 }
 
 // validate checks the options and secrets together and lists every
@@ -481,18 +549,14 @@ func validate(o options, s secrets) (settings, error) {
 	if st.Chat.Limits == (chat.Limits{}) {
 		st.Chat.Limits = def.Chat.Limits
 	}
-	if st.Chat.LogDays == 0 {
-		st.Chat.LogDays = def.Chat.LogDays
-	}
 	if st.Jail.Map == "" {
 		st.Jail = def.Jail
 	}
 	if err := st.Chat.Check(); err != nil {
 		bad("chat", "%v", err)
 	}
-	if st.Chat.LogDays < 1 || st.Chat.LogDays > 3650 {
-		bad("chat.log_days", "is 1 to 3650")
-	}
+	st.Retention = checkRetention(o, bad, func(w string) { st.Warnings = append(st.Warnings, w) })
+	checkClassic(o, bad, func(w string) { st.Warnings = append(st.Warnings, w) })
 	if len(o.Privacy.Contact) > 1000 {
 		bad("privacy.contact", "is at most 1,000 bytes")
 	}
@@ -633,6 +697,65 @@ func validate(o options, s secrets) (settings, error) {
 		errs = append(errs, errors.New(oldSecretKeysEnv+" is set without "+secretKeyEnv))
 	}
 	return st, errors.Join(errs...)
+}
+
+// checkRetention checks the retention block and the deprecated
+// chat.log_days, and returns the periods in effect (decision 0049).
+func checkRetention(o options, bad func(key, format string, args ...any), warn func(string)) retention.Periods {
+	p := retention.Defaults
+	for _, v := range []struct {
+		key  string
+		days *int
+		to   *int
+	}{
+		{"retention.login_ip_days", o.Retention.LoginIPDays, &p.LoginIPDays},
+		{"retention.chat_days", o.Retention.ChatDays, &p.ChatDays},
+		{"retention.item_log_days", o.Retention.ItemLogDays, &p.ItemLogDays},
+		{"retention.audit_days", o.Retention.AuditDays, &p.AuditDays},
+	} {
+		if v.days == nil {
+			continue
+		}
+		if *v.days < retention.MinDays || *v.days > retention.MaxDays {
+			bad(v.key, "is %d to %d days", retention.MinDays, retention.MaxDays)
+			continue
+		}
+		*v.to = *v.days
+	}
+	if d := o.Chat.LogDays; d != 0 {
+		switch {
+		case o.Retention.ChatDays != nil && *o.Retention.ChatDays != d:
+			bad("chat.log_days", "is %d days, but retention.chat_days is %d; keep retention.chat_days only", d, *o.Retention.ChatDays)
+		case d < retention.MinDays || d > retention.MaxDays:
+			bad("chat.log_days", "is %d to %d days", retention.MinDays, retention.MaxDays)
+		default:
+			warn("chat.log_days is deprecated: use retention.chat_days")
+			p.ChatDays = d
+		}
+	}
+	for _, w := range p.Warnings() {
+		warn(w)
+	}
+	return p
+}
+
+// checkClassic checks the classic block against the deprecated
+// top-level start_map and maps (decision 0049).
+func checkClassic(o options, bad func(key, format string, args ...any), warn func(string)) {
+	if o.given["file:start_map"] {
+		if o.Classic.StartMap != "" && o.Classic.StartMap != o.StartMap {
+			bad("classic.start_map", "is %q, but the top-level start_map is %q; keep classic.start_map only", o.Classic.StartMap, o.StartMap)
+		} else {
+			warn("start_map at the top level is deprecated: move it into the classic block, which procedural worlds ignore")
+		}
+	}
+	if o.given["file:maps"] {
+		if o.Classic.Maps != nil && joinList(o.Classic.Maps) != joinList(o.Maps) {
+			bad("classic.maps", "is %q, but the top-level maps is %q; keep classic.maps only", joinList(o.Classic.Maps), joinList(o.Maps))
+		} else {
+			warn("maps at the top level is deprecated: move it into the classic block, which procedural worlds ignore")
+		}
+	}
 }
 
 // checkPublicURL checks that the public URL is the root of an origin,

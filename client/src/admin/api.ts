@@ -55,6 +55,8 @@ import {
   RestoreRequestSchema,
   type RestoreResult,
   RestoreResultSchema,
+  type RetentionStatus,
+  RetentionStatusSchema,
   ReviewRequestSchema,
   type Sanction,
   type SanctionList,
@@ -478,6 +480,11 @@ export class AdminAPI {
   /** GET /world: the zones, the process, the players and the restart. */
   async world(): Promise<Result<WorldView>> {
     return decode(WorldViewSchema, await this.call('GET', 'world'));
+  }
+
+  /** GET /retention: the retention periods and the retention job's last run. */
+  async retention(): Promise<Result<RetentionStatus>> {
+    return decode(RetentionStatusSchema, await this.call('GET', 'retention'));
   }
 
   /** POST /announce: a line to the world, or to one map's players. */

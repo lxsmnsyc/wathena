@@ -460,8 +460,9 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `trusted_proxies` | `--trusted-proxies` | none | Proxies whose `X-Forwarded-For` is believed. |
 | `assets` | `--assets` | none, required | The asset build folder, with its `manifest.json`. |
 | `client_dir` | `--client-dir` | the built-in client | A web client build to serve at `/` instead. |
-| `start_map` | `--map` | `prontera` | Where new characters start. |
-| `maps` | `--maps` | the start map | Maps to run, or `all`. See "Maps and warps". |
+| `classic.start_map` | `--map` | `prontera` | Where new characters start in a classic world. A procedural world ignores the `classic` block, so one file serves both modes. |
+| `classic.maps` | `--maps` | the start map | Maps to run in a classic world, or `all`. See "Maps and warps". |
+| `start_map`, `maps` | `--map`, `--maps` | none | Deprecated: use the `classic` block. They still work, with a warning at start. A procedural world reads them as before: `start_map` when it names a generated map, and `maps` as asset maps to run. Set in both places with different values, they are an error. |
 | `mode` | `--mode` | `renewal` | The rAthena mode of the reference data: `renewal`, `pre-renewal`, or `none` for no monsters. It must match the world's ruleset. |
 | `captcha` | `--captcha` | `none` | `none` or `dev`. |
 | `dev` | `--dev` | `false` | Development sessions instead of accounts. Needs a loopback `listen`. |
@@ -482,7 +483,8 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `mods.max_asset_mb` | none | `200` | The largest asset build of one mod, in MiB before compression. See "Mod art". |
 | `chat.burst`, `chat.refill` | none | `5`, `1s` | Chat rate limits: lines at once, and the time for one more. See "Chat and moderation". |
 | `chat.new_character_burst`, `chat.new_character_refill`, `chat.new_character_period` | none | `3`, `3s`, `1h` | Lower limits for a character's first period after it was made. A period of `0s` turns them off. |
-| `chat.log_days` | none | `30` | Days the chat log keeps lines, except lines of open reports. More than 30 logs a warning. |
+| `chat.log_days` | none | none | Deprecated: use `retention.chat_days`. It still works, with a warning. Set with a different `retention.chat_days`, it is an error. |
+| `retention.login_ip_days`, `retention.chat_days`, `retention.item_log_days`, `retention.audit_days` | none | `90`, `30`, `180`, `730` | Days the server keeps login records with IP addresses, chat lines, the item and zeny logs, and the GM audit log. Each is 1 to 3650. A period longer than its default logs a warning at start and shows one on the admin World screen. See "Retention". |
 | `jail.map`, `jail.cells` | none | `sec_pri`, `[[49, 75], [24, 75]]` | Where jailed players go, as rAthena's `MAP_JAIL` and `pc_jail`. A jail map that does not run logs a warning. |
 | `staff.owners` | none | none | Account names with the `owner` role. See "Staff and admin tools". |
 | `staff.roles` | none | `admin`, `game_master`, `moderator` | Role names and their permissions. A list replaces the defaults. |
@@ -534,6 +536,37 @@ wactl world restore --in world-20261018T030000Z.dump.age --identity backup-ident
 - `--wait-for-recipient`, with `--every`: when the recipients files have no recipient, the command makes no backup and does not fail. It logs a warning at start and every hour until it stops. It reads the files only at start, so restart it after adding a recipient. A recipient that does not parse still fails. Compose's `backup` service uses it.
 - `verify-backup` checks the hash against the manifest, decrypts, restores into a temporary database as a role with `CREATEDB` (`--database` or `WATHENA_VERIFY_DATABASE_URL`), checks that the migrations are the manifest's and not newer than this wactl's, compares the counts, and drops the database, also on failure. It exits with status 1 on any mismatch.
 - `restore` decrypts an age backup with `--identity`, and restores plain backups too. It restores only into an empty database, in one transaction, as before.
+
+### Retention
+
+`waserver` deletes data that it keeps only for a time, once a day ([decision 0049](../docs/decisions/0049-retention.md), strategy section 7.10). The periods are the `retention` block of the config:
+
+```yaml
+retention:
+  login_ip_days: 90
+  chat_days: 30
+  item_log_days: 180
+  audit_days: 730
+```
+
+What the job deletes:
+
+- Login records with their IP addresses, `account_logins`, older than `login_ip_days`. Sessions still go sooner, when they expire or go idle.
+- Chat lines older than `chat_days`, except the lines that an open report holds. Once the report closes, its lines go at the next run.
+- The item and zeny logs: each month partition whose whole month is older than `item_log_days`, dropped whole, and the rows of the default partitions older than that. So lines are kept at least 180 days and at most about 211 days with the default.
+- Rows of the GM audit log older than `audit_days`, with their reviews. A row that needs a review and has none stays until it is reviewed.
+
+How it runs:
+
+- At start and every 24 hours, in `waserver`, with a database.
+- Each run takes a PostgreSQL advisory lock for its session first. When another process holds it, the run logs that and does nothing, so only one process runs the job.
+- The game role deletes chat lines and runs `drop_old_log_partitions`. The account role deletes login records and runs `delete_old_staff_audit`. Both functions run with the rights of the schema's owner, as `ensure_log_partitions` does, so the game role still cannot drop tables and the account role still cannot delete audit rows. Both refuse a cutoff less than a day ago. Migration 00036 adds them.
+- With `--dev` there is no account role, so login records and the audit log are left.
+- Each run logs the rows it deleted by kind: `login_ips`, `chat`, `item_log`, `zeny_log` and `audit`, and the month partitions it dropped. A failed kind is logged, and the others still run.
+- The admin API's `GET /retention` and the World screen show the periods, the last run and the rows deleted.
+- With `debug_addr`, `GET /debug/wathena/metrics/prometheus` serves its metrics in the Prometheus text format: `wathena_retention_deleted_rows_total{kind}`, the rows deleted since the process started, and `wathena_retention_last_success_timestamp_seconds`, the start of the last run without errors.
+
+Backups made before a delete still hold the data, for up to 4 weeks with the default schedule (see "Backups"). The privacy page says so.
 
 ## Mods
 
@@ -903,7 +936,7 @@ Chat follows strategy section 7.10 and proposal 0002, review decision 26 ([decis
 - **Mutes and jails** come from mods with `player.sanction`, from the admin screens, and from `@mute` and `@jail` (see "Staff and admin tools"). A muted player's lines come back as `ChatRefused` with a `SanctionNotice` that has the reason and the end time. A jailed player goes to the jail map, cannot use warps, scripts' warps or wings, comes back in jail after death, and goes back to where it was when the jail ends or staff lift it. Sanctions run on the server clock and are saved in `sanctions`, which keeps ended ones too, with kicks and bans ([decision 0030](../docs/decisions/0030-moderation-and-gm-commands.md)).
 - **Reports.** `Report` reports a player, or a line by its `line_id`, or a guild's name or emblem by `guild_id` and `emblem`, from the player menu and the guild window. The report keeps the lines the reporter saw in the last 5 minutes. A player may send 10 reports an hour. Staff work through them in the admin screens' report queue, and close each with an outcome.
 - **GM commands.** For a player whose staff role has the permission of at least one command, with a login with a second factor, a line that starts with `@` is a GM command, never chat. It is not shown, logged, or passed to the chat hooks or the chat event. A command the role lacks, or one that does not exist, answers "Unknown command.". For every other player, such a line is normal chat, as in rAthena (review decision 40).
-- **The chat log** keeps every line players say: local, whisper and channel. With a database, `chat_log` keeps lines for `chat.log_days` days, and `report_lines` ties a report to its lines, which stay while the report is open. Once a report closes, its lines follow the normal limit again. A worker writes lines and reports in batches, in order, and deletes old lines every 12 hours. Without a database, the last 10,000 lines and 1,000 reports stay in memory.
+- **The chat log** keeps every line players say: local, whisper and channel. With a database, `chat_log` keeps lines for `retention.chat_days` days, and `report_lines` ties a report to its lines, which stay while the report is open. Once a report closes, its lines follow the normal limit again. A worker writes lines and reports in batches, in order. The retention job deletes old lines once a day (see "Retention"). Without a database, the last 10,000 lines and 1,000 reports stay in memory.
 
 With `--dev`, the debug address serves more endpoints for development and the end-to-end tests:
 
@@ -964,7 +997,7 @@ The admin screens are at `/admin` of the server's public URL. The page asks the 
    - Reviews: the rows marked for review, with ok and flag.
    - Reports: the report queue, and each report with its chat, the target's earlier reports and sanctions, sanction buttons, and the forms that close it.
    - Bans: the bans in effect, with a lift button. A permanent ban shows it only with `moderation.ban_permanent`.
-   - World: the zones with their tick times of the last minute, the process, the players online and the planned restart with a countdown, loaded again every 5 seconds. With `world.announce`, an announcement box. With `world.restart`, the restart planner.
+   - World: the zones with their tick times of the last minute, the process, the players online and the planned restart with a countdown, loaded again every 5 seconds. With `world.announce`, an announcement box. With `world.restart`, the restart planner. Below, the retention periods with their warnings, the job's last run and the rows it deleted, loaded once.
    - Events: every world event with whether it is on, its trigger, its next run, the run that lasts and the latest results, with start, stop, edit and reset buttons.
    - Mods: every loaded mod with its version, signature status, permissions and Lua errors by zone. With `mods.disable`, off and on buttons by zone.
    - The player page's Sanctions tab gives a mute, a jail or a kick to the character and a ban to its account, and lists its sanctions with lift buttons.
@@ -991,6 +1024,7 @@ The admin API is JSON at `/admin/api/v1/` on the account service's origin. The m
 | `DELETE /sanctions/{id}` | the kind's | Lifts a mute, a jail or a ban early. `?reason=` is required. A ban needs a login from the last 10 minutes, and a permanent ban also `moderation.ban_permanent` (review decision 40). |
 | `GET /sanctions` | any `moderation.*` | Sanctions, newest first. Filters: `character` (its sanctions and its account's bans), `account`, `kind` and `active=true`. Pages: `limit` (1 to 100) and `before_id`. |
 | `GET /world` | `world.read` | Each zone's map, players, monsters and ticks of the last minute (p50, p99, maximum, ticks over 10 ms), the process's CPU, memory, goroutines, uptime and version, the players online (at most 1,000 listed), the planned restart and the server clock. |
+| `GET /retention` | `world.read` | The retention periods in effect with their defaults, the job's last run, its last successful run and next run, its last error, whether another process ran it, the rows the last run deleted and those deleted since the start, by kind, the month partitions dropped, and a warning for each period above its default (decision 0049). |
 | `POST /announce` | `world.announce` | `{"text": "...", "map": "prontera"}`. An empty map is the world. The text is 1 to 255 characters. |
 | `POST /restart` | `world.restart` | Plans a restart: `{"at": "2026-10-13T22:00:00Z", "reason": "update", "message": "New maps arrive!"}`, 1 minute to 7 days ahead. Needs a login from the last 10 minutes. |
 | `DELETE /restart` | `world.restart` | Cancels the planned restart. `?reason=` is optional. Needs a login from the last 10 minutes. |
@@ -1064,7 +1098,7 @@ Restores (decision 0029):
 - The holder loses an open trade, and a vending shop loses the lines of the stack.
 - The world side is `server/adminworld`. The admin API reaches it through `admin.World`.
 
-Logins of the account pages are kept 90 days in `account_logins`, with their IP address, for the IP search (migration 00024). The account service's cleanup deletes older rows.
+Logins of the account pages are kept in `account_logins`, with their IP address, for the IP search (migration 00024). The retention job deletes rows older than `retention.login_ip_days`, 90 by default (see "Retention"). The IP search and the account page still look back 90 days at most.
 
 The GM audit log is `staff_audit` (migration 00023). Each staff action adds a row with the time, the account, the role, the action, the target, the arguments, the reason and a review mark. Reviews go in `staff_audit_reviews`, with the verdict `ok` or `flag` and a note (migration 00024). The game and account roles can add rows, and neither can change or delete them. Only the account role reads them. Rows are kept 2 years; the deletion job comes with phase 8. To read the newest rows in psql:
 
@@ -1250,6 +1284,7 @@ curl 'http://127.0.0.1:8301/debug/wathena/metrics?format=text'
 | Endpoint | Use |
 |---|---|
 | `GET /debug/wathena/metrics` | Every measurement since the start or the last reset, as JSON. `?format=text` gives tables. |
+| `GET /debug/wathena/metrics/prometheus` | With a database: the retention job's metrics, in the Prometheus text format (see "Retention"). |
 | `POST /debug/wathena/reset` | Starts every count again, such as after the bots of a load test have joined. |
 | `GET /debug/wathena/items` | With `--dev` only: every item, with its serial, and all zeny that the players and the ground of each zone hold, as JSON, for the duplication tests. |
 | `POST /debug/wathena/announce?text=&map=` | With `--dev` only: an announcement, as the admin API's `POST /announce`. |
