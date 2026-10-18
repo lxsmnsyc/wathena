@@ -64,7 +64,7 @@
 //   (decision 0045). Chromium only.
 //
 // - gen: the map generator module (src/world/gen.wasm) gives the golden
-//   checksums of shared/gen/testdata in Chromium, Firefox and WebKit,
+//   checksums of shared/gen/testdata in Chromium (GEN_BROWSERS adds others),
 //   whatever BROWSERS says (decision 0038): fields, dungeon floors and
 //   towns, with their WMAP and places hashes (decision 0040).
 //   GEN_BROWSERS picks others. A browser that is not installed is
@@ -1157,7 +1157,7 @@ try {
     }
   }
   if (wanted('gen')) {
-    for (const name of (process.env.GEN_BROWSERS ?? 'chromium,firefox,webkit').split(',')) {
+    for (const name of (process.env.GEN_BROWSERS ?? 'chromium').split(',')) {
       let browser: Browser;
       try {
         browser = await launch(name);

@@ -135,7 +135,7 @@ Map ready after a warp, measured in Chrome on an Apple M2 with `waserver` and th
 tinygo build -o client/src/world/gen.wasm -target=wasm-unknown -opt=2 -no-debug -tags procedural ./shared/gen/wasm
 ```
 
-`generator.test.ts` checks it against the golden checksums of `shared/gen/testdata` in Node, and `pnpm check:browsers` does the same in Chromium, Firefox and WebKit.
+`generator.test.ts` checks it against the golden checksums of `shared/gen/testdata` in Node, and `pnpm check:browsers` does the same in Chromium. Only Chromium is supported. `GEN_BROWSERS=chromium,firefox,webkit` adds the others for a one-off check.
 
 A map whose name starts with `gen:`, such as `gen:field:0:0`, is a generated field (docs/decisions/0039-generated-fields.md):
 

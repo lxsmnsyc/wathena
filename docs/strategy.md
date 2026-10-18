@@ -273,6 +273,7 @@ One refactor is already going the right way. Skills are moving from large `switc
 - Support for the official Ragnarok Online client.
 - Including Gravity's assets in the repository, or hosting them on the project's own infrastructure. Server operators supply and serve them for their own servers (section 10.1).
 - Mobile-native apps. The web client has touch input as decision 0034 built it, and it is frozen there (2026-10-17).
+- Browsers other than Chromium. The web client supports Chromium-based browsers, such as Chrome and Edge, and is tested only in Chromium. Firefox and Safari are not tested or supported (2026-10-18).
 - Running a game server, a beta, or a world of the project's own. wAthena is server software, as rAthena is: server owners run their own worlds (2026-10-18).
 - Art packs. Server owners supply the art, such as their own GRF files through the GRF importer. The project ships the asset contract, the importer and placeholders only (2026-10-18).
 - Importing accounts, characters, or items from existing rAthena servers.
@@ -415,7 +416,7 @@ Approach:
 | Metrics and profiling | Prometheus client and `pprof`. |
 | Linting | `golangci-lint` with the `exhaustive` linter enabled. |
 | Release builds | `goreleaser`, static binaries for every target. |
-| Web client | TypeScript, WebGL2 (WebGPU later), DOM-based UI. |
+| Web client | TypeScript, WebGL2 (WebGPU later), DOM-based UI. Chromium-based browsers only (section 2.2). |
 | Mod tooling | `wactl` command-line tool written in Go (section 6.9). |
 | Password hashing | Argon2id (`golang.org/x/crypto/argon2`). |
 | Two-factor login | TOTP (`pquerna/otp`) and passkeys (`go-webauthn/webauthn`). |
@@ -3387,7 +3388,7 @@ Exit criteria:
 
 Phase 7 is done (2026-10-18). [Decision 0046](decisions/0046-economy-and-phase-7-exit.md), "Exit criteria and their proof", maps each criterion to its tests:
 
-- Same cell grid: the golden maps match in Go on arm64 and on amd64 under Rosetta, in TinyGo, in Node, and in Chromium, Firefox and WebKit through Playwright. A real amd64 machine and Safari itself are not proven.
+- Same cell grid: the golden maps match in Go on arm64 and on amd64 under Rosetta, in TinyGo, in Node, and in Chromium, Firefox and WebKit through Playwright. A real amd64 machine is not proven. Safari is not needed, since only Chromium is supported (section 2.2, 2026-10-18).
 - Playable from level 1 to the transcendent cap: `TestLevelPath` checks default new worlds of 5 towns, 30 fields and 6 dungeons for reachability, fields reachable without crossing harder maps, fitting fields for every level from 1 to 99, the job guilds' tests and the rebirth place; the e2e and modkit tests play the job changes and the rebirth. No bot plays one character from 1 to 99.
 - Rotation on schedule, and removal that moves players and points: the e2e test `TestRotation`.
 - Reachability and unique town names: `TestLayoutRules`, `TestCoverage`, `FuzzLayout`, `TestTownNames` and `TestWorldLayout`.

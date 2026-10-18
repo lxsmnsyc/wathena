@@ -18,4 +18,4 @@ Packages:
   tinygo build -o client/src/world/gen.wasm -target=wasm-unknown -opt=2 -no-debug -tags procedural ./shared/gen/wasm
   ```
 
-  `scripts/check.sh gen` runs the golden maps and the field, dungeon and town tests in Go on arm64 and amd64 and the golden maps in the module in Node, and `scripts/check.sh browsers` in Chromium, Firefox and WebKit.
+  `scripts/check.sh gen` runs the golden maps and the field, dungeon and town tests in Go on arm64 and amd64 and the golden maps in the module in Node, and `scripts/check.sh browsers` in Chromium, the only supported browser.

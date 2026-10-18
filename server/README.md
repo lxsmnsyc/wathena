@@ -1384,7 +1384,7 @@ scripts/check.sh lint e2e     # some steps
 - The `test` step runs the `unit` step, then `go test -race ./...`, which includes the end-to-end tests in [e2e](../e2e/README.md).
 - Under `-race`, the heavy tests that run on one goroutine skip with `testrace.SkipUnderRace` ([decision 0022](../docs/decisions/0022-test-speed.md)). They run in the first pass.
 - The `vet`, `unit` and `lint` steps also run with the tag `procedural`: `vet` on every package, `unit` and `lint` on `shared/gen` and the packages that import it, the only ones the tag changes ([decision 0038](../docs/decisions/0038-generator-core.md)).
-- The `gen` step generates the golden maps of `shared/gen` in Go on this machine's architecture and on the other one, under Rosetta on an arm64 Mac, and in `gen.wasm` in Node. The `browsers` step does it in Chromium, Firefox and WebKit.
+- The `gen` step generates the golden maps of `shared/gen` in Go on this machine's architecture and on the other one, under Rosetta on an arm64 Mac, and in `gen.wasm` in Node. The `browsers` step does it in Chromium, the only supported browser.
 - The `fuzz` step runs each fuzz test for 10 seconds, 4 at once.
 - Without `WATHENA_TEST_DATABASE_URL`, the script starts a `postgres:18` container for the database tests when Docker runs, and removes it at the end. `CHECK_NO_DOCKER=1` turns that off.
 - Checks of generated files compare the files before and after the generator, so uncommitted work does not fail them.

@@ -42,8 +42,8 @@
 #             on this machine's
 #             architecture and on the other one (amd64 under Rosetta on
 #             an arm64 Mac), and the maps in gen.wasm in Node. The
-#             browsers step checks the maps in Chromium, Firefox and
-#             WebKit. Only the server makes layouts and spawns.
+#             browsers step checks the maps in Chromium. Only the
+#             server makes layouts and spawns.
 #   e2e       the e2e package alone, with -race, with the phase 5
 #             exit check for 30 minutes (WATHENA_EXIT_MINUTES=30,
 #             e2e/README.md), and prints its numbers. test runs
@@ -61,7 +61,8 @@
 #             in a world that wactl world new made (decision 0044), a
 #             rotation that moves a player and the new floors it loads
 #             (decision 0045), and the map
-#             generator in Chromium, Firefox and WebKit. Only with all.
+#             generator in Chromium. Only with all. Only Chromium is
+#             supported (strategy section 2.2).
 #             Touch input is frozen as built (decision 0034), so the
 #             touch and phone checks are not in this step. Run them with
 #             CHECKS=touch,phone pnpm check:browsers in client.
