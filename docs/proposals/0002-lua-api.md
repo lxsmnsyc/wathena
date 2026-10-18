@@ -1090,6 +1090,13 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **SECURITY.md** gains a supported versions table for the first release.
     - **No Lua API,** unless a finding needs a sandbox change, which goes to the user first.
 
+52. Security fixes that add to the Lua API (phase 8 step 5). The user approved these on 2026-10-18:
+    - **`data.core_override`.** A new permission. A data overlay that changes an economy field of a record another mod owns, such as an item's `buy` or `sell`, a monster's drops or exp, or a quest's drops, needs it. `wactl mod install` lists the core records such a mod changes.
+    - **Hook `next()`.** A `next` function stops working once its chain call returns. Calling a kept `next` raises an error.
+    - **Per-mod Lua budgets.** Each mod gets its own memory limit and a CPU budget per tick, on top of the per-call limits. A manifest may ask for a lower or higher budget within limits the server owner sets. A mod over its budget has its calls refused for the rest of the tick and logs a warning.
+    - **Enforcement of existing permissions.** `player.status` is enforced. Whispers and announcements from mods are marked as coming from the mod, and reading private chat needs its permission. Mods reach only their own storages, unless a permission says otherwise.
+    - All of these only add to API 1.0 or enforce rules it already states.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
