@@ -265,7 +265,7 @@ One refactor is already going the right way. Skills are moving from large `switc
 | Client customization | The web client is open source. The community changes it by forking or with plugins. |
 | Procedural mode | Generates every part of the world: fields, dungeons, towns, spawns, and quests. Included in a build with the `procedural` build tag (section 8.1). |
 | Default world mode | `procedural` in builds that include it. `classic` otherwise. |
-| Launch order | Set by the build tag. The recommended first release is procedural mode only (section 14.2). |
+| Launch order | The first release ships both world modes, with procedural as the default (section 14.2). |
 | Mod index | Run by the community. The core team defines the index format and the `wactl` support. |
 | Data import | No import from existing rAthena servers. New worlds start empty. |
 | Rotating content | Depends on the automatic event system (section 8.8). |
@@ -1422,7 +1422,7 @@ Section 6.6 covers the sandbox and permissions. Additional Lua rules:
 - Go modules are pinned by `go.sum`. Web client packages are pinned by the lock file. Dependency updates go through review. Releases include a software bill of materials.
 - Release binaries are signed.
 - `SECURITY.md` explains how to report vulnerabilities privately, and states the target time for a first response.
-- An external security review happens before the first release.
+- The project reviews its own security before the first release. wAthena is open source with no budget, so there is no paid review and no bug bounty. Outside reports come through `SECURITY.md` (2026-10-18).
 
 ### 7.10 Player safety and privacy
 
@@ -2440,13 +2440,13 @@ The project has one developer. The plan is ordered to reach a playable game earl
 
 ### 14.2 First release scope
 
-- Procedural mode only. It is the default mode, it avoids fixed-map content, and it does not need GRF map files.
+- Both world modes (2026-10-18). Procedural mode is the default. Classic mode runs on the owner's GRF files with the NPCs and spawns that convert from rAthena's data, and the release notes list what does not convert yet.
 - One ruleset: `core.ruleset.renewal`.
 - Classes up to transcendent second classes.
 - All tier 1 systems in section 11.
 - All-in-one deployment.
 
-Classic mode, pre-Renewal, third and later classes, and tier 2 systems follow.
+Pre-Renewal, third and later classes, and tier 2 systems follow.
 
 ### 14.3 Rough effort
 
@@ -3225,12 +3225,13 @@ Phase 7 is done (2026-10-18). [Decision 0046](decisions/0046-economy-and-phase-7
 
 ### Phase 8: First release
 
-Built with the `procedural` tag, with procedural mode as the only world mode (section 14.2).
+Built with the `procedural` tag. Both world modes ship, with procedural as the default (section 14.2).
 
 - GM audit logs, role-based GM permissions, and encrypted backups with restore tests (section 7.8).
 - Privacy settings and retention jobs (section 7.10).
+- Classic mode from the owner's GRF files: maps, converted NPCs, and fixed spawns from rAthena's data.
 - Load tests at 2,000 bots on the all-in-one build.
-- A security review. With one developer, this can be a paid review or a public bug bounty before the release.
+- A security review by the project against section 7. There is no paid review and no bug bounty (section 7.9).
 - Setup guide for server owners and a first-start guide for players.
 - A tagged release with signed binaries, images and a software bill of materials. The project runs no server or beta of its own (section 2.2).
 
