@@ -18,5 +18,7 @@ supports:
 permissions:
   - event.listen
   - game.read
+  # The tonic starts Verve on the player who uses it.
+  - player.status
 scripts:
   - scripts/main.lua

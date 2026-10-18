@@ -605,6 +605,7 @@ func TestSampleMod(t *testing.T) {
 		"example.mossy-fields":    {"spawns.modify"},
 		"example.hunting-board":   {"player.give_items", "player.give_zeny"},
 		"example.wayside-shrines": {"world.generate"},
+		"example.verve":           {"player.status"},
 	}})
 	if err != nil {
 		t.Fatal(err)

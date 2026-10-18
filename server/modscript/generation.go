@@ -182,9 +182,9 @@ func (r *Runtime) RunGeneration(m content.LayerMap, secret rng.Node, monsterName
 		}
 		r.gen = &genState{nodes: []rng.Node{content.LayerNode(secret, l.ctx.Mod, m.ID)}}
 		prev := r.current
-		r.current = l.ctx
+		r.setCurrent(l.ctx)
 		vals, err := r.s.Call(r.fns.runGeneration.Value(), l.fn.Value(), fields, script.Int(1))
-		r.current = prev
+		r.setCurrent(prev)
 		r.gen = nil
 		if err != nil {
 			r.afterError()

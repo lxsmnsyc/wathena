@@ -87,12 +87,18 @@ func TestServerVariables(t *testing.T) {
 	}
 	kills := variables.Key{Mod: "example.boss", Name: "kills"}
 	name := variables.Key{Mod: "example.boss", Name: "last"}
-	sv.Set(kills, "41")
+	if err := sv.Set(kills, "41"); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := sv.Update(kills, func(old string) (string, error) { return "42", nil }); err != nil {
 		t.Fatal(err)
 	}
-	sv.Set(name, `"Ann"`)
-	sv.Set(name, "")
+	if err := sv.Set(name, `"Ann"`); err != nil {
+		t.Fatal(err)
+	}
+	if err := sv.Set(name, ""); err != nil {
+		t.Fatal(err)
+	}
 	runCtx, cancel := context.WithCancel(ctx)
 	done := make(chan struct{})
 	go func() {

@@ -20,7 +20,7 @@ import (
 // ItemKind is the item overlay: data/items.yml. Fields are the names of
 // the item extract (server/item.Def), such as weight and stackable, and
 // script, bonuses and unsupported. A record's name is its AegisName.
-var ItemKind = Kind{Name: "items", File: "data/items.yml", Fixed: []string{"id", "aegis_name"}}
+var ItemKind = Kind{Name: "items", File: "data/items.yml", Fixed: []string{"id", "aegis_name"}, Economy: []string{"buy", "sell"}}
 
 // itemTypes are item_db's types, in lower case.
 var itemTypes = []string{"healing", "usable", "etc", "armor", "weapon", "card", "petegg", "petarmor", "ammo", "delayconsume", "shadowgear", "cash"}
@@ -292,6 +292,16 @@ func applyFields[T any](rec *T, fields map[string]any) error {
 // default, limits how many are used.
 const maxItemSlots = 16
 
+// PricesSafe is rAthena's check of an item's prices in itemdb.cpp:
+// buy / 124 must not be below sell / 75. Discount takes up to 24% off
+// buy, and Overcharge adds up to 24% to sell (as 124 / 100 and 75 / 100
+// of rAthena's price tables), so lower prices let a player make zeny by
+// buying and selling. rAthena sets sell to 1 with a warning. A mod's
+// record that breaks it is an error instead.
+func PricesSafe(buy, sell int) bool {
+	return int64(buy)*75 >= int64(sell)*124
+}
+
 // checkItem checks the values of an item.
 func checkItem(d *item.Def) error {
 	var errs []string
@@ -303,6 +313,8 @@ func checkItem(d *item.Def) error {
 	}
 	if d.Buy < 0 || d.Sell < 0 || d.Buy > item.MaxZeny || d.Sell > item.MaxZeny {
 		errs = append(errs, fmt.Sprintf("buy and sell are 0 to %d zeny", item.MaxZeny))
+	} else if !PricesSafe(d.Buy, d.Sell) {
+		errs = append(errs, fmt.Sprintf("sell %d is too high for buy %d: with Discount and Overcharge a player makes zeny by buying and selling; sell is at most buy * 75 / 124, %d here", d.Sell, d.Buy, d.Buy*75/124))
 	}
 	if len(d.Name) > 255 {
 		errs = append(errs, "name is at most 255 bytes")

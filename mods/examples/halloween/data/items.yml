@@ -4,6 +4,7 @@
   type: Armor
   display_name: Pumpkin Hat
   weight: 200
+  buy: 1000
   sell: 500
   # Worn on the head, with the sprite of core's Pumpkin_Hat (view 206).
   location: [head_top]

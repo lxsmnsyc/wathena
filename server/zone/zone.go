@@ -1476,6 +1476,10 @@ func (z *Zone) stepAt(now int64) {
 	began := time.Now()
 	z.tick++
 	z.now = now
+	if z.scripts != nil {
+		// Each mod's Lua CPU budget is whole again (review decision 52).
+		z.scripts.BeginTick()
+	}
 	var warped []warpTouch
 	for e := range z.entities.all() {
 		touched := false

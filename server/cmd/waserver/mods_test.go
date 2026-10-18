@@ -31,6 +31,7 @@ var sampleApprovals = map[string][]string{
 	"example.mossy-fields":    {"spawns.modify"},
 	"example.hunting-board":   {"player.give_items", "player.give_zeny"},
 	"example.wayside-shrines": {"world.generate"},
+	"example.verve":           {"player.status"},
 }
 
 // TestLoadSampleMod loads mods/examples over the renewal reference data,

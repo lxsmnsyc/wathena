@@ -60,7 +60,19 @@ The environment of each mod, and read-only shared tables (strategy section 6.6),
 |---|---|---|---|
 | CPU | 10,000,000 | each call and each resume | A count hook every 1,000 instructions. Allocations cost 1 per 64 bytes. Pattern matching, plain `find`, `table.sort`, `table.insert`, and other work in C is charged too. |
 | Memory | 16 MB | the state | The allocator refuses to grow past it. |
+| Owner memory | none | each owner of memory | `SetOwnerLimit`. The allocator refuses to grow an owner past it while a call runs. |
 | Time | 1 second | each call and each resume | A backstop for work the CPU budget does not see, such as comparing long strings. The hook reads the clock from the first 1,000 instructions on. |
+
+## Owners of memory
+
+A state has `MaxOwners` (512) owners of memory, so one state can hold the code of many mods, each with its own limit (server/modscript, review decision 52).
+
+- `SetOwner` sets the owner of the code that runs. A host function may call it, so a call can switch owners, such as between the hooks of one chain. Go writes it to the state's header, without a call into C.
+- Each block of memory starts with 8 bytes that hold its owner. A block that grows belongs to the owner that runs, which pays for all of it. A block that shrinks or is freed keeps its owner, so a collection while another owner runs gives the memory back to the right owner.
+- `OwnerMemory` returns an owner's bytes. The owners' bytes add up to `Memory`, which does not count the 8 bytes of each block.
+- `SetOwnerLimit` limits an owner while a call runs. A call that would go past it stops with `ErrMemoryLimit`. Lua first collects garbage and tries again, so garbage does not count against an owner for long.
+- Owner 0 holds everything no other owner does. An owner out of range is owner 0.
+- `Spent` counts the CPU units charged since the state began, from every source of the per-call budget. Go reads it at each switch of owners to give each mod a budget per tick. The count hook charges 1,000 units at a time, so a short call may show none, and the next call that reaches the count pays for it.
 
 When a limit stops a call:
 

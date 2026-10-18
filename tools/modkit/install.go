@@ -180,6 +180,8 @@ func (e *Env) installFrom(ctx context.Context, o InstallOptions, src string, isZ
 	m := rep.Manifest
 	say(out, "%s %s: %s\n", m.ID, m.Version, m.Name)
 	PrintPermissions(out, m.ID, rep.Permissions)
+	PrintOverrides(out, rep.Overrides)
+	PrintBudget(out, m.Budget)
 
 	installed, err := mod.Discover(o.ModsDir)
 	if err != nil {
@@ -258,6 +260,29 @@ func PrintPermissions(out io.Writer, id string, perms []mod.Permission) {
 	}
 	say(out, "nothing is approved. To approve, review the mod, then add to the server config:\n")
 	say(out, "  mods:\n    approve:\n      %s: [%s]\n", id, strings.Join(approve, ", "))
+}
+
+// PrintOverrides shows the records of other mods, core's too, whose
+// prices, drops, exp or chat filter words the mod changes. These need
+// data.core_override.
+func PrintOverrides(out io.Writer, list []string) {
+	if len(list) == 0 {
+		return
+	}
+	say(out, "changes to records that other mods added, core's too (%s):\n", mod.CoreOverride)
+	for _, line := range list {
+		say(out, "  %s\n", line)
+	}
+}
+
+// PrintBudget shows the Lua budget a manifest asks for, when it asks for
+// one. The server's mods.max_budget must allow it.
+func PrintBudget(out io.Writer, b mod.Budget) {
+	if b == (mod.Budget{}) {
+		return
+	}
+	say(out, "Lua budget asked: memory_mb %d, cpu_per_tick %d (0 is the server's default). The server allows up to mods.max_budget: %d MB and %d by default.\n",
+		b.MemoryMB, b.CPUPerTick, mod.DefaultMaxMemoryMB, mod.DefaultMaxCPUPerTick)
 }
 
 // say writes to a writer of messages, where a failed write has no one

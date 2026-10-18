@@ -6,6 +6,7 @@ package variables
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -27,6 +28,15 @@ type Store interface {
 // RetryDelay is the wait before a failed write runs again.
 const RetryDelay = 5 * time.Second
 
+// Limits of one mod's server variables (review decision 52).
+const (
+	// MaxModValues is the most server variables one mod may hold.
+	MaxModValues = 256
+	// MaxModBytes is the most bytes of JSON one mod's server variables
+	// may hold together.
+	MaxModBytes = 1 << 20
+)
+
 // Server holds the server variables in memory. Zones read and write
 // them from their own goroutines. With a Store, Run writes each change
 // soon after it happens: the last value of a variable wins, and a value
@@ -39,6 +49,9 @@ type Server struct {
 	values map[Key]string
 	dirty  map[Key]bool
 	wake   chan struct{}
+	// count and bytes are each mod's number of values and their bytes.
+	count map[string]int
+	bytes map[string]int
 }
 
 // NewServer makes the server variables. store may be nil, which keeps
@@ -47,7 +60,8 @@ func NewServer(store Store, log *slog.Logger) *Server {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
-	return &Server{store: store, log: log, values: map[Key]string{}, dirty: map[Key]bool{}, wake: make(chan struct{}, 1)}
+	return &Server{store: store, log: log, values: map[Key]string{}, dirty: map[Key]bool{}, wake: make(chan struct{}, 1),
+		count: map[string]int{}, bytes: map[string]int{}}
 }
 
 // Load reads the saved values. Call it before the zones run.
@@ -59,9 +73,43 @@ func (s *Server) Load(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if vals == nil {
+		vals = map[Key]string{}
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.values = vals
+	clear(s.count)
+	clear(s.bytes)
+	for k, v := range vals {
+		s.count[k.Mod]++
+		s.bytes[k.Mod] += len(v)
+	}
+	return nil
+}
+
+// put changes a value in memory, within the mod's limits. The lock must
+// be held. Values loaded over the limits stay, and can shrink.
+func (s *Server) put(k Key, value string) error {
+	old, had := s.values[k]
+	count, bytes := s.count[k.Mod], s.bytes[k.Mod]-len(old)
+	if had {
+		count--
+	}
+	if value != "" {
+		count++
+		bytes += len(value)
+		if !had && count > MaxModValues {
+			return fmt.Errorf("%s holds %d server variables, the most a mod may", k.Mod, MaxModValues)
+		}
+		if len(value) > len(old) && bytes > MaxModBytes {
+			return fmt.Errorf("%s's server variables would take %d bytes, more than the %d a mod may", k.Mod, bytes, MaxModBytes)
+		}
+		s.values[k] = value
+	} else {
+		delete(s.values, k)
+	}
+	s.count[k.Mod], s.bytes[k.Mod] = count, bytes
 	return nil
 }
 
@@ -74,13 +122,12 @@ func (s *Server) Get(k Key) (string, bool) {
 }
 
 // Set changes a variable. An empty value is the default, which has no
-// row.
-func (s *Server) Set(k Key, value string) {
+// row. It fails when the value goes over the mod's limits.
+func (s *Server) Set(k Key, value string) error {
 	s.mu.Lock()
-	if value == "" {
-		delete(s.values, k)
-	} else {
-		s.values[k] = value
+	if err := s.put(k, value); err != nil {
+		s.mu.Unlock()
+		return err
 	}
 	if s.store != nil {
 		s.dirty[k] = true
@@ -92,6 +139,7 @@ func (s *Server) Set(k Key, value string) {
 		default:
 		}
 	}
+	return nil
 }
 
 // Update changes a variable in one step: f gets the current value, or
@@ -101,14 +149,12 @@ func (s *Server) Update(k Key, f func(old string) (string, error)) (string, erro
 	s.mu.Lock()
 	cur := s.values[k]
 	next, err := f(cur)
+	if err == nil {
+		err = s.put(k, next)
+	}
 	if err != nil {
 		s.mu.Unlock()
 		return "", err
-	}
-	if next == "" {
-		delete(s.values, k)
-	} else {
-		s.values[k] = next
 	}
 	if s.store != nil {
 		s.dirty[k] = true

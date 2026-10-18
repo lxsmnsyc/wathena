@@ -10728,6 +10728,7 @@ type ChatMessage struct {
 	xxx_hidden_Color       uint32                 `protobuf:"varint,5,opt,name=color,proto3"`
 	xxx_hidden_ChannelName string                 `protobuf:"bytes,6,opt,name=channel_name,json=channelName,proto3"`
 	xxx_hidden_LineId      []byte                 `protobuf:"bytes,7,opt,name=line_id,json=lineId,proto3"`
+	xxx_hidden_FromMod     string                 `protobuf:"bytes,8,opt,name=from_mod,json=fromMod,proto3"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -10806,6 +10807,13 @@ func (x *ChatMessage) GetLineId() []byte {
 	return nil
 }
 
+func (x *ChatMessage) GetFromMod() string {
+	if x != nil {
+		return x.xxx_hidden_FromMod
+	}
+	return ""
+}
+
 func (x *ChatMessage) SetChannel(v ChatChannel) {
 	x.xxx_hidden_Channel = v
 }
@@ -10837,6 +10845,10 @@ func (x *ChatMessage) SetLineId(v []byte) {
 	x.xxx_hidden_LineId = v
 }
 
+func (x *ChatMessage) SetFromMod(v string) {
+	x.xxx_hidden_FromMod = v
+}
+
 type ChatMessage_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -10858,6 +10870,11 @@ type ChatMessage_builder struct {
 	// line_id identifies a line a player said, for Report. It is empty
 	// for lines no player said, such as NPC lines and announcements.
 	LineId []byte
+	// from_mod is the ID of the mod whose script sent a whisper or an
+	// announcement, such as example.bank. It is empty for players, for
+	// core's scripts and for the server. The client shows it with the
+	// line, so a mod cannot pass for a player or for staff.
+	FromMod string
 }
 
 func (b0 ChatMessage_builder) Build() *ChatMessage {
@@ -10871,6 +10888,7 @@ func (b0 ChatMessage_builder) Build() *ChatMessage {
 	x.xxx_hidden_Color = b.Color
 	x.xxx_hidden_ChannelName = b.ChannelName
 	x.xxx_hidden_LineId = b.LineId
+	x.xxx_hidden_FromMod = b.FromMod
 	return m0
 }
 
@@ -22277,7 +22295,7 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\brequires\x18\v \x03(\v2\x1c.wathena.v1.SkillRequirementR\brequires\"C\n" +
 	"\x10SkillRequirement\x12\x19\n" +
 	"\bskill_id\x18\x01 \x01(\rR\askillId\x12\x14\n" +
-	"\x05level\x18\x02 \x01(\rR\x05level\"\xd7\x01\n" +
+	"\x05level\x18\x02 \x01(\rR\x05level\"\xf2\x01\n" +
 	"\vChatMessage\x121\n" +
 	"\achannel\x18\x01 \x01(\x0e2\x17.wathena.v1.ChatChannelR\achannel\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\rR\x04from\x12\x1b\n" +
@@ -22285,7 +22303,8 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x04text\x18\x04 \x01(\tR\x04text\x12\x14\n" +
 	"\x05color\x18\x05 \x01(\rR\x05color\x12!\n" +
 	"\fchannel_name\x18\x06 \x01(\tR\vchannelName\x12\x17\n" +
-	"\aline_id\x18\a \x01(\fR\x06lineId\"\x82\x01\n" +
+	"\aline_id\x18\a \x01(\fR\x06lineId\x12\x19\n" +
+	"\bfrom_mod\x18\b \x01(\tR\afromMod\"\x82\x01\n" +
 	"\rWhisperResult\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x124\n" +
 	"\aoutcome\x18\x02 \x01(\x0e2\x1a.wathena.v1.WhisperOutcomeR\aoutcome\x12\x12\n" +

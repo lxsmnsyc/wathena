@@ -36,6 +36,13 @@ const (
 	MaxVariableBytes = 65536
 	// MaxStringVariable is the longest string value, in bytes.
 	MaxStringVariable = 4096
+	// MaxModVariables is the most variables one mod may declare, over
+	// every scope. Declaring a variable again does not count.
+	MaxModVariables = 256
+	// MaxModPlayerBytes is the most bytes of JSON one mod's variables may
+	// hold on one player: its character and account variables together,
+	// and its temporary ones apart.
+	MaxModPlayerBytes = 1 << 20
 )
 
 var variableName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,63}$`)
@@ -73,13 +80,30 @@ func (r *Runtime) variablesDeclare(c *script.Call) error {
 		return fmt.Errorf("%s needs a mod: declare it at the top of a mod's file", what)
 	}
 	key := mod + " " + scope + " " + name
-	if prev, ok := r.declared[key]; ok && prev != kind {
-		return fmt.Errorf("%s: %s already declared %s as a %s variable", what, mod, name, prev)
+	if prev, ok := r.declared[key]; ok {
+		if prev.kind != kind {
+			return fmt.Errorf("%s: %s already declared %s as a %s variable", what, mod, name, prev.kind)
+		}
+		// The same declaration again, such as in a handler: the same
+		// handle.
+		c.Return(script.Int(prev.id))
+		return nil
 	}
-	r.declared[key] = kind
+	if r.modVariables[mod] >= MaxModVariables {
+		return fmt.Errorf("%s: %s has declared %d variables, the most a mod may", what, mod, MaxModVariables)
+	}
+	r.modVariables[mod]++
 	r.variables = append(r.variables, &variable{mod: mod, scope: scope, kind: kind, name: name})
-	c.Return(script.Int(int64(len(r.variables) - 1)))
+	id := int64(len(r.variables) - 1)
+	r.declared[key] = declared{kind: kind, id: id}
+	c.Return(script.Int(id))
 	return nil
+}
+
+// declared is a declaration: its type and its handle.
+type declared struct {
+	kind string
+	id   int64
 }
 
 func (r *Runtime) variableOf(c *script.Call) (*variable, error) {
@@ -130,8 +154,7 @@ func (r *Runtime) variableGet(c *script.Call) error {
 
 func (r *Runtime) writeVariable(v *variable, player int64, value string) error {
 	if v.scope == "server" {
-		r.opts.Server.Set(variables.Key{Mod: v.mod, Name: v.name}, value)
-		return nil
+		return r.opts.Server.Set(variables.Key{Mod: v.mod, Name: v.name}, value)
 	}
 	h, err := r.npcHost()
 	if err != nil {

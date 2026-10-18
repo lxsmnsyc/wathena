@@ -304,5 +304,5 @@ func (r *Runtime) announce(c *script.Call) error {
 	if !ok || text == "" || len(text) > MaxMessage || !utf8.ValidString(text) {
 		return fmt.Errorf("%s: the text must be 1 to %d bytes", what, MaxMessage)
 	}
-	return h.Announce(m, text)
+	return h.Announce(m, r.sender(), text)
 }

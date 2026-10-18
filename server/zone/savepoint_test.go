@@ -89,13 +89,13 @@ func TestAnnouncements(t *testing.T) {
 	pa := onMap(a, "A", 5, 5, &saves{})
 	pb := onMap(b, "B", 5, 5, &saves{})
 	h := scriptHost{a}
-	if err := h.Announce("", "to everyone"); err != nil {
+	if err := h.Announce("", "", "to everyone"); err != nil {
 		t.Fatal(err)
 	}
-	if err := h.Announce("b", "to map b"); err != nil {
+	if err := h.Announce("b", "example.a", "to map b"); err != nil {
 		t.Fatal(err)
 	}
-	if err := h.Announce("nowhere", "lost"); err == nil {
+	if err := h.Announce("nowhere", "", "lost"); err == nil {
 		t.Error("an announcement to a map that does not run went through")
 	}
 	for _, z := range []*Zone{a, b} {
@@ -108,15 +108,16 @@ func TestAnnouncements(t *testing.T) {
 		var out []string
 		for _, e := range events(p) {
 			if c := e.GetChat(); c != nil && c.GetChannel() == wathenav1.ChatChannel_CHAT_CHANNEL_ANNOUNCEMENT {
-				out = append(out, c.GetText())
+				out = append(out, c.GetFromMod()+"|"+c.GetText())
 			}
 		}
 		return out
 	}
-	if g := got(pa); len(g) != 1 || g[0] != "to everyone" {
+	if g := got(pa); len(g) != 1 || g[0] != "|to everyone" {
 		t.Errorf("map a heard %q", g)
 	}
-	if g := got(pb); len(g) != 2 || g[0] != "to everyone" || g[1] != "to map b" {
+	// A mod's announcement carries the mod (review decision 52).
+	if g := got(pb); len(g) != 2 || g[0] != "|to everyone" || g[1] != "example.a|to map b" {
 		t.Errorf("map b heard %q", g)
 	}
 }

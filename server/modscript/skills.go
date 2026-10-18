@@ -327,7 +327,7 @@ func (r *Runtime) FireSkillUsed(ev SkillUsed) {
 				continue
 			}
 		}
-		if err := r.run(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("skill_use"), obj); err != nil {
+		if err := r.runHandler(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("skill_use"), obj); err != nil {
 			r.failed(h.ctx, "event skill_used", err)
 		}
 	}

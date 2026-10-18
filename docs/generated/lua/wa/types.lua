@@ -343,7 +343,7 @@ function wa_Player:count_item(item, options) end
 function wa_Player:take_item(item, amount, options) end
 
 ---Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee.
----@param name? string An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. Nothing opens the account's storage.
+---@param name? string An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. A mod reaches only its own records and core's: another mod's name raises an error. Nothing opens the account's storage.
 ---@return boolean
 function wa_Player:open_storage(name) end
 
@@ -546,7 +546,7 @@ function wa_Player:reset_stats() end
 ---@return boolean
 function wa_Player:reset_skill(skill, options) end
 
----Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it.
+---Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it. The player sees the mod's ID with a mod's whisper, as a server line it cannot answer, so it cannot pass for a player's. Core's whispers are plain whispers.
 ---@param text string 1 to 255 bytes.
 ---@param options? wa.WhisperOptions
 function wa_Player:whisper(text, options) end
@@ -668,13 +668,13 @@ function wa_Player:expand(limit, amount) end
 ---@return boolean
 function wa_Player:reset_stat(stat, options) end
 
----Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
 ---@return boolean
 function wa_Player:start_status(status, options) end
 
----Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
+---Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns. On a player it needs player.status.
 ---@param status integer
 ---@return boolean
 function wa_Player:end_status(status) end
@@ -759,13 +759,13 @@ function wa_Monster:talk(text) end
 ---The monster stops walking and attacking, and drops its target, as unitstop.
 function wa_Monster:stop() end
 
----Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
 ---@return boolean
 function wa_Monster:start_status(status, options) end
 
----Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
+---Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns. On a player it needs player.status.
 ---@param status integer
 ---@return boolean
 function wa_Monster:end_status(status) end
@@ -827,13 +827,13 @@ function wa_Npc:find_nearby(query) end
 ---@return boolean
 function wa_Npc:exists() end
 
----Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
+---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
 ---@return boolean
 function wa_Npc:start_status(status, options) end
 
----Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
+---Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns. On a player it needs player.status.
 ---@param status integer
 ---@return boolean
 function wa_Npc:end_status(status) end

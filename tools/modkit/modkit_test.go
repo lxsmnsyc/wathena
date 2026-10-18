@@ -241,6 +241,7 @@ permissions:
   - event.listen
   - game.read
   - rules.override
+  - player.status
 scripts:
   - scripts/main.lua
 `,

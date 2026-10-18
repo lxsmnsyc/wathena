@@ -54,6 +54,9 @@ type Directory interface {
 	// Announce shows a line to every player of every zone. It never
 	// waits on a zone.
 	Announce(text string, color uint32)
+	// AnnounceFrom is Announce for a mod's script: players see mod, the
+	// mod's ID, with the line.
+	AnnounceFrom(text string, color uint32, mod string)
 }
 
 // SetWarps sets the map's warps, in rAthena's load order: when areas

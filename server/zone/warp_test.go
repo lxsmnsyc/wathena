@@ -14,9 +14,11 @@ type zones map[string]*Zone
 
 func (d zones) Zone(name string) *Zone { return d[name] }
 
-func (d zones) Announce(text string, color uint32) {
+func (d zones) Announce(text string, color uint32) { d.AnnounceFrom(text, color, "") }
+
+func (d zones) AnnounceFrom(text string, color uint32, mod string) {
 	for _, z := range d {
-		z.Announce(text, color)
+		z.AnnounceFrom(text, color, mod)
 	}
 }
 

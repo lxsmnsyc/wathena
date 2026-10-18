@@ -95,7 +95,7 @@ func (r *Runtime) FireTrade(t TradeEvent) {
 		if h.trade != nil && !h.trade.match(t) {
 			continue
 		}
-		if err := r.run(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("trade"), obj); err != nil {
+		if err := r.runHandler(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("trade"), obj); err != nil {
 			r.failed(h.ctx, "event trade", err)
 		}
 	}

@@ -8,5 +8,5 @@ package mod
 // after the mod ID. server/gamedata reads the fields.
 var (
 	ChannelKind    = Kind{Name: "channels", File: "data/channels.yml", CoreNames: true}
-	ChatFilterKind = Kind{Name: "chat filter words", File: "data/chat_filter.yml", CoreNames: true, LocalNames: true}
+	ChatFilterKind = Kind{Name: "chat filter words", File: "data/chat_filter.yml", CoreNames: true, LocalNames: true, Economy: []string{"action", "match"}}
 )

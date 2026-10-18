@@ -95,8 +95,16 @@ scripts:
 | `provides.ruleset` | no | Makes the mod a ruleset mod (below). |
 | `permissions` | no | What the mod needs (below). |
 | `scripts` | no | Entry scripts that run once per zone, in the mod's context. Paths are under `scripts/`. |
+| `budget` | no | A Lua budget other than the server's default: `memory_mb` and `cpu_per_tick` ("Budgets" below). The server owner sets the most a mod may ask for. |
 
 Unknown fields are errors, so a typo does not pass. Every error names the file and the field.
+
+The server checks a mod's files against their limits before it reads them, since an entry of a `.zip` file can state any size:
+
+- `mod.yaml` is at most 64 KB.
+- A data file, such as `data/items.yml`, is at most 32 MB.
+- All `.lua` files under `scripts/` are at most 8 MB together.
+- `locales/en.yml` is at most 4 MB.
 
 ## Load order
 
@@ -244,9 +252,11 @@ Each limit has a range:
 | `player.expand_limits` | Needs the owner's approval. It raises and lowers a player's inventory, cart and storage slots with `player:expand`, within the ruleset's limits (review decision 32). |
 | `spawns.modify` | Needs the owner's approval. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
 | `world.generate` | Needs the owner's approval. It adds generation layers and quest templates with `wa.generation`, which add places, objects, bosses and quests to a new procedural world (review decision 46). |
-| `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. |
+| `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. `rules.override` also lets the `chat` event hear whispers, party and guild lines ("Chat" below). |
+| `data.core_override` | Needs approval, and is logged as a warning at each start. It changes the prices, drops and exp of records that other mods added, core's too, and the chat filter's words ("Data overlays" below, review decision 52). |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
+- `player.status` covers `start_status` and `end_status` on players. Monsters and NPCs need no permission.
 - A mod with a permission that is not approved does not load, and the server does not start. The error names the permissions.
 - Calls check permissions when they run. A call without its permission raises an error that names it, such as `player:give_item needs the permission player.give_items`.
 
@@ -257,6 +267,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 - A new record is named with the mod's ID: `example.greeter:Welcome_Cookie`.
 - A name without a prefix is a core record. A field set there changes the core record. A core name that does not exist is an error, so a typo does not make a new record.
 - To change another mod's record, write its full name, and load after that mod.
+- Fields that change the economy need `data.core_override` on a record that another mod added, core's too: an item's `buy` and `sell`, a monster's `drops`, `mvp_drops`, `base_exp`, `job_exp` and `mvp_exp`, a quest's `drops`, and a chat filter word's `action` and `match`. On the mod's own records they need nothing. `wactl mod validate` and `wactl mod install` list the records such a mod changes.
 - A mod cannot delete a record.
 - When two mods set the same field, the later mod wins and the server logs a warning. With `mods.strict`, it is an error.
 - Fields are changed whole: setting `heal` replaces all of `heal`.
@@ -277,6 +288,7 @@ Files in `data/` add records or change fields of existing ones. Each file is a l
 
 - Names are AegisNames, such as `Red_Potion`.
 - Fields are those of the item extract: `type`, `weight` (in tenths), `stackable`, `stack_limit`, `unique_id`, `no_consume`, `no_drop`, `delay_ms`, `delay_status`, `min_level`, `max_level`, `gender`, and `job_restricted`, and `display_name`, `buy`, `sell` and `no_sell`: the name `items.name` gives, the prices of NPC shops in zeny, and whether shops buy the item. `name` is the record's key, so the name players see is `display_name`, as for NPCs.
+- `sell` is at most 75/124 of `buy`, as rAthena's `itemdb.cpp` checks: with Discount and Overcharge, lower prices let a player make zeny by buying and selling. rAthena sets such a `sell` to 1 with a warning. A mod's record that breaks the rule fails to load. An item with `sell` needs a `buy` too.
 - `script` is the item's entry script, a path under the mod's `scripts/`. It belongs to the mod that sets it.
 - `description` is the item's description in the client, text of up to 4,096 bytes ("Names in the client" below).
 - `bonuses` are static bonuses of an equipment item ("Static bonuses" below).
@@ -1163,9 +1175,11 @@ Scripts are Lua 5.4 in a sandbox (internal/script/README.md). There are no globa
 ### Isolation
 
 - Each mod has its own global table in each zone. One mod cannot read or change another mod's globals.
+- Each mod has its own Lua budget in each zone: memory, and CPU per tick ("Budgets" below).
 - The standard libraries (`string`, `table`, `math`, `utf8`, `coroutine`) are copies per mod. Changing one changes only the mod's own copy.
 - API modules, player handles, and event and timer handles are read-only. Writing to them, `rawset` on them, or `setmetatable` on them raises an error.
-- `load` runs code in the mod's own environment unless it is given another table.
+- `load`, `loadstring`, `dofile` and `loadfile` do not exist. Mods cannot run code built from strings (strategy section 7.7).
+- Mods see no memory addresses. `tostring` of a table, a function or a coroutine gives its kind and a number, such as `table: #12`, which stays the same for the same object. `string.format` shows `%s` the same way, and refuses `%p`.
 
 ### The context
 
@@ -1218,6 +1232,17 @@ Event contexts can listen to the events of mod contexts.
 - `events.on` checks the name. An unknown name, or an event of another context kind, such as `click`, raises an error during setup.
 - Handlers run in registration order. A failing handler is logged and does not stop the others.
 - A handler that runs over the CPU or memory limit stops with an error. The zone goes on.
+
+### Budgets
+
+Each mod has a Lua budget in each zone, on top of the limits of each call (review decision 52):
+
+- **Memory.** The mod's Lua objects may hold `memory_mb` MiB, 16 by default. An object belongs to the mod whose code made it, or last made it grow. A call that would go past the limit stops with a memory error, as at the per-call limits, and counts as the mod's failure. Other mods' calls go on.
+- **CPU per tick.** The mod's calls may spend `cpu_per_tick` units in one zone tick, 2,000,000 by default. A unit is about one Lua instruction, as the per-call limit of 10,000,000 counts them. Once the mod has spent its budget, its event handlers and hooks are skipped for the rest of the tick, and its timers wait for the next tick. This is not a failure. The server logs a warning at most once a minute per mod and zone.
+- Setup functions, item, skill and NPC scripts, conversations, schedules and conditions still run when the mod is over its CPU budget, so a player's action is never lost. Their CPU counts toward the budget.
+- Core is the server's own content and has no CPU budget. Its memory limit is 64 MiB.
+- A manifest asks for another budget with `budget: { memory_mb: 32, cpu_per_tick: 4000000 }`. A field left out is the server's default. The server owner sets the default under `mods.budget`, and the most a manifest may ask for under `mods.max_budget`, 64 MiB and 10,000,000 by default. A mod that asks for more does not load.
+- The example mods use at most 15,000 units in a tick and 760 KB in their tests. Core's scripts use at most 8 MB in the converter's and the zone's tests.
 
 ### Timers
 
@@ -1335,6 +1360,8 @@ end
 - Character and account variables are saved with the character, in the same transaction. Two characters of one account that change the same account variable at once: the last save wins.
 - Without a database, variables live in memory until the server stops.
 - Declaring needs `storage.mod`, which every mod has.
+- A mod declares at most 256 variables over every scope. Declaring the same variable again, such as in a handler, gives the same handle and does not count.
+- A mod's values on one player take at most 1 MiB as JSON: its character and account variables together, and its temporary ones apart. Its server variables take at most 256 values and 1 MiB. A `set` past a limit raises an error that names it.
 
 ### Shops, save points and announcements
 
@@ -1351,8 +1378,8 @@ end
 | `player:unmark_minimap(id)` | None | Removes a mark. |
 | `items.name(item)` | `game.read` | The item's name from rAthena's item database. |
 | `text.item_link(item)` | None | A link `say` shows as the item's name, as `mesitemlink`. |
-| `maps.announce(map, text)` | None | A line for every player of a map, as `mapannounce`. |
-| `world.announce(text)` | `world.announce` | A line for every player of the world, as `announce`. |
+| `maps.announce(map, text)` | None | A line for every player of a map, as `mapannounce`. Players see the mod's ID with a mod's line. |
+| `world.announce(text)` | `world.announce` | A line for every player of the world, as `announce`. Players see the mod's ID with a mod's line. |
 
 Player handles also have `sex`: `"male"` or `"female"`.
 
@@ -1440,10 +1467,11 @@ The message of the event and the hook is `{ player, channel, text, to, map }`:
 - `channel` is `"public"` for local chat, `"whisper"`, `"party"`, `"guild"`, or a channel's name without its `#`, such as `"trade"`. Guild chat does not exist yet.
 - `to` is a whisper's target name, or nil.
 - The event's options `channel`, `map` and `player` narrow it. It is a world event: a handler hears every player of its context's map.
+- Whispers, party lines and guild lines are private. The event delivers them only to a mod with `rules.override`, which the `chat` hook needs and which sees every line there (review decision 52). Other mods hear local chat and channel lines.
 
 | Call | Permission | Meaning |
 |---|---|---|
-| `player:whisper(text, { from })` | None | Sends the player a whisper. `from` is the name it sees, by default the NPC's name in an NPC context, or the mod's name. It does not pass the filter or the hooks, and blocks do not stop it. `player:send_message` stays for system lines. |
+| `player:whisper(text, { from })` | None | Sends the player a whisper. `from` is the name it sees, by default the NPC's name in an NPC context, or the mod's name. The player sees the mod's ID with it, such as `[Mod example.bank] Banker: hello`, as a server line it cannot answer, so a mod cannot pass for a player or for staff. Core's whispers are plain whispers. It does not pass the filter or the hooks, and blocks do not stop it. `player:send_message` stays for system lines. |
 | `player:is_blocking(other)` | `game.read` | Whether the player blocks the other player's name. |
 | `player:mute(minutes, reason)` | `player.sanction` | Mutes the player, as rAthena's `SC_NOCHAT`. It replaces a mute that has not ended. |
 | `player:jail(minutes, reason)` | `player.sanction` | Jails the player, as rAthena's `pc_jail`: it goes to the jail map and cannot warp until the end, then goes back to where it was. |
@@ -1591,14 +1619,14 @@ end
 | Call | Permission | Meaning |
 |---|---|---|
 | `player:open_storage()` | None | Opens the account's storage, as `openstorage`. Scripts charge any fee. |
-| `player:open_storage(name)` | None | Opens an extra storage of `data/storages.yml`, as `openstorage2`. A name without a prefix is the calling mod's record, then core's. Returns false when the player has a storage open, or another character of the account has this one open. |
+| `player:open_storage(name)` | None | Opens an extra storage of `data/storages.yml`, as `openstorage2`. A name without a prefix is the calling mod's record, then core's. A mod reaches only its own records and core's: another mod's name raises an error. Returns false when the player has a storage open, or another character of the account has this one open. |
 | `player:open_guild_storage()` | None | Opens the guild storage, as `guildopenstorage`. Returns true, or false and why: `"no_guild"`, `"no_storage"`, `"no_permission"`, `"in_use"` or `"already_open"`. |
 | `player:count_item(item, { from = place })` | `game.read` | The amount in a storage or the cart, as `storagecountitem` and `cartcountitem`. nil when it cannot be read: no cart, or a storage window open. |
 | `player:give_item(item, amount, { to = place, bound = kind })` | `player.give_items` | Gives items into a storage or the cart, with its restrictions and bound rules. `bound` is `"account"`, `"character"`, `"party"` or `"guild"`, as `getitembound`. |
 | `player:take_item(item, amount, { from = place })` | None | Takes items from a storage or the cart, as `storagedelitem` and `cartdelitem`. Takes nothing when there are too few. |
 | `guild:count_item(item)` | `game.read` | The amount in the guild storage, as `guildstoragecountitem`. |
 
-A place is `"storage"`, the account's storage, `"cart"`, or an extra storage's name.
+A place is `"storage"`, the account's storage, `"cart"`, or an extra storage's name. A mod reaches only its own extra storages and core's (review decision 52). The account's storage and the cart need the permissions in the table: none to open and take, `game.read` to count, and `player.give_items` to give.
 
 Events and hooks:
 
@@ -2131,6 +2159,7 @@ local s = player:get_status(statuses.blessing)
 - `start_status` returns true when the status starts. rAthena's rules apply: a weaker copy of an active status does nothing and returns true, and a status that fails its roll returns false.
 - `end_status` returns true when the status was active. `get_statuses()` lists every active status, by status.
 - A player's stats change before `start_status` or `end_status` returns, so the script reads the new values. Events of the status run after the script's call.
+- `start_status` and `end_status` on a player need `player.status`. On a monster or an NPC they need no permission.
 - Converted item scripts set `keep_duration`, as rAthena's `sc_start` does in item scripts. Converted NPC scripts set `cannot_be_avoided`.
 
 Events of mod and event contexts, with the options `status`, `target_kind` and `map`:
@@ -2164,6 +2193,7 @@ statuses.define {
 ```
 
 - The name is 1 to 48 lower case letters, digits and `_`. A name that a status of the game or of another mod has raises an error.
+- A mod defines at most 256 statuses. Defining a status again, such as in another zone, does not count.
 - `bonuses` returns bonus entries, as `add_timed_bonuses` takes them. They apply to players while the status lasts. A status restored at login runs it again.
 - With `tick_milliseconds`, `status_tick` fires at that interval, and once more when the status runs out.
 - Mod statuses get IDs from 100,000. A saved status keeps its name, so it comes back when its ID changes.
@@ -2569,7 +2599,7 @@ The server checks every entry at start with the rules of `bonuses.add`. `when` i
 | `player:show_headgear_effect(effect)` | None | rAthena's `hateffect`. It shows nothing yet: the protocol has no message for it. |
 | `player:get_skill_level(skill)` | `game.read` | rAthena's `getskilllv`. |
 | `player:get_equipped(slot)` | `game.read` | The copy in a slot, such as `right_hand`, as an equipped handle, or nil. |
-| `player:start_status(status, options)` | None | rAthena's `sc_start`, `sc_start2` and `sc_start4` ("Status effects" below). |
+| `player:start_status(status, options)` | `player.status` | rAthena's `sc_start`, `sc_start2` and `sc_start4` ("Status effects" below). |
 | `player:add_timed_bonuses(key, ms, bonuses, options)` | None | rAthena's `bonus_script` ("Timed bonuses" below). |
 
 Heals need no approved permission.
@@ -2791,7 +2821,10 @@ curl -X POST 'http://127.0.0.1:8301/debug/wathena/mods/reload?mod=example.greete
 - A folder is copied as it is. A folder or Git mod with `art/` and no `assets/` needs `wactl mod build-art` in the mods folder, or it shows placeholders.
 - The mod must pass `wactl mod validate` against core and the mods already installed.
 - The permissions it requests are shown, with those that need approval. Nothing is approved: the owner reviews them and adds the printed lines to the server config.
+- The records of other mods, core's too, whose prices, drops, exp or chat filter words the mod changes are listed. These need `data.core_override`.
+- A Lua budget the manifest asks for is shown. The server's `mods.max_budget` must allow it.
 - A mod with the same ID already installed is an error, unless `--replace` is given.
+- An unsigned `.zip` file installs with a note, and a `.sha256` file next to it proves only that the download is whole: whoever can change the `.zip` file can change it too. Check the checksum against one the author publishes elsewhere, or use `--public-key`. Required signatures are phase 9 work.
 
 ```text
 $ wactl mod install dist/example.demo-0.1.0.zip --mods-dir /srv/mods

@@ -38,6 +38,10 @@ type worldConfig struct {
 		Strict  bool                `yaml:"strict"`
 		Approve map[string][]string `yaml:"approve"`
 		Disable []string            `yaml:"disable"`
+		// Budget and MaxBudget are the mods' Lua budgets, so a mod that
+		// asks for more than the default loads as on the server.
+		Budget    mod.Budget `yaml:"budget"`
+		MaxBudget mod.Budget `yaml:"max_budget"`
 	} `yaml:"mods"`
 	Procedural struct {
 		FieldSize int            `yaml:"field_size"`
@@ -121,7 +125,7 @@ func proceduralWorld(configPath, ruleset string, seed []byte, version int) (*mad
 	ctx, cancel := commandContext(5 * time.Minute)
 	defer cancel()
 	loaded, err := gamedata.LoadMods(ctx, found, mod.Config{Base: base, Ruleset: c.Mods.Ruleset, Approve: c.Mods.Approve,
-		Disable: c.Mods.Disable, Strict: c.Mods.Strict}, mode, env.Items, env.Monsters, env.Tables, env.Jobs, &mod.MemoryIDs{}, env.Core, log)
+		Disable: c.Mods.Disable, Strict: c.Mods.Strict, Budgets: mod.Budgets{Default: c.Mods.Budget, Max: c.Mods.MaxBudget}}, mode, env.Items, env.Monsters, env.Tables, env.Jobs, &mod.MemoryIDs{}, env.Core, log)
 	if err != nil {
 		return nil, fmt.Errorf("mods: %w", err)
 	}

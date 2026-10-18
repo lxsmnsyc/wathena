@@ -79,7 +79,7 @@ type chatHost struct {
 	sent     []string
 }
 
-func (h *chatHost) Whisper(int64, string, string) error                 { return nil }
+func (h *chatHost) Whisper(int64, string, string, string) error         { return nil }
 func (h *chatHost) IsBlocking(int64, int64) (bool, error)               { return false, nil }
 func (h *chatHost) Sanction(int64, string, int64, string, string) error { return nil }
 func (h *chatHost) Unmute(int64) (bool, error)                          { return false, nil }

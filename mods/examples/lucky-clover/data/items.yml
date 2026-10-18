@@ -4,6 +4,7 @@
   type: Armor
   display_name: Clover Charm
   weight: 100
+  buy: 2000
   sell: 1000
   location: [both_accessory]
   armor_level: 1

@@ -180,7 +180,7 @@ func (r *Runtime) FireDeath(d Death) {
 				continue
 			}
 		}
-		if err := r.run(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("death"), obj); err != nil {
+		if err := r.runHandler(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("death"), obj); err != nil {
 			r.failed(h.ctx, "event death", err)
 		}
 	}
@@ -376,21 +376,20 @@ func (r *Runtime) RunExperience(e Experience) (int64, int64) {
 func (r *Runtime) runHooks(name string, fields []script.Field) ([]script.Value, bool) {
 	var chain []*hook
 	for _, h := range r.hooks[name] {
-		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) {
+		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) && !r.overBudget(h.ctx) {
 			chain = append(chain, h)
 		}
 	}
 	if len(chain) == 0 {
 		return nil, false
 	}
-	args := []script.Value{script.String(name), script.NewTable(fields...), script.Int(int64(len(chain)))}
+	saved := r.beginChain(chain)
+	args := []script.Value{script.String(name), script.NewTable(fields...), script.Int(int64(len(chain))), script.Int(r.chainToken)}
 	for _, h := range chain {
 		args = append(args, h.fn.Value())
 	}
-	prev, prevComputing, prevChain := r.current, r.computing, r.chain
-	r.chain, r.computing = chain, true
 	vals, err := r.s.Call(r.fns.runHooks.Value(), args...)
-	r.current, r.computing, r.chain = prev, prevComputing, prevChain
+	r.endChain(saved)
 	if err != nil {
 		r.afterError()
 		r.failed(chain[0].ctx, "hook "+name, err)
@@ -406,21 +405,20 @@ func (r *Runtime) runHooks(name string, fields []script.Field) ([]script.Value, 
 func (r *Runtime) runHookNested(name string, fields []script.Field) (script.Value, bool) {
 	var chain []*hook
 	for _, h := range r.hooks[name] {
-		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) {
+		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) && !r.overBudget(h.ctx) {
 			chain = append(chain, h)
 		}
 	}
 	if len(chain) == 0 {
 		return script.Nil, false
 	}
-	args := []script.Value{script.String(name), script.NewTable(fields...), script.Int(int64(len(chain)))}
+	saved := r.beginChain(chain)
+	args := []script.Value{script.String(name), script.NewTable(fields...), script.Int(int64(len(chain))), script.Int(r.chainToken)}
 	for _, h := range chain {
 		args = append(args, h.fn.Value())
 	}
-	prev, prevComputing, prevChain := r.current, r.computing, r.chain
-	r.chain, r.computing = chain, true
 	v, err := r.s.Call1Nested(r.fns.runHooks.Value(), args...)
-	r.current, r.computing, r.chain = prev, prevComputing, prevChain
+	r.endChain(saved)
 	if err != nil {
 		r.afterError()
 		r.failed(chain[0].ctx, "hook "+name, err)
@@ -429,25 +427,78 @@ func (r *Runtime) runHookNested(name string, fields []script.Field) (script.Valu
 	return v, true
 }
 
-// hookEnter sets the running context to the context of hook i, from 1,
-// of the running chain.
-func (r *Runtime) hookEnter(c *script.Call) error {
+// beginChain makes chain the running hook chain, with a new token, and
+// returns the state to give back to endChain. A token names one run of
+// a chain: hook_enter refuses any other, so a next() function kept from
+// an earlier chain, or from an outer chain, cannot switch the context
+// (review decision 52).
+func (r *Runtime) beginChain(chain []*hook) savedChain {
+	s := savedChain{current: r.current, computing: r.computing, chain: r.chain, token: r.chainToken, depth: len(r.hookStack)}
+	r.chainSeq++
+	r.chain, r.computing, r.chainToken = chain, true, r.chainSeq
+	return s
+}
+
+// endChain gives back the state that beginChain replaced.
+func (r *Runtime) endChain(s savedChain) {
+	r.setCurrent(s.current)
+	r.computing, r.chain, r.chainToken = s.computing, s.chain, s.token
+	if len(r.hookStack) > s.depth {
+		clear(r.hookStack[s.depth:])
+		r.hookStack = r.hookStack[:s.depth]
+	}
+}
+
+// chainHook checks the hook index and token of hook_enter and
+// hook_failed.
+func (r *Runtime) chainHook(c *script.Call, at int) (*hook, error) {
 	i := c.Int(0)
+	if tok, ok := c.Arg(at).AsInt(); !ok || tok != r.chainToken || r.chainToken == 0 {
+		return nil, errors.New("next: this hook chain has ended; call next only while the hook runs")
+	}
 	if i < 1 || int(i) > len(r.chain) {
+		return nil, errors.New("no hook chain runs")
+	}
+	return r.chain[i-1], nil
+}
+
+// hookEnter sets the running context to the context of hook i, from 1,
+// of the running chain, and keeps the context it replaced for
+// hookLeave.
+func (r *Runtime) hookEnter(c *script.Call) error {
+	h, err := r.chainHook(c, 1)
+	if err != nil {
+		return err
+	}
+	r.hookStack = append(r.hookStack, r.current)
+	r.setCurrent(h.ctx)
+	return nil
+}
+
+// hookLeave gives back the context that the last hookEnter of the
+// running chain replaced, once a hook's call returns.
+func (r *Runtime) hookLeave(c *script.Call) error {
+	if tok, ok := c.Arg(0).AsInt(); !ok || tok != r.chainToken || r.chainToken == 0 {
 		return errors.New("no hook chain runs")
 	}
-	r.current = r.chain[i-1].ctx
+	n := len(r.hookStack)
+	if n == 0 {
+		return errors.New("no hook runs")
+	}
+	prev := r.hookStack[n-1]
+	r.hookStack[n-1] = nil
+	r.hookStack = r.hookStack[:n-1]
+	r.setCurrent(prev)
 	return nil
 }
 
 // hookFailed logs a hook that failed. The chain goes on without its
 // result.
 func (r *Runtime) hookFailed(c *script.Call) error {
-	i := c.Int(0)
-	if i < 1 || int(i) > len(r.chain) {
+	h, err := r.chainHook(c, 2)
+	if err != nil {
 		return nil
 	}
-	h := r.chain[i-1]
 	msg, _ := c.Arg(1).AsString()
 	r.failed(h.ctx, "hook "+h.name, errors.New(msg))
 	return nil
@@ -681,9 +732,9 @@ func (r *Runtime) condition(ctx *Context, fn script.Value) (bool, error) {
 // runFn runs f with a context set.
 func (r *Runtime) runFn(c *Context, f func() error) error {
 	prev := r.current
-	r.current = c
+	r.setCurrent(c)
 	err := f()
-	r.current = prev
+	r.setCurrent(prev)
 	if err != nil {
 		r.afterError()
 	}

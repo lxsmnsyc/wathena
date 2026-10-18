@@ -255,6 +255,48 @@ describe('Online', () => {
     expect(lines).toEqual(['local Bob: hi 2', 'whisper Eve: psst 2', '#trade Ann: S> Knife ff00']);
   });
 
+  it('marks whispers and announcements from mods with the mod', () => {
+    const o = online();
+    o.setMap(map());
+    const got: string[] = [];
+    o.onWhisper = (from, text) => {
+      got.push(`whisper ${from}: ${text}`);
+    };
+    o.onServerText = (text) => {
+      got.push(`server ${text}`);
+    };
+    o.onAnnouncement = (text) => {
+      got.push(`announce ${text}`);
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'chat',
+          value: {
+            channel: ChatChannel.WHISPER,
+            fromName: 'Bob',
+            fromMod: 'example.a',
+            text: 'psst',
+          },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'chat',
+          value: { channel: ChatChannel.ANNOUNCEMENT, fromMod: 'example.a', text: 'Boss!' },
+        },
+      }),
+      create(EventSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.ANNOUNCEMENT, text: 'Restart' } },
+      }),
+    ]);
+    expect(got).toEqual([
+      'server [Mod example.a] Bob: psst',
+      'announce [Mod example.a] Boss!',
+      'announce Restart',
+    ]);
+  });
+
   it('passes channel, block, sanction and report events on', () => {
     const o = online();
     o.setMap(map());

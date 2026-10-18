@@ -484,6 +484,8 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `mods.disable` | none | none | Installed mods that must not load. |
 | `mods.events` | none | none | Changes to world events, by event name. See "World events". |
 | `mods.max_asset_mb` | none | `200` | The largest asset build of one mod, in MiB before compression. See "Mod art". |
+| `mods.budget.memory_mb`, `mods.budget.cpu_per_tick` | none | `16`, `2000000` | The Lua budget of each mod in each zone whose manifest asks for none: the memory its Lua objects may hold, and the CPU its calls may spend in one tick, about one unit per Lua instruction. See "Budgets" in [mods/README.md](../mods/README.md). |
+| `mods.max_budget.memory_mb`, `mods.max_budget.cpu_per_tick` | none | `64`, `10000000` | The most a mod's manifest may ask for. A mod that asks for more does not load. Each is at most 1024 MiB and 1,000,000,000. |
 | `chat.burst`, `chat.refill` | none | `5`, `1s` | Chat rate limits: lines at once, and the time for one more. See "Chat and moderation". |
 | `chat.new_character_burst`, `chat.new_character_refill`, `chat.new_character_period` | none | `3`, `3s`, `1h` | Lower limits for a character's first period after it was made. A period of `0s` turns them off. |
 | `chat.log_days` | none | none | Deprecated: use `retention.chat_days`. It still works, with a warning. Set with a different `retention.chat_days`, it is an error. |

@@ -21,6 +21,10 @@ import (
 	"github.com/lxsmnsyc/wathena/server/zone"
 )
 
+// anyBudget lets a manifest ask for any Lua budget up to the ceilings,
+// since the server owner's limits are not known to the tools.
+var anyBudget = mod.Budgets{Max: mod.Budget{MemoryMB: mod.CeilingMemoryMB, CPUPerTick: mod.CeilingCPUPerTick}}
+
 // Report is what wactl mod validate found.
 type Report struct {
 	Manifest *mod.Manifest
@@ -37,6 +41,10 @@ type Report struct {
 	Files, Cases int
 	// Records are the records the mod adds or changes, merged.
 	Records []Record
+	// Overrides are the prices, drops, exp and chat filter words the mod
+	// changes on records that other mods added, core's too, as
+	// "<kind> <record>: <fields>". They need data.core_override.
+	Overrides []string
 	// Loaded is the mod merged with core, when it loads.
 	Loaded *Loaded
 }
@@ -92,7 +100,7 @@ func (e *Env) Validate(ctx context.Context, p, depsDir string) *Report {
 	// mod is the world's ruleset itself, on its own base.
 	base := ""
 	if m.Manifest.Provides.Ruleset != nil {
-		s, err := mod.Resolve([]*mod.Mod{m}, mod.Config{Ruleset: m.ID(), Approve: map[string][]string{m.ID(): m.Manifest.Permissions}})
+		s, err := mod.Resolve([]*mod.Mod{m}, mod.Config{Ruleset: m.ID(), Approve: map[string][]string{m.ID(): m.Manifest.Permissions}, Budgets: anyBudget})
 		if err == nil {
 			base = s.Ruleset.Base
 			rep.Rulesets = append(rep.Rulesets, m.ID()+" (base "+base+")")
@@ -104,7 +112,7 @@ func (e *Env) Validate(ctx context.Context, p, depsDir string) *Report {
 		}
 		// Other problems, such as a dependency in another folder, are
 		// reported below.
-		_, err := mod.Resolve([]*mod.Mod{m}, mod.Config{Base: b, Approve: map[string][]string{m.ID(): m.Manifest.Permissions}})
+		_, err := mod.Resolve([]*mod.Mod{m}, mod.Config{Base: b, Approve: map[string][]string{m.ID(): m.Manifest.Permissions}, Budgets: anyBudget})
 		if err == nil || !strings.Contains(err.Error(), "is refused on the ruleset") {
 			rep.Rulesets = append(rep.Rulesets, "core.ruleset."+b)
 			if base == "" {
@@ -127,7 +135,24 @@ func (e *Env) Validate(ctx context.Context, p, depsDir string) *Report {
 	checkRequires(l, files, rep)
 	e.checkEntries(l, rep)
 	rep.Records = records(l)
+	rep.Overrides = overrides(l)
 	return rep
+}
+
+// overrides lists the Economy fields the mod sets on records that other
+// mods added (mod.Overlay.Overrides).
+func overrides(l *Loaded) []string {
+	id := l.Mod.ID()
+	list := []*mod.Overlay{l.MonsterOverlay, l.QuestOverlay}
+	if l.Items != nil {
+		list = append(list, l.Items.Overlay)
+	}
+	list = append(list, l.ChatOverlays...)
+	var out []string
+	for _, o := range list {
+		out = append(out, o.Overrides(id)...)
+	}
+	return out
 }
 
 // addErrors adds each line of a joined error as a problem.
@@ -147,6 +172,7 @@ func luaFiles(m *mod.Mod) (map[string]string, error) {
 	}
 	defer func() { _ = closeFS() }()
 	out := map[string]string{}
+	total := 0
 	err = fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -157,10 +183,13 @@ func luaFiles(m *mod.Mod) (map[string]string, error) {
 		if d.IsDir() || path.Ext(p) != ".lua" {
 			return nil
 		}
-		b, err := fs.ReadFile(fsys, p)
+		// A file is checked before it is read: an entry of a .zip file
+		// can declare any size.
+		b, err := mod.ReadLimited(fsys, p, int64(max(mod.MaxScriptBytes-total, 0)))
 		if err != nil {
 			return err
 		}
+		total += len(b)
 		out[p] = string(b)
 		return nil
 	})

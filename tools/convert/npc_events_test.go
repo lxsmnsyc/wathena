@@ -221,7 +221,7 @@ type eventHost struct {
 	said []string
 }
 
-func (h *eventHost) Announce(_ string, text string) error { h.said = append(h.said, text); return nil }
+func (h *eventHost) Announce(_, _, text string) error { h.said = append(h.said, text); return nil }
 func (h *eventHost) SendMessage(_ int64, text string) error {
 	h.said = append(h.said, "message: "+text)
 	return nil

@@ -135,6 +135,8 @@ func printReport(p string, rep *modkit.Report, show bool) error {
 		}
 		fmt.Printf("checked: %d Lua files, %d test cases\n", rep.Files, rep.Cases)
 		modkit.PrintPermissions(os.Stdout, m.ID, rep.Permissions)
+		modkit.PrintOverrides(os.Stdout, rep.Overrides)
+		modkit.PrintBudget(os.Stdout, m.Budget)
 	}
 	for _, n := range rep.Notes {
 		fmt.Println("note: " + n)

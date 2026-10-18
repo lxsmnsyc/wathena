@@ -5,7 +5,7 @@
 ---@class wa.world
 local world = {}
 
----Shows a line to every player of the world, as announce.
+---Shows a line to every player of the world, as announce. Players see the mod's ID with a mod's line.
 ---
 ---Needs the permission `world.announce`.
 ---@param text string At most 255 bytes.

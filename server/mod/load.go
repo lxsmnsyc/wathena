@@ -8,6 +8,7 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"os"
@@ -39,6 +40,9 @@ type Mod struct {
 	Builtin bool
 	// Grants are the permissions the mod holds, once resolved.
 	Grants Grants
+	// Budget is the mod's Lua budget, once resolved. The built-in mods
+	// have none: core is the server's own content.
+	Budget Budget
 
 	// open opens the mod's files. Each call reads the current files, so
 	// a reload sees changes. It is nil for built-in mods.
@@ -174,7 +178,7 @@ func readMod(p string, open func() (fs.FS, func() error, error)) (*Mod, error) {
 		return nil, err
 	}
 	defer func() { _ = closeFS() }()
-	data, err := fs.ReadFile(fsys, ManifestFile)
+	data, err := ReadLimited(fsys, ManifestFile, MaxManifestBytes)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", p, err)
 	}
@@ -204,6 +208,10 @@ type Config struct {
 	// rAthena when the server starts (mods/README.md, "Item scripts").
 	// Without it, core has no files.
 	Core fs.FS
+	// Budgets are the mods' Lua budgets: the default, and the most a
+	// manifest may ask for (review decision 52). Zero fields take the
+	// package defaults.
+	Budgets Budgets
 }
 
 // Set is the mods that load, in load order, with the world's ruleset.
@@ -318,6 +326,13 @@ func Resolve(found []*Mod, cfg Config) (*Set, error) {
 			}
 		}
 		m.Grants = g
+		if !m.Builtin {
+			b, err := cfg.Budgets.budgetFor(id, man.Budget)
+			if err != nil {
+				fail("%v", err)
+			}
+			m.Budget = b
+		}
 		if len(missing) > 0 {
 			fail("%s requests permissions the server owner has not approved: %s. Review them, then approve them in the config under mods.approve.%s",
 				id, strings.Join(missing, ", "), id)
@@ -526,14 +541,49 @@ func (s *Set) Visible(id string) []string {
 	return out
 }
 
-// readFile reads one file of a mod.
+// readFile reads one file of a mod, such as a data file, up to
+// MaxDataBytes. The built-in mods' files are the server's own.
 func (m *Mod) readFile(name string) ([]byte, error) {
 	fsys, closeFS, err := m.Open()
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = closeFS() }()
-	return fs.ReadFile(fsys, name)
+	if m.Builtin {
+		return fs.ReadFile(fsys, name)
+	}
+	return ReadLimited(fsys, name, MaxDataBytes)
+}
+
+// Limits of a mod's files, checked before they are read, since an entry
+// of a .zip file can declare any size.
+const (
+	// MaxManifestBytes is the largest mod.yaml.
+	MaxManifestBytes = 64 << 10
+	// MaxDataBytes is the largest file a mod's data overlays read, such
+	// as data/items.yml.
+	MaxDataBytes = 32 << 20
+)
+
+// ReadLimited reads a file of a mod's files, and refuses one larger than
+// limit bytes before it allocates for it.
+func ReadLimited(fsys fs.FS, name string, limit int64) ([]byte, error) {
+	f, err := fsys.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	if fi, err := f.Stat(); err == nil && fi.Size() > limit {
+		return nil, fmt.Errorf("%s is larger than %d bytes", name, limit)
+	}
+	b, err := io.ReadAll(io.LimitReader(f, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(b)) > limit {
+		return nil, fmt.Errorf("%s is larger than %d bytes", name, limit)
+	}
+	return b, nil
 }
 
 // file names a file of the mod in messages.

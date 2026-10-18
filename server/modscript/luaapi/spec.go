@@ -213,7 +213,7 @@ var Modules = []Module{
 		Name: "wa.maps", Local: "maps",
 		Doc: "Maps.",
 		Funcs: []Func{
-			{Name: "announce", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of a map, as mapannounce."},
+			{Name: "announce", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of a map, as mapannounce. Players see the mod's ID with a mod's line."},
 			{Name: "find_entities", Params: []Param{{"query", "wa.EntityQuery", "One area, filters, and an order."}}, Returns: "(wa.Player|wa.Monster|wa.Npc)[]",
 				Doc: "The entities of an area of the context's map that pass every filter, sorted, and cut to the limit. Ties sort by kind, then by entity. A query with no area, two areas, or a field it does not know raises an error.", Permission: "game.read"},
 			{Name: "get_display_name", Params: []Param{{"map", "string", "A map ID, such as \"gen:town:t7\"."}}, Returns: "string?",
@@ -224,7 +224,7 @@ var Modules = []Module{
 		Name: "wa.world", Local: "world",
 		Doc: "The world.",
 		Funcs: []Func{
-			{Name: "announce", Params: []Param{{"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of the world, as announce.", Permission: "world.announce"},
+			{Name: "announce", Params: []Param{{"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of the world, as announce. Players see the mod's ID with a mod's line.", Permission: "world.announce"},
 			{Name: "get_shop", Params: []Param{{"name", "string", "A shop of data/npcs.yml: a full record name, or a plain name, which is the calling mod's record, then core's."}}, Returns: "wa.Shop?",
 				Doc: "A shop's handle, or nil when there is none. world:get_shop(name), as review decision 30 writes it, works too.", Permission: "game.read"},
 		},
@@ -320,7 +320,7 @@ var Modules = []Module{
 	},
 	{
 		Name: "wa.variables", Local: "variables",
-		Doc:   "Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID.",
+		Doc:   "Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables.",
 		Funcs: variableFuncs(),
 	},
 	{
@@ -362,7 +362,7 @@ var Modules = []Module{
 		Name: "wa.statuses", Local: "statuses", Doc: "Status effects, from rAthena's SC_ names, and the statuses mods define.", Constants: true,
 		Funcs: []Func{
 			{Name: "define", Params: []Param{{"definition", "wa.StatusDefinition", ""}},
-				Doc: "Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error."},
+				Doc: "Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error. A mod defines at most 256 statuses."},
 		},
 	},
 	{Name: "wa.effects", Local: "effects", Doc: "Effects for entity:show_effect, from rAthena's EF_ names.", Constants: true},
@@ -470,7 +470,7 @@ var Classes = []Class{
 			{Name: "give_item_from_group", Params: []Param{{"group", "integer", "A group from items.group."}}, Doc: "Gives one use of an item group, as getgroupitem.", Permission: "player.give_items"},
 			{Name: "count_item", Params: []Param{itemParam, {"options", "wa.FromOptions?", ""}}, Returns: "integer?", Doc: "How many of the item the player has, as countitem. With from, how many a storage or the cart holds, as storagecountitem and cartcountitem; nil when it cannot be read: no cart, or a storage window open.", Permission: "game.read"},
 			{Name: "take_item", Params: []Param{itemParam, {"amount", "integer", "1 or more."}, {"options", "wa.FromOptions?", ""}}, Returns: "boolean", Doc: "Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. Returns false, and takes nothing, when there are too few."},
-			{Name: "open_storage", Params: []Param{{"name", "string?", "An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. Nothing opens the account's storage."}}, Returns: "boolean", Doc: "Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee."},
+			{Name: "open_storage", Params: []Param{{"name", "string?", "An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. A mod reaches only its own records and core's: another mod's name raises an error. Nothing opens the account's storage."}}, Returns: "boolean", Doc: "Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee."},
 			{Name: "open_guild_storage", Returns: "boolean, string?", Doc: "Opens the guild storage, as guildopenstorage. Returns true, or false and why: \"no_guild\", \"no_storage\", \"no_permission\", \"in_use\" or \"already_open\"."},
 			{Name: "get_currency", Params: []Param{currencyParam}, Returns: "integer", Doc: "How much of a currency of data/currencies.yml the player has, such as cash for rAthena's #CASHPOINTS. An account's currency is its account's.", Permission: "game.read"},
 			{Name: "give_currency", Params: []Param{currencyParam, {"amount", "integer", "1 to 2147483647."}},
@@ -523,7 +523,7 @@ var Classes = []Class{
 			{Name: "reset_skill", Params: []Param{{"skill", "integer", "A skill from skills.id."}, {"options", "wa.ResetSkillOptions?", ""}}, Returns: "boolean",
 				Doc: "Lowers one skill, to 0 by default, and refunds its skill points. Returns false, and changes nothing, when another learned skill needs the lowered level and with_dependents is not set, when the skill is not above the level, or for a quest skill."},
 			{Name: "whisper", Params: []Param{{"text", "string", "1 to 255 bytes."}, {"options", "wa.WhisperOptions?", ""}},
-				Doc: "Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it."},
+				Doc: "Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it. The player sees the mod's ID with a mod's whisper, as a server line it cannot answer, so it cannot pass for a player's. Core's whispers are plain whispers."},
 			{Name: "is_blocking", Params: []Param{{"other", "wa.Player", ""}}, Returns: "boolean", Doc: "Whether the player blocks the other player's name.", Permission: "game.read"},
 			{Name: "is_friend", Params: []Param{{"other", "wa.Player", ""}}, Returns: "boolean", Doc: "Whether the other player is on the player's friend list. Only players add and remove friends.", Permission: "game.read"},
 			{Name: "get_friend_names", Returns: "string[]", Doc: "The names on the player's friend list, in the order they were added.", Permission: "game.read"},
@@ -1568,8 +1568,8 @@ func showEffect(who string) Func {
 // 0002, review decision 19).
 var statusMethods = []Func{
 	{Name: "start_status", Params: []Param{{"status", "integer", "A status from wa.statuses."}, {"options", "wa.StatusOptions?", ""}}, Returns: "boolean",
-		Doc: "Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns."},
-	{Name: "end_status", Params: []Param{{"status", "integer", ""}}, Returns: "boolean", Doc: "Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns."},
+		Doc: "Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status."},
+	{Name: "end_status", Params: []Param{{"status", "integer", ""}}, Returns: "boolean", Doc: "Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns. On a player it needs player.status."},
 	{Name: "has_status", Params: []Param{{"status", "integer", ""}}, Returns: "boolean", Doc: "Whether a status is active, as getstatus.", Permission: "game.read"},
 	{Name: "get_status", Params: []Param{{"status", "integer", ""}}, Returns: "wa.Status?", Doc: "An active status, or nil.", Permission: "game.read"},
 	{Name: "get_statuses", Returns: "wa.Status[]", Doc: "The active statuses, by status.", Permission: "game.read"},
@@ -1620,7 +1620,7 @@ var Events = []Event{
 	{Name: "status_start", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status started on an entity of the context's map, or started again. Options narrow it."},
 	{Name: "status_end", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status ended. Options narrow it."},
 	{Name: "status_tick", Kinds: []string{"mod", "event"}, Params: []Param{{"event", "wa.StatusEvent", ""}}, Doc: "A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it."},
-	{Name: "chat", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"message", "wa.ChatMessage", ""}}, Doc: "A player on the context's map said a line: local chat, a whisper, a party line, or a channel line. It runs after the line went out. Options narrow it."},
+	{Name: "chat", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"message", "wa.ChatMessage", ""}}, Doc: "A player on the context's map said a line: local chat, a whisper, a party line, or a channel line. It runs after the line went out. Options narrow it. Whispers, party and guild lines reach only a mod with rules.override, which the chat hook needs too."},
 	{Name: "party_join", Kinds: []string{"mod", "event"}, Params: []Param{{"join", "wa.PartyMembership", ""}}, Doc: "A player of the context's map joined a party: an accepted invite, or a wa.parties call. It does not fire for a player who makes a party itself."},
 	{Name: "party_leave", Kinds: []string{"mod", "event"}, Params: []Param{{"leave", "wa.PartyMembership", ""}}, Doc: "A player of the context's map left its party. A member who is offline gets no event."},
 	{Name: "party_change", Kinds: []string{"mod", "event"}, Params: []Param{{"change", "wa.PartyChange", ""}}, Doc: "A party's leader or options changed, by a change made on the context's map."},

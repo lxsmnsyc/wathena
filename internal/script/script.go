@@ -63,7 +63,16 @@ const (
 	hNres
 	hFatal
 	hMem
+	hOwner
+	hSpent
+	hOwnerMem
+	hOwnerLimit = hOwnerMem + MaxOwners
+	hWords      = hOwnerLimit + MaxOwners
 )
+
+// MaxOwners is how many owners of memory a state has, GLUE_OWNERS.
+// Owner 0 holds what no other owner does.
+const MaxOwners = 512
 
 // Types of glue_value.
 const (
@@ -255,6 +264,50 @@ func (s *State) Memory() int64 {
 		return 0
 	}
 	return s.e.hdr(hMem)
+}
+
+// SetOwner sets the owner of the code that runs from now on, from 0 to
+// MaxOwners - 1. Memory that grows is charged to it, within its limit
+// while a call runs. A host function may call it. Other values are owner
+// 0.
+func (s *State) SetOwner(owner int) {
+	if s.e == nil {
+		return
+	}
+	if owner < 0 || owner >= MaxOwners {
+		owner = 0
+	}
+	s.e.setHdr(hOwner, int64(owner))
+}
+
+// SetOwnerLimit sets an owner's memory limit in bytes, 0 for none. A
+// call that would grow the owner's memory past it stops with
+// ErrMemoryLimit, as the state's limit does. The state's own limit still
+// applies.
+func (s *State) SetOwnerLimit(owner int, bytes int64) {
+	if s.e == nil || owner < 0 || owner >= MaxOwners {
+		return
+	}
+	s.e.setHdr(hOwnerLimit+owner, max(bytes, 0))
+}
+
+// OwnerMemory returns the bytes an owner's blocks hold. A block belongs
+// to the owner that ran when it last grew.
+func (s *State) OwnerMemory(owner int) int64 {
+	if s.e == nil || owner < 0 || owner >= MaxOwners {
+		return 0
+	}
+	return s.e.hdr(hOwnerMem + owner)
+}
+
+// Spent returns the CPU units charged since the state began: about one
+// per Lua instruction, as the per-call budget counts them. The
+// difference of two readings is what ran between them.
+func (s *State) Spent() int64 {
+	if s.e == nil {
+		return 0
+	}
+	return s.e.hdr(hSpent)
 }
 
 // GC runs a full garbage collection.

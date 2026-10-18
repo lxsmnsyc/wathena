@@ -679,8 +679,22 @@ func (h scriptHost) SetVariable(id int64, v modscript.VariableKey, value string)
 		delete(m, k)
 		return nil
 	}
-	if _, ok := m[k]; !ok && len(m) >= maxVariables {
+	old, ok := m[k]
+	if !ok && len(m) >= maxVariables {
 		return fmt.Errorf("the player holds %d variables, the most it may", maxVariables)
+	}
+	if len(value) > len(old) {
+		// A mod's share of the player's variables is limited too, so one
+		// mod cannot fill the player's record (review decision 52).
+		used := len(value)
+		for k2, v2 := range m {
+			if k2.Mod == v.Mod && k2 != k {
+				used += len(v2)
+			}
+		}
+		if used > modscript.MaxModPlayerBytes {
+			return fmt.Errorf("%s's variables on the player would take %d bytes, more than the %d a mod may", v.Mod, used, modscript.MaxModPlayerBytes)
+		}
 	}
 	m[k] = value
 	return nil
@@ -698,21 +712,22 @@ func (h scriptHost) ItemName(itemID uint32) (string, bool) {
 	return d.Name, true
 }
 
-// Announce is announce and mapannounce.
-func (h scriptHost) Announce(mapName, text string) error {
+// Announce is announce and mapannounce. Players see mod with a mod's
+// line.
+func (h scriptHost) Announce(mapName, mod, text string) error {
 	if mapName == "" {
 		if h.z.World == nil {
-			h.z.Announce(text, 0)
+			h.z.AnnounceFrom(text, 0, mod)
 			return nil
 		}
-		h.z.World.Announce(text, 0)
+		h.z.World.AnnounceFrom(text, 0, mod)
 		return nil
 	}
 	to := h.z.zoneOf("map/" + strings.TrimPrefix(mapName, "map/"))
 	if to == nil {
 		return fmt.Errorf("maps.announce: the map %s does not run in this world", mapName)
 	}
-	to.Announce(text, 0)
+	to.AnnounceFrom(text, 0, mod)
 	return nil
 }
 

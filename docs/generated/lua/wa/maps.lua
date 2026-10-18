@@ -5,7 +5,7 @@
 ---@class wa.maps
 local maps = {}
 
----Shows a line to every player of a map, as mapannounce.
+---Shows a line to every player of a map, as mapannounce. Players see the mod's ID with a mod's line.
 ---@param map string A map name, such as prontera.
 ---@param text string At most 255 bytes.
 function maps.announce(map, text) end

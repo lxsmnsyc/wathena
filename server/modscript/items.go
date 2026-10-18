@@ -209,9 +209,9 @@ func (r *Runtime) setup(entry string) (script.Value, string, error) {
 	if !ok {
 		return script.Nil, "", fmt.Errorf("item script %s: %s has no %s", entry, mod, path)
 	}
-	r.loading = mod
+	r.setLoading(mod)
 	fn, err := r.s.Call1(r.fns.loadEntry.Value(), script.String(mod), script.String(path), script.String(src))
-	r.loading = ""
+	r.setLoading("")
 	if err != nil {
 		r.afterError()
 		r.countError(mod, err)

@@ -47,7 +47,8 @@ func loadMods(ctx context.Context, o modOptions, base string, mode reference.Mod
 			return nil, err
 		}
 	}
-	cfg := mod.Config{Ruleset: o.Ruleset, Base: base, Approve: o.Approve, Disable: o.Disable, Strict: o.Strict}
+	cfg := mod.Config{Ruleset: o.Ruleset, Base: base, Approve: o.Approve, Disable: o.Disable, Strict: o.Strict,
+		Budgets: mod.Budgets{Default: o.Budget, Max: o.MaxBudget}}
 	m, err := gamedata.LoadMods(ctx, found, cfg, mode, items, monsters, tables, jobs, ids, core, log)
 	if err != nil {
 		return nil, err

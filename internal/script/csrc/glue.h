@@ -45,6 +45,7 @@ void glue_limit_error(lua_State *L);
 static inline void glue_charge(lua_State *L, int64_t n) {
 	glue_state *st = glue_of(L);
 	st->budget -= n;
+	st->h.spent += n;
 	if (st->budget <= 0 && st->limited)
 		glue_limit_error(L);
 }

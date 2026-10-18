@@ -18,8 +18,10 @@ import (
 // ChatHost is a Host with chat. A Host without it raises an error on
 // these calls.
 type ChatHost interface {
-	// Whisper shows a whisper to a player from a name it gives.
-	Whisper(player int64, from, text string) error
+	// Whisper shows a whisper to a player from a name it gives. mod is
+	// the mod that sends it, which the player sees with the line, or ""
+	// for core (review decision 52).
+	Whisper(player int64, mod, from, text string) error
 	// IsBlocking reports whether a player blocks another.
 	IsBlocking(player, other int64) (bool, error)
 	// Sanction mutes or jails a player for minutes, with a reason. by
@@ -59,6 +61,16 @@ const (
 
 // Chat channels of the chat event that are not channel names.
 var chatKinds = []string{"public", "whisper", "party", "guild"}
+
+// PrivateChatPermission is the permission that hears private lines in
+// the chat event. The chat hook needs it too, and sees every line.
+const PrivateChatPermission = "rules.override"
+
+// IsPrivateChat reports whether a line of a channel of the chat event is
+// private: a whisper, or a party or guild line.
+func IsPrivateChat(channel string) bool {
+	return channel == "whisper" || channel == "party" || channel == "guild"
+}
 
 // IsChatKind reports whether a channel of the chat event is one of
 // public, whisper, party and guild, which no chat channel may be named.
@@ -155,7 +167,13 @@ func (r *Runtime) FireChat(m ChatMessage) {
 		if h.chat != nil && !h.chat.match(m, r.host.Map()) {
 			continue
 		}
-		if err := r.run(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("chat"), obj); err != nil {
+		// Whispers, party and guild lines are private. Only a mod with
+		// rules.override, which the chat hook needs and which sees every
+		// line there, hears them (review decision 52).
+		if IsPrivateChat(m.Channel) && !h.ctx.grants.Has(PrivateChatPermission) {
+			continue
+		}
+		if err := r.runHandler(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("chat"), obj); err != nil {
 			r.failed(h.ctx, "event chat", err)
 		}
 	}
@@ -220,7 +238,7 @@ func (r *Runtime) playerWhisper(c *script.Call) error {
 	if utf8.RuneCountInString(from) > MaxWhisperName || strings.TrimSpace(from) == "" {
 		return fmt.Errorf("%s: from must be 1 to %d characters", what, MaxWhisperName)
 	}
-	return h.Whisper(id, from, text)
+	return h.Whisper(id, r.sender(), from, text)
 }
 
 // whisperName is the default from of player:whisper: the NPC's name in

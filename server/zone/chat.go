@@ -63,14 +63,22 @@ func (z *Zone) chatEvents(p *Player) []*wathenav1.Event {
 type announcement struct {
 	text  string
 	color uint32
+	// mod is the mod whose script sent it, or "" (review decision 52).
+	mod string
 }
 
 // Announce shows a line to every player of the zone. Any goroutine may
 // call it. It never waits: when the zone is far behind, the line is
 // dropped.
 func (z *Zone) Announce(text string, color uint32) {
+	z.AnnounceFrom(text, color, "")
+}
+
+// AnnounceFrom is Announce for a mod's script: players see mod, the
+// mod's ID, with the line.
+func (z *Zone) AnnounceFrom(text string, color uint32, mod string) {
 	select {
-	case z.announces <- announcement{text, color}:
+	case z.announces <- announcement{text, color, mod}:
 	default:
 	}
 }
@@ -82,6 +90,7 @@ func (z *Zone) announce(a announcement) {
 			Channel: wathenav1.ChatChannel_CHAT_CHANNEL_ANNOUNCEMENT,
 			Text:    a.text,
 			Color:   a.color,
+			FromMod: a.mod,
 		}.Build()}.Build())
 	}
 }

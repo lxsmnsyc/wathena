@@ -29,7 +29,16 @@ type Kind struct {
 	// CoreNames lets core's own file add records with plain names, such
 	// as max_hp, which mods then change by that name.
 	CoreNames bool
+	// Economy are fields that change the game's economy, such as an
+	// item's prices or a monster's drops. Setting one on a record another
+	// mod added, core's too, needs the permission data.core_override
+	// (proposal 0002, review decision 52).
+	Economy []string
 }
+
+// CoreOverride is the permission that changes the Economy fields of
+// records that other mods added.
+const CoreOverride = "data.core_override"
 
 // Record is one record that mods added or changed. Core records that no
 // mod touched are not in an Overlay.
@@ -61,6 +70,31 @@ type Overlay struct {
 
 // Record returns a record by full name, or nil when no mod touched it.
 func (o *Overlay) Record(name string) *Record { return o.byName[name] }
+
+// Overrides lists the Economy fields that a mod set on records other
+// mods added, as "<kind> <record>: <field>, <field>", for wactl mod
+// install. Such a mod needs data.core_override.
+func (o *Overlay) Overrides(modID string) []string {
+	if o == nil {
+		return nil
+	}
+	var out []string
+	for _, r := range o.Records {
+		if r.Mod == modID {
+			continue
+		}
+		var keys []string
+		for _, k := range o.Kind.Economy {
+			if r.SetBy[k] == modID {
+				keys = append(keys, k)
+			}
+		}
+		if len(keys) > 0 {
+			out = append(out, fmt.Sprintf("%s %s: %s", o.Kind.Name, r.Name, strings.Join(keys, ", ")))
+		}
+	}
+	return out
+}
 
 // Overlay merges every loaded mod's file of a kind, in load order. core
 // reports whether core has a record of a name.
@@ -155,6 +189,10 @@ func (o *Overlay) merge(m *Mod, data []byte, core func(string) bool, strict bool
 		for _, key := range order {
 			if r.Mod != m.ID() && slices.Contains(o.Kind.Fixed, key) {
 				bad(fields[key].Line, "%s: %s cannot be changed on a record the mod did not add", full, key)
+				continue
+			}
+			if r.Mod != m.ID() && slices.Contains(o.Kind.Economy, key) && !m.Grants.Has(CoreOverride) {
+				bad(fields[key].Line, "%s: changing %s of a record that %s added needs the permission %s", full, key, r.Mod, CoreOverride)
 				continue
 			}
 			var v any

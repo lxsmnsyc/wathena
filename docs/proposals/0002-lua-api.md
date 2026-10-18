@@ -1097,6 +1097,14 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Enforcement of existing permissions.** `player.status` is enforced. Whispers and announcements from mods are marked as coming from the mod, and reading private chat needs its permission. Mods reach only their own storages, unless a permission says otherwise.
     - All of these only add to API 1.0 or enforce rules it already states.
 
+53. Details of the mod security fixes (phase 8 step 5). The user approved these on 2026-10-18:
+    - **Private chat.** The `chat` event gives whispers, party and guild lines only to mods with `rules.override`, which the chat hook already needs. There is no separate permission.
+    - **Budget names.** The manifest field `budget` with `memory_mb` and `cpu_per_tick`, and the config keys `mods.budget` and `mods.max_budget`. Defaults: 16 MB and 2,000,000 units per tick, with at most 64 MB and 10,000,000 units.
+    - **Over budget.** Event handlers, hooks and timers of the mod are skipped for the rest of the tick, and timers wait for the next tick. Scripts that players trigger, such as item, skill and NPC scripts, still run.
+    - **Sandbox output.** `tostring` shows `table: #N` instead of an address, and `string.format` refuses `%p`.
+    - **Price rule.** An item record that breaks rAthena's buy and sell rule (buy / 124 below sell / 75) is a load error.
+    - **Mod whispers.** They carry the mod's ID and show in the client as server lines with a `[Mod <id>]` prefix, with no reply tab.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.

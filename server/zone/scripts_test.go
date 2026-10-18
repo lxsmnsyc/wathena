@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lxsmnsyc/wathena/internal/script"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/mod"
@@ -192,6 +193,13 @@ return function()
   events.on("death", function(death) while true do end end)
   events.on("death", function(death) death.killer:send_message("after the loop") end)
 end`)
+	// A budget per tick above the per-call limit, so the second handler
+	// runs in the same tick (modscript/budget.go).
+	sc := z.Mods.Scripts[0]
+	sc.Budget.CPUPerTick = 2 * script.DefaultCPU
+	if err := z.scripts.Reload(sc); err != nil {
+		t.Fatal(err)
+	}
 	z.stepAt(50)
 	events(p)
 	got := systemLines(kill(t, z, p, m))

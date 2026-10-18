@@ -227,8 +227,8 @@ func (h *npcHost) SetVariable(_ int64, v modscript.VariableKey, value string) er
 	}
 	return nil
 }
-func (h *npcHost) ItemName(id uint32) (string, bool) { return fmt.Sprintf("Item %d", id), true }
-func (h *npcHost) Announce(string, string) error     { return nil }
+func (h *npcHost) ItemName(id uint32) (string, bool)     { return fmt.Sprintf("Item %d", id), true }
+func (h *npcHost) Announce(string, string, string) error { return nil }
 
 // The storage calls: storage opens, and the storages are empty.
 func (h *npcHost) OpenStorage(int64, string, string) (bool, error) { return true, nil }

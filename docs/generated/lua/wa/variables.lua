@@ -1,7 +1,7 @@
 ---@meta wa.variables
 -- Generated from server/modscript/luaapi. Do not edit: wactl mod types writes it again.
 
----Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID.
+---Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables.
 ---@class wa.variables
 local variables = {}
 

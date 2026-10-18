@@ -45,9 +45,9 @@ func (r *Runtime) LoadTests(modID, path, source string) ([]string, error) {
 	if r.scripts[modID] == nil {
 		return nil, fmt.Errorf("modscript: %s has no scripts in this runtime", modID)
 	}
-	r.loading = modID
+	r.setLoading(modID)
 	v, err := r.s.Call1(r.fns.loadTests.Value(), script.String(modID), script.String(path), script.String(source))
-	r.loading = ""
+	r.setLoading("")
 	if err != nil {
 		r.afterError()
 		return nil, err
@@ -77,9 +77,9 @@ func (r *Runtime) RunCase(modID string, i int, w TestWorld) error {
 	}
 	resume := func(args ...script.Value) ([]script.Value, bool, error) {
 		prev := r.loading
-		r.loading = modID
+		r.setLoading(modID)
 		vals, done, err := th.Resume(args...)
-		r.loading = prev
+		r.setLoading(prev)
 		return vals, done, err
 	}
 	vals, done, err := resume(script.Int(int64(i + 1)))

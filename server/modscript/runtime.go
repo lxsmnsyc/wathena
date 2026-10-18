@@ -204,14 +204,21 @@ type Runtime struct {
 	// closed is the error a closed conversation raises.
 	closed string
 	// variables are the declared variables, by handle ID. declared maps
-	// "<mod> <scope> <name>" to the type, so a name keeps one type.
-	variables []*variable
-	declared  map[string]string
+	// "<mod> <scope> <name>" to the type and handle, so a name keeps one
+	// type and one handle. modVariables counts each mod's declarations.
+	variables    []*variable
+	declared     map[string]declared
+	modVariables map[string]int
 	// hooks are the hooks by name, in the order they run. chain is the
 	// chain that runs now.
 	hooks    map[string][]*hook
 	hookByID map[int64]*hook
 	chain    []*hook
+	// chainToken names the run of the chain that runs now, or 0, and
+	// chainSeq is the last token given. hookStack holds the contexts
+	// that hook_enter replaced, for hook_leave.
+	chainToken, chainSeq int64
+	hookStack            []*Context
 	// schedules are the schedules of wa.schedules, by handle ID.
 	schedules map[int64]*scheduled
 	// events are the event contexts that run, by context ID.
@@ -242,6 +249,15 @@ type Runtime struct {
 	generation   []*genLayer
 	genTemplates []content.Template
 	gen          *genState
+	// budgets are the mods' budgets, by mod ID, and nextOwner the next
+	// owner of memory to give (budget.go). spent is the state's CPU count
+	// at the last charge. tick counts the ticks, and tickNow is the zone
+	// clock at the last one.
+	budgets   map[string]*budget
+	nextOwner int
+	spent     int64
+	tick      int64
+	tickNow   int64
 }
 
 // Context owns what a setup function and its handlers create
@@ -326,16 +342,26 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		scripts: map[string]*mod.Scripts{}, contexts: map[string]*Context{},
 		handlers: map[string][]*handler{}, byID: map[int64]*handler{}, timers: map[int64]*timer{},
 		setups: map[string]*script.Ref{}, bonuses: map[int64]*Bonus{},
-		conversations: map[int64]*Conversation{}, declared: map[string]string{},
+		conversations: map[int64]*Conversation{}, declared: map[string]declared{}, modVariables: map[string]int{},
 		hooks: map[string][]*hook{}, hookByID: map[int64]*hook{}, schedules: map[int64]*scheduled{}, events: map[int64]*Context{},
 		skillCtxs: map[int64]*Context{}, skillEntries: map[int64]string{}, passives: map[passiveKey]*passive{},
 		monsterCtxs: map[int64]*Context{},
+		budgets:     map[string]*budget{}, nextOwner: 1,
 	}
-	s, err := script.New(script.Options{Limits: opts.Limits})
+	// Each owner of memory has its limit: core CoreMemory and each mod
+	// its budget's. Without a limit in Options, the state has none of its
+	// own, since the owners' limits bound it.
+	limits := opts.Limits
+	if limits.Memory == 0 {
+		limits.Memory = -1
+	}
+	s, err := script.New(script.Options{Limits: limits})
 	if err != nil {
 		return nil, err
 	}
 	r.s = s
+	s.SetOwnerLimit(0, CoreMemory)
+	r.tickNow = opts.Host.Now()
 	for _, id := range opts.Off {
 		if id != mod.Core {
 			if r.offMods == nil {
@@ -349,6 +375,10 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		return nil, err
 	}
 	for _, sc := range mods {
+		if err := r.addOwner(sc); err != nil {
+			s.Close()
+			return nil, err
+		}
 		r.scripts[sc.Mod] = sc
 		r.order = append(r.order, sc.Mod)
 	}
@@ -477,6 +507,7 @@ func (r *Runtime) init() error {
 		{"hooks_on", r.hooksOn},
 		{"hooks_remove", r.hooksRemove},
 		{"hook_enter", r.hookEnter},
+		{"hook_leave", r.hookLeave},
 		{"hook_failed", r.hookFailed},
 		{"schedules_add", r.schedulesAdd},
 		{"schedules_when", r.schedulesWhen},
@@ -657,23 +688,23 @@ func (r *Runtime) start(sc *mod.Scripts) error {
 			s.Release()
 		}
 	}()
-	r.loading = sc.Mod
+	r.setLoading(sc.Mod)
 	for _, e := range sc.Entries {
 		fn, err := r.s.Call1(r.fns.loadEntry.Value(), script.String(sc.Mod), script.String(e), script.String(sc.Files[e]))
 		if err != nil {
-			r.loading = ""
+			r.setLoading("")
 			r.afterError()
 			r.countError(sc.Mod, err)
 			return err
 		}
 		ref, err := r.s.Keep(fn)
 		if err != nil {
-			r.loading = ""
+			r.setLoading("")
 			return err
 		}
 		setups = append(setups, ref)
 	}
-	r.loading = ""
+	r.setLoading("")
 	r.contexts[sc.Mod] = c
 	for i, s := range setups {
 		if err := r.run(c, s.Value()); err != nil {
@@ -705,6 +736,9 @@ func (r *Runtime) Reload(sc *mod.Scripts) error {
 		}
 	}
 	r.setupOrder = slices.DeleteFunc(r.setupOrder, func(k string) bool { return strings.HasPrefix(k, sc.Mod+":") })
+	if err := r.addOwner(sc); err != nil {
+		return err
+	}
 	if _, ok := r.scripts[sc.Mod]; !ok {
 		r.order = append(r.order, sc.Mod)
 	}
@@ -806,9 +840,9 @@ func (r *Runtime) newID() int64 {
 // context's failures when it is a handler or timer.
 func (r *Runtime) run(c *Context, fn script.Value, args ...script.Value) error {
 	prev := r.current
-	r.current = c
+	r.setCurrent(c)
 	_, err := r.s.Call(fn, args...)
-	r.current = prev
+	r.setCurrent(prev)
 	if t := r.group; t != nil {
 		// A limit stopped a with_bonuses function, which pcall cannot
 		// catch: its bonuses end.
@@ -838,6 +872,10 @@ func (r *Runtime) afterError() {
 // failed records a handler failure, and ends the context when it fails
 // too often.
 func (r *Runtime) failed(c *Context, what string, err error) {
+	if errors.Is(err, errOverBudget) {
+		// A call refused for the budget is not the mod's failure.
+		return
+	}
 	r.log.Warn("mod handler failed", "map", r.host.Map(), "mod", c.Mod, "kind", c.Kind, "in", what, "err", err)
 	r.countError(c.Mod, fmt.Errorf("%s: %w", what, err))
 	now := r.host.Now()
@@ -893,7 +931,7 @@ func (r *Runtime) Fire(event string, args ...Arg) {
 		for _, a := range args {
 			vals = append(vals, script.String(a.kind), a.v)
 		}
-		if err := r.run(h.ctx, r.fns.invoke.Value(), vals...); err != nil {
+		if err := r.runHandler(h.ctx, r.fns.invoke.Value(), vals...); err != nil {
 			r.failed(h.ctx, "event "+event, err)
 		}
 	}
@@ -922,6 +960,11 @@ func (r *Runtime) Advance(now int64) {
 			continue
 		}
 		skip := t.fn != nil && r.off(t.ctx)
+		if t.fn != nil && !skip && r.overBudget(t.ctx) {
+			// The timer stays due, and runs at the next tick its mod has
+			// budget for.
+			continue
+		}
 		if t.fn == nil {
 			// A with_bonuses timer: its bonuses end.
 			r.dropTimer(t)

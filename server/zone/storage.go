@@ -3,6 +3,7 @@ package zone
 import (
 	"context"
 	"errors"
+	"strings"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/chat"
@@ -129,10 +130,25 @@ func (z *Zone) cartOf(p *Player) *storage.Storage {
 }
 
 // storageRecord finds an extra storage record by name. A name without a
-// mod prefix is first the record of the calling mod, then core's.
+// mod prefix is first the record of the calling mod, then core's. A mod
+// reaches only its own records and core's (review decision 52). mod is
+// "" for the server's own calls, which reach every record.
 func (z *Zone) storageRecord(name, mod string) *storage.Record {
-	for _, r := range z.storageRecords() {
-		if r.Name == name || mod != "" && r.Name == mod+":"+name {
+	if mod != "" {
+		if owner, _, ok := strings.Cut(name, ":"); ok && owner != mod {
+			return nil
+		}
+	}
+	recs := z.storageRecords()
+	if mod != "" && !strings.Contains(name, ":") {
+		for _, r := range recs {
+			if r.Name == mod+":"+name {
+				return r
+			}
+		}
+	}
+	for _, r := range recs {
+		if r.Name == name {
 			return r
 		}
 	}

@@ -47,6 +47,9 @@ type Manifest struct {
 	// with a mod context. Paths are relative to the mod's folder, under
 	// scripts/.
 	Scripts []string `yaml:"scripts"`
+	// Budget asks for a Lua budget other than the server's default,
+	// within the most the server owner allows (review decision 52).
+	Budget Budget `yaml:"budget"`
 
 	version Version
 }
@@ -309,6 +312,12 @@ func ParseManifest(file string, data []byte) (*Manifest, error) {
 		if err := checkScriptPath(s); err != nil {
 			bad(fmt.Sprintf("scripts[%d]", i), "%v", err)
 		}
+	}
+	if m.Budget.MemoryMB < 0 || m.Budget.MemoryMB > CeilingMemoryMB {
+		bad("budget.memory_mb", "is 1 to %d, or left out for the server's default", CeilingMemoryMB)
+	}
+	if m.Budget.CPUPerTick < 0 || m.Budget.CPUPerTick > CeilingCPUPerTick {
+		bad("budget.cpu_per_tick", "is 1 to %d, or left out for the server's default", CeilingCPUPerTick)
 	}
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)

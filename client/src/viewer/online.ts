@@ -121,6 +121,15 @@ import {
 // until the new map has loaded.
 
 /** JT_WARPNPC, the NPC sprite of warp portals. */
+/**
+ * modLine marks a line that a mod's script sent, such as a whisper or an
+ * announcement, with the mod's ID, so it cannot pass for a player's or
+ * staff's line.
+ */
+export function modLine(mod: string, text: string): string {
+  return `[Mod ${mod}] ${text}`;
+}
+
 export const WARP_SPRITE = 45;
 /** EF_WARPZONE2, the effect roBrowser plays on warp portals. */
 export const WARP_EFFECT = 321;
@@ -1169,6 +1178,10 @@ export default class Online {
           const c = e.body.value;
           if (c.channel === ChatChannel.LOCAL) {
             this.onChat?.(c.from, c.fromName, c.text, c.color, c.lineId);
+          } else if (c.channel === ChatChannel.WHISPER && c.fromMod !== '') {
+            // A mod's whisper is not a player's: it shows as a server line
+            // with the mod, and opens no whisper tab to answer.
+            this.onServerText?.(modLine(c.fromMod, `${c.fromName}: ${c.text}`));
           } else if (c.channel === ChatChannel.WHISPER) {
             this.onWhisper?.(c.fromName, c.text, c.lineId);
           } else if (c.channel === ChatChannel.PARTY) {
@@ -1180,7 +1193,7 @@ export default class Online {
           } else if (c.channel === ChatChannel.SYSTEM) {
             this.onServerText?.(c.text);
           } else if (c.channel === ChatChannel.ANNOUNCEMENT) {
-            this.onAnnouncement?.(c.text, c.color);
+            this.onAnnouncement?.(c.fromMod === '' ? c.text : modLine(c.fromMod, c.text), c.color);
           }
           break;
         }

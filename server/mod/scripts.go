@@ -33,6 +33,9 @@ type Scripts struct {
 	// Texts are the lines of the mod's English locale, LocaleFile, by
 	// key. Nested keys are joined with dots: healer.greeting.
 	Texts map[string]string
+	// Budget is the mod's Lua budget in each zone. It is zero for the
+	// built-in mods, which have none (review decision 52).
+	Budget Budget
 }
 
 // LocaleFile is the English locale of a mod (strategy section 6.13).
@@ -47,7 +50,7 @@ func (s *Set) Scripts(id string) (*Scripts, error) {
 	if m == nil {
 		return nil, fmt.Errorf("%s is not loaded", id)
 	}
-	out := &Scripts{Mod: id, Name: m.Manifest.Name, Entries: m.Manifest.Scripts, Files: map[string]string{}, Grants: m.Grants, Visible: s.Visible(id)}
+	out := &Scripts{Mod: id, Name: m.Manifest.Name, Entries: m.Manifest.Scripts, Files: map[string]string{}, Grants: m.Grants, Visible: s.Visible(id), Budget: m.Budget}
 	fsys, closeFS, err := m.Open()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", m.Path, err)
@@ -64,16 +67,21 @@ func (s *Set) Scripts(id string) (*Scripts, error) {
 		if d.IsDir() || path.Ext(p) != ".lua" {
 			return nil
 		}
-		b, err := fs.ReadFile(fsys, p)
+		// Core's converted item scripts are larger, and the server makes
+		// them itself. A mod's files are checked before they are read.
+		var b []byte
+		if m.Builtin {
+			b, err = fs.ReadFile(fsys, p)
+		} else {
+			b, err = ReadLimited(fsys, p, int64(MaxScriptBytes-total))
+			if err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return fmt.Errorf("the scripts are larger than %d MB: %w", MaxScriptBytes>>20, err)
+			}
+		}
 		if err != nil {
 			return err
 		}
 		total += len(b)
-		// Core's converted item scripts are larger, and the server makes
-		// them itself.
-		if total > MaxScriptBytes && !m.Builtin {
-			return fmt.Errorf("the scripts are larger than %d MB", MaxScriptBytes>>20)
-		}
 		out.Files[p] = string(b)
 		return nil
 	})
@@ -85,13 +93,11 @@ func (s *Set) Scripts(id string) (*Scripts, error) {
 			return nil, fmt.Errorf("%s: scripts lists %s, which does not exist", m.file(ManifestFile), e)
 		}
 	}
-	data, err := fs.ReadFile(fsys, LocaleFile)
+	data, err := ReadLimited(fsys, LocaleFile, MaxLocaleBytes)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 	case err != nil:
 		return nil, fmt.Errorf("%s: %w", m.file(LocaleFile), err)
-	case len(data) > MaxLocaleBytes:
-		return nil, fmt.Errorf("%s: larger than %d MB", m.file(LocaleFile), MaxLocaleBytes>>20)
 	default:
 		if out.Texts, err = readLocale(data); err != nil {
 			return nil, fmt.Errorf("%s: %w", m.file(LocaleFile), err)

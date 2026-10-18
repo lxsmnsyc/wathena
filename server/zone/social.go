@@ -785,14 +785,15 @@ func (z *Zone) unjail(p *Player, s *character.Sanction) {
 
 // The script calls of chat (modscript.ChatHost).
 
-// Whisper shows a whisper from a script to a player.
-func (h scriptHost) Whisper(id int64, from, text string) error {
+// Whisper shows a whisper from a script to a player. The player sees
+// mod with a mod's whisper.
+func (h scriptHost) Whisper(id int64, mod, from, text string) error {
 	p, err := h.player(id)
 	if err != nil {
 		return err
 	}
 	p.pending = append(p.pending, wathenav1.Event_builder{Chat: wathenav1.ChatMessage_builder{
-		Channel: wathenav1.ChatChannel_CHAT_CHANNEL_WHISPER, FromName: from, Text: text,
+		Channel: wathenav1.ChatChannel_CHAT_CHANNEL_WHISPER, FromName: from, Text: text, FromMod: mod,
 	}.Build()}.Build())
 	return nil
 }

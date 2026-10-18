@@ -9,7 +9,8 @@ import (
 // MonsterKind is the monster overlay: data/monsters.yml. A record's name
 // is the monster's AegisName, such as PORING, or a mod's full name, such
 // as example.halloween:PUMPKIN_PORING. server/gamedata reads the fields.
-var MonsterKind = Kind{Name: "monsters", File: "data/monsters.yml", Fixed: []string{"id"}}
+var MonsterKind = Kind{Name: "monsters", File: "data/monsters.yml", Fixed: []string{"id"},
+	Economy: []string{"drops", "mvp_drops", "base_exp", "job_exp", "mvp_exp"}}
 
 // EventKind is the world event overlay: data/events.yml. A name without
 // a prefix is the mod's own event. server/worldevent reads the fields.

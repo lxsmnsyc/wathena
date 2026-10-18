@@ -410,6 +410,11 @@ func (db *DB) SetBonuses(id int, b []Template) error {
 	return nil
 }
 
+// MaxModStatuses is the most statuses one mod may define. Defining a
+// status again, such as in another zone, does not count (review decision
+// 52).
+const MaxModStatuses = 256
+
 // ModSpec is what statuses.define gives a mod's status.
 type ModSpec struct {
 	// Mod is the mod's ID, and Name the status's name in wa.statuses.
@@ -438,10 +443,17 @@ func (db *DB) Define(s ModSpec) (*Def, error) {
 	}
 	db.mu.Lock()
 	defer db.mu.Unlock()
+	own := 0
 	for _, d := range db.mods {
 		if d.Mod != s.Mod && strings.TrimPrefix(d.Name, d.Mod+":") == s.Name {
 			return nil, fmt.Errorf("statuses.define: %s defined a status named %s already", d.Mod, s.Name)
 		}
+		if d.Mod == s.Mod {
+			own++
+		}
+	}
+	if db.modName[full] == nil && own >= MaxModStatuses {
+		return nil, fmt.Errorf("statuses.define: %s has defined %d statuses, the most a mod may", s.Mod, MaxModStatuses)
 	}
 	def := &Def{Name: full, Icon: s.Icon, Mod: s.Mod, TickMs: s.TickMs, MinDuration: 1}
 	// A mod status ends on what ends_on names, and on nothing else, so

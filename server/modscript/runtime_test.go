@@ -342,7 +342,7 @@ try("new field on api module", function() events.extra = 1 end)
 try("metatable of api module", function() assert(getmetatable(events) == false) end)
 try("setmetatable on api module", function() setmetatable(events, {}) end)
 try("reach real globals", function() assert(_G.secret == nil and _ENV == _G) end)
-try("load uses own env", function() assert(load("return secret")() == nil) end)
+try("no load", function() assert(load == nil and loadstring == nil and dofile == nil) end)
 try("os and io", function() assert(os == nil and io == nil and debug == nil and package == nil) end)
 return function()
   events.on("login", function(p) p:send_message(table.concat(results, ",")) end)
@@ -353,7 +353,7 @@ end`)
 		"1:a sees secret=a's global string.upper ok=true",
 		"1:read a's global=ok,change string lib=ok,write api module=refused,rawset api module=refused," +
 			"new field on api module=refused,metatable of api module=ok,setmetatable on api module=refused," +
-			"reach real globals=ok,load uses own env=ok,os and io=ok",
+			"reach real globals=ok,no load=ok,os and io=ok",
 	}
 	if got := strings.Join(h.messages, "\n"); got != strings.Join(want, "\n") {
 		t.Fatalf("messages:\n%s\nwant:\n%s\nlogs: %s", got, strings.Join(want, "\n"), logs)
@@ -490,18 +490,23 @@ end`))
 
 func TestLimitInHandlerKeepsRuntime(t *testing.T) {
 	h := newHost()
-	r, logs := newRuntime(t, h, modScripts("example.a", nil, nil, "scripts/main.lua", `
+	sc := modScripts("example.a", nil, nil, "scripts/main.lua", `
 local events = require "wa.events"
 return function()
   events.on("login", function(p) while true do end end)
   events.on("login", function(p) p:send_message("still here") end)
-end`))
+end`)
+	// A budget per tick above the per-call limit, so the second handler
+	// runs in the same tick (budget.go).
+	sc.Budget.CPUPerTick = 2 * script.DefaultCPU
+	r, logs := newRuntime(t, h, sc)
 	r.Fire("login", Player(1))
 	if strings.Join(h.messages, "") != "1:still here" || !strings.Contains(logs.String(), "CPU limit") {
 		t.Fatalf("messages = %q, logs: %s", h.messages, logs)
 	}
 	// It keeps working, and fails too often after MaxFailures.
 	for range MaxFailures {
+		r.BeginTick()
 		r.Fire("login", Player(1))
 	}
 	if r.Context("example.a") != nil || !strings.Contains(logs.String(), "failed too often") {

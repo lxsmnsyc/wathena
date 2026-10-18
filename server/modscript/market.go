@@ -84,7 +84,7 @@ func (r *Runtime) FireSale(name string, ev SaleEvent) {
 		if h.removed || h.ctx.ended || r.off(h.ctx) {
 			continue
 		}
-		if err := r.run(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("sale"), obj); err != nil {
+		if err := r.runHandler(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("sale"), obj); err != nil {
 			r.failed(h.ctx, "event "+name, err)
 		}
 	}

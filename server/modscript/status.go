@@ -225,7 +225,7 @@ func (r *Runtime) FireStatus(event string, ev StatusEvent) {
 				continue
 			}
 		}
-		if err := r.run(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("status"), obj); err != nil {
+		if err := r.runHandler(h.ctx, r.fns.invoke.Value(), h.fn.Value(), script.String("status"), obj); err != nil {
 			r.failed(h.ctx, "event "+event, err)
 		}
 	}
@@ -345,6 +345,13 @@ func (r *Runtime) entityStatus(c *script.Call) error {
 			return fmt.Errorf("%s: want a status from wa.statuses", what)
 		}
 		status = n
+	}
+	// Starting and ending a player's status needs player.status (review
+	// decision 52). A preview only computes.
+	if (op == "start" || op == "end") && target.Kind == "player" {
+		if err := r.need(what, "player.status"); err != nil {
+			return err
+		}
 	}
 	switch op {
 	case "start", "preview":
@@ -792,13 +799,12 @@ func (r *Runtime) hookChainBegin(c *script.Call) error {
 	}
 	var chain []*hook
 	for _, h := range r.hooks[name] {
-		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) {
+		if !h.removed && !h.ctx.ended && !h.ctx.retiring && !r.off(h.ctx) && !r.overBudget(h.ctx) {
 			chain = append(chain, h)
 		}
 	}
-	r.saved = append(r.saved, savedChain{current: r.current, computing: r.computing, chain: r.chain})
-	r.chain, r.computing = chain, true
-	out := []script.Value{script.Int(int64(len(chain)))}
+	r.saved = append(r.saved, r.beginChain(chain))
+	out := []script.Value{script.Int(int64(len(chain))), script.Int(r.chainToken)}
 	for _, h := range chain {
 		out = append(out, h.fn.Value())
 	}
@@ -810,7 +816,7 @@ func (r *Runtime) hookChainEnd(*script.Call) error {
 	if n := len(r.saved); n > 0 {
 		s := r.saved[n-1]
 		r.saved = r.saved[:n-1]
-		r.current, r.computing, r.chain = s.current, s.computing, s.chain
+		r.endChain(s)
 	}
 	return nil
 }
@@ -820,6 +826,8 @@ type savedChain struct {
 	current   *Context
 	computing bool
 	chain     []*hook
+	token     int64
+	depth     int
 }
 
 // computeBegin and computeEnd mark Lua code that only computes, such as

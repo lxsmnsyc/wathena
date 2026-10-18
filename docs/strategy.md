@@ -584,7 +584,7 @@ Server:
 | Tick work | p99 under 10 ms, maximum 25 ms | Leaves 60% of the tick free for bursts. A zone over budget for 10 ticks in a row logs a warning with a profile. |
 | View range | 14 cells | Same as rAthena's `area_size` default (`conf/battle/client.conf`). Updates are only sent for entities in range. |
 | Memory per online player | Under 256 KB | 5,000 players then use about 1.3 GB, leaving room for maps and Lua. |
-| Lua memory | 16 MB per mod per zone | Enforced by the sandbox (section 6.6). |
+| Lua memory | 16 MB per mod per zone | Enforced by the binding: each mod owns the memory its code makes (review decision 52). Owners set the default and a ceiling. |
 | Lua CPU per call | 5 ms for events, 50 ms for generation layers | A call over the limit is stopped (section 6.6). |
 | Database query | p99 under 20 ms | Zones never wait on queries, but slow queries delay saves. |
 | Login to in-game | Under 2 seconds on the server side | Excludes asset loading in the client. |
@@ -1574,6 +1574,8 @@ The full threat model, with assets, trust boundaries, and the status of each mit
 Section 6.6 covers the sandbox and permissions. Additional Lua rules:
 
 - `load` and `loadstring` are removed for mods. Mods cannot run code built from strings.
+- Mods see no memory addresses: `tostring` numbers tables, functions and coroutines, and `string.format` refuses `%p` (review decision 52).
+- Each mod has its own memory limit and CPU budget per tick in each zone, on top of the limits of each call (review decision 52, mods/README.md "Budgets").
 - Shared tables are read-only proxies. Their metatables are locked with `__metatable`.
 - Memory limits stop large string builds such as `string.rep` with a huge count. CPU limits stop slow pattern matches.
 - Mod errors that reach players show a generic message. Stack traces go only to server logs.

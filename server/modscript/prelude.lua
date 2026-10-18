@@ -10,7 +10,7 @@
 
 local H = ...
 
-local type, error, select, tostring, tonumber = type, error, select, tostring, tonumber
+local type, error, select, tonumber = type, error, select, tonumber
 local setmetatable, getmetatable = setmetatable, getmetatable
 local rawget, rawset, rawequal, rawlen = rawget, rawset, rawequal, rawlen
 local next, pairs, ipairs, load, pcall, xpcall, assert = next, pairs, ipairs, load, pcall, xpcall, assert
@@ -19,6 +19,60 @@ local unpack = table.unpack
 local math_type = math.type
 local libraries = { string = string, table = table, math = math, utf8 = utf8, coroutine = coroutine }
 local version = _VERSION
+
+-- Heap addresses stay hidden from mods (review decision 52): they help
+-- an attack on the C Lua runtime. tostring shows a table, function or
+-- thread with a number of its own instead of its address, and
+-- string.format refuses %p and shows %s the same way. The string table
+-- is the strings' methods too, so ("%p"):format(t) is refused as well.
+-- The prelude's own messages use this tostring.
+local raw_tostring, raw_format = _G.tostring, string.format
+local object_ids = setmetatable({}, { __mode = "k" })
+local object_count = 0
+local function tostring(v)
+	local s = raw_tostring(v)
+	local t = type(v)
+	if t == "table" or t == "function" or t == "thread" or t == "userdata" then
+		local kind = s:match("^(.-): 0x%x+$") or s:match("^(.-): %x%x%x%x%x%x+$")
+		if kind ~= nil then
+			local id = object_ids[v]
+			if id == nil then
+				object_count = object_count + 1
+				id = object_count
+				object_ids[v] = id
+			end
+			return kind .. ": #" .. id
+		end
+	end
+	return s
+end
+local function safe_format(fmt, ...)
+	if type(fmt) ~= "string" then
+		return raw_format(fmt, ...)
+	end
+	local args = table.pack(...)
+	local n, i = 0, 1
+	while true do
+		local p = fmt:find("%", i, true)
+		if p == nil then
+			break
+		end
+		local q, conv = fmt:match("^[-+ #0]*%d*%.?%d*()(.?)", p + 1)
+		if conv ~= "%" then
+			n = n + 1
+			if conv == "p" then
+				error("string.format: %p is not allowed", 2)
+			end
+			local t = type(args[n])
+			if conv == "s" and (t == "table" or t == "function" or t == "thread" or t == "userdata") then
+				args[n] = tostring(args[n])
+			end
+		end
+		i = q + 1
+	end
+	return raw_format(fmt, unpack(args, 1, args.n))
+end
+string.format = safe_format
 
 -- protected holds every read-only table, so the rawset that mods get
 -- refuses them.
@@ -2297,12 +2351,8 @@ local function environment(mod_id)
 		end
 		return rawset(t, k, v)
 	end
-	env.load = function(chunk, name, mode, chunk_env)
-		if chunk_env == nil then
-			chunk_env = env
-		end
-		return load(chunk, name, mode, chunk_env)
-	end
+	-- load is not there: mods cannot run code built from strings
+	-- (strategy section 7.7).
 	env.require = function(name)
 		return (require_from(mod_id, name))
 	end
@@ -2727,9 +2777,11 @@ local function innermost(kind, o, fields)
 end
 
 -- run_chain runs a chain of n hooks. Each runs in its own context, which
--- Go sets with H.hook_enter. A hook that fails is logged, and the chain
--- goes on as if it were not there.
-local function run_chain(kind, fields, n, fns)
+-- Go sets with H.hook_enter and gives back with H.hook_leave. token names
+-- this run of the chain: Go refuses any other. A hook that fails is
+-- logged, and the chain goes on as if it were not there. A hook's next
+-- stops working once the hook's call returns (review decision 52).
+local function run_chain(kind, fields, n, token, fns)
 	-- The spawn_table hook gets the map before its list, and a copy of
 	-- the list it may change.
 	local map = nil
@@ -2740,9 +2792,12 @@ local function run_chain(kind, fields, n, fns)
 		if i > n then
 			return innermost(kind, o, fields)
 		end
-		H.hook_enter(i)
+		local alive = true
 		local called, inner_a, inner_b = false, nil, nil
 		local next_fn = function(next_o)
+			if not alive then
+				error("next: the hook that got this next has returned; call next only while the hook runs", 2)
+			end
 			if next_o == nil then
 				next_o = o
 			end
@@ -2751,20 +2806,22 @@ local function run_chain(kind, fields, n, fns)
 			end
 			inner_a, inner_b = at(i + 1, next_o)
 			called = true
-			H.hook_enter(i)
 			return inner_a, inner_b
 		end
+		H.hook_enter(i, token)
 		local ok, a, b
 		if map ~= nil then
 			ok, a, b = pcall(fns[i], map, spawn_list(o), next_fn)
 		else
 			ok, a, b = pcall(fns[i], o, next_fn)
 		end
+		alive = false
+		H.hook_leave(token)
 		if ok then
 			ok, a, b = pcall(hook_result, kind, a, b, o)
 		end
 		if not ok then
-			H.hook_failed(i, tostring(a))
+			H.hook_failed(i, tostring(a), token)
 			if called then
 				return inner_a, inner_b
 			end
@@ -2775,16 +2832,16 @@ local function run_chain(kind, fields, n, fns)
 	return at(1, hook_object(kind, fields))
 end
 
-function R.run_hooks(kind, fields, n, ...)
+function R.run_hooks(kind, fields, n, token, ...)
 	if kind == "monster_target" then
 		-- Go gets the chosen handle as its key, or nil.
-		local h = run_chain(kind, fields, n, table.pack(...))
+		local h = run_chain(kind, fields, n, token, table.pack(...))
 		if h == nil then
 			return nil
 		end
 		return handle_key(h)
 	end
-	return run_chain(kind, fields, n, table.pack(...))
+	return run_chain(kind, fields, n, token, table.pack(...))
 end
 
 -- Status effects (proposal 0002, review decision 19): the status methods
@@ -2801,7 +2858,7 @@ local function lua_hooks(kind, fields)
 		H.hook_chain_end()
 		return nil
 	end
-	local ok, a = pcall(run_chain, kind, fields, n, table.pack(unpack(got, 2, got.n)))
+	local ok, a = pcall(run_chain, kind, fields, n, got[2], table.pack(unpack(got, 3, got.n)))
 	H.hook_chain_end()
 	if not ok then
 		error(a, 0)

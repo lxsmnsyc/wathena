@@ -32,6 +32,16 @@ func (r *Runtime) actor() string {
 	return r.loading
 }
 
+// sender is the mod that players see with a whisper or an announcement
+// of the running script: its ID, or "" for core, which is the server's
+// own content (review decision 52).
+func (r *Runtime) sender() string {
+	if id := r.actor(); id != mod.Core {
+		return id
+	}
+	return ""
+}
+
 // need checks that the running mod holds a permission.
 func (r *Runtime) need(what, permission string) error {
 	id := r.actor()

@@ -144,3 +144,33 @@ func TestMinisign(t *testing.T) {
 		t.Error("another key passed")
 	}
 }
+
+// TestInstallListsCoreOverrides checks that validate and install name
+// the core records whose prices or drops a mod changes, which need
+// data.core_override (review decision 52).
+func TestInstallListsCoreOverrides(t *testing.T) {
+	testrace.SkipUnderRace(t, "its mod test worlds run on one goroutine")
+	dir := writeMod(t, map[string]string{
+		"mod.yaml":          "id: example.prices\nname: Prices\nversion: 1.0.0\napi: 1.0\ndepends:\n  - id: core\npermissions:\n  - data.core_override\n",
+		"data/items.yml":    "- name: Red_Potion\n  buy: 40\n  sell: 20\n- name: Jellopy\n  weight: 2\n",
+		"data/monsters.yml": "- name: PORING\n  base_exp: 90\n",
+	})
+	e := env(t)
+	rep := e.Validate(context.Background(), dir, "")
+	if len(rep.Problems) > 0 {
+		t.Fatalf("problems: %q", rep.Problems)
+	}
+	want := []string{"monsters PORING: base_exp", "items Red_Potion: buy, sell"}
+	if strings.Join(rep.Overrides, "|") != strings.Join(want, "|") {
+		t.Errorf("overrides = %q, want %q", rep.Overrides, want)
+	}
+	var out bytes.Buffer
+	if err := e.Install(context.Background(), InstallOptions{Source: dir, ModsDir: t.TempDir()}, &out); err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range []string{"data.core_override", "changes to records that other mods added", "items Red_Potion: buy, sell"} {
+		if !strings.Contains(out.String(), line) {
+			t.Errorf("install output has no %q:\n%s", line, out.String())
+		}
+	}
+}

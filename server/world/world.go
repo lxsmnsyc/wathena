@@ -202,8 +202,14 @@ func (w *World) ReloadMod(ctx context.Context, sc *mod.Scripts) error {
 // Announce shows a line to every player of every zone, as rAthena's
 // announce. It never waits on a zone.
 func (w *World) Announce(text string, color uint32) {
+	w.AnnounceFrom(text, color, "")
+}
+
+// AnnounceFrom is Announce for a mod's script: players see mod, the
+// mod's ID, with the line (review decision 52).
+func (w *World) AnnounceFrom(text string, color uint32, mod string) {
 	for _, z := range w.Zones() {
-		z.Announce(text, color)
+		z.AnnounceFrom(text, color, mod)
 	}
 }
 

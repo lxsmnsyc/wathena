@@ -57,6 +57,10 @@ var Permissions = []Permission{
 	{Name: "spawns.modify", Approval: true, Allows: "change the monsters a new procedural world spawns on its fields and dungeons"},
 	// world.generate is review decision 46's: wa.generation.
 	{Name: "world.generate", Approval: true, Allows: "add places, objects, bosses and quest templates to a new procedural world's maps"},
+	// data.core_override is review decision 52's: data overlays that
+	// change the prices, drops, exp or reserved chat words of records
+	// other mods added, core's too.
+	{Name: "data.core_override", Approval: true, Flagged: true, Allows: "change the prices, drops and exp of items, monsters and quests, and the chat filter's words, that other mods added, core's too"},
 }
 
 // LookupPermission returns a permission by name.

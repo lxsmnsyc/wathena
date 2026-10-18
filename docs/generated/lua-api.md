@@ -33,7 +33,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.places`](#waplaces) | Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil. |
 | [`wa.towns`](#watowns) | The towns of the world layout (review decision 43): each with an ID such as t7, a display name, a map and a level band. A classic world has no towns: list returns an empty list, and nearest and get nil. |
 | [`wa.generation`](#wageneration) | Generation layers (review decision 46): mod code that runs when wactl world new makes a procedural world, on the server only, and in the test worlds of wactl mod test. A layer adds named places, objects and bosses to each generated map. It cannot change terrain cells, which the client generates. Both calls need world.generate. In a running zone they record what they get, and nothing runs it. |
-| [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. |
+| [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
 | [`wa.integers`](#waintegers) | Integer division that rounds as C does, toward zero, for scripts converted from rAthena. |
 | [`wa.bonuses`](#wabonuses) | Item bonuses (proposal 0002a). Equip contexts only. |
@@ -354,7 +354,7 @@ Maps.
 
 #### `maps.announce(map, text)`
 
-Shows a line to every player of a map, as mapannounce.
+Shows a line to every player of a map, as mapannounce. Players see the mod's ID with a mod's line.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -391,7 +391,7 @@ The world.
 
 #### `world.announce(text)`
 
-Shows a line to every player of the world, as announce.
+Shows a line to every player of the world, as announce. Players see the mod's ID with a mod's line.
 
 Permission: `world.announce`.
 
@@ -680,7 +680,7 @@ Permission: `world.generate`.
 local variables = require "wa.variables"
 ```
 
-Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID.
+Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables.
 
 #### `variables.character_integer(name) → wa.IntegerVariable`
 
@@ -1023,7 +1023,7 @@ Constants: [lua-constants.md](lua-constants.md#wastatuses).
 
 #### `statuses.define(definition)`
 
-Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error.
+Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error. A mod defines at most 256 statuses.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1264,7 +1264,7 @@ Opens the account's storage or an extra storage, as openstorage and openstorage2
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string?` | An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. Nothing opens the account's storage. |
+| `name` | `string?` | An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. A mod reaches only its own records and core's: another mod's name raises an error. Nothing opens the account's storage. |
 
 #### `player:open_guild_storage() → boolean, string?`
 
@@ -1561,7 +1561,7 @@ Lowers one skill, to 0 by default, and refunds its skill points. Returns false, 
 
 #### `player:whisper(text, options?)`
 
-Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it.
+Sends the player a whisper. It does not pass the chat filter or the chat hooks, and the player's block list does not stop it. The player sees the mod's ID with a mod's whisper, as a server line it cannot answer, so it cannot pass for a player's. Core's whispers are plain whispers.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1734,7 +1734,7 @@ Lowers one stat, to 1 by default, and refunds what raising it cost, by rAthena's
 
 #### `player:start_status(status, options?) → boolean`
 
-Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1743,7 +1743,7 @@ Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance
 
 #### `player:end_status(status) → boolean`
 
-Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
+Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns. On a player it needs player.status.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1862,7 +1862,7 @@ The monster stops walking and attacking, and drops its target, as unitstop.
 
 #### `monster:start_status(status, options?) → boolean`
 
-Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1871,7 +1871,7 @@ Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance
 
 #### `monster:end_status(status) → boolean`
 
-Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
+Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns. On a player it needs player.status.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1964,7 +1964,7 @@ False once the entity is removed, has logged out, or has left the zone. It never
 
 #### `npc:start_status(status, options?) → boolean`
 
-Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns.
+Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1973,7 +1973,7 @@ Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance
 
 #### `npc:end_status(status) → boolean`
 
-Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns.
+Ends a status, as sc_end. Returns true when it was active. The target's stats change before it returns. The status_end event runs after the script's call returns. On a player it needs player.status.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -4076,7 +4076,7 @@ Changes the value.
 | `status_start` | mod, event | `event: wa.StatusEvent` | A status started on an entity of the context's map, or started again. Options narrow it. |
 | `status_end` | mod, event | `event: wa.StatusEvent` | A status ended. Options narrow it. |
 | `status_tick` | mod, event | `event: wa.StatusEvent` | A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it. |
-| `chat` | mod, npc, event | `message: wa.ChatMessage` | A player on the context's map said a line: local chat, a whisper, a party line, or a channel line. It runs after the line went out. Options narrow it. |
+| `chat` | mod, npc, event | `message: wa.ChatMessage` | A player on the context's map said a line: local chat, a whisper, a party line, or a channel line. It runs after the line went out. Options narrow it. Whispers, party and guild lines reach only a mod with rules.override, which the chat hook needs too. |
 | `party_join` | mod, event | `join: wa.PartyMembership` | A player of the context's map joined a party: an accepted invite, or a wa.parties call. It does not fire for a player who makes a party itself. |
 | `party_leave` | mod, event | `leave: wa.PartyMembership` | A player of the context's map left its party. A member who is offline gets no event. |
 | `party_change` | mod, event | `change: wa.PartyChange` | A party's leader or options changed, by a change made on the context's map. |

@@ -26,6 +26,13 @@ enum {
 	GLUE_TREF = 7     /* i is a registry reference */
 };
 
+/*
+ * Owners of memory. Go gives each mod an owner, and sets the owner of the
+ * code that runs. Memory that grows is charged to that owner, and each
+ * owner may have its own limit. Owner 0 is everything else.
+ */
+#define GLUE_OWNERS 512
+
 /* The start of each state. Go reads and writes it. */
 typedef struct glue_hdr {
 	int64_t vals;  /* address of the value array */
@@ -36,6 +43,10 @@ typedef struct glue_hdr {
 	int64_t nres;  /* top-level values in the exchange, from either side */
 	int64_t fatal; /* the limit the last operation hit, GLUE_F* */
 	int64_t mem;   /* bytes the Lua state has allocated */
+	int64_t owner; /* the owner that runs now, 0 to GLUE_OWNERS - 1. Go writes it. */
+	int64_t spent; /* CPU units charged since the state began */
+	int64_t omem[GLUE_OWNERS];   /* bytes each owner holds */
+	int64_t olimit[GLUE_OWNERS]; /* each owner's limit in bytes, 0 for none. Go writes it. */
 } glue_hdr;
 
 /* Limits that stop a call. pcall cannot catch them. */

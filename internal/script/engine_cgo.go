@@ -40,8 +40,8 @@ func (e *engine) op(op int32, a, b int64) (int32, error) {
 }
 
 // words views the header as 64-bit fields.
-func (e *engine) words() *[8]int64 {
-	return (*[8]int64)(unsafe.Pointer(e.h)) // #nosec G103 -- glue_hdr is eight int64_t fields.
+func (e *engine) words() *[hWords]int64 {
+	return (*[hWords]int64)(unsafe.Pointer(e.h)) // #nosec G103 -- glue_hdr is hWords int64_t fields.
 }
 
 func (e *engine) hdr(i int) int64       { return e.words()[i] }

@@ -1028,7 +1028,7 @@
 ---@field zephyr integer 474, rAthena's SC_ZEPHYR.
 local statuses = {}
 
----Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error.
+---Adds a status in a mod script. It gets a constant in wa.statuses named after it, such as statuses.glow. Its ID stays the same in every zone, and a saved status keeps its name. A name that a status of the game or of another mod has raises an error. A mod defines at most 256 statuses.
 ---@param definition wa.StatusDefinition
 function statuses.define(definition) end
 

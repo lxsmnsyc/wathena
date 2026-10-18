@@ -634,6 +634,11 @@ message ChatMessage {
   // line_id identifies a line a player said, for Report. It is empty
   // for lines no player said, such as NPC lines and announcements.
   bytes line_id = 7;
+  // from_mod is the ID of the mod whose script sent a whisper or an
+  // announcement, such as example.bank. It is empty for players, for
+  // core's scripts and for the server. The client shows it with the
+  // line, so a mod cannot pass for a player or for staff.
+  string from_mod = 8;
 }
 
 // WhisperResult answers the player's whisper, as clif_wis_end.

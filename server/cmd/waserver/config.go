@@ -23,6 +23,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
 	"github.com/lxsmnsyc/wathena/server/layout"
+	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/retention"
 	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/staff"
@@ -233,6 +234,12 @@ type modOptions struct {
 	// MaxAssetMB limits each mod's asset build, in MiB before
 	// compression. 0 is the default, 200 (decision 0033).
 	MaxAssetMB int `yaml:"max_asset_mb"`
+	// Budget is the Lua budget of a mod whose manifest asks for none, and
+	// MaxBudget the most a manifest may ask for (review decision 52).
+	// Zero fields take the defaults: 16 MB and 2,000,000 CPU per tick,
+	// and at most 64 MB and 10,000,000.
+	Budget    mod.Budget `yaml:"budget"`
+	MaxBudget mod.Budget `yaml:"max_budget"`
 }
 
 // list is a list of strings. In the config file it is a YAML sequence
@@ -688,6 +695,9 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if o.Mods.MaxAssetMB < 0 || o.Mods.MaxAssetMB > 64<<10 {
 		bad("mods.max_asset_mb", "must be 0 for the default of 200, or up to 65536")
+	}
+	if err := (mod.Budgets{Default: o.Mods.Budget, Max: o.Mods.MaxBudget}).Check("mods.budget", "mods.max_budget"); err != nil {
+		bad("mods.budget", "%v", err)
 	}
 
 	if !o.Dev && (s.Database == "" || s.AccountDatabase == "") {

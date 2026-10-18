@@ -178,7 +178,9 @@ func (e *Env) Load(ctx context.Context, p, depsDir, base string, log *slog.Logge
 	}
 	// Only the mods the target needs: its dependencies, and theirs.
 	found = needed(m, found)
-	cfg := mod.Config{Base: base, Approve: approve}
+	// The server owner's budget limits are not known here: a manifest may
+	// ask for any budget up to the ceilings.
+	cfg := mod.Config{Base: base, Approve: approve, Budgets: anyBudget}
 	if m.Manifest.Provides.Ruleset != nil {
 		b, _ := mod.ModeBase(string(e.Mode))
 		cfg.Ruleset, cfg.Base = m.ID(), b

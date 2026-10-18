@@ -65,8 +65,9 @@ type NPCHost interface {
 	// ItemName is an item's name in the server's language.
 	ItemName(item uint32) (string, bool)
 	// Announce shows a line to every player of a map, or of the world
-	// when mapName is empty.
-	Announce(mapName, text string) error
+	// when mapName is empty. mod is the mod that sends it, which players
+	// see with the line, or "" for core (review decision 52).
+	Announce(mapName, mod, text string) error
 }
 
 // StepKind is what a conversation step shows.
@@ -276,9 +277,9 @@ func (r *Runtime) CloseConversation(conv *Conversation) {
 
 func (r *Runtime) resume(conv *Conversation, args ...script.Value) {
 	prev := r.current
-	r.current = conv.ctx
+	r.setCurrent(conv.ctx)
 	_, done, err := conv.thread.Resume(args...)
-	r.current = prev
+	r.setCurrent(prev)
 	if err != nil {
 		r.afterError()
 		if !strings.Contains(err.Error(), r.closed) {

@@ -88,39 +88,74 @@ static int64_t glue_now(void) {
 /* ---- Limits ---- */
 
 /*
+ * Each block starts with GLUE_TAG bytes that hold its owner. Lua needs 8
+ * byte alignment (LUAI_MAXALIGN), which a tag of 8 keeps.
+ */
+#define GLUE_TAG 8
+
+/*
  * glue_alloc is the state's allocator. While a call runs, it refuses to grow
- * past the memory limit, and it charges the CPU budget one unit per 64 bytes.
- * When the budget is used up it refuses, and Lua raises a memory error that
- * pcall cannot catch.
+ * past the memory limit or the running owner's limit, and it charges the CPU
+ * budget one unit per 64 bytes. When the budget is used up it refuses, and
+ * Lua raises a memory error that pcall cannot catch.
+ *
+ * A block that grows belongs to the owner that runs, which pays for all of
+ * it. A block that shrinks or is freed, such as by the collector while
+ * another owner runs, keeps its owner, so each owner's count is the memory
+ * its blocks hold.
  */
 static void *glue_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
 	glue_state *st = ud;
-	void *p;
+	char *block = NULL, *p;
+	int64_t from = 0, to;
 	if (ptr == NULL)
 		osize = 0;
+	else {
+		block = (char *)ptr - GLUE_TAG;
+		memcpy(&from, block, sizeof from);
+	}
 	if (nsize == 0) {
 		st->h.mem -= (int64_t)osize;
-		free(ptr);
+		st->h.omem[from] -= (int64_t)osize;
+		free(block);
 		return NULL;
+	}
+	to = from;
+	if (nsize > osize) {
+		to = st->h.owner;
+		if (to < 0 || to >= GLUE_OWNERS)
+			to = 0;
 	}
 	if (nsize > osize && st->limited) {
 		size_t grow = nsize - osize;
+		int64_t lim = st->h.olimit[to];
+		int64_t held = st->h.omem[to] + (int64_t)nsize - (to == from ? (int64_t)osize : 0);
 		if (st->mem_limit && (size_t)st->h.mem + grow > st->mem_limit) {
 			st->memhit = 1;
 			return NULL;
 		}
+		if (lim > 0 && held > lim) {
+			st->memhit = 1;
+			return NULL;
+		}
 		st->budget -= (int64_t)(grow >> 6);
+		st->h.spent += (int64_t)(grow >> 6);
 		if (st->budget <= 0 && st->h.fatal == GLUE_FNONE) {
 			st->h.fatal = GLUE_FCPU;
 			return NULL;
 		}
 	}
-	p = realloc(ptr, nsize);
-	if (p != NULL) {
-		st->h.mem += (int64_t)nsize - (int64_t)osize;
-		st->memhit = 0;
-	}
-	return p;
+	if (nsize > SIZE_MAX - GLUE_TAG)
+		return NULL;
+	p = realloc(block, nsize + GLUE_TAG);
+	if (p == NULL)
+		return NULL;
+	memcpy(p, &to, sizeof to);
+	st->h.mem += (int64_t)nsize - (int64_t)osize;
+	st->h.omem[from] -= (int64_t)osize;
+	st->h.omem[to] += (int64_t)nsize;
+	st->memhit = 0;
+	return p + GLUE_TAG;
 }
 
 /*
@@ -153,6 +188,7 @@ static void glue_hook(lua_State *L, lua_Debug *ar) {
 	if (!st->limited)
 		return;
 	st->budget -= GLUE_HOOK_EVERY;
+	st->h.spent += GLUE_HOOK_EVERY;
 	if (st->budget <= 0)
 		glue_stop(L, 0);
 	if (st->timeout > 0) {

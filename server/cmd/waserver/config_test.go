@@ -376,3 +376,26 @@ mods:
 		t.Errorf("a negative limit: %v", err)
 	}
 }
+
+// The mods' Lua budgets come from mods.budget and mods.max_budget
+// (review decision 52).
+func TestModBudgetConfig(t *testing.T) {
+	p := writeConfig(t, `
+assets: `+assetDir(t)+`
+dev: true
+mods:
+  budget: {memory_mb: 8, cpu_per_tick: 1000000}
+  max_budget: {memory_mb: 32}
+`)
+	o, _, err := parseOptions("waserver all", []string{"--config", p}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validate(o, secrets{}); err != nil || o.Mods.Budget.MemoryMB != 8 || o.Mods.Budget.CPUPerTick != 1_000_000 || o.Mods.MaxBudget.MemoryMB != 32 {
+		t.Fatalf("%v, %+v, %+v", err, o.Mods.Budget, o.Mods.MaxBudget)
+	}
+	o.Mods.Budget.MemoryMB = 64
+	if _, err := validate(o, secrets{}); err == nil || !strings.Contains(err.Error(), "mods.budget") {
+		t.Errorf("a default above the most: %v", err)
+	}
+}
