@@ -12,7 +12,8 @@
 # Rules:
 #   - Both images run as user 65532 and work with a read-only root
 #     filesystem. /srv/assets belongs to that user, so a new Docker volume
-#     mounted there does too.
+#     mounted there does too. So does /backups in the tools image, with
+#     mode 0700, for the backup service (decision 0048).
 #   - Neither image has secrets or game assets. deploy/README.md shows how
 #     the operator gives both.
 #   - Base images are pinned by digest. Update them together with the
@@ -82,7 +83,8 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 # wactl with the PostgreSQL 18 client tools.
 FROM postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 AS tools
 RUN groupadd --gid 65532 nonroot && \
-    useradd --uid 65532 --gid 65532 --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin nonroot
+    useradd --uid 65532 --gid 65532 --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin nonroot && \
+    install -d -m 0700 -o 65532 -g 65532 /backups
 COPY --from=server --chown=65532:65532 /out/srv /srv
 COPY --from=server /out/wactl /usr/local/bin/wactl
 USER 65532:65532

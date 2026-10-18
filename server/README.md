@@ -513,6 +513,27 @@ Health checks:
 
 On SIGTERM or Ctrl+C, `waserver` stops being ready, ends every game connection with `DISCONNECT_REASON_SERVER_SHUTDOWN`, saves every character, stops its zones, and gives the save workers 10 seconds to finish.
 
+### Backups
+
+`wactl` makes, checks and restores backups of the database, encrypted with age (docs/decisions/0048-encrypted-backups.md). deploy/README.md, "Backups", is the owner's guide, with the Compose services.
+
+```text
+wactl world backup-key new --out backup-identity.txt
+wactl world backup --dir /backups --recipients-file recipients.txt [--every 24h --keep-daily 7 --keep-weekly 4]
+wactl world backup --out world.dump.age --recipient age1...
+wactl world verify-backup --in world-20261018T030000Z.dump.age --identity backup-identity.txt --database postgres://me@localhost/postgres
+wactl world verify-backup --dir /backups --identity backup-identity.txt [--every 24h]
+wactl world restore --in world-20261018T030000Z.dump.age --identity backup-identity.txt
+```
+
+- `backup-key new` writes an X25519 identity with mode 0600, never over a file, and prints its recipient. `age-keygen` makes the same keys.
+- `backup` streams `pg_dump`'s custom format through age into the file, so no plain copy touches disk. It refuses to run without `--recipient` or `--recipients-file`, unless `--plain` is given. `--out -` writes to standard output.
+- `--dir` names backups `world-<UTC time>.dump.age` with a manifest `world-<UTC time>.json` beside it: the release, the migration, the time, the size, the SHA-256 of the file, and the numbers of accounts, characters and item serials, and the zeny total. One database snapshot gives both the counts and the dump.
+- Files are written to a hidden temporary name and renamed when complete.
+- `--every` runs as a long-lived process. After each backup it keeps the newest backup of each of the last `--keep-daily` UTC days and of each of the last `--keep-weekly` ISO weeks (Monday to Sunday, UTC), and removes the others. It touches only files of its own names, and stops cleanly on SIGTERM.
+- `verify-backup` checks the hash against the manifest, decrypts, restores into a temporary database as a role with `CREATEDB` (`--database` or `WATHENA_VERIFY_DATABASE_URL`), checks that the migrations are the manifest's and not newer than this wactl's, compares the counts, and drops the database, also on failure. It exits with status 1 on any mismatch.
+- `restore` decrypts an age backup with `--identity`, and restores plain backups too. It restores only into an empty database, in one transaction, as before.
+
 ## Mods
 
 `waserver` loads the mods in `mods.dir` at startup (strategy section 6, [decision 0006](../docs/decisions/0006-mod-loader.md)). [mods/README.md](../mods/README.md) is the guide for mod authors. `mods/examples/greeter` is a small sample, `mods/examples/halloween` adds an NPC, an item, monsters, a hook and world events, `mods/examples/verve` adds a status, `mods/examples/chain-lightning` adds a skill, and `mods/examples/familiars` adds a companion and a mount.

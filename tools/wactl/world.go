@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -187,115 +188,12 @@ func readPassword(path string) (string, error) {
 	return strings.TrimRight(line, "\r\n"), nil
 }
 
-// worldBackup writes the whole database with pg_dump, in its custom
-// format. The backup holds password hashes, sealed TOTP secrets and the
-// world seed, so the file is made readable by its owner only.
-func worldBackup(args []string) error {
-	fs := newFlags("world backup")
-	database := fs.String("database", "", "PostgreSQL URL of the migrator role; prefer the "+migrateEnv+" environment variable")
-	out := fs.String("out", "", "the backup file to make, or - for standard output")
-	if err := fs.Parse(args); err != nil {
-		return err
-	}
-	if *out == "" {
-		return errors.New("--out is required: a new file, or - for standard output")
-	}
-	raw, err := migratorURL(*database)
-	if err != nil {
-		return err
-	}
-	cmd, err := pgCommand("pg_dump", raw, "--format=custom", "--no-password")
-	if err != nil {
-		return err
-	}
-	if *out == "-" {
-		cmd.Stdout = os.Stdout
-		return runPG(cmd)
-	}
-	// pg_dump writes into the file made here, which keeps mode 0600.
-	f, err := os.OpenFile(*out, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) // #nosec G304 -- the file the operator named.
-	if err != nil {
-		return err
-	}
-	cmd.Stdout = f
-	err = runPG(cmd)
-	if cerr := f.Close(); err == nil {
-		err = cerr
-	}
-	if err != nil {
-		_ = os.Remove(*out)
-		return err
-	}
-	st, err := os.Stat(*out)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(os.Stderr, "wrote %s, %.1f MB\n", *out, float64(st.Size())/(1<<20))
-	return nil
-}
-
-// worldRestore loads a backup from worldBackup into an empty database
-// that roles.sql made, in one transaction. A backup from an older
-// release then needs `wactl migrate up`.
-func worldRestore(args []string) error {
-	fs := newFlags("world restore")
-	database := fs.String("database", "", "PostgreSQL URL of the migrator role; prefer the "+migrateEnv+" environment variable")
-	in := fs.String("in", "", "the backup file, or - for standard input")
-	if err := fs.Parse(args); err != nil {
-		return err
-	}
-	if *in == "" {
-		return errors.New("--in is required: a backup file, or - for standard input")
-	}
-	raw, err := migratorURL(*database)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := commandContext(time.Hour)
-	defer cancel()
-	pool, err := connect(ctx, raw)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-	has, err := store.HasSchema(ctx, pool)
-	if err != nil {
-		return err
-	}
-	if has {
-		return errors.New("the database is not empty; restore into a new database made with deploy/postgres/roles.sql")
-	}
-	cmd, err := pgCommand("pg_restore", raw, "--exit-on-error", "--single-transaction", "--no-password")
-	if err != nil {
-		return err
-	}
-	if *in == "-" {
-		cmd.Stdin = os.Stdin
-	} else {
-		f, err := os.Open(*in) // #nosec G304 -- the file the operator named.
-		if err != nil {
-			return err
-		}
-		defer func() { _ = f.Close() }()
-		cmd.Stdin = f
-	}
-	if err := runPG(cmd); err != nil {
-		return err
-	}
-	if err := store.CheckMigrations(ctx, pool); errors.Is(err, store.ErrPending) {
-		fmt.Fprintln(os.Stderr, "restored; the backup is from an older release, so run wactl migrate up")
-		return nil
-	} else if err != nil {
-		return err
-	}
-	fmt.Fprintln(os.Stderr, "restored")
-	return nil
-}
-
-// pgCommand makes a pg_dump or pg_restore command for a database URL.
-// The password moves from the URL to PGPASSWORD, so it never shows in
-// process lists.
-func pgCommand(tool, raw string, args ...string) (*exec.Cmd, error) {
+// pgCommand makes a command of the PostgreSQL client tools for a
+// database URL, which it passes with urlFlag: --dbname= for pg_dump and
+// pg_restore, --maintenance-db= for createdb and dropdb. The password
+// moves from the URL to PGPASSWORD, so it never shows in process lists.
+// The context's end kills the tool.
+func pgCommand(ctx context.Context, tool, urlFlag, raw string, args ...string) (*exec.Cmd, error) {
 	path, err := exec.LookPath(tool)
 	if err != nil {
 		return nil, fmt.Errorf("%s is not installed; install the PostgreSQL 18 client tools, or run wactl from the tools image (deploy/README.md)", tool)
@@ -304,7 +202,7 @@ func pgCommand(tool, raw string, args ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command(path, append(args, "--dbname="+dbname)...) // #nosec G204 -- a PostgreSQL tool with fixed flags.
+	cmd := exec.CommandContext(ctx, path, append([]string{urlFlag + dbname}, args...)...) // #nosec G204 -- a PostgreSQL tool with fixed flags.
 	cmd.Env = append(os.Environ(), "PGPASSWORD="+password, "PGAPPNAME=wactl")
 	cmd.Stderr = os.Stderr
 	return cmd, nil

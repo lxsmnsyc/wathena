@@ -44,8 +44,10 @@ commands:
   sim economy      print a new procedural world's exp and zeny per hour by field
   version          print the version and the world modes of the build
   world new        apply migrations, make the world and its first account
-  world backup     write the database to a file with pg_dump
+  world backup     write the database with pg_dump, encrypted with age, once or on a schedule
+  world backup-key new  make an age identity for backups and print its recipient
   world restore    load a backup into an empty database with pg_restore
+  world verify-backup   restore a backup into a temporary database and check it
 `
 
 func main() {
@@ -98,6 +100,14 @@ func main() {
 		err = worldBackup(os.Args[3:])
 	case "world restore":
 		err = worldRestore(os.Args[3:])
+	case "world verify-backup":
+		err = worldVerifyBackup(os.Args[3:])
+	case "world backup-key":
+		if len(os.Args) < 4 || os.Args[3] != "new" {
+			fmt.Fprint(os.Stderr, usage)
+			os.Exit(2)
+		}
+		err = backupKeyNew(os.Args[4:])
 	case "mod new":
 		err = modNew(os.Args[3:])
 	case "mod validate":

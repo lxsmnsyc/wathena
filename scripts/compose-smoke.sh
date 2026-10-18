@@ -3,13 +3,14 @@
 # as deploy/README.md describes, and checks it through Caddy:
 #   1. Makes the secrets, builds the images, and builds the placeholder
 #      assets into the assets volume with the wactl service.
-#   2. Makes the world and its staff account, then starts the stack and
-#      waits until every service is healthy.
+#   2. Makes a backup key, makes the world and its staff account, then
+#      starts the stack and waits until every service is healthy.
 #   3. Fetches the client, the account login page and the asset manifest
 #      over HTTPS from Caddy's local authority, and checks that the
 #      health checks are not public.
-#   4. Makes a backup, restores it into an empty database, and starts
-#      again.
+#   4. Waits for the backup service's first encrypted backup, verifies
+#      it with the backup-verify service, restores it into an empty
+#      database, and starts again (decision 0048).
 # It removes the stack and its volumes at the end. It uses the project
 # name wathena-smoke and ports 18080 and 18443, so a local stack named
 # wathena keeps running.
@@ -23,6 +24,8 @@ export COMPOSE_PROJECT_NAME=wathena-smoke
 export WATHENA_DOMAIN=localhost WATHENA_HTTP_PORT=18080 WATHENA_HTTPS_PORT=18443
 export WATHENA_EDGE_SUBNET=${WATHENA_EDGE_SUBNET:-172.30.81.0/24} WATHENA_PROXY_IP=${WATHENA_PROXY_IP:-172.30.81.10}
 export WATHENA_CONFIG="$work/waserver.yml"
+# The test's backup key, so the secrets of a local stack stay as they are.
+export WATHENA_BACKUP_RECIPIENTS="$work/backup_recipients" WATHENA_BACKUP_IDENTITY="$work/backup_identity"
 cat >"$WATHENA_CONFIG" <<'EOF'
 listen: 0.0.0.0:8300
 assets: /srv/assets
@@ -37,7 +40,7 @@ cleanup() {
 	if [ "$status" -ne 0 ]; then
 		compose logs --no-color --tail 50 || true
 	fi
-	compose --profile tools down -v --remove-orphans || true
+	compose --profile tools --profile verify down -v --remove-orphans || true
 	rm -rf "$work"
 	exit "$status"
 }
@@ -46,8 +49,19 @@ trap cleanup EXIT
 ./secrets.sh
 compose --profile tools build
 compose run --rm --no-deps wactl assets build --source placeholder --out /srv/assets
+# The key is made in a container, whose /tmp goes with it. Only its
+# recipient goes to the backup service.
+compose run --rm --no-deps -T --entrypoint sh wactl -c \
+	'wactl world backup-key new --out /tmp/identity.txt >/dev/null 2>&1 && cat /tmp/identity.txt' >"$WATHENA_BACKUP_IDENTITY"
+sed -n 's/^# public key: //p' "$WATHENA_BACKUP_IDENTITY" >"$WATHENA_BACKUP_RECIPIENTS"
+grep -q '^age1' "$WATHENA_BACKUP_RECIPIENTS"
+# The containers' user must read the bind-mounted copies, as secrets.sh
+# does for its files.
+chmod 644 "$WATHENA_BACKUP_IDENTITY" "$WATHENA_BACKUP_RECIPIENTS"
 openssl rand -hex 16 >"$work/admin_password"
-compose run --rm -T wactl world new --name Smoke --admin Admin --admin-password-file - <"$work/admin_password"
+# The placeholder pack has no game maps, so the world is classic. A
+# procedural world needs the reference data, which the tools image lacks.
+compose run --rm -T wactl world new --name Smoke --mode classic --admin Admin --admin-password-file - <"$work/admin_password"
 compose up -d --wait --wait-timeout 300
 
 check() {
@@ -66,10 +80,32 @@ check() {
 }
 check
 
-(umask 077 && compose run --rm -T wactl world backup --out - >"$work/world.dump")
+# The backup service makes its first backup at start.
+for i in $(seq 120); do
+	compose logs --no-color backup >"$work/backup.log"
+	if grep -q 'msg="backup made"' "$work/backup.log"; then
+		break
+	fi
+	if [ "$i" = 120 ]; then
+		echo "no backup after 2 minutes" >&2
+		cat "$work/backup.log" >&2
+		exit 1
+	fi
+	sleep 1
+done
+compose exec -T backup ls /backups >"$work/backups.txt"
+backup=$(grep '^world-.*\.dump\.age$' "$work/backups.txt" | tail -1)
+grep -qx "${backup%.dump.age}.json" "$work/backups.txt"
+compose exec -T backup cat "/backups/$backup" >"$work/world.dump.age"
+if [ "$(head -c 22 "$work/world.dump.age")" != "age-encryption.org/v1" ]; then
+	echo "$backup is not an age file" >&2
+	exit 1
+fi
+compose run --rm -T backup-verify world verify-backup --dir=/backups --identity=/run/secrets/backup_identity
 compose down
 docker volume rm "${COMPOSE_PROJECT_NAME}_pgdata"
-compose run --rm -T wactl world restore --in - <"$work/world.dump"
+compose run --rm -T -v "$WATHENA_BACKUP_IDENTITY:/keys/identity.txt:ro" wactl \
+	world restore --in - --identity /keys/identity.txt <"$work/world.dump.age"
 compose up -d --wait --wait-timeout 300
 check
 # grep -q stops reading at the first match, which makes compose logs fail

@@ -5,6 +5,7 @@ go 1.27.2
 tool google.golang.org/protobuf/cmd/protoc-gen-go
 
 require (
+	filippo.io/age v1.3.2
 	github.com/andybalholm/brotli v1.2.5
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc
 	github.com/coder/websocket v1.8.15
@@ -21,6 +22,7 @@ require (
 )
 
 require (
+	filippo.io/hpke v0.4.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.4 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/go-webauthn/x v0.3.1 // indirect

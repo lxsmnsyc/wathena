@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, was built the same day.
 
 Done:
 
@@ -152,6 +152,13 @@ Done:
   - `scripts/release.sh` builds `waserver` and `wactl` with the `procedural` tag for linux/amd64, linux/arm64, darwin/arm64 and windows/amd64, stamped with `git describe`, into `dist/<version>/` with `SHA256SUMS`. Two runs gave the same checksums.
   - `wactl version` is new, and both version commands print the build's world modes. The Dockerfile builds both binaries with the `procedural` tag and the version stamp.
   - A binary with the `procedural` tag runs classic worlds: the e2e test `TestClassicWorldProceduralBuild`.
+
+- Phase 8 step 2, encrypted backups ([decision 0048](decisions/0048-encrypted-backups.md)):
+  - `wactl world backup` encrypts the `pg_dump` stream with age (`filippo.io/age`) to the owner's recipients, and refuses to run without one unless `--plain`. `wactl world backup-key new` makes the key. The identity stays offline.
+  - `--dir` names backups by UTC time, with a plain manifest of the release, the migration, the size, the SHA-256 and the counts of accounts, characters, item serials and zeny. The counts and the dump share one snapshot. Files get their names only when complete.
+  - `--every` runs as a long-lived process and prunes to the newest backup of each of the last 7 days and 4 ISO weeks by default.
+  - `wactl world verify-backup` restores a backup into a temporary database as a role with only `CREATEDB`, checks it against the manifest, and drops it. `wactl world restore` decrypts, and plain backups still restore.
+  - Compose has a `backup` service and an opt-in `backup-verify` service, which puts the identity on the server.
 
 Open review items:
 
@@ -702,7 +709,7 @@ All-in-one details:
 
 - The repository ships a Docker Compose file with `waserver`, PostgreSQL 18, and a TLS proxy (Caddy) that gets certificates automatically.
 - The same Compose file serves the web client build as static files.
-- `wactl world new` creates the database, the first admin account, and the world seed. `wactl world backup` and `wactl world restore` wrap `pg_dump` and restore.
+- `wactl world new` creates the database, the first admin account, and the world seed. `wactl world backup` and `wactl world restore` wrap `pg_dump` and `pg_restore`. Backups are encrypted with age to the owner's key, and a Compose service makes one each day and removes old ones. `wactl world verify-backup` restores a backup into a temporary database and checks it against its manifest (decision 0048).
 - Service calls inside one process skip the network but use the same interfaces as the distributed mode. Tests run both.
 
 Minimum hardware for all-in-one with 500 players: 4 CPU cores, 8 GB RAM, and 50 GB SSD. The load tests in section 12 confirm or correct these numbers. Owners can run the same load test on their own machine before they open a world.
@@ -1418,7 +1425,7 @@ Section 6.6 covers the sandbox and permissions. Additional Lua rules:
 - Commands that create items or zeny need a reason field, and their audit log entries can be reviewed.
 - Each service uses its own PostgreSQL role with only the tables and rights it needs. The game services cannot drop tables.
 - Secrets such as database passwords and certificate keys come from environment variables or a secret manager, never from files in the repository.
-- Backups are encrypted, and restore tests run on a schedule.
+- Backups are encrypted, and restore tests run on a schedule (decision 0048).
 - Logs never contain passwords, tokens, or full session IDs.
 
 ### 7.9 Secure development
@@ -3254,6 +3261,13 @@ Progress:
   - Release build: `scripts/release.sh` builds both binaries with the `procedural` tag for the four targets, with a `git describe` version, flags that repeat the same bytes, and SHA-256 checksums. The Docker images use the same tag and stamp.
   - Both world modes: a release binary runs classic worlds (`TestClassicWorldProceduralBuild`). Classic mode from the owner's GRF files, with converted NPCs and fixed spawns, is not built yet.
   - Signing and the software bill of materials are a later step.
+- Step 2 is built (2026-10-18), [decision 0048](decisions/0048-encrypted-backups.md):
+  - Encryption: backups are age files for the owner's recipients. The server holds only the recipients, and the owner keeps the identity offline. `wactl world backup` refuses to run without a recipient unless `--plain`.
+  - Manifest: each backup in a folder has a plain JSON manifest with the release, the migration, the time, the size, the SHA-256 and the counts of accounts, characters, item serials and zeny, from the same snapshot as the dump.
+  - Schedule: `--every 24h --keep-daily 7 --keep-weekly 4` makes backups in a long-lived process. The weekly backup of an ISO week is its newest one.
+  - Restore tests: `wactl world verify-backup` restores into a temporary database as the role `wathena_verify`, which has only `CREATEDB`, checks the hash, the migrations and the counts, and drops the database. By default it runs on the owner's machine. The opt-in `backup-verify` Compose service runs it on the server, and the guide warns that the server then holds the identity.
+  - Compose: a `backup` service with a `backups` volume and the recipients from a secret. The smoke test makes an encrypted backup, verifies it and restores it.
+  - Copies to other machines, an admin screen for backups and point-in-time recovery are out of scope.
 
 ### Phase 9: Modding ecosystem
 

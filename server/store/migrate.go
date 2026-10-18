@@ -65,6 +65,12 @@ func (m *Migrator) Up(ctx context.Context) ([]int64, error) {
 	return applied, err
 }
 
+// Versions returns the newest applied migration, 0 for none, and the
+// newest migration of this build.
+func (m *Migrator) Versions(ctx context.Context) (current, latest int64, err error) {
+	return m.provider.GetVersions(ctx)
+}
+
 // Migration is one migration and whether it is applied.
 type Migration struct {
 	Version int64

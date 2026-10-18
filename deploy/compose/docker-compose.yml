@@ -12,6 +12,15 @@
 #     client, on one origin. Starts after migrate succeeds.
 #   - caddy: the only public service. Gets certificates for
 #     WATHENA_DOMAIN and proxies everything to waserver.
+#   - backup: makes an encrypted backup into the backups volume once a
+#     day with `wactl world backup --every`, and prunes old ones
+#     (decision 0048). It needs the recipient, the public key, in the
+#     backup_recipients secret. The identity, the private key, stays
+#     with the owner.
+#   - backup-verify: only with the verify profile. Restores the newest
+#     backup into a temporary database once a day and checks it. It
+#     puts the identity on the server, so a stolen server can decrypt
+#     the backups. deploy/README.md, "Backups", explains the choice.
 #   - wactl: only for `docker compose run`. Makes the world, builds
 #     assets into the assets volume, and makes and restores backups.
 
@@ -69,7 +78,7 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGDATABASE: postgres
-    secrets: [postgres_password, migrator_password, game_password, account_password]
+    secrets: [postgres_password, migrator_password, game_password, account_password, verify_password]
     volumes:
       - ../postgres/roles.sql:/deploy/roles.sql:ro
       - ./init-db.sh:/deploy/init-db.sh:ro
@@ -89,6 +98,44 @@ services:
     command: []
     volumes:
       - ${WATHENA_ASSETS:-assets}:/srv/assets
+    tmpfs: [/tmp]
+
+  backup:
+    <<: [*tools, *hardening]
+    restart: unless-stopped
+    command:
+      - world
+      - backup
+      - --dir=/backups
+      - --recipients-file=/run/secrets/backup_recipients
+      - --every=${WATHENA_BACKUP_EVERY:-24h}
+      - --keep-daily=${WATHENA_BACKUP_KEEP_DAILY:-7}
+      - --keep-weekly=${WATHENA_BACKUP_KEEP_WEEKLY:-4}
+    secrets: [migrate_database_url, backup_recipients]
+    volumes:
+      - backups:/backups
+    tmpfs: [/tmp]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  backup-verify:
+    <<: [*tools, *hardening]
+    profiles: [verify]
+    restart: unless-stopped
+    command:
+      - world
+      - verify-backup
+      - --dir=/backups
+      - --identity=/run/secrets/backup_identity
+      - --every=${WATHENA_VERIFY_EVERY:-24h}
+    # Only the verify role, which may make databases and has no rights on
+    # the world's database.
+    environment:
+      WATHENA_VERIFY_DATABASE_URL_FILE: /run/secrets/verify_database_url
+    secrets: [verify_database_url, backup_identity]
+    volumes:
+      - backups:/backups:ro
     tmpfs: [/tmp]
 
   waserver:
@@ -177,6 +224,9 @@ volumes:
   caddy_config:
   # The asset build, unless WATHENA_ASSETS names a folder instead.
   assets:
+  # The backup service's backups. `docker compose down -v` deletes them
+  # with the database. Copy them to another machine too.
+  backups:
 
 # ./secrets.sh makes these files. Each service only gets the ones it needs.
 secrets:
@@ -196,3 +246,14 @@ secrets:
     file: ./secrets/account_database_url
   account_secret_key:
     file: ./secrets/account_secret_key
+  verify_password:
+    file: ./secrets/verify_password
+  verify_database_url:
+    file: ./secrets/verify_database_url
+  # The backup key's recipient (public key), and its identity (private
+  # key) for the verify profile only. secrets.sh never makes the
+  # identity. The variables name other files, such as for a test.
+  backup_recipients:
+    file: ${WATHENA_BACKUP_RECIPIENTS:-./secrets/backup_recipients}
+  backup_identity:
+    file: ${WATHENA_BACKUP_IDENTITY:-./secrets/backup_identity}
