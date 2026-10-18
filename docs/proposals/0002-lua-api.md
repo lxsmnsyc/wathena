@@ -1053,6 +1053,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Lua.** World events `dungeon_rotated` with { `dungeon`, `date` } and `region_changed` with { `region`, `season` }. `wa.testing` gains `world:rotate(dungeon)` and `world:change_region(x, y)`.
     - **Admin.** The events tool lists rotations and seasons, and staff can force one with `events.control` and an audit row.
 
+48. Encrypted backups (phase 8 step 2). The user approved these on 2026-10-18:
+    - **Encryption.** Backups are encrypted with age (`filippo.io/age`). The server holds only the recipient, the public key. The owner keeps the identity, the private key, offline. Owners can also decrypt with the standard `age` command.
+    - **Commands.** `wactl world backup-key new --out identity.txt` writes an identity and prints its recipient. `wactl world backup --recipient age1...` or `--recipients-file` encrypts the `pg_dump` stream, so no plain copy touches disk. A backup without a recipient is refused unless `--plain` is given. `wactl world restore --identity` decrypts and restores. Older plain backups still restore.
+    - **Manifest.** Each backup has a plain `world-<UTC time>.json` next to it: release version, migration version, time, size, the SHA-256 of the encrypted file, and row counts of accounts, characters, item serials and the zeny total. It holds no secrets.
+    - **Schedule.** `wactl world backup --dir /backups --every 24h --keep-daily 7 --keep-weekly 4` runs as a long-lived process, prunes old backups and logs each run. Compose gets a `backup` service with a backups volume and the recipient from a secret. The defaults are daily, keeping 7 daily and 4 weekly backups.
+    - **Restore tests.** `wactl world verify-backup --in F --identity I` checks the hash against the manifest, decrypts, restores into a temporary database, checks the migrations are current or older, compares the row counts, and drops the temporary database. With `--every` it tests the latest backup on a schedule. By default it runs on the owner's machine against copied backups. An opt-in `backup-verify` Compose service can run it on the server, and the setup guide says that the server then holds the identity, so a stolen server can decrypt backups.
+    - **Out of scope.** Copying backups to other machines (owners use `rclone` or `rsync`), an admin screen for backups, and point-in-time recovery.
+    - **No Lua API.**
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
