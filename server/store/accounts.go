@@ -59,6 +59,10 @@ type Ticket struct {
 	// TwoFactor is set when the ticket's session logged in with a
 	// second factor, so a staff role counts (decision 0028).
 	TwoFactor bool
+	// Recent is set when the ticket's session proved who its player is
+	// within the reauth window when the ticket was made (review decision
+	// 51).
+	Recent bool
 }
 
 // ErrTicketInvalid is a ticket that does not exist, was used, or
@@ -82,6 +86,6 @@ func (s *Store) RedeemTicket(ctx context.Context, hash []byte) (Ticket, error) {
 	return Ticket{
 		SessionID: row.SessionID, AccountID: row.AccountID, CharacterID: row.CharacterID, Name: row.Name,
 		Job: row.Job, Sex: row.Sex, Hair: row.Hair, HairColor: row.HairColor,
-		AccountName: row.AccountName, TwoFactor: row.TwoFactor,
+		AccountName: row.AccountName, TwoFactor: row.TwoFactor, Recent: row.Recent,
 	}, nil
 }

@@ -120,9 +120,9 @@ func (p Periods) Warnings() []string {
 }
 
 // Job runs the deletes. Game is the game role's pool, which deletes
-// chat lines and old log partitions and holds the lock. Account is the
-// account role's pool, which deletes login records and audit rows. A
-// nil Account skips those two, as with --dev.
+// chat lines, old log partitions and old audit rows, and holds the
+// lock. Account is the account role's pool, which deletes login
+// records. A nil Account skips those, as with --dev.
 type Job struct {
 	Game    *pgxpool.Pool
 	Account *pgxpool.Pool
@@ -278,12 +278,13 @@ func (j *Job) RunOnce(ctx context.Context) (Result, error) {
 	if err != nil {
 		fail("item and zeny logs", err)
 	}
-	if j.Account != nil {
-		n, err := store.DeleteOldAudit(ctx, j.Account, cutoff(j.Periods.AuditDays))
-		res.Deleted[KindAudit] = n
-		if err != nil {
-			fail(KindAudit, err)
-		}
+	// The game role deletes old audit rows. The account role writes
+	// the reviews, so it may not also delete the rows they release
+	// (review decision 51).
+	n, err = store.DeleteOldAudit(ctx, j.Game, cutoff(j.Periods.AuditDays))
+	res.Deleted[KindAudit] = n
+	if err != nil {
+		fail(KindAudit, err)
 	}
 	var runErr error
 	if len(errs) > 0 {

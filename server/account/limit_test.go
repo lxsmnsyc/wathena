@@ -118,26 +118,30 @@ func TestIPCaptchaAndForget(t *testing.T) {
 	}
 }
 
-func TestFullTablesRefuse(t *testing.T) {
+func TestFullTablesEvict(t *testing.T) {
 	lim := DefaultLimits
 	lim.MaxEntries = 2
 	l := newLimiter(lim)
 	ip := netip.MustParseAddr("192.0.2.1")
 	l.fail("aaaa", ip, t0)
-	l.fail("bbbb", ip, t0)
-	// A third name cannot be counted, so it is refused, not let through
-	// without limits.
-	if wait, _ := l.check("cccc", ip, t0); wait == 0 {
-		t.Error("a name that cannot be counted is allowed")
+	l.fail("bbbb", ip, t0.Add(time.Second))
+	// A third name is not refused. Its failure pushes out the entry
+	// used least recently (review decision 51).
+	if wait, _ := l.check("cccc", ip, t0); wait != 0 {
+		t.Error("a name that the full table does not hold is refused")
 	}
-	if wait, _ := l.check("aaaa", ip, t0); wait != 0 {
-		t.Error("a counted name is refused")
+	l.fail("cccc", ip, t0.Add(2*time.Second))
+	if len(l.names) != 2 || l.names["aaaa"] != nil || l.names["cccc"] == nil {
+		t.Errorf("names after the eviction: %v", l.names)
 	}
 	if ok, _ := l.allow(actLogin, netip.MustParseAddr("192.0.2.2"), t0); !ok {
 		t.Error("bucket table refused its first entries")
 	}
 	_, _ = l.allow(actLogin, netip.MustParseAddr("192.0.2.3"), t0)
-	if ok, _ := l.allow(actLogin, netip.MustParseAddr("192.0.2.4"), t0); ok {
-		t.Error("a full bucket table took another address")
+	if ok, _ := l.allow(actLogin, netip.MustParseAddr("192.0.2.4"), t0); !ok {
+		t.Error("a full bucket table refused a new address")
+	}
+	if len(l.buckets) != 2 {
+		t.Errorf("%d buckets, want 2", len(l.buckets))
 	}
 }

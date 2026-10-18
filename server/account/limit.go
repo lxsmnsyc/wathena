@@ -39,8 +39,11 @@ type Limits struct {
 	// back to 0. A successful login resets its account name's count.
 	Forget time.Duration
 	// MaxEntries bounds each table of counts. When a table is full of
-	// entries still in use, new addresses and names are refused until
-	// old ones expire.
+	// entries still in use, a new address or name pushes out the entry
+	// least recently used of a sample of evictSample entries. A flood of
+	// made-up names therefore cannot lock out the names it did not
+	// touch, and the per-address buckets still limit the flood (review
+	// decision 51).
 	MaxEntries int
 }
 
@@ -97,9 +100,19 @@ type bucket struct {
 }
 
 type failures struct {
+	// n counts the failures, and last is the time of the last one.
 	n    int
 	last time.Time
+	// inflight counts the attempts that reserve let through and that
+	// have not ended yet. seen is the time of the last use, for
+	// eviction.
+	inflight int
+	seen     time.Time
 }
+
+// evictSample is how many entries a full table looks at to choose the
+// one to push out.
+const evictSample = 16
 
 // limiter keeps the counts for Limits.
 type limiter struct {
@@ -163,7 +176,7 @@ func (l *limiter) allow(act action, addr netip.Addr, now time.Time) (bool, time.
 	b := l.buckets[k]
 	if b == nil {
 		if l.full(func() int { return len(l.buckets) }, now) {
-			return false, cfg.Every
+			evictBucket(l.buckets)
 		}
 		b = &bucket{tokens: float64(cfg.Burst), at: now}
 		l.buckets[k] = b
@@ -178,7 +191,8 @@ func (l *limiter) allow(act action, addr netip.Addr, now time.Time) (bool, time.
 }
 
 // full reports whether a table cannot take one more entry. When it is
-// full, it sweeps expired entries first. l.mu must be held.
+// full, it sweeps expired entries first. The caller then pushes one out.
+// l.mu must be held.
 func (l *limiter) full(size func() int, now time.Time) bool {
 	if l.lim.MaxEntries <= 0 || size() < l.lim.MaxEntries {
 		return false
@@ -190,18 +204,18 @@ func (l *limiter) full(size func() int, now time.Time) bool {
 // nameKey is an account name as the database compares it.
 func nameKey(name string) string { return strings.ToLower(name) }
 
-// check returns, before a login attempt, how long the name must still
-// wait and whether a captcha is needed. It applies to every name, taken
-// or not, so its answers do not tell which accounts exist.
+// check returns how long the name must still wait and whether a
+// captcha is needed. It applies to every name, taken or not, so its
+// answers do not tell which accounts exist. It reserves nothing: a
+// login attempt calls reserve.
 func (l *limiter) check(name string, addr netip.Addr, now time.Time) (wait time.Duration, captcha bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if _, ok := l.names[nameKey(name)]; !ok && l.full(func() int { return len(l.names) }, now) {
-		// The table is full, so a failure for this name could not be
-		// counted. Refuse the attempt instead of allowing it unlimited.
-		return time.Minute, true
-	}
-	f := l.live(l.names[nameKey(name)], now)
+	return l.checkLocked(l.names[nameKey(name)], addr, now)
+}
+
+func (l *limiter) checkLocked(entry *failures, addr netip.Addr, now time.Time) (wait time.Duration, captcha bool) {
+	f := l.live(entry, now)
 	a := l.live(l.addrs[addrKey(addr)], now)
 	if l.lim.AccountCaptcha > 0 && f.n >= l.lim.AccountCaptcha || l.lim.IPCaptcha > 0 && a.n >= l.lim.IPCaptcha {
 		captcha = true
@@ -210,6 +224,55 @@ func (l *limiter) check(name string, addr netip.Addr, now time.Time) (wait time.
 		wait = until.Sub(now)
 	}
 	return wait, captcha
+}
+
+// reserve is check for a login attempt that goes on to check a password
+// or a code. Under the same lock it counts the attempt as in flight
+// until release, so attempts that arrive together cannot all pass a
+// check made before any of them failed (review decision 51):
+//   - Failures and attempts in flight together reach BackoffAfter at
+//     most. Past that, one attempt at a time goes, after the backoff.
+//   - release ends the attempt. Call it once the attempt failed (after
+//     fail) or passed (after succeed). It is a no-op when wait > 0.
+func (l *limiter) reserve(name string, addr netip.Addr, now time.Time) (wait time.Duration, captcha bool, release func()) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	k := nameKey(name)
+	f := l.names[k]
+	if f == nil {
+		if l.full(func() int { return len(l.names) }, now) {
+			evictFailures(l.names)
+		}
+		f = &failures{}
+		l.names[k] = f
+	}
+	f.seen = now
+	if f.n > 0 && now.Sub(f.last) > l.lim.Forget {
+		f.n = 0
+	}
+	wait, captcha = l.checkLocked(f, addr, now)
+	if wait == 0 && l.lim.BackoffAfter > 0 && f.n+f.inflight >= l.lim.BackoffAfter && f.inflight > 0 {
+		// Another attempt for the name is still being checked. Its
+		// result decides the next wait.
+		wait = max(l.backoff(f.n+f.inflight), time.Second)
+	}
+	if wait > 0 {
+		return wait, captcha, func() {}
+	}
+	f.inflight++
+	var once sync.Once
+	return 0, captcha, func() {
+		once.Do(func() {
+			l.mu.Lock()
+			defer l.mu.Unlock()
+			// The entry may have been reset by succeed or pushed out
+			// meanwhile. Then f is no longer in the table, and the
+			// count does not matter.
+			if f.inflight > 0 {
+				f.inflight--
+			}
+		})
+	}
 }
 
 // captchaFor reports whether an address must solve a captcha, to show
@@ -241,21 +304,20 @@ func (l *limiter) live(f *failures, now time.Time) failures {
 	return *f
 }
 
-// fail records a failed login for a name and an address. It returns
-// false when the tables are full.
-func (l *limiter) fail(name string, addr netip.Addr, now time.Time) bool {
+// fail records a failed login for a name and an address. A full table
+// pushes out an older entry for it.
+func (l *limiter) fail(name string, addr netip.Addr, now time.Time) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	byName := bump(l, l.names, nameKey(name), now)
-	byAddr := bump(l, l.addrs, addrKey(addr), now)
-	return byName && byAddr
+	bump(l, l.names, nameKey(name), now)
+	bump(l, l.addrs, addrKey(addr), now)
 }
 
-func bump[K comparable](l *limiter, m map[K]*failures, k K, now time.Time) bool {
+func bump[K comparable](l *limiter, m map[K]*failures, k K, now time.Time) {
 	f := m[k]
 	if f == nil {
 		if l.full(func() int { return len(m) }, now) {
-			return false
+			evictFailures(m)
 		}
 		f = &failures{}
 		m[k] = f
@@ -264,16 +326,74 @@ func bump[K comparable](l *limiter, m map[K]*failures, k K, now time.Time) bool 
 		f.n = 0
 	}
 	f.n++
-	f.last = now
-	return true
+	f.last, f.seen = now, now
+}
+
+// evictFailures pushes out the entry used least recently of a sample of
+// a table, preferring entries without attempts in flight. Go's map
+// order is random, so the sample is too.
+func evictFailures[K comparable](m map[K]*failures) {
+	var (
+		victim K
+		best   *failures
+		i      int
+	)
+	for k, f := range m {
+		if best == nil || evictBefore(f, best) {
+			victim, best = k, f
+		}
+		if i++; i >= evictSample {
+			break
+		}
+	}
+	if best != nil {
+		delete(m, victim)
+	}
+}
+
+// evictBefore reports whether f goes before best: an entry without
+// attempts in flight first, then the one used least recently.
+func evictBefore(f, best *failures) bool {
+	if idle := f.inflight == 0; idle != (best.inflight == 0) {
+		return idle
+	}
+	return lastUse(f).Before(lastUse(best))
+}
+
+// lastUse is when an entry was last used.
+func lastUse(f *failures) time.Time {
+	if f.last.After(f.seen) {
+		return f.last
+	}
+	return f.seen
+}
+
+// evictBucket pushes out the bucket used least recently of a sample.
+func evictBucket(m map[bucketKey]*bucket) {
+	var (
+		victim bucketKey
+		best   *bucket
+		i      int
+	)
+	for k, b := range m {
+		if best == nil || b.at.Before(best.at) {
+			victim, best = k, b
+		}
+		if i++; i >= evictSample {
+			break
+		}
+	}
+	if best != nil {
+		delete(m, victim)
+	}
 }
 
 // failAddr records a failure for an address only, such as a passkey
 // that did not work, whose account is not known.
-func (l *limiter) failAddr(addr netip.Addr, now time.Time) bool {
+func (l *limiter) failAddr(addr netip.Addr, now time.Time) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return bump(l, l.addrs, addrKey(addr), now)
+	bump(l, l.addrs, addrKey(addr), now)
 }
 
 // succeed forgets a name's failures after a successful login.
@@ -299,7 +419,7 @@ func (l *limiter) sweepLocked(now time.Time) {
 		}
 	}
 	for k, f := range l.names {
-		if now.Sub(f.last) > l.lim.Forget {
+		if f.inflight == 0 && now.Sub(lastUse(f)) > l.lim.Forget {
 			delete(l.names, k)
 		}
 	}

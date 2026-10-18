@@ -108,7 +108,9 @@ func TestDropOldLogs(t *testing.T) {
 			t.Errorf("a cutoff %v ago: %v", ago, err)
 		}
 	}
-	if _, _, err := store.DropOldLogs(ctx, game, time.Now().Add(-30*24*time.Hour)); err != nil {
+	// A second more, as the database's clock may run a little behind
+	// the test's, such as in a VM.
+	if _, _, err := store.DropOldLogs(ctx, game, time.Now().Add(-30*24*time.Hour-time.Second)); err != nil {
 		t.Errorf("a cutoff 30 days ago: %v", err)
 	}
 	// Other roles cannot run it.
@@ -119,14 +121,26 @@ func TestDropOldLogs(t *testing.T) {
 }
 
 // TestDeleteOldAudit: old audit rows go with their reviews, except rows
-// that need a review and have none, and new rows stay. Only the account
-// role runs it (decision 0049).
+// that need a review and have none or one less than 30 days old, and new
+// rows stay. Only the game role runs it (decision 0049, review decision
+// 51).
 func TestDeleteOldAudit(t *testing.T) {
 	admin, game := migrated(t)
 	account := storetest.As(t, admin, "wathena_account")
 	ctx := timeout(t)
 	old := time.Now().Add(-800 * 24 * time.Hour)
-	add := func(name string, at time.Time, needsReview, reviewed bool) {
+	// review adds a review of a row, made at a time. A review always
+	// gets the database's time, so the test moves it afterwards.
+	review := func(id int64, at time.Time) {
+		t.Helper()
+		if _, err := admin.Exec(ctx, `INSERT INTO staff_audit_reviews (audit_id, reviewer_id, reviewer_name) VALUES ($1, 2, 'Owner')`, id); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := admin.Exec(ctx, `UPDATE staff_audit_reviews SET reviewed_at = $2 WHERE audit_id = $1`, id, at); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add := func(name string, at time.Time, needsReview bool, reviewedAt time.Time) int64 {
 		t.Helper()
 		var id int64
 		reason := ""
@@ -137,19 +151,19 @@ func TestDeleteOldAudit(t *testing.T) {
 			VALUES ($1, 1, $2, 'admin', 'items.restore', 'admin', $3, $4) RETURNING id`, at, name, reason, needsReview).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
-		if reviewed {
-			if _, err := admin.Exec(ctx, `INSERT INTO staff_audit_reviews (audit_id, reviewer_id, reviewer_name) VALUES ($1, 2, 'Owner')`, id); err != nil {
-				t.Fatal(err)
-			}
+		if !reviewedAt.IsZero() {
+			review(id, reviewedAt)
 		}
+		return id
 	}
-	add("OldPlain", old, false, false)
-	add("OldReviewed", old, true, true)
-	add("OldPending", old, true, false)
-	add("NewPending", time.Now(), true, false)
-	add("NewReviewed", time.Now(), true, true)
+	add("OldPlain", old, false, time.Time{})
+	add("OldReviewed", old, true, old.Add(24*time.Hour))
+	pending := add("OldPending", old, true, time.Time{})
+	add("OldFreshReview", old, true, time.Now())
+	add("NewPending", time.Now(), true, time.Time{})
+	add("NewReviewed", time.Now(), true, time.Now())
 
-	n, err := store.DeleteOldAudit(ctx, account, time.Now().Add(-730*24*time.Hour))
+	n, err := store.DeleteOldAudit(ctx, game, time.Now().Add(-730*24*time.Hour))
 	if err != nil || n != 2 {
 		t.Fatalf("deleted %d, %v; want 2", n, err)
 	}
@@ -157,38 +171,93 @@ func TestDeleteOldAudit(t *testing.T) {
 	if err := admin.QueryRow(ctx, "SELECT string_agg(account_name, ' ' ORDER BY id) FROM staff_audit").Scan(&names); err != nil {
 		t.Fatal(err)
 	}
-	if names != "OldPending NewPending NewReviewed" {
+	if names != "OldPending OldFreshReview NewPending NewReviewed" {
 		t.Errorf("rows left: %s", names)
 	}
 	var reviews int
-	if err := admin.QueryRow(ctx, "SELECT count(*) FROM staff_audit_reviews").Scan(&reviews); err != nil || reviews != 1 {
-		t.Errorf("%d reviews left, %v; want NewReviewed's", reviews, err)
+	if err := admin.QueryRow(ctx, "SELECT count(*) FROM staff_audit_reviews").Scan(&reviews); err != nil || reviews != 2 {
+		t.Errorf("%d reviews left, %v; want OldFreshReview's and NewReviewed's", reviews, err)
 	}
-	// Once reviewed, the old pending row goes.
-	if _, err := admin.Exec(ctx, `INSERT INTO staff_audit_reviews (audit_id, reviewer_id, reviewer_name)
-		SELECT id, 2, 'Owner' FROM staff_audit WHERE account_name = 'OldPending'`); err != nil {
+	// A review made now does not free the old pending row at once. Once
+	// the review is 30 days old, the row goes.
+	review(pending, time.Now())
+	if n, err := store.DeleteOldAudit(ctx, game, time.Now().Add(-730*24*time.Hour)); err != nil || n != 0 {
+		t.Errorf("after a new review: deleted %d, %v; want 0", n, err)
+	}
+	if _, err := admin.Exec(ctx, `UPDATE staff_audit_reviews SET reviewed_at = now() - interval '31 days' WHERE audit_id = $1`, pending); err != nil {
 		t.Fatal(err)
 	}
-	if n, err := store.DeleteOldAudit(ctx, account, time.Now().Add(-730*24*time.Hour)); err != nil || n != 1 {
-		t.Errorf("after the review: deleted %d, %v; want 1", n, err)
+	if n, err := store.DeleteOldAudit(ctx, game, time.Now().Add(-730*24*time.Hour)); err != nil || n != 1 {
+		t.Errorf("after the review aged: deleted %d, %v; want 1", n, err)
 	}
-	// The account role still cannot delete rows itself, and the game
-	// role cannot run the function.
+	// The account role, which writes the reviews, can neither delete
+	// rows itself nor run the function. The game role cannot delete rows
+	// itself.
 	if _, err := account.Exec(ctx, "DELETE FROM staff_audit"); err == nil {
 		t.Error("the account role deleted audit rows")
 	}
-	if _, err := store.DeleteOldAudit(ctx, game, old); err == nil {
+	if _, err := store.DeleteOldAudit(ctx, account, old); err == nil {
+		t.Error("the account role ran the audit deletion")
+	}
+	if _, err := game.Exec(ctx, "DELETE FROM staff_audit"); err == nil {
 		t.Error("the game role deleted audit rows")
 	}
 	// A cutoff less than 30 days ago is refused (migration 00037). 30
 	// days ago works.
 	for _, ago := range []time.Duration{0, 29 * 24 * time.Hour} {
-		if _, err := store.DeleteOldAudit(ctx, account, time.Now().Add(-ago)); err == nil || !strings.Contains(err.Error(), "less than 30 days ago") {
+		if _, err := store.DeleteOldAudit(ctx, game, time.Now().Add(-ago)); err == nil || !strings.Contains(err.Error(), "less than 30 days ago") {
 			t.Errorf("a cutoff %v ago: %v", ago, err)
 		}
 	}
-	if _, err := store.DeleteOldAudit(ctx, account, time.Now().Add(-30*24*time.Hour)); err != nil {
+	// A second more, as the database's clock may run a little behind
+	// the test's, such as in a VM.
+	if _, err := store.DeleteOldAudit(ctx, game, time.Now().Add(-30*24*time.Hour-time.Second)); err != nil {
 		t.Errorf("a cutoff 30 days ago: %v", err)
+	}
+}
+
+// TestAuditReviewRules: the database refuses a review of a row that is
+// not marked for review and a review by the row's own actor, and gives
+// every review its own time, so the account role cannot forge old
+// reviews to free rows for deletion (review decision 51).
+func TestAuditReviewRules(t *testing.T) {
+	admin, _ := migrated(t)
+	account := storetest.As(t, admin, "wathena_account")
+	ctx := timeout(t)
+	row := func(needsReview bool) int64 {
+		t.Helper()
+		reason := ""
+		if needsReview {
+			reason = "restore"
+		}
+		var id int64
+		if err := admin.QueryRow(ctx, `INSERT INTO staff_audit (at, account_id, account_name, role, action, source, reason, needs_review)
+			VALUES (now() - interval '800 days', 7, 'Rogue', 'admin', 'items.restore', 'admin', $1, $2) RETURNING id`, reason, needsReview).Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	plain, marked := row(false), row(true)
+	for _, c := range []struct {
+		name string
+		sql  string
+		args []any
+	}{
+		{"a row not marked for review", `INSERT INTO staff_audit_reviews (audit_id, reviewer_id, reviewer_name) VALUES ($1, 8, 'Other')`, []any{plain}},
+		{"a review of one's own action", `INSERT INTO staff_audit_reviews (audit_id, reviewer_id, reviewer_name) VALUES ($1, 7, 'Rogue')`, []any{marked}},
+	} {
+		if _, err := account.Exec(ctx, c.sql, c.args...); err == nil {
+			t.Errorf("%s was accepted", c.name)
+		}
+	}
+	// A review with a time in the past gets the database's time.
+	if _, err := account.Exec(ctx, `INSERT INTO staff_audit_reviews (audit_id, reviewer_id, reviewer_name, reviewed_at)
+		VALUES ($1, 8, 'Other', now() - interval '400 days')`, marked); err != nil {
+		t.Fatal(err)
+	}
+	var fresh bool
+	if err := admin.QueryRow(ctx, "SELECT reviewed_at > now() - interval '1 minute' FROM staff_audit_reviews WHERE audit_id = $1", marked).Scan(&fresh); err != nil || !fresh {
+		t.Errorf("the review kept a forged time: %v %v", fresh, err)
 	}
 }
 

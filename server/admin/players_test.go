@@ -169,8 +169,9 @@ func TestPlayerSearch(t *testing.T) {
 	if p := get(e, owner, "players?serial="+serial, &adminv1.PlayerSearch{}); len(p.GetAccounts()) != 0 || p.GetHolder() != nil {
 		t.Errorf("gone serial: %v", p)
 	}
-	// Name, ID and serial searches write no audit row.
-	if got := e.actions(); len(got) != 0 {
+	// Name and ID searches write no audit row. A serial search shows
+	// who holds an item, so it writes one (review decision 51).
+	if got := e.actions(); !slices.Equal(got, []string{"players.search_serial " + serial, "players.search_serial " + serial}) {
 		t.Errorf("audit rows after searches: %q", got)
 	}
 	// The test server's logins come from 127.0.0.1.
@@ -184,7 +185,7 @@ func TestPlayerSearch(t *testing.T) {
 	if got := accountNames(get(e, owner, "players?ip=203.0.113.7", &adminv1.PlayerSearch{})); got != "" {
 		t.Errorf("other range: %q", got)
 	}
-	if got := e.actions(); !slices.Equal(got, []string{"players.search_ip 127.0.0.0/8", "players.search_ip 203.0.113.7/32"}) {
+	if got := e.actions(); len(got) < 2 || !slices.Equal(got[2:], []string{"players.search_ip 127.0.0.0/8", "players.search_ip 203.0.113.7/32"}) {
 		t.Errorf("audit rows of IP searches: %q", got)
 	}
 	for _, q := range []string{"", "?name=a&id=1", "?id=x", "?id=0", "?serial=nope", "?ip=300.1.1.1", "?name=a&limit=0",
@@ -253,6 +254,12 @@ func TestLogsAndHistory(t *testing.T) {
 		e.errorCode(gm, "GET", "characters/5/logs"+q, "", nil, http.StatusBadRequest, "bad_request")
 	}
 	e.errorCode(gm, "GET", "characters/x/logs", "", nil, http.StatusBadRequest, "bad_request")
+	// Each history read, and the first page of each log search, writes
+	// an audit row (review decision 51). A later page, which comes with
+	// a cursor, and a failed read write none.
+	if got := e.actions(); !slices.Equal(got, []string{"items.history " + serial, "characters.logs 5"}) {
+		t.Errorf("audit rows of the reads: %q", got)
+	}
 }
 
 func restoreReq(character int64, reason string, zeny int64, serials ...string) *adminv1.RestoreRequest {

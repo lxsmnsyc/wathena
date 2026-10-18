@@ -554,7 +554,7 @@ func TestPrivacyPage(t *testing.T) {
 		"<td>Chat lines</td><td>45 days</td>", "<td>Login records with IP addresses</td><td>60 days</td>",
 		"<td>Item and zeny logs</td><td>180 days</td>", "<td>Staff audit log</td><td>2 years</td>", "14 days",
 		"<td>Backups</td><td>Up to 4 weeks</td>", "stays in backups for up to 4 weeks",
-		"may be kept up to 31 days longer", "kept until it is reviewed"} {
+		"may be kept up to 31 days longer", "kept until 30 days after it is reviewed"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the privacy page lacks %q: %s", want, body)
 		}

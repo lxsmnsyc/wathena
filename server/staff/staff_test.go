@@ -187,3 +187,27 @@ func TestRegistry(t *testing.T) {
 		t.Error("a nil registry has roles")
 	}
 }
+
+// TestRecentLogin: GM commands that make items or sanction players need
+// a login whose ticket was made soon after a login or a reauth. Other
+// commands do not (review decision 51).
+func TestRecentLogin(t *testing.T) {
+	stale := Login{AccountName: "Gm", TwoFactor: true}
+	fresh := Login{AccountName: "Gm", TwoFactor: true, Recent: true}
+	for _, p := range []string{"items.create", "moderation.mute", "moderation.jail", "moderation.kick", "moderation.ban"} {
+		if stale.Allows(p) || !fresh.Allows(p) {
+			t.Errorf("%s: stale %v, fresh %v", p, stale.Allows(p), fresh.Allows(p))
+		}
+	}
+	for _, p := range []string{"commands.warp", "commands.recall", "commands.hide", "world.rename"} {
+		if !stale.Allows(p) {
+			t.Errorf("%s needs a recent login", p)
+		}
+	}
+	// Every listed permission is a real one.
+	for p := range recentPermissions {
+		if !Known(p) {
+			t.Errorf("%s is not in Catalog", p)
+		}
+	}
+}

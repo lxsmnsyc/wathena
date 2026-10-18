@@ -384,6 +384,7 @@ func (s *Service) finishRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("passkey added", "account", sess.AccountID)
+	s.afterLoginChange(ctx, sess, "passkey_added")
 	writeJSON(w, http.StatusOK, map[string]string{"next": withNotice(Prefix+"settings", "passkey-added")})
 }
 

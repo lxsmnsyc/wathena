@@ -372,7 +372,7 @@ func (q *Queries) DeletionOfCharacter(ctx context.Context, characterID int64) (D
 
 const dueDeletions = `-- name: DueDeletions :many
 SELECT account_id FROM account_deletions
-WHERE delete_after <= $1
+WHERE delete_after <= least($1::timestamptz, now())
 ORDER BY delete_after, account_id
 LIMIT $2
 `
@@ -382,8 +382,8 @@ type DueDeletionsParams struct {
 	MaxRows int32
 }
 
-// DueDeletions are the accounts whose deletion is due at at, oldest
-// first.
+// DueDeletions are the accounts whose deletion is due at at, and on the
+// database clock, oldest first.
 func (q *Queries) DueDeletions(ctx context.Context, arg DueDeletionsParams) ([]int64, error) {
 	rows, err := q.db.Query(ctx, dueDeletions, arg.At, arg.MaxRows)
 	if err != nil {
@@ -530,10 +530,8 @@ func (q *Queries) ReportsFiled(ctx context.Context, arg ReportsFiledParams) ([]R
 	return items, nil
 }
 
-const requestDeletion = `-- name: RequestDeletion :execrows
-INSERT INTO account_deletions (account_id, requested_at, delete_after)
-VALUES ($1, now(), now() + $2::interval)
-ON CONFLICT (account_id) DO NOTHING
+const requestDeletion = `-- name: RequestDeletion :one
+SELECT request_account_deletion($1::bigint, $2::interval)::boolean AS requested
 `
 
 type RequestDeletionParams struct {
@@ -541,12 +539,12 @@ type RequestDeletionParams struct {
 	Wait      pgtype.Interval
 }
 
-// RequestDeletion asks for the account's deletion after wait. It
-// returns 0 when a request waits already.
-func (q *Queries) RequestDeletion(ctx context.Context, arg RequestDeletionParams) (int64, error) {
-	result, err := q.db.Exec(ctx, requestDeletion, arg.AccountID, arg.Wait)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+// RequestDeletion asks for the account's deletion after wait, with
+// request_account_deletion, which sets both times from the database
+// clock. It returns false when a request waits already.
+func (q *Queries) RequestDeletion(ctx context.Context, arg RequestDeletionParams) (bool, error) {
+	row := q.db.QueryRow(ctx, requestDeletion, arg.AccountID, arg.Wait)
+	var requested bool
+	err := row.Scan(&requested)
+	return requested, err
 }

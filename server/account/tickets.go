@@ -37,5 +37,5 @@ func (t GameTickets) Check(ctx context.Context, token []byte) (gateway.Login, er
 	}
 	look := zone.Look{Job: uint32(tk.Job), Sex: uint32(tk.Sex), Hair: uint32(tk.Hair), HairColor: uint32(tk.HairColor)} // #nosec G115 -- CHECK constraints keep these 0 or more.
 	return gateway.Login{CharacterID: tk.CharacterID, SessionID: tk.SessionID, Name: tk.Name, Look: look,
-		Staff: staff.Login{AccountName: tk.AccountName, TwoFactor: tk.TwoFactor}}, nil
+		Staff: staff.Login{AccountName: tk.AccountName, TwoFactor: tk.TwoFactor, Recent: tk.Recent}}, nil
 }

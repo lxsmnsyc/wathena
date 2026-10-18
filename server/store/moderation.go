@@ -290,6 +290,17 @@ func (s *Store) AccountName(ctx context.Context, id int64) (string, error) {
 	return n, err
 }
 
+// StaffRoleOf returns the staff role the admin screens gave an account,
+// or "" for none. Sanctions compare it with the actor's role (review
+// decision 51).
+func (s *Store) StaffRoleOf(ctx context.Context, account int64) (string, error) {
+	role, err := s.q.StaffRoleOf(ctx, account)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	return role, err
+}
+
 // AccountCharacters are the IDs of an account's characters.
 func (s *Store) AccountCharacters(ctx context.Context, account int64) ([]int64, error) {
 	return s.q.CharacterIDsOfAccount(ctx, account)

@@ -12,9 +12,10 @@ import (
 )
 
 // The deletes of the retention job (decision 0049). server/retention
-// runs them once a day. The game role deletes chat lines and drops old
-// log partitions. The account role deletes login records and audit
-// rows.
+// runs them once a day. The game role deletes chat lines, drops old log
+// partitions and deletes old audit rows. The account role deletes login
+// records. Audit rows moved from the account role to the game role in
+// review decision 51.
 
 // retentionBatch is the most rows one delete of chat lines or login
 // records takes. The queries say 10,000 too.
@@ -114,8 +115,8 @@ func DropOldLogs(ctx context.Context, pool *pgxpool.Pool, before time.Time) (ite
 }
 
 // DeleteOldAudit deletes the rows of the GM audit log from before a
-// time, with their reviews, except rows that wait for a review. pool is
-// the account role's.
+// time, with their reviews, except rows that wait for a review and rows
+// whose review is less than 30 days old. pool is the game role's.
 func DeleteOldAudit(ctx context.Context, pool *pgxpool.Pool, before time.Time) (int64, error) {
 	ctx, cancel := context.WithTimeout(ctx, retentionTimeout)
 	defer cancel()

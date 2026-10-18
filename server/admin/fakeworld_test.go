@@ -120,12 +120,18 @@ func (w *world) SanctionByID(_ context.Context, id int64) (*adminv1.Sanction, er
 	if !ok {
 		return nil, admin.ErrNotFound
 	}
-	// "permanent ban" is a ban without an end.
+	// "permanent ban" is a ban without an end, and "long ban" one of
+	// two years.
 	permanent := kind == "permanent ban"
-	if permanent {
-		kind = "ban"
+	b := adminv1.Sanction_builder{Id: id, Kind: kind, Active: true, Permanent: permanent}
+	if kind == "long ban" {
+		start := time.Now()
+		b.StartedAt, b.EndsAt = timestamppb.New(start), timestamppb.New(start.AddDate(2, 0, 0))
 	}
-	return adminv1.Sanction_builder{Id: id, Kind: kind, Active: true, Permanent: permanent}.Build(), nil
+	if permanent || kind == "long ban" {
+		b.Kind = "ban"
+	}
+	return b.Build(), nil
 }
 
 func (w *world) LiftSanction(_ context.Context, l admin.Lift) (*adminv1.Sanction, error) {

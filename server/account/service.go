@@ -291,6 +291,8 @@ func (s *Service) routes() {
 	m.HandleFunc("POST /account/settings/totp/disable", s.disableTOTP)
 	m.HandleFunc("POST /account/settings/recovery", s.newRecovery)
 	m.HandleFunc("POST /account/settings/passkeys/remove", s.removePasskey)
+	m.HandleFunc("POST /account/settings/password", s.changePassword)
+	m.HandleFunc("POST /account/settings/sessions/end", s.endSessions)
 	m.HandleFunc("POST /account/passkeys/register/begin", s.beginRegister)
 	m.HandleFunc("POST /account/passkeys/register/finish", s.finishRegister)
 	m.HandleFunc("POST /account/passkeys/login/begin", s.beginPasskeyLogin)
@@ -391,6 +393,8 @@ type page struct {
 	Key                                string
 	Codes                              []string
 	AttemptsLeft                       int
+	// Sessions says how many other sessions are logged in.
+	Sessions string
 
 	Characters []characterView
 	// Guilds are the guilds the account's characters master, on the
@@ -578,7 +582,8 @@ func (s *Service) postLogin(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusTooManyRequests, "login.html", p)
 		return
 	}
-	wait, needCaptcha := s.limit.check(name, addr, now)
+	wait, needCaptcha, release := s.limit.reserve(name, addr, now)
+	defer release()
 	if needCaptcha {
 		p.Captcha = s.captcha.Field()
 	}
@@ -604,9 +609,7 @@ func (s *Service) postLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if account == 0 {
-		if !s.limit.fail(name, addr, now) {
-			s.log.Warn("login rate limit tables are full")
-		}
+		s.limit.fail(name, addr, now)
 		if _, c := s.limit.check(name, addr, now); c {
 			p.Captcha = s.captcha.Field()
 		}
@@ -1105,6 +1108,9 @@ func (s *Service) ticket(w http.ResponseWriter, r *http.Request) {
 		TokenHash: hash, SessionID: sess.ID, AccountID: sess.AccountID, CharacterID: sess.CharacterID.Int64,
 		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(s.cfg.TicketLifetime), Valid: true},
 		TwoFactor: twoFactor,
+		// GM commands that make items or sanction players need a ticket
+		// made soon after a login or a reauth (review decision 51).
+		Recent: recent(sess.AuthenticatedAt.Time, time.Now(), s.cfg.ReauthWindow),
 	})
 	if err != nil {
 		s.log.Error("cannot make a game ticket", "err", err)

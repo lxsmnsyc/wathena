@@ -14,7 +14,9 @@ import (
 // The account page's deletion (decision 0032). The test server runs
 // --dev, which has no account pages, so the tests write the request
 // as the account service does, and run the job with --dev's POST
-// /debug/wathena/deletions.
+// /debug/wathena/deletions. A deletion is due on the database clock
+// (review decision 51), so a test moves the request's times back to
+// make it due.
 
 // requestDeletion asks for the deletion of a character's account, as the
 // account page does, 14 days from now on the database's clock.
@@ -22,6 +24,17 @@ func (s *Server) requestDeletion(ctx context.Context, name string) {
 	s.t.Helper()
 	if _, err := s.DB.Exec(ctx, `INSERT INTO account_deletions (account_id, requested_at, delete_after)
 		SELECT account_id, now(), now() + interval '14 days' FROM characters WHERE name = $1`, name); err != nil {
+		s.t.Fatal(err)
+	}
+}
+
+// makeDue moves a character's deletion request 15 days back, so it is
+// due on the database clock.
+func (s *Server) makeDue(ctx context.Context, name string) {
+	s.t.Helper()
+	if _, err := s.DB.Exec(ctx, `UPDATE account_deletions SET requested_at = requested_at - interval '15 days',
+		delete_after = delete_after - interval '15 days'
+		WHERE account_id = (SELECT account_id FROM characters WHERE name = $1)`, name); err != nil {
 		s.t.Fatal(err)
 	}
 }
@@ -34,8 +47,8 @@ func (s *Server) cancelDeletion(ctx context.Context, name string) {
 	}
 }
 
-// runDeletions runs the deletion job on the server clock, and returns
-// how many accounts it deleted.
+// runDeletions runs the deletion job, and returns how many accounts it
+// deleted.
 func (s *Server) runDeletions(ctx context.Context) int {
 	s.t.Helper()
 	body, err := s.post(ctx, s.Debug+"/debug/wathena/deletions", nil)
@@ -113,9 +126,7 @@ func TestDeletionRunsAfterTheWait(t *testing.T) {
 	srv.requestDeletion(ctx, "Goner")
 	stayer.Skip()
 
-	if err := srv.AdvanceClock(ctx, 15*24*time.Hour); err != nil {
-		t.Fatal(err)
-	}
+	srv.makeDue(ctx, "Goner")
 	// The logout's save may still be on its way: the job waits for it.
 	deadline = time.Now().Add(15 * time.Second)
 	for srv.runDeletions(ctx) != 1 {

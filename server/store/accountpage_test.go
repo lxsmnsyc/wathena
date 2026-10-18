@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/lxsmnsyc/wathena/server/store"
+	"github.com/lxsmnsyc/wathena/server/store/storetest"
 )
 
 // seedAccount makes an account with characters, as the admin role.
@@ -150,6 +151,15 @@ func TestDeleteAccountEveryTable(t *testing.T) {
 	}
 	if ok, err := s.DeleteAccount(ctx, b, time.Now(), nil); err != nil || ok {
 		t.Fatalf("deletion of an account whose time has not come: %v %v", ok, err)
+	}
+	// The database clock decides, not the caller's: a time 15 days ahead
+	// neither lists nor deletes the stayer (review decision 51).
+	ahead := time.Now().Add(15 * 24 * time.Hour)
+	if ok, err := s.DeleteAccount(ctx, b, ahead, nil); err != nil || ok {
+		t.Fatalf("deletion with the caller's clock ahead: %v %v", ok, err)
+	}
+	if due, err := s.DueDeletions(ctx, ahead, 10); err != nil || len(due) != 1 || due[0] != a {
+		t.Fatalf("due with the caller's clock ahead: %v %v", due, err)
 	}
 	if n := count("SELECT count(*) FROM characters"); n != 3 {
 		t.Fatalf("characters after refused deletions: %d", n)
@@ -363,13 +373,17 @@ func TestAccountPageRights(t *testing.T) {
 		role, sql string
 		ok        bool
 	}{
-		{"wathena_account", "INSERT INTO account_deletions (account_id, requested_at, delete_after) VALUES ($1, now(), now() + interval '1 day')", true},
+		{"wathena_account", "INSERT INTO account_deletions (account_id, requested_at, delete_after) VALUES ($1, now(), now() + interval '14 days')", false},
+		{"wathena_account", "SELECT request_account_deletion($1, interval '13 days')", false},
+		{"wathena_account", "SELECT request_account_deletion($1, interval '14 days')", true},
+		{"wathena_account", "DELETE FROM account_deletions WHERE account_id = $1", true},
 		{"wathena_account", "INSERT INTO account_exports (account_id, exported_at) VALUES ($1, now())", true},
 		{"wathena_account", "SELECT delete_account($1, now(), '{}')", false},
 		{"wathena_account", "DELETE FROM accounts WHERE id = $1", false},
 		{"wathena_game", "SELECT count(*) FROM account_deletions WHERE account_id = $1", true},
 		{"wathena_game", "SELECT delete_account($1, now(), '{}')", true},
 		{"wathena_game", "INSERT INTO account_deletions (account_id, requested_at, delete_after) VALUES ($1, now(), now())", false},
+		{"wathena_game", "SELECT request_account_deletion($1, interval '14 days')", false},
 		{"wathena_game", "DELETE FROM accounts WHERE id = $1", false},
 		{"wathena_game", "DELETE FROM characters WHERE account_id = $1", false},
 		{"wathena_game", "SELECT count(*) FROM account_exports WHERE account_id = $1", false},
@@ -386,5 +400,48 @@ func TestAccountPageRights(t *testing.T) {
 			t.Errorf("%s: %s: %v", c.role, c.sql, err)
 		}
 		_ = tx.Rollback(context.Background())
+	}
+}
+
+// TestDeletionWaitInDatabase: the account role cannot write a request
+// whose wait is short or already over, and delete_account refuses one
+// that someone else wrote, so a compromised account role cannot make
+// the game role's job delete accounts at once (review decision 51).
+func TestDeletionWaitInDatabase(t *testing.T) {
+	admin, game := migrated(t)
+	s := newStore(t, game, store.Options{})
+	ctx := timeout(t)
+	account := storetest.As(t, admin, "wathena_account")
+	a, _ := seedAccount(t, ctx, admin, "Short1", "Short One")
+	b, _ := seedAccount(t, ctx, admin, "Asked1", "Asked One")
+	// The function sets both times from the database clock.
+	var ok bool
+	if err := account.QueryRow(ctx, "SELECT request_account_deletion($1, interval '14 days')", b).Scan(&ok); err != nil || !ok {
+		t.Fatalf("request: %v %v", ok, err)
+	}
+	if err := account.QueryRow(ctx, "SELECT request_account_deletion($1, interval '14 days')", b).Scan(&ok); err != nil || ok {
+		t.Errorf("second request: %v %v", ok, err)
+	}
+	var wait int64
+	var fresh bool
+	if err := admin.QueryRow(ctx, `SELECT extract(epoch FROM delete_after - requested_at)::bigint, requested_at > now() - interval '1 minute'
+		FROM account_deletions WHERE account_id = $1`, b).Scan(&wait, &fresh); err != nil || wait != 14*24*3600 || !fresh {
+		t.Errorf("request times: %v %v %v", wait, fresh, err)
+	}
+	// A row with a wait shorter than 14 days, such as one the account
+	// role could write before, is never due.
+	if _, err := admin.Exec(ctx, `INSERT INTO account_deletions (account_id, requested_at, delete_after)
+		VALUES ($1, now() - interval '1 day', now() - interval '1 minute')`, a); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.DeleteAccount(ctx, a, time.Now(), nil); err != nil || ok {
+		t.Errorf("deletion of a short request: %v %v", ok, err)
+	}
+	if ok, err := s.DeleteAccount(ctx, b, time.Now().Add(15*24*time.Hour), nil); err != nil || ok {
+		t.Errorf("deletion with the caller's clock ahead: %v %v", ok, err)
+	}
+	var left int
+	if err := admin.QueryRow(ctx, "SELECT count(*) FROM accounts WHERE id IN ($1, $2)", a, b).Scan(&left); err != nil || left != 2 {
+		t.Errorf("accounts left: %d %v", left, err)
 	}
 }

@@ -268,6 +268,7 @@ type GameTicket struct {
 	CreatedAt   pgtype.Timestamptz
 	ExpiresAt   pgtype.Timestamptz
 	TwoFactor   bool
+	Recent      bool
 }
 
 type Guild struct {

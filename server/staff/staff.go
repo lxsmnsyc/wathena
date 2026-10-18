@@ -333,7 +333,36 @@ type Login struct {
 	// TwoFactor is set when the login's session used a second factor
 	// and the account had TOTP or a passkey on.
 	TwoFactor bool
+	// Recent is set when the login's session proved who its player is
+	// within the reauth window (10 minutes by default) when the game
+	// ticket was made. A stolen session cookie cannot make it so.
+	Recent bool
 }
+
+// recentPermissions are the permissions whose GM commands need a
+// recent login (review decision 51): the commands that make items and
+// the sanctions. The admin API asks the same of restores and bans.
+var recentPermissions = map[string]bool{
+	"items.create":             true,
+	"moderation.mute":          true,
+	"moderation.jail":          true,
+	"moderation.kick":          true,
+	"moderation.ban":           true,
+	"moderation.ban_permanent": true,
+}
+
+// NeedsRecentLogin reports whether a GM command of a permission needs a
+// game login whose ticket was made soon after the player proved who
+// they are.
+func NeedsRecentLogin(permission string) bool { return recentPermissions[permission] }
+
+// Allows reports whether a game login may use a GM command of a
+// permission as far as its login's age goes. The role's permissions are
+// checked apart.
+func (l Login) Allows(permission string) bool { return l.Recent || !NeedsRecentLogin(permission) }
+
+// ReauthText is the answer to a GM command that needs a recent login.
+const ReauthText = "This command needs a recent login. Log in again on the account page, then reconnect."
 
 // RoleOfLogin returns the role of a game login: the account's role when
 // the login used a second factor, else "".

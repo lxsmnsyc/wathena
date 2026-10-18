@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	adminv1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1"
@@ -17,10 +18,16 @@ import (
 //     them, with the audit row of each change in its transaction.
 //   - POST /sanctions needs the permission of its kind: moderation.mute,
 //     moderation.jail, moderation.kick or moderation.ban. A ban also
-//     needs a recent login, and a permanent ban moderation.ban_permanent.
+//     needs a recent login. A permanent ban, and a ban longer than
+//     LongBanMinutes, also need moderation.ban_permanent (review
+//     decision 51).
 //   - DELETE /sanctions/{id} needs the permission of the sanction's kind,
-//     and a recent login for a ban. Lifting a permanent ban also needs
-//     moderation.ban_permanent (review decision 40).
+//     and a recent login for a ban. Lifting a permanent ban, or a ban
+//     longer than LongBanMinutes, also needs moderation.ban_permanent
+//     (review decisions 40 and 51).
+//   - The world refuses a sanction, or a lift, of an owner by a non-owner,
+//     and of a staff account whose role the actor's role does not cover
+//     (review decision 51).
 //   - GET /sanctions needs any permission of the moderation group.
 
 // Limits of the moderation calls.
@@ -33,7 +40,21 @@ const (
 	MaxSanctionMinutes = 525_600
 	// MaxBanMinutes is the longest ban with an end: 10 years.
 	MaxBanMinutes = 5_256_000
+	// LongBanMinutes is the longest ban that moderation.ban gives or
+	// lifts alone: a year, the longest mute or jail. A longer ban acts
+	// as a permanent one, so it needs moderation.ban_permanent too
+	// (review decision 51).
+	LongBanMinutes = MaxSanctionMinutes
 )
+
+// longBan reports whether a ban needs moderation.ban_permanent: it has
+// no end, or lasts longer than LongBanMinutes.
+func longBan(s *adminv1.Sanction) bool {
+	if s.GetPermanent() {
+		return true
+	}
+	return s.GetEndsAt().AsTime().Sub(s.GetStartedAt().AsTime()) > LongBanMinutes*time.Minute
+}
 
 // kindPermission is the permission of a sanction's kind.
 var kindPermission = map[string]string{
@@ -114,7 +135,7 @@ func (h *Handler) searchReports(ctx context.Context, w http.ResponseWriter, r *h
 	h.write(w, http.StatusOK, page)
 }
 
-func (h *Handler) report(ctx context.Context, w http.ResponseWriter, r *http.Request, _ caller) {
+func (h *Handler) report(ctx context.Context, w http.ResponseWriter, r *http.Request, c caller) {
 	id, ok := pathID(r, "id")
 	if !ok {
 		h.fail(w, http.StatusBadRequest, "bad_request", "That is not a report ID.")
@@ -126,6 +147,14 @@ func (h *Handler) report(ctx context.Context, w http.ResponseWriter, r *http.Req
 	d, err := h.cfg.World.Report(ctx, id)
 	if err != nil {
 		h.worldFailed(w, r, err)
+		return
+	}
+	// A report shows the target's chat, whispers too, so the audit log
+	// keeps each reading (review decision 51).
+	rep := d.GetReport()
+	if err := h.writeAudit(ctx, h.q, c, "reports.view", target{id: rep.GetTargetAccountId(), name: rep.GetTarget()},
+		map[string]any{"report_id": id, "lines": len(d.GetLines())}, "", false); err != nil {
+		h.unavailable(w, r, err)
 		return
 	}
 	h.write(w, http.StatusOK, d)
@@ -205,7 +234,7 @@ func (h *Handler) sanction(ctx context.Context, w http.ResponseWriter, r *http.R
 	if !h.need(w, c, perm, kind == "ban") {
 		return
 	}
-	if kind == "ban" && minutes == 0 && !h.need(w, c, "moderation.ban_permanent", true) {
+	if kind == "ban" && (minutes == 0 || minutes > LongBanMinutes) && !h.need(w, c, "moderation.ban_permanent", true) {
 		return
 	}
 	if !h.worldOnly(w) {
@@ -253,7 +282,7 @@ func (h *Handler) liftSanction(ctx context.Context, w http.ResponseWriter, r *ht
 	if !h.need(w, c, perm, s.GetKind() == "ban") {
 		return
 	}
-	if s.GetKind() == "ban" && s.GetPermanent() && !h.need(w, c, "moderation.ban_permanent", true) {
+	if s.GetKind() == "ban" && longBan(s) && !h.need(w, c, "moderation.ban_permanent", true) {
 		return
 	}
 	s, err = h.cfg.World.LiftSanction(ctx, Lift{Actor: c.actor(), ID: id, Reason: reason})

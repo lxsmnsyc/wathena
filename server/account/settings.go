@@ -22,11 +22,13 @@ type passkeyView struct {
 
 // settingsNotices are the messages the settings page shows for ?notice=.
 var settingsNotices = map[string]string{
-	"totp-on":         "Two-factor login is on.",
-	"totp-off":        "Two-factor login is off.",
-	"totp-already":    "Two-factor login is already on.",
-	"passkey-added":   "The passkey is added.",
-	"passkey-removed": "The passkey is removed.",
+	"totp-on":          "Two-factor login is on.",
+	"totp-off":         "Two-factor login is off.",
+	"totp-already":     "Two-factor login is already on.",
+	"passkey-added":    "The passkey is added.",
+	"passkey-removed":  "The passkey is removed.",
+	"password-changed": "The password is changed. Your other sessions are logged out.",
+	"sessions-ended":   "Your other sessions are logged out.",
 }
 
 func (s *Service) getSettings(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +75,11 @@ func (s *Service) fillSettings(ctx context.Context, p *page, sess db.UseSessionR
 	if err != nil {
 		return err
 	}
+	others, err := s.otherSessions(ctx, sess)
+	if err != nil {
+		return err
+	}
+	p.Sessions = sessionCount(others)
 	for _, k := range keys {
 		v := passkeyView{ID: k.ID, Name: k.Name, Created: day(k.CreatedAt.Time), LastUsed: "never"}
 		if k.LastUsedAt.Valid {
@@ -197,7 +204,9 @@ func (s *Service) confirmTOTP(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusTooManyRequests, "totp.html", p)
 		return
 	}
-	if wait, _ := s.limit.check(sess.AccountName, addr, now); wait > 0 {
+	wait, _, release := s.limit.reserve(sess.AccountName, addr, now)
+	defer release()
+	if wait > 0 {
 		p.Error = "Too many failed attempts for this account. Try again in " + seconds(wait) + "."
 		s.render(w, http.StatusTooManyRequests, "totp.html", p)
 		return
@@ -236,6 +245,7 @@ func (s *Service) confirmTOTP(w http.ResponseWriter, r *http.Request) {
 	}
 	s.limit.succeed(sess.AccountName)
 	s.log.Info("TOTP turned on", "account", sess.AccountID)
+	s.afterLoginChange(ctx, sess, "totp_on")
 	s.showRecoveryCodes(w, r, codes, "Two-factor login is on")
 }
 
@@ -280,6 +290,7 @@ func (s *Service) newRecovery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("recovery codes replaced", "account", sess.AccountID)
+	s.afterLoginChange(ctx, sess, "recovery_codes")
 	s.showRecoveryCodes(w, r, codes, "New recovery codes")
 }
 
@@ -329,6 +340,7 @@ func (s *Service) disableTOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("TOTP turned off", "account", sess.AccountID)
+	s.afterLoginChange(ctx, sess, "totp_off")
 	s.redirect(w, r, withNotice(Prefix+"settings", "totp-off"))
 }
 
@@ -351,6 +363,7 @@ func (s *Service) removePasskey(w http.ResponseWriter, r *http.Request) {
 	}
 	if n == 1 {
 		s.log.Info("passkey removed", "account", sess.AccountID)
+		s.afterLoginChange(ctx, sess, "passkey_removed")
 	}
 	s.redirect(w, r, withNotice(Prefix+"settings", "passkey-removed"))
 }

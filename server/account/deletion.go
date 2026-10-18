@@ -130,7 +130,7 @@ func (s *Service) requestDeletion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	n, err := s.q.RequestDeletion(ctx, db.RequestDeletionParams{AccountID: sess.AccountID, Wait: interval(DeletionWait)})
+	requested, err := s.q.RequestDeletion(ctx, db.RequestDeletionParams{AccountID: sess.AccountID, Wait: interval(DeletionWait)})
 	if err != nil {
 		s.unavailable(w, r, err)
 		return
@@ -140,7 +140,7 @@ func (s *Service) requestDeletion(w http.ResponseWriter, r *http.Request) {
 		s.unavailable(w, r, err)
 		return
 	}
-	if n == 1 {
+	if requested {
 		s.log.Info("account deletion requested", "account", sess.AccountID)
 	}
 	// The characters stop playing at once.

@@ -86,6 +86,26 @@ func (q *Queries) AccountCharacters(ctx context.Context, accountID int64) ([]Acc
 	return items, nil
 }
 
+const countOtherSessions = `-- name: CountOtherSessions :one
+SELECT count(*) FROM account_sessions
+WHERE account_id = $1 AND id <> $2 AND revoked_at IS NULL AND expires_at > now()
+    AND last_used_at > now() - $3::interval
+`
+
+type CountOtherSessionsParams struct {
+	AccountID int64
+	KeepID    int64
+	Idle      pgtype.Interval
+}
+
+// CountOtherSessions counts the live sessions of an account but one.
+func (q *Queries) CountOtherSessions(ctx context.Context, arg CountOtherSessionsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countOtherSessions, arg.AccountID, arg.KeepID, arg.Idle)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createAccountWithPassword = `-- name: CreateAccountWithPassword :one
 
 WITH a AS (
@@ -155,8 +175,8 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (i
 }
 
 const createTicket = `-- name: CreateTicket :exec
-INSERT INTO game_tickets (token_hash, session_id, account_id, character_id, expires_at, two_factor)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO game_tickets (token_hash, session_id, account_id, character_id, expires_at, two_factor, recent)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type CreateTicketParams struct {
@@ -166,11 +186,15 @@ type CreateTicketParams struct {
 	CharacterID int64
 	ExpiresAt   pgtype.Timestamptz
 	TwoFactor   bool
+	Recent      bool
 }
 
 // CreateTicket makes a game ticket. two_factor is set when the session
 // logged in with a second factor and the account still has TOTP or a
 // passkey on, so a staff role counts in the game (decision 0028).
+// recent is set when the session proved who its player is within the
+// reauth window, so GM commands that make items or sanction players
+// work in the game (review decision 51).
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) error {
 	_, err := q.db.Exec(ctx, createTicket,
 		arg.TokenHash,
@@ -179,6 +203,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 		arg.CharacterID,
 		arg.ExpiresAt,
 		arg.TwoFactor,
+		arg.Recent,
 	)
 	return err
 }
@@ -230,6 +255,22 @@ func (q *Queries) DeleteExpired(ctx context.Context, idle pgtype.Interval) (int6
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const deleteOtherSessionTickets = `-- name: DeleteOtherSessionTickets :exec
+DELETE FROM game_tickets WHERE account_id = $1 AND session_id <> $2
+`
+
+type DeleteOtherSessionTicketsParams struct {
+	AccountID int64
+	KeepID    int64
+}
+
+// DeleteOtherSessionTickets removes the game tickets nobody used of an
+// account's sessions but one.
+func (q *Queries) DeleteOtherSessionTickets(ctx context.Context, arg DeleteOtherSessionTicketsParams) error {
+	_, err := q.db.Exec(ctx, deleteOtherSessionTickets, arg.AccountID, arg.KeepID)
+	return err
 }
 
 const deleteSessionTickets = `-- name: DeleteSessionTickets :exec
@@ -293,10 +334,10 @@ func (q *Queries) Reauthenticate(ctx context.Context, sessionID int64) error {
 const redeemTicket = `-- name: RedeemTicket :one
 WITH t AS (
     DELETE FROM game_tickets WHERE token_hash = $1
-    RETURNING session_id, account_id, character_id, expires_at, two_factor
+    RETURNING session_id, account_id, character_id, expires_at, two_factor, recent
 )
 SELECT t.session_id, t.account_id, t.character_id, t.expires_at > now() AS live,
-    c.name, c.job, c.sex, c.hair, c.hair_color, t.two_factor, a.name AS account_name
+    c.name, c.job, c.sex, c.hair, c.hair_color, t.two_factor, t.recent, a.name AS account_name
 FROM t
 JOIN characters c ON c.id = t.character_id AND c.account_id = t.account_id
 JOIN accounts a ON a.id = t.account_id
@@ -313,6 +354,7 @@ type RedeemTicketRow struct {
 	Hair        int
 	HairColor   int
 	TwoFactor   bool
+	Recent      bool
 	AccountName string
 }
 
@@ -334,6 +376,7 @@ func (q *Queries) RedeemTicket(ctx context.Context, tokenHash []byte) (RedeemTic
 		&i.Hair,
 		&i.HairColor,
 		&i.TwoFactor,
+		&i.Recent,
 		&i.AccountName,
 	)
 	return i, err
@@ -349,6 +392,40 @@ RETURNING id
 // ban (decision 0036), and returns their IDs.
 func (q *Queries) RevokeAccountSessions(ctx context.Context, accountID int64) ([]int64, error) {
 	rows, err := q.db.Query(ctx, revokeAccountSessions, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const revokeOtherSessions = `-- name: RevokeOtherSessions :many
+UPDATE account_sessions SET revoked_at = now()
+WHERE account_id = $1 AND id <> $2 AND revoked_at IS NULL
+RETURNING id
+`
+
+type RevokeOtherSessionsParams struct {
+	AccountID int64
+	KeepID    int64
+}
+
+// RevokeOtherSessions ends every live session of an account but one,
+// for log out everywhere and for changes of the login methods (review
+// decision 51), and returns their IDs.
+func (q *Queries) RevokeOtherSessions(ctx context.Context, arg RevokeOtherSessionsParams) ([]int64, error) {
+	rows, err := q.db.Query(ctx, revokeOtherSessions, arg.AccountID, arg.KeepID)
 	if err != nil {
 		return nil, err
 	}
@@ -411,6 +488,25 @@ type SelectCharacterParams struct {
 // slot on the session's account.
 func (q *Queries) SelectCharacter(ctx context.Context, arg SelectCharacterParams) (int64, error) {
 	result, err := q.db.Exec(ctx, selectCharacter, arg.SessionID, arg.Slot)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const setPassword = `-- name: SetPassword :execrows
+UPDATE account_passwords SET hash = $1, changed_at = now() WHERE account_id = $2
+`
+
+type SetPasswordParams struct {
+	Hash      string
+	AccountID int64
+}
+
+// SetPassword replaces an account's password hash. It returns 0 for an
+// account without a password, such as a dev account.
+func (q *Queries) SetPassword(ctx context.Context, arg SetPasswordParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setPassword, arg.Hash, arg.AccountID)
 	if err != nil {
 		return 0, err
 	}

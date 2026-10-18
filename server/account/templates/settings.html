@@ -48,6 +48,23 @@
 {{if .PasskeysAvailable}}{{template "passkey" .}}<noscript><p>Adding a passkey needs JavaScript.</p></noscript>
 {{else}}<p>Passkeys are not set up on this server.</p>{{end}}
 
+<h2>Password</h2>
+<form method="post" action="/account/settings/password" class="password">
+{{template "hidden" .}}
+<label>Current password <input type="password" name="password" autocomplete="current-password" required maxlength="256"></label>
+<label>New password <input type="password" name="new_password" autocomplete="new-password" required minlength="8" maxlength="256"></label>
+<label>New password again <input type="password" name="confirm" autocomplete="new-password" required minlength="8" maxlength="256"></label>
+<button type="submit">Change password</button>
+</form>
+<p>Changing the password, two-factor login, recovery codes or passkeys logs out your other sessions.</p>
+
+<h2>Sessions</h2>
+<p>{{.Sessions}} Logging out everywhere else also closes their game connections.</p>
+<form method="post" action="/account/settings/sessions/end" class="sessions">
+{{template "hidden" .}}
+<button type="submit">Log out everywhere else</button>
+</form>
+
 <form method="post" action="/account/logout" class="logout">
 {{template "hidden" .}}
 <button type="submit">Log out</button>

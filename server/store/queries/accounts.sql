@@ -90,8 +90,11 @@ WHERE s.id = @session_id AND c.account_id = s.account_id AND c.slot = @slot;
 -- CreateTicket makes a game ticket. two_factor is set when the session
 -- logged in with a second factor and the account still has TOTP or a
 -- passkey on, so a staff role counts in the game (decision 0028).
-INSERT INTO game_tickets (token_hash, session_id, account_id, character_id, expires_at, two_factor)
-VALUES (@token_hash, @session_id, @account_id, @character_id, @expires_at, @two_factor);
+-- recent is set when the session proved who its player is within the
+-- reauth window, so GM commands that make items or sanction players
+-- work in the game (review decision 51).
+INSERT INTO game_tickets (token_hash, session_id, account_id, character_id, expires_at, two_factor, recent)
+VALUES (@token_hash, @session_id, @account_id, @character_id, @expires_at, @two_factor, @recent);
 
 -- name: RedeemTicket :one
 -- RedeemTicket uses a ticket up and returns its character. The DELETE
@@ -100,10 +103,10 @@ VALUES (@token_hash, @session_id, @account_id, @character_id, @expires_at, @two_
 -- No row comes back when the character left the ticket's account.
 WITH t AS (
     DELETE FROM game_tickets WHERE token_hash = @token_hash
-    RETURNING session_id, account_id, character_id, expires_at, two_factor
+    RETURNING session_id, account_id, character_id, expires_at, two_factor, recent
 )
 SELECT t.session_id, t.account_id, t.character_id, t.expires_at > now() AS live,
-    c.name, c.job, c.sex, c.hair, c.hair_color, t.two_factor, a.name AS account_name
+    c.name, c.job, c.sex, c.hair, c.hair_color, t.two_factor, t.recent, a.name AS account_name
 FROM t
 JOIN characters c ON c.id = t.character_id AND c.account_id = t.account_id
 JOIN accounts a ON a.id = t.account_id;
@@ -149,6 +152,30 @@ LIMIT 1;
 UPDATE account_sessions SET revoked_at = now()
 WHERE account_id = @account_id AND revoked_at IS NULL
 RETURNING id;
+
+-- name: RevokeOtherSessions :many
+-- RevokeOtherSessions ends every live session of an account but one,
+-- for log out everywhere and for changes of the login methods (review
+-- decision 51), and returns their IDs.
+UPDATE account_sessions SET revoked_at = now()
+WHERE account_id = @account_id AND id <> @keep_id AND revoked_at IS NULL
+RETURNING id;
+
+-- name: DeleteOtherSessionTickets :exec
+-- DeleteOtherSessionTickets removes the game tickets nobody used of an
+-- account's sessions but one.
+DELETE FROM game_tickets WHERE account_id = @account_id AND session_id <> @keep_id;
+
+-- name: CountOtherSessions :one
+-- CountOtherSessions counts the live sessions of an account but one.
+SELECT count(*) FROM account_sessions
+WHERE account_id = @account_id AND id <> @keep_id AND revoked_at IS NULL AND expires_at > now()
+    AND last_used_at > now() - @idle::interval;
+
+-- name: SetPassword :execrows
+-- SetPassword replaces an account's password hash. It returns 0 for an
+-- account without a password, such as a dev account.
+UPDATE account_passwords SET hash = @hash, changed_at = now() WHERE account_id = @account_id;
 
 -- name: DeleteAccountTickets :exec
 -- DeleteAccountTickets removes the game tickets of an account that

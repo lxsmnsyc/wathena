@@ -165,12 +165,15 @@ func TestJob(t *testing.T) {
 		t.Errorf("status after a failed run: %+v %v", o, err)
 	}
 
-	// Without the account pool, the login records and the audit log are
-	// left.
+	// Without the account pool, the login records are left. The game
+	// role deletes old audit rows, so they still go (review decision
+	// 51).
 	dev := &retention.Job{Game: game, Periods: retention.Defaults, Log: slog.New(slog.DiscardHandler)}
 	if res, err := dev.RunOnce(ctx); err != nil {
 		t.Errorf("dev run: %v", err)
-	} else if _, ok := res.Deleted[retention.KindAudit]; ok {
-		t.Errorf("a run without the account pool touched the audit log: %+v", res)
+	} else if _, ok := res.Deleted[retention.KindLoginIPs]; ok {
+		t.Errorf("a run without the account pool touched the login records: %+v", res)
+	} else if _, ok := res.Deleted[retention.KindAudit]; !ok {
+		t.Errorf("a run without the account pool skipped the audit log: %+v", res)
 	}
 }

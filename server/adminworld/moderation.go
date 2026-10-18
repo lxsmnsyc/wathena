@@ -135,6 +135,57 @@ func selfCheck(o order, account int64) error {
 	return nil
 }
 
+// targetCheck refuses a sanction of the staff member's own account, and
+// of an account that outranks the staff member (review decision 51).
+func (w *World) targetCheck(ctx context.Context, o order, account int64, name string) error {
+	if err := selfCheck(o, account); err != nil {
+		return err
+	}
+	return w.rankCheck(ctx, o.actor, account, name)
+}
+
+// rankCheck refuses a sanction, or the lift of one, of an account that
+// the actor's role does not cover, as role changes are refused
+// (server/admin's findTarget):
+//   - Only an owner acts on an owner.
+//   - Any other staff account needs a role of the actor that has every
+//     permission of its role.
+func (w *World) rankCheck(ctx context.Context, actor admin.Actor, account int64, name string) error {
+	if actor.Role == staff.Owner {
+		return nil
+	}
+	var roles *staff.Roles
+	if reg := w.cfg.Staff; reg != nil {
+		if name == "" && w.cfg.Store != nil {
+			n, err := w.cfg.Store.AccountName(ctx, account)
+			if err != nil && !errors.Is(err, store.ErrNoRow) {
+				return err
+			}
+			name = n
+		}
+		if reg.IsOwner(name) {
+			return werr("forbidden", "That account is an owner. Only an owner can sanction an owner.")
+		}
+		roles = reg.Roles()
+	}
+	if w.cfg.Store == nil {
+		return nil
+	}
+	role, err := w.cfg.Store.StaffRoleOf(ctx, account)
+	if err != nil {
+		return err
+	}
+	// A role the config no longer has gives no permissions, so it does
+	// not protect its account either.
+	if role == "" || !roles.Exists(role) {
+		return nil
+	}
+	if !roles.Covers(actor.Role, role) {
+		return werr("forbidden", "That account's staff role has permissions your role does not have.")
+	}
+	return nil
+}
+
 func (w *World) characterSanction(ctx context.Context, o order) (store.SanctionRow, error) {
 	for range sanctionTries {
 		zones, err := w.locate(ctx, []int64{o.character})
@@ -174,7 +225,7 @@ func (w *World) onlineSanction(ctx context.Context, z *zone.Zone, o order) (stor
 			return store.SanctionRow{}, true, err
 		}
 		account = p.AccountID
-		if err := selfCheck(o, account); err != nil {
+		if err := w.targetCheck(ctx, o, account, p.AccountName); err != nil {
 			return store.SanctionRow{}, true, err
 		}
 	}
@@ -213,7 +264,7 @@ func (w *World) offlineSanction(ctx context.Context, o order) (store.SanctionRow
 	if err != nil {
 		return store.SanctionRow{}, true, err
 	}
-	if err := selfCheck(o, p.AccountID); err != nil {
+	if err := w.targetCheck(ctx, o, p.AccountID, p.AccountName); err != nil {
 		return store.SanctionRow{}, true, err
 	}
 	now := w.now()
@@ -242,7 +293,7 @@ func (w *World) kick(ctx context.Context, o order) (store.SanctionRow, error) {
 			return row, err
 		}
 		row.Character, row.AccountID, row.Account = p.Name, p.AccountID, p.AccountName
-		if err := selfCheck(o, p.AccountID); err != nil {
+		if err := w.targetCheck(ctx, o, p.AccountID, p.AccountName); err != nil {
 			return row, err
 		}
 	}
@@ -275,7 +326,7 @@ func (w *World) ban(ctx context.Context, o order) (store.SanctionRow, error) {
 	if err != nil {
 		return store.SanctionRow{}, err
 	}
-	if err := selfCheck(o, o.account); err != nil {
+	if err := w.targetCheck(ctx, o, o.account, name); err != nil {
 		return store.SanctionRow{}, err
 	}
 	now := time.Now()
@@ -343,6 +394,11 @@ func (w *World) LiftSanction(ctx context.Context, l admin.Lift) (*adminv1.Sancti
 	}
 	if row.AccountID == l.AccountID {
 		return nil, werr("conflict", "No one lifts a sanction of their own account.")
+	}
+	// Lifting needs the same rank as giving. A game master cannot lift
+	// an owner's ban of an admin, for one.
+	if err := w.rankCheck(ctx, l.Actor, row.AccountID, row.Account); err != nil {
+		return nil, err
 	}
 	now := w.now()
 	if row.Kind == store.SanctionBan {

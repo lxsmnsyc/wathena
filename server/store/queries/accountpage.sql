@@ -26,12 +26,11 @@ ORDER BY at DESC, id DESC;
 -- name: AccountDeletion :one
 SELECT requested_at, delete_after FROM account_deletions WHERE account_id = @account_id;
 
--- name: RequestDeletion :execrows
--- RequestDeletion asks for the account's deletion after wait. It
--- returns 0 when a request waits already.
-INSERT INTO account_deletions (account_id, requested_at, delete_after)
-VALUES (@account_id, now(), now() + @wait::interval)
-ON CONFLICT (account_id) DO NOTHING;
+-- name: RequestDeletion :one
+-- RequestDeletion asks for the account's deletion after wait, with
+-- request_account_deletion, which sets both times from the database
+-- clock. It returns false when a request waits already.
+SELECT request_account_deletion(@account_id::bigint, @wait::interval)::boolean AS requested;
 
 -- name: CancelDeletion :execrows
 DELETE FROM account_deletions WHERE account_id = @account_id;
@@ -44,10 +43,10 @@ FROM account_deletions d JOIN characters c ON c.account_id = d.account_id
 WHERE c.id = @character_id;
 
 -- name: DueDeletions :many
--- DueDeletions are the accounts whose deletion is due at at, oldest
--- first.
+-- DueDeletions are the accounts whose deletion is due at at, and on the
+-- database clock, oldest first.
 SELECT account_id FROM account_deletions
-WHERE delete_after <= @at
+WHERE delete_after <= least(@at::timestamptz, now())
 ORDER BY delete_after, account_id
 LIMIT @max_rows;
 

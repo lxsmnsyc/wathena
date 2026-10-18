@@ -77,7 +77,7 @@ func (s *Service) retention() []retentionRow {
 		{"Reports", "Kept", "A report keeps the reporter's and the target's character IDs and names, also after an account is deleted."},
 		{"Sanctions", "Life of the account", "The staff audit log keeps a record of each sanction."},
 		{"Item and zeny logs", days(orDefault(p.ItemLogDays, 180)), "Needed to trace duplication and theft. They keep character IDs after an account is deleted. Old lines are deleted a month at a time, so a line may be kept up to 31 days longer."},
-		{"Staff audit log", days(orDefault(p.AuditDays, 730)), "Records what staff did, with the IDs of the accounts and characters they acted on. A row that waits for a staff review is kept until it is reviewed."},
+		{"Staff audit log", days(orDefault(p.AuditDays, 730)), "Records what staff did, with the IDs of the accounts and characters they acted on. A row that waits for a staff review is kept until 30 days after it is reviewed."},
 		{"Backups", "Up to 4 weeks", "Backups are encrypted copies of the data above. With the default backup schedule, data deleted from the server stays in backups for up to 4 weeks."},
 	}
 }

@@ -196,6 +196,14 @@ func (h *Handler) searchPlayers(ctx context.Context, w http.ResponseWriter, r *h
 			h.worldFailed(w, r, err)
 			return
 		}
+		// A serial search shows who holds an item, so the audit log
+		// keeps it (review decision 51).
+		holder := map[string]any{"serial": serial.String(), "found": owner != nil}
+		if err := h.writeAudit(ctx, h.q, c, "players.search_serial", target{id: owner.GetAccountId(), name: serial.String()},
+			holder, "", false); err != nil {
+			h.unavailable(w, r, err)
+			return
+		}
 		out.SetHolder(owner)
 		if owner != nil && owner.GetAccountId() > after {
 			rows, err := h.q.AccountsByIDs(ctx, []int64{owner.GetAccountId()})
@@ -384,7 +392,7 @@ func (h *Handler) character(ctx context.Context, w http.ResponseWriter, r *http.
 	h.write(w, http.StatusOK, d)
 }
 
-func (h *Handler) characterLogs(ctx context.Context, w http.ResponseWriter, r *http.Request, _ caller) {
+func (h *Handler) characterLogs(ctx context.Context, w http.ResponseWriter, r *http.Request, c caller) {
 	id, ok := h.characterID(w, r)
 	if !ok || !h.worldOnly(w) {
 		return
@@ -422,10 +430,33 @@ func (h *Handler) characterLogs(ctx context.Context, w http.ResponseWriter, r *h
 		h.worldFailed(w, r, err)
 		return
 	}
+	// Reading a character's item and zeny log is a lookup the audit log
+	// keeps, once per search: the later pages of a search, which come
+	// with its cursor, write no row (review decision 51).
+	if lq.Cursor == "" {
+		t := target{name: strconv.FormatInt(id, 10)}
+		if ch, err := h.q.CharacterWithAccount(ctx, id); err == nil {
+			t = target{id: ch.AccountID, name: ch.Name}
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			h.unavailable(w, r, err)
+			return
+		}
+		args := map[string]any{"character_id": id}
+		if !lq.Since.IsZero() {
+			args["since"] = lq.Since.UTC().Format(time.RFC3339)
+		}
+		if !lq.Until.IsZero() {
+			args["until"] = lq.Until.UTC().Format(time.RFC3339)
+		}
+		if err := h.writeAudit(ctx, h.q, c, "characters.logs", t, args, "", false); err != nil {
+			h.unavailable(w, r, err)
+			return
+		}
+	}
 	h.write(w, http.StatusOK, logs)
 }
 
-func (h *Handler) itemHistory(ctx context.Context, w http.ResponseWriter, r *http.Request, _ caller) {
+func (h *Handler) itemHistory(ctx context.Context, w http.ResponseWriter, r *http.Request, c caller) {
 	serial, ok := item.ParseSerial(r.PathValue("serial"))
 	if !ok {
 		h.fail(w, http.StatusBadRequest, "bad_request", "That is not an item serial.")
@@ -437,6 +468,13 @@ func (h *Handler) itemHistory(ctx context.Context, w http.ResponseWriter, r *htt
 	hist, err := h.cfg.World.ItemHistory(ctx, serial)
 	if err != nil {
 		h.worldFailed(w, r, err)
+		return
+	}
+	// An item's history shows who held it, so the audit log keeps the
+	// lookup (review decision 51).
+	if err := h.writeAudit(ctx, h.q, c, "items.history", target{name: serial.String()},
+		map[string]any{"serial": serial.String()}, "", false); err != nil {
+		h.unavailable(w, r, err)
 		return
 	}
 	h.write(w, http.StatusOK, hist)

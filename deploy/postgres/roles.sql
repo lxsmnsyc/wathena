@@ -10,14 +10,19 @@
 --     can read and write rows in the tables it needs, and cannot change
 --     the schema. It cannot read password hashes or login sessions. It
 --     only reads and deletes game tickets. It deletes accounts only
---     through delete_account, for a deletion whose time has come
---     (decision 0032).
+--     through delete_account, for a deletion whose time has come on the
+--     database clock after a wait of at least 14 days (decision 0032,
+--     review decision 51). It deletes GM audit rows only through
+--     delete_old_staff_audit, for rows older than 30 days whose review,
+--     if they need one, is older than 30 days too.
 --   - wathena_account is what the account service connects as. It
 --     reads and writes passwords, login sessions, game tickets, TOTP
 --     secrets, recovery codes and passkeys, and makes accounts and
 --     characters. It cannot change or delete characters, or change the
---     schema. The game role has no rights on TOTP secrets, recovery
---     codes or passkeys.
+--     schema. It asks for account deletions only through
+--     request_account_deletion, which sets the times itself, and it
+--     cannot delete GM audit rows. The game role has no rights on TOTP
+--     secrets, recovery codes or passkeys.
 --
 -- The migrations grant the table rights of both.
 --

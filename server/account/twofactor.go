@@ -168,7 +168,9 @@ func (s *Service) postLoginCode(w http.ResponseWriter, r *http.Request) {
 		s.unavailable(w, r, err)
 		return
 	}
-	if wait, _ := s.limit.check(pending.AccountName, addr, now); wait > 0 {
+	wait, _, release := s.limit.reserve(pending.AccountName, addr, now)
+	defer release()
+	if wait > 0 {
 		p.Error = "Too many failed logins for this account. Try again in " + seconds(wait) + "."
 		s.render(w, http.StatusTooManyRequests, "code.html", p)
 		return
@@ -179,9 +181,7 @@ func (s *Service) postLoginCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if factor == "" {
-		if !s.limit.fail(pending.AccountName, addr, now) {
-			s.log.Warn("login rate limit tables are full")
-		}
+		s.limit.fail(pending.AccountName, addr, now)
 		row, err := s.q.PendingLogin(ctx, db.PendingLoginParams{TokenHash: hash, MaxAttempts: s.cfg.MaxCodeAttempts})
 		if errors.Is(err, pgx.ErrNoRows) {
 			expired()
@@ -335,7 +335,9 @@ func (s *Service) checkIdentity(ctx context.Context, r *http.Request, sess db.Us
 	if ok, wait := s.limit.allow(actLogin, addr, now); !ok {
 		return http.StatusTooManyRequests, "Too many attempts from your network. Try again in " + seconds(wait) + ".", nil
 	}
-	if wait, _ := s.limit.check(name, addr, now); wait > 0 {
+	wait, _, release := s.limit.reserve(name, addr, now)
+	defer release()
+	if wait > 0 {
 		return http.StatusTooManyRequests, "Too many failed attempts for this account. Try again in " + seconds(wait) + ".", nil
 	}
 	password := r.PostForm.Get("password")
@@ -361,9 +363,7 @@ func (s *Service) checkIdentity(ctx context.Context, r *http.Request, sess db.Us
 		ok = factor != ""
 	}
 	if !ok {
-		if !s.limit.fail(name, addr, now) {
-			s.log.Warn("login rate limit tables are full")
-		}
+		s.limit.fail(name, addr, now)
 		if withCode {
 			return http.StatusBadRequest, "The password or the code is wrong.", nil
 		}

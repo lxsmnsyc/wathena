@@ -179,8 +179,8 @@ type inbox struct{}
 func (inbox) DeliverSocial(social.Notice) {}
 
 // TestDeletionJob: the job waits while a character has a session, and
-// disconnects it. Once the clock passes the request's time, it deletes
-// the account, and the party it led breaks up in memory.
+// disconnects it. Once the database clock passes the request's time, it
+// deletes the account, and the party it led breaks up in memory.
 func TestDeletionJob(t *testing.T) {
 	e := setup(t)
 	leaver := e.character("Leaver")
@@ -208,8 +208,16 @@ func TestDeletionJob(t *testing.T) {
 	if n, err := e.aw.DeleteDue(e.ctx); err != nil || n != 0 {
 		t.Fatalf("early run: %d %v", n, err)
 	}
-	// Due 15 days later, but the character plays: it is disconnected and
-	// the account waits.
+	// Nor with the server clock 15 days ahead: the database clock
+	// decides, so nothing is deleted and no one is kicked (review
+	// decision 51).
+	if n, err := aw.DeleteDue(e.ctx); err != nil || n != 0 || len(e.kicker.got()) != 0 {
+		t.Fatalf("run with the clock ahead: %d %v %v", n, err, e.kicker.got())
+	}
+	// The request's time comes on the database clock.
+	e.exec(`UPDATE account_deletions SET requested_at = now() - interval '15 days', delete_after = now() - interval '1 day' WHERE account_id = $1`, acc)
+	// Due now, but the character plays: it is disconnected and the
+	// account waits.
 	s := e.login(leaver)
 	if n, err := aw.DeleteDue(e.ctx); err != nil || n != 0 {
 		t.Fatalf("run while online: %d %v", n, err)

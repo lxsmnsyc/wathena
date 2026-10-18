@@ -49,6 +49,11 @@ func TestReportCalls(t *testing.T) {
 		t.Errorf("report %v", d)
 	}
 	e.errorCode(mod, "GET", "reports/404", "", nil, http.StatusNotFound, "not_found")
+	// Reading a report shows the target's chat, whispers too, so it
+	// writes an audit row (review decision 51).
+	if got := e.actions(); len(got) != 1 || got[0] != "reports.view Bob" {
+		t.Errorf("audit rows after reading a report: %q", got)
+	}
 	e.errorCode(mod, "GET", "reports/x", "", nil, http.StatusBadRequest, "bad_request")
 
 	closeReq := func(outcome, note string, sanction int64) *adminv1.CloseReportRequest {
@@ -137,6 +142,16 @@ func TestSanctionCalls(t *testing.T) {
 	e.errorCode(gm, "POST", "sanctions", csrf(gm), sanctionReq("ban", 0, 9, 0, "x"), http.StatusForbidden, "forbidden")
 	e.errorCode(muter, "POST", "sanctions", csrf(muter), sanctionReq("jail", 7, 0, 5, "x"), http.StatusForbidden, "forbidden")
 	e.errorCode(muter, "POST", "sanctions", csrf(muter), sanctionReq("kick", 7, 0, 0, "x"), http.StatusForbidden, "forbidden")
+	// A ban longer than a year acts as a permanent one, so it needs
+	// moderation.ban_permanent too (review decision 51).
+	e.errorCode(gm, "POST", "sanctions", csrf(gm), sanctionReq("ban", 0, 9, admin.LongBanMinutes+1, "x"), http.StatusForbidden, "forbidden")
+	e.errorCode(gm, "POST", "sanctions", csrf(gm), sanctionReq("ban", 0, 9, admin.MaxBanMinutes, "x"), http.StatusForbidden, "forbidden")
+	if status, b := e.call(gm, "POST", "sanctions", csrf(gm), sanctionReq("ban", 0, 9, admin.LongBanMinutes, "a year")); status != http.StatusOK {
+		t.Errorf("a ban of a year: %d %s", status, b)
+	}
+	if status, b := e.call(adm, "POST", "sanctions", csrf(adm), sanctionReq("ban", 0, 9, admin.MaxBanMinutes, "ten years")); status != http.StatusOK {
+		t.Errorf("an admin's ban of ten years: %d %s", status, b)
+	}
 	e.errorCode(reader, "POST", "sanctions", csrf(reader), sanctionReq("mute", 7, 0, 5, "x"), http.StatusForbidden, "forbidden")
 	e.errorCode(reader, "GET", "sanctions", "", nil, http.StatusForbidden, "forbidden")
 
@@ -174,7 +189,7 @@ func TestSanctionCalls(t *testing.T) {
 	// Lifting needs the kind's permission, a reason, for a ban a recent
 	// login, and for a permanent ban moderation.ban_permanent.
 	e.world.mu.Lock()
-	e.world.sanctionKinds = map[int64]string{1: "mute", 2: "jail", 3: "ban", 4: "kick", 5: "permanent ban"}
+	e.world.sanctionKinds = map[int64]string{1: "mute", 2: "jail", 3: "ban", 4: "kick", 5: "permanent ban", 6: "long ban"}
 	e.world.mu.Unlock()
 	status, b := e.call(muter, "DELETE", "sanctions/1?reason="+url.QueryEscape("appealed"), csrf(muter), nil)
 	if status != http.StatusOK || !strings.Contains(string(b), "appealed") {
@@ -191,6 +206,7 @@ func TestSanctionCalls(t *testing.T) {
 		t.Errorf("lift a ban: %d %s", status, b)
 	}
 	e.errorCode(fresh, "DELETE", "sanctions/5?reason=x", csrf(fresh), nil, http.StatusForbidden, "forbidden")
+	e.errorCode(fresh, "DELETE", "sanctions/6?reason=x", csrf(fresh), nil, http.StatusForbidden, "forbidden")
 	freshAdmin := e.loginTOTP("Admin")
 	if status, b := e.call(freshAdmin, "DELETE", "sanctions/5?reason=x", csrf(freshAdmin), nil); status != http.StatusOK {
 		t.Errorf("lift a permanent ban: %d %s", status, b)
