@@ -1081,6 +1081,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Fixes.** Small slowdowns found are fixed in this step. Large ones are reported for a decision.
     - **No Lua API.**
 
+51. Security review (phase 8 step 5). The user approved these on 2026-10-18:
+    - **Capacity.** The docs keep 250 players, as measured in decision 0050. The send cost of many viewers in one zone moves to phase 10 item 5.
+    - **Method.** The project reviews itself against docs/security/threat-model.md, in eight areas: protocol and zone, accounts, staff and admin, mods and the Lua sandbox, web, database rights, procedural secrets, and deployment and release. Each area gets its own read-only reviewer. A second pass proves or drops each finding, capped at 15 checking agents, with small findings of one area checked together. Reviewers and checkers run on Sonnet. Stage 2 starts only after the user checks the usage of stage 1.
+    - **Tools.** The existing `gosec` and `govulncheck`, plus longer fuzz runs, `pnpm audit` and `trivy` on the images. All are free.
+    - **Output.** docs/security/review-2026-10.md with each finding's severity, how to reproduce it, and its fix or accepted risk. The threat model's statuses are updated.
+    - **Fixes.** Critical and high findings are fixed before the release, each with a test. Medium and low findings are fixed when small, or listed as known issues in the release notes.
+    - **SECURITY.md** gains a supported versions table for the first release.
+    - **No Lua API,** unless a finding needs a sandbox change, which goes to the user first.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.

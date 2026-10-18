@@ -3460,7 +3460,7 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
 2. Tier 2 systems from section 11, starting with pets, homunculus, and guild sieges.
 3. Third classes, then fourth and expanded classes.
 4. Classic mode: full `npc/` conversion, classic maps from player GRF files, and fixed spawns.
-5. Distributed deployment mode and load tests at 7,500 bots (section 3.7).
+5. Distributed deployment mode and load tests at 7,500 bots (section 3.7). This includes the send cost of many viewers in one zone, such as 1,000 players in one town, which phase 8's load tests found over budget (decision 0050). The documented capacity stays at what phase 8 measured until then.
 6. Web client plugin API (section 10.4).
 7. The headless web client, with the web client's UI rebuilt on it (section 10.4).
 8. Other clients (section 10.7): the guide to writing a client with local game files and the native login flow it needs, then the Go client, then the Lua client with LÖVE.
