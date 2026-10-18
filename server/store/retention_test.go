@@ -26,8 +26,17 @@ func TestDropOldLogs(t *testing.T) {
 	ctx := timeout(t)
 	// March and April 2026 get partitions. 2025-01 and 2030-01 have none,
 	// so their rows go to the default partitions.
-	if _, err := admin.Exec(ctx, "SELECT ensure_log_partitions('2026-03-15T00:00:00Z')"); err != nil {
-		t.Fatal(err)
+	// ensure_log_partitions refuses a day far from now, so the test makes
+	// them itself.
+	for _, part := range []string{"item_log", "zeny_log"} {
+		for _, m := range []struct{ name, from, to string }{
+			{"2026_03", "2026-03-01", "2026-04-01"}, {"2026_04", "2026-04-01", "2026-05-01"},
+		} {
+			if _, err := admin.Exec(ctx, "CREATE TABLE "+part+"_"+m.name+" PARTITION OF "+part+
+				" FOR VALUES FROM ('"+m.from+"T00:00:00Z') TO ('"+m.to+"T00:00:00Z')"); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 	insert := func(at string) {
 		t.Helper()

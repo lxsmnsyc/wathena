@@ -1509,3 +1509,15 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - The classic run used Prontera's map files from the kRO client, since the full asset build did not fit on the disk.
    - The zone fix: a sleeping zone clears its block index, a player that leaves its zone resets its IDs for what it saw, and the tick clears its hits and removals before it cuts them.
    - Review items: whether to document 500 players, the slowdown of 1,000 players in one town, and a way to place bots without a database URL.
+37. Build review decisions 51 to 53: the security review (phase 8 step 5), with the fixes of its findings, connection limits per address, and the Lua API changes of decision 52. Done on 2026-10-18 ([review 2026-10](../security/review-2026-10.md)). Details to review:
+   - Eight areas, each with its own read-only reviewer on Sonnet, then checking agents that proved the high and medium findings, most with a failing test. 6 high, 19 medium and 39 low findings, some found twice. Commits 88149d2, 9fd99ca and eaf4077 fixed every high and medium finding but one, and a follow-up change fixed most low ones.
+   - Decisions 52 and 53 are built as approved: `data.core_override`, hook `next()` that stops working, per-mod budgets with `budget` and `mods.budget`, `player.status` enforced, mod whispers marked with `from_mod`, private chat only for `rules.override`, `tostring` without addresses, and the price rule. No other Lua API change was made.
+   - The gateway limits each address to 32 game connections, and 20 new ones at once, then one every 3 seconds, which limits `Hello` too. The address comes through `trusted_proxies`, through the new package `server/clientaddr`, which the account service uses too. Loopback is not limited. `connections.*` in `waserver.yml` changes the numbers.
+   - The debug address answers only a loopback `Host` and no request from another page. `--dev` refuses `trusted_proxies` and a public URL on another host.
+   - The e2e bots led to two rate changes: guild skill ups count as actions, and only a store search query counts as a search.
+   - Known issues for the release notes: a passkey without user verification counts as a second factor, a stale session can commit after a second login, `/gen/maps` lists every map's places and names, `node:hash` on a secret node can be inverted, the account role can make characters with any values, backups are not signed, database traffic in Compose is not encrypted, secret files are mode 644 in their 0700 folder, and `release.sh` does not check its tools.
+   - Review items:
+     - A Lua API change for `node:hash` on secret nodes: an HMAC-SHA256 hash, or no `node:hash` in generation layers. Either changes the output of mods that use it.
+     - Whether `/gen/maps` should list places and names only for maps a player visited, which changes the protocol and the bots.
+     - Owners by account ID or a claim code instead of by name.
+     - A session factor for a passkey that verified its user, which needs a migration.

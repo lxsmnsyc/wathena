@@ -759,6 +759,10 @@ func (z *Zone) buyingStoreSell(p *Player, s *wathenav1.BuyingStoreSell) {
 	weight := b.inventory.Weight
 	var zeny int64
 	seen := map[int]bool{}
+	// taken is the amount the lines so far sell of each store line. Two
+	// slots of the same item count together, so a sale cannot pass a
+	// line's amount. rAthena checks each slot alone.
+	taken := map[int]int{}
 	var sold []modscript.SaleItem
 	for _, l := range lines {
 		slot, id, amount := int(l.GetSlot()), l.GetItemId(), int(l.GetAmount())
@@ -787,12 +791,13 @@ func (z *Zone) buyingStoreSell(p *Player, s *wathenav1.BuyingStoreSell) {
 			fail(wathenav1.BuyingStoreOutcome_BUYING_STORE_OUTCOME_FAILED, id, "")
 			return
 		}
-		if store.lines[i].amount < amount {
+		if store.lines[i].amount-taken[i] < amount {
 			fail(wathenav1.BuyingStoreOutcome_BUYING_STORE_OUTCOME_COUNT, id, "")
 			return
 		}
+		taken[i] += amount
 		d := z.Items.Get(id)
-		if checkAddItem(b.inventory, d, amount) == addOverAmount || amount*d.Weight > b.maxWeight-weight {
+		if checkAddItem(b.inventory, d, taken[i]) == addOverAmount || amount*d.Weight > b.maxWeight-weight {
 			fail(wathenav1.BuyingStoreOutcome_BUYING_STORE_OUTCOME_FAILED, id, "")
 			return
 		}

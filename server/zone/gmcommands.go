@@ -154,6 +154,16 @@ func (z *Zone) commandAudit(p *Player, role, action, target string, targetAccoun
 		NeedsReview: review})
 }
 
+// auditAs adds the audit row of a command to the zone's next commit, for
+// the staff member of actor. A zone that applies a command for another
+// zone's player writes the row with the effect, so the row does not
+// depend on the staff member's session.
+func (z *Zone) auditAs(actor staff.AuditRow, action, target string, targetAccount int64, args map[string]any) {
+	row := actor
+	row.Action, row.Target, row.TargetAccount, row.Arguments = action, target, targetAccount, args
+	z.txAudit = append(z.txAudit, row)
+}
+
 // staffName is the account name of a player's login, for audit rows.
 func (z *Zone) staffName(p *Player) string {
 	if p.sess != nil && p.sess.staff.AccountName != "" {
@@ -384,7 +394,7 @@ func (z *Zone) commandRecall(p *Player, c gmCall) {
 		z.answer(p, "You cannot recall yourself.")
 		return
 	}
-	me, role, m, x, y := p.sess, c.role, z.Map, p.entity.x, p.entity.y
+	me, actor, m, x, y := p.sess, z.actor(p, c.role), z.Map, p.entity.x, p.entity.y
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), commandWait)
 		defer cancel()
@@ -399,10 +409,8 @@ func (z *Zone) commandRecall(p *Player, c gmCall) {
 				later(me, name+" could not be recalled.")
 				return
 			}
-			postAsync(me, func(z *Zone, p *Player) {
-				z.commandAudit(p, role, "commands.recall", name, account, map[string]any{"map": strings.TrimPrefix(m, "map/"), "x": x, "y": y}, "", false)
-				z.answer(p, name+" recalled!")
-			})
+			tz.auditAs(actor, "commands.recall", name, account, map[string]any{"map": strings.TrimPrefix(m, "map/"), "x": x, "y": y})
+			later(me, name+" recalled!")
 		})
 		if !ok {
 			later(me, "Character not found.")
@@ -764,7 +772,7 @@ func (z *Zone) commandRenameTown(p *Player, c gmCall) {
 		z.answer(p, "The town cannot take that name: "+err.Error()+".")
 		return
 	}
-	s, role := p.sess, c.role
+	s, actor := p.sess, z.actor(p, c.role)
 	if s == nil {
 		return
 	}
@@ -776,9 +784,11 @@ func (z *Zone) commandRenameTown(p *Player, c gmCall) {
 			later(s, "The rename failed: "+err.Error()+".")
 			return
 		}
-		postAsync(s, func(z *Zone, p *Player) {
-			z.commandAudit(p, role, "world.rename", "", 0, map[string]any{"town": town.ID, "from": town.Name, "to": name, "maps": len(changes)}, "", false)
-			z.answer(p, "Renamed "+town.Name+" to "+name+".")
+		// The row goes to this zone's next commit, also when the staff
+		// member has logged out since.
+		z.post(func() {
+			z.auditAs(actor, "world.rename", "", 0, map[string]any{"town": town.ID, "from": town.Name, "to": name, "maps": len(changes)})
 		})
+		later(s, "Renamed "+town.Name+" to "+name+".")
 	}()
 }

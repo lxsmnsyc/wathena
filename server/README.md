@@ -20,7 +20,7 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 | `emblem` | Guild emblem uploads: the size, format and dimension checks, and the PNG the server keeps. See "Guilds". |
 | `store` | PostgreSQL persistence: goose migrations in `migrations`, sqlc queries in `queries` generated into `db`, a pool of save workers, transfer commits with the item and zeny logs, and game ticket redemption. `storetest` makes throwaway databases for integration tests. See [decision 0003](../docs/decisions/0003-database-migrations-and-queries.md). |
 | `account` | The account service under `/account/`: signup, login, logout, login sessions, account settings with TOTP codes, recovery codes and passkeys, the character list with character creation, Play, and one-time game tickets. Argon2id passwords, CSRF tokens, a strict Content Security Policy, rate limits and a captcha hook. `GameTickets` checks the ticket in `Hello` for the gateway. See decisions [0004](../docs/decisions/0004-account-service-and-game-tickets.md) and [0005](../docs/decisions/0005-two-factor-login-and-passkeys.md). |
-| `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone the player is in, through its `zone.Session`, which stays the same across map changes. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. Other messages are rate limited per connection and per kind of command (`limits.go`): 60 at once, then 30 a second in all, with lower rates for walks, NPC clicks, drops, social commands and store searches. A message over a rate is dropped, and so is a command when the player already has 64 waiting in its zone's queue. Each drop is a strike, strikes fall by 10 a second, and more than 100 end the connection with `DISCONNECT_REASON_RATE_LIMITED`. |
+| `gateway` | The WebSocket protocol from docs/proposals/0001-protocol.md: Hello first within 10 seconds, the session token checked through `Sessions` (game tickets, or names with `DevSessions`), trusted `Origin` checks, version and size checks, and commands to the zone the player is in, through its `zone.Session`, which stays the same across map changes. Chat lines are cleaned and checked (valid UTF-8, no control or bidirectional formatting characters, 1 to 255 code points) and rate limited per connection: a burst of 5, then 1 per second. Other messages are rate limited per connection and per kind of command (`limits.go`): 60 at once, then 30 a second in all, with lower rates for walks, NPC clicks, drops, social commands and store search queries. A message over a rate is dropped, and so is a command when the player already has 64 waiting in its zone's queue. Each drop is a strike, strikes fall by 10 a second, and more than 100 end the connection with `DISCONNECT_REASON_RATE_LIMITED`. Each client address may hold 32 game connections and open 20 at once, then one every 3 seconds (`connlimit.go`), with the address found through `trusted_proxies` as the account service finds it. A connection over these gets HTTP 429 before the WebSocket starts. Loopback addresses are not limited. The `Origin` check compares the scheme too, and a page on the server's own host counts only on a loopback host. |
 | `cmd/waserver` | The all-in-one server: the web client, an asset build over HTTP, the account pages, and a world of zones over WebSocket, one per map, with characters in PostgreSQL. With `--dev`, names instead of accounts, and characters in PostgreSQL or in memory. See "All-in-one". |
 
 ## Building
@@ -155,9 +155,10 @@ docker exec -i wathena-pg psql -U postgres < deploy/postgres/roles.sql
 docker exec -it wathena-pg psql -U postgres -c '\password wathena_migrator' -c '\password wathena_game'
 ```
 
-`deploy/postgres/roles.sql` makes the `wathena` database and three roles:
+`deploy/postgres/roles.sql` makes the `wathena` database and its roles:
 
-- `wathena_migrator` owns the schema. Only `wactl migrate` uses it.
+- `wathena_migrator` owns the schema. `wactl migrate`, restores and other manual `wactl` work use it.
+- `wathena_backup` only reads, as a member of `pg_read_all_data`. `wactl world backup` connects as it in Compose.
 - `wathena_game` is what the game side of `waserver` uses. It reads and writes rows, and cannot change the schema, delete accounts and characters, or read passwords and login sessions. It only reads and deletes game tickets. The account deletion job deletes an account through one function, `delete_account`, which only works for an account whose deletion is due on the database clock, after a wait of at least 14 days (see "The account page"). The retention job deletes old GM audit rows through `delete_old_staff_audit` (see "Retention").
 - `wathena_account` is what the account service uses. It alone reads password hashes, login sessions, TOTP secrets, recovery codes and passkeys. It makes accounts and characters, and cannot change or delete characters. It asks for account deletions only through `request_account_deletion`, which sets the times from the database clock, and it cannot delete GM audit rows (migration 00038).
 
@@ -391,7 +392,7 @@ Flags of the account service, all in "All-in-one" with their config keys:
 - `--origins`: more trusted web client origins, as `scheme://host[:port]`, comma-separated. They may fetch tickets and open the WebSocket, and Play may send players to them. The public URL's origin is always trusted. Without `--origins` and without a public URL, the default is the Vite dev server, `http://localhost:5173,http://127.0.0.1:5173`.
 - `--play-url`: where Play goes when the account pages were not opened from a client. Its origin must be trusted. Without it, Play opens the client that `waserver` serves at the public URL.
 - `--trusted-proxies`: proxy addresses or CIDR blocks whose `X-Forwarded-For` gives the client address, for rate limits.
-- `--captcha`: `none` (default), or `dev` for a checkbox that shows where a real captcha goes. A real provider is not built yet.
+- `--captcha`: `none` (default), or `dev` for a checkbox that shows where a real captcha goes. Signup always asks for it, and login after repeated failures. A real provider is not built yet.
 
 The account page, with block lists, reports, sanctions, the data export, account deletion and the privacy notice, is in "The account page" below.
 
@@ -468,12 +469,12 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `start_map`, `maps` | `--map`, `--maps` | none | Deprecated: use the `classic` block. They still work, with a warning at start. A procedural world reads them as before: `start_map` when it names a generated map, and `maps` as asset maps to run. Set in both places with different values, they are an error. |
 | `mode` | `--mode` | `renewal` | The rAthena mode of the reference data: `renewal`, `pre-renewal`, or `none` for no monsters. It must match the world's ruleset. |
 | `captcha` | `--captcha` | `none` | `none` or `dev`. |
-| `dev` | `--dev` | `false` | Development sessions instead of accounts. Needs a loopback `listen`. |
+| `dev` | `--dev` | `false` | Development sessions instead of accounts. Needs a loopback `listen`, no `trusted_proxies`, and no `public_url` on another host, so a proxy on the same host cannot make it public. |
 | `build` | `--build` | `all_1` | Raised stats of new characters, for testing. |
 | `start_items` | `--start-items` | none | Items of new characters, for development. |
 | `start_job` | `--start-job` | none | Job, base level and job level of new characters, as `job:base:job`, for development. Needs `dev`. |
 | `seed` | `--seed` | none | Text that fixes the random streams of the zones and world events, so a test runs the same way each time. For tests only. Needs `dev`. |
-| `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. |
+| `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. It answers only requests to a loopback host name, with no `Origin` of another page and no cross-site `Sec-Fetch-Site`, so a web page cannot reach it through the browser. |
 | `profile_dir` | `--profile-dir` | none | Folder for CPU profiles of slow ticks. |
 | `shutdown_countdown` | `--shutdown-countdown` | `10s` | The countdown players see before the server stops, up to `10m`. `0s` turns it off. See "NPCs". |
 | `time_zone` | `--time-zone` | `UTC` | The server's time zone, as an IANA name such as `Asia/Manila`. Schedules and world events match their times there. See "World events". |
@@ -488,6 +489,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `mods.max_budget.memory_mb`, `mods.max_budget.cpu_per_tick` | none | `64`, `10000000` | The most a mod's manifest may ask for. A mod that asks for more does not load. Each is at most 1024 MiB and 1,000,000,000. |
 | `chat.burst`, `chat.refill` | none | `5`, `1s` | Chat rate limits: lines at once, and the time for one more. See "Chat and moderation". |
 | `chat.new_character_burst`, `chat.new_character_refill`, `chat.new_character_period` | none | `3`, `3s`, `1h` | Lower limits for a character's first period after it was made. A period of `0s` turns them off. |
+| `connections.per_address`, `connections.hello_burst`, `connections.hello_refill` | none | `32`, `20`, `3s` | Game connections per client address: open at once, and new ones at once and the time for one more. An IPv6 address counts by its /64. Loopback addresses are not limited. See the `gateway` row of "Packages". |
 | `chat.log_days` | none | none | Deprecated: use `retention.chat_days`. It still works, with a warning. Set with a different `retention.chat_days`, it is an error. |
 | `retention.login_ip_days`, `retention.chat_days`, `retention.item_log_days`, `retention.audit_days` | none | `90`, `30`, `180`, `730` | Days the server keeps login records with IP addresses, chat lines, the item and zeny logs, and the GM audit log. `login_ip_days` and `chat_days` are 1 to 3650. `item_log_days` and `audit_days` are 30 to 3650. A period longer than its default logs a warning at start and shows one on the admin World screen. See "Retention". |
 | `jail.map`, `jail.cells` | none | `sec_pri`, `[[49, 75], [24, 75]]` | Where jailed players go, as rAthena's `MAP_JAIL` and `pc_jail`. A jail map that does not run logs a warning. |

@@ -11,3 +11,23 @@ deploy/compose/.env
 **/*.log
 **/.DS_Store
 .env
+# Local data and build output. None of it is in the images, and the
+# server stage copies the whole context, so it would land in that
+# stage's layers and the build cache (security review L25):
+#   - data holds the owner's client files, such as data/kro/client.
+#   - dist is the output of scripts/release.sh.
+#   - generated is local generated output.
+# These patterns name the top-level folders only. Packages embed their
+# own data folders, such as server/economy/core/data.
+data
+dist
+generated
+bin
+backups
+# Backups, keys and environment files anywhere in the tree.
+**/*.age
+**/*.dump
+**/secrets
+**/*.pem
+**/*.key
+**/.env*

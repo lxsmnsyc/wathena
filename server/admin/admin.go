@@ -31,6 +31,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -157,6 +158,45 @@ func New(cfg Config) (*Handler, error) {
 	})
 	h.mux = m
 	return h, nil
+}
+
+// MissingOwners returns the names of staff.owners that have no account.
+// Whoever signs up first with such a name becomes an owner, so the
+// server owner must register these accounts first (review decision 51).
+func (h *Handler) MissingOwners(ctx context.Context) ([]string, error) {
+	if len(h.cfg.Owners) == 0 {
+		return nil, nil
+	}
+	names := make([]string, len(h.cfg.Owners))
+	for i, o := range h.cfg.Owners {
+		names[i] = strings.ToLower(o)
+	}
+	accounts, err := h.q.StaffAccountsByNames(ctx, names)
+	if err != nil {
+		return nil, err
+	}
+	var missing []string
+	for _, o := range h.cfg.Owners {
+		if !slices.ContainsFunc(accounts, func(a db.StaffAccountsByNamesRow) bool { return strings.EqualFold(a.Name, o) }) {
+			missing = append(missing, o)
+		}
+	}
+	return missing, nil
+}
+
+// WarnMissingOwners logs a warning for each name of staff.owners that
+// has no account. The server calls it at startup.
+func (h *Handler) WarnMissingOwners(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	missing, err := h.MissingOwners(ctx)
+	if err != nil {
+		h.log.Warn("cannot check the accounts of staff.owners", "err", err)
+		return
+	}
+	for _, o := range missing {
+		h.log.Warn("staff.owners names an account that does not exist. Sign up with this name now: whoever signs up with it first becomes an owner.", "owner", o)
+	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

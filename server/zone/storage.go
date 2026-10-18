@@ -338,6 +338,13 @@ func (z *Zone) storageMove(p *Player, m *storageMove) {
 		p.pending = append(p.pending, storageResult(wathenav1.StorageOutcome_STORAGE_OUTCOME_BUSY))
 		return
 	}
+	if p.entity.dead && m.kind != MoveCartPut && m.kind != MoveCartTake {
+		// A dead player keeps its storage window but moves nothing in or
+		// out of it. rAthena has no such check. The window stays open
+		// until the player closes it, walks or warps.
+		p.pending = append(p.pending, storageResult(wathenav1.StorageOutcome_STORAGE_OUTCOME_BUSY))
+		return
+	}
 	inv := end{ok: true, box: z.box(p)}
 	var open, cart end
 	switch {

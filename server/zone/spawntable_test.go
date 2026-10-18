@@ -39,3 +39,16 @@ func TestSpawnClearCells(t *testing.T) {
 		t.Errorf("%d monsters on a cleared map", z.entities.len())
 	}
 }
+
+// TestSpawnHooksSecretStream: the spawn_table hooks draw from the secret
+// ChaCha8 stream of their node, not the xoshiro stream whose state is
+// the node's key (review finding L36).
+func TestSpawnHooksSecretStream(t *testing.T) {
+	seed := [32]byte{9, 8, 7}
+	got, want := spawnHooksStream(seed), rng.FromKey(seed).SecretStream()
+	for i := range 4 {
+		if got, w := got.Uint64(), want.Uint64(); got != w {
+			t.Fatalf("draw %d: %#x, want the secret stream's %#x", i, got, w)
+		}
+	}
+}

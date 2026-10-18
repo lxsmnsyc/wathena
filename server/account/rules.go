@@ -78,9 +78,11 @@ func PasswordProblem(name, password string) string {
 	return ""
 }
 
-// common-passwords.txt lists common passwords of 8 characters or more,
-// one per line, in lowercase. It is small on purpose. A server owner
-// who wants a full breach list can check passwords in front of this.
+// common-passwords.txt lists about 65,000 common passwords of 8 bytes
+// or more, one per line, in lowercase. Its header names the sources,
+// and common-passwords-LICENSE.txt holds their license. It is not a
+// full breach list. A server owner who wants one can check passwords in
+// front of this (review decision 51).
 //
 //go:embed common-passwords.txt
 var commonPasswordsFile string

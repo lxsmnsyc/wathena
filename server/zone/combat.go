@@ -92,6 +92,16 @@ func (z *Zone) inSight(e, t *entity) bool {
 	return chebyshev(e, t) < 2 || z.clearShot(e.x, e.y, t.x, t.y)
 }
 
+// inReach is the distance part of unit_attack_timer_sub: a player's
+// attack range is a circle, as check_distance_client_bl, and other
+// units' a square, as check_distance_bl.
+func inReach(e, t *entity, reach int) bool {
+	if e.player != nil {
+		return clientDistance(t.x-e.x, t.y-e.y) <= reach
+	}
+	return chebyshev(e, t) <= reach
+}
+
 // fight runs every unit's attack for this tick.
 func (z *Zone) fight() {
 	for e := range z.entities.all() {
@@ -123,7 +133,7 @@ func (z *Zone) fight() {
 			continue
 		}
 		reach := max(e.status.RHW.Range, 1)
-		if chebyshev(e, t) > reach {
+		if !inReach(e, t, reach) {
 			if e.monster != nil {
 				// unit_attack_timer_sub: a monster chases with its
 				// attack range, and the chase attacks on arrival.

@@ -52,6 +52,10 @@ const (
 	// verifyEnv holds the URL of the role that verify-backup restores
 	// with. It needs CREATEDB and no rights on the world's database.
 	verifyEnv = "WATHENA_VERIFY_DATABASE_URL"
+	// backupEnv holds the URL of the role that backup dumps with. It only
+	// needs to read every table, such as wathena_backup, a member of
+	// pg_read_all_data. Without it, backup uses migrateEnv.
+	backupEnv = "WATHENA_BACKUP_DATABASE_URL"
 	// retryAfter is the wait after a failed scheduled run, when it is
 	// shorter than --every.
 	retryAfter = time.Hour
@@ -490,7 +494,7 @@ func (j *backupJob) dumpDir(ctx context.Context, dir string) (*backupManifest, e
 // hashes, sealed TOTP secrets and the world seed.
 func worldBackup(args []string) error {
 	fs := newFlags("world backup")
-	database := fs.String("database", "", "PostgreSQL URL of the migrator role; prefer the "+migrateEnv+" environment variable")
+	database := fs.String("database", "", "PostgreSQL URL of a role that reads every table, such as wathena_backup; prefer the "+backupEnv+" or "+migrateEnv+" environment variable")
 	out := fs.String("out", "", "the backup file to make, or - for standard output; a file gets a manifest beside it")
 	dir := fs.String("dir", "", "a folder for backups named world-<UTC time>.dump.age, each with a manifest world-<UTC time>.json")
 	var recipients, recipientFiles listFlag
@@ -535,7 +539,7 @@ func worldBackup(args []string) error {
 	if err != nil {
 		return err
 	}
-	dsn, err := migratorURL(*database)
+	dsn, err := backupURL(*database)
 	if err != nil {
 		return err
 	}
@@ -1024,6 +1028,27 @@ func worldVerifyBackup(args []string) error {
 	}
 	fmt.Fprintln(os.Stderr, verifiedLine(file, m))
 	return nil
+}
+
+// backupURL returns --database, else backupEnv or backupEnv_FILE, else
+// the migrator's URL. In Compose the backup service has only the backup
+// role's URL, so it cannot change the schema or the audit log.
+func backupURL(flagValue string) (string, error) {
+	if flagValue != "" {
+		return flagValue, nil
+	}
+	value, err := secretenv.Get(backupEnv)
+	if err != nil || value != "" {
+		return value, err
+	}
+	value, err = secretenv.Get(migrateEnv)
+	if err != nil {
+		return "", err
+	}
+	if value == "" {
+		return "", errors.New("give --database or set " + backupEnv + ", " + migrateEnv + ", or the same with _FILE")
+	}
+	return value, nil
 }
 
 // verifyURL returns --database, else verifyEnv or verifyEnv_FILE.

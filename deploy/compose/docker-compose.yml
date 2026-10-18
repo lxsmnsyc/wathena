@@ -16,7 +16,8 @@
 #     WATHENA_DOMAIN and proxies everything to waserver.
 #   - backup: makes an encrypted backup into the backups volume once a
 #     day with `wactl world backup --every`, and prunes old ones
-#     (decision 0048). It needs the recipient, the public key, in the
+#     (decision 0048). It connects as wathena_backup, which reads every
+#     table and changes nothing. It needs the recipient, the public key, in the
 #     backup_recipients secret. The identity, the private key, stays
 #     with the owner. Without a recipient it makes no backup and logs a
 #     warning every hour. It reads the secret only when it starts, so
@@ -26,8 +27,12 @@
 #     backup into a temporary database once a day and checks it. It
 #     puts the identity on the server, so a stolen server can decrypt
 #     the backups. deploy/README.md, "Backups", explains the choice.
-#   - wactl: only for `docker compose run`. Makes the world, builds
-#     assets into the assets volume, and makes and restores backups.
+#   - wactl: only for `docker compose run`. Makes the world, and makes
+#     and restores backups, as the migrator role.
+#   - offline: only for `docker compose run`. wactl with no network and
+#     no secrets, for asset builds and other work on untrusted files.
+#   - caddy-init: runs once per `up`. Gives Caddy's volumes to the user
+#     that Caddy runs as.
 
 name: wathena
 
@@ -36,14 +41,18 @@ x-hardening: &hardening
   cap_drop: [ALL]
   security_opt: ["no-new-privileges:true"]
 
-# wactl with the PostgreSQL client tools, as the migrator role.
-x-tools: &tools
+# The wactl image: wactl with the PostgreSQL client tools.
+x-tools-image: &tools-image
   image: ${WATHENA_TOOLS_IMAGE:-wathena/wactl:local}
   build:
     context: ../..
     target: tools
     args:
       VERSION: ${WATHENA_VERSION:-local}
+
+# wactl as the migrator role.
+x-tools: &tools
+  <<: *tools-image
   environment:
     WATHENA_MIGRATE_DATABASE_URL_FILE: /run/secrets/migrate_database_url
   secrets: [migrate_database_url]
@@ -55,7 +64,12 @@ x-tools: &tools
 
 services:
   postgres:
-    image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+    image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    # It starts as the postgres user, so it needs no Linux capabilities.
+    # The image's data folder belongs to that user, and so does a new
+    # volume made from it.
+    <<: *hardening
+    user: postgres
     restart: unless-stopped
     environment:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
@@ -64,9 +78,7 @@ services:
       - pgdata:/var/lib/postgresql
     networks: [db]
     shm_size: 256mb
-    read_only: true
     tmpfs: [/var/run/postgresql, /tmp]
-    security_opt: ["no-new-privileges:true"]
     stop_grace_period: 1m
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
@@ -75,7 +87,7 @@ services:
       retries: 30
 
   db-init:
-    image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+    image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
     <<: *hardening
     user: postgres
     entrypoint: ["sh", "/deploy/init-db.sh"]
@@ -83,7 +95,7 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGDATABASE: postgres
-    secrets: [postgres_password, migrator_password, game_password, account_password]
+    secrets: [postgres_password, migrator_password, game_password, account_password, backup_password]
     volumes:
       - ../postgres/roles.sql:/deploy/roles.sql:ro
       - ./init-db.sh:/deploy/init-db.sh:ro
@@ -96,7 +108,7 @@ services:
   # Makes the verify role only for the verify profile, so a stack
   # without backup-verify has no role that may make databases.
   verify-init:
-    image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+    image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
     <<: *hardening
     profiles: [verify]
     user: postgres
@@ -126,6 +138,19 @@ services:
       - ${WATHENA_ASSETS:-assets}:/srv/assets
     tmpfs: [/tmp]
 
+  # Asset builds read game clients, art packs and mods, which are
+  # untrusted files. This service has no network and no secrets, so a
+  # bug in a parser cannot reach the database.
+  offline:
+    <<: [*tools-image, *hardening]
+    profiles: [tools]
+    command: []
+    network_mode: none
+    volumes:
+      - ${WATHENA_ASSETS:-assets}:/srv/assets
+    tmpfs: [/tmp]
+    restart: "no"
+
   backup:
     <<: [*tools, *hardening]
     restart: unless-stopped
@@ -140,7 +165,11 @@ services:
       # Without a recipient, wait and warn instead of failing, so
       # `docker compose up --wait` passes on a new stack.
       - --wait-for-recipient
-    secrets: [migrate_database_url, backup_recipients]
+    # Only the backup role, which reads every table and changes nothing.
+    # Restores run in the wactl service as the migrator.
+    environment:
+      WATHENA_BACKUP_DATABASE_URL_FILE: /run/secrets/backup_database_url
+    secrets: [backup_database_url, backup_recipients]
     volumes:
       - backups:/backups
     tmpfs: [/tmp]
@@ -210,9 +239,28 @@ services:
       start_period: 2m
       retries: 3
 
+  # Caddy's volumes belong to root in the image. This gives them to the
+  # user that Caddy runs as, also on a stack made before Caddy ran as
+  # that user.
+  caddy-init:
+    image: caddy:2@sha256:0c994536bddb66445885237f1a5dcc1916bccea922661c76b4e9fc24061f9b52
+    <<: *hardening
+    cap_add: [CHOWN, DAC_READ_SEARCH]
+    user: root
+    entrypoint: ["chown", "-R", "65532:65532", "/data", "/config"]
+    network_mode: none
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: "no"
+
   caddy:
     image: caddy:2@sha256:0c994536bddb66445885237f1a5dcc1916bccea922661c76b4e9fc24061f9b52
     <<: *hardening
+    # Not root. The image's caddy binary has the file capability
+    # NET_BIND_SERVICE, and the kernel refuses to run it without that
+    # capability in the container's set.
+    user: "65532:65532"
     cap_add: [NET_BIND_SERVICE]
     restart: unless-stopped
     environment:
@@ -230,6 +278,8 @@ services:
       edge:
         ipv4_address: ${WATHENA_PROXY_IP:-172.30.80.10}
     depends_on:
+      caddy-init:
+        condition: service_completed_successfully
       waserver:
         condition: service_healthy
     healthcheck:
@@ -270,8 +320,12 @@ secrets:
     file: ./secrets/game_password
   account_password:
     file: ./secrets/account_password
+  backup_password:
+    file: ./secrets/backup_password
   migrate_database_url:
     file: ./secrets/migrate_database_url
+  backup_database_url:
+    file: ./secrets/backup_database_url
   game_database_url:
     file: ./secrets/game_database_url
   account_database_url:

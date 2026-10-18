@@ -191,6 +191,8 @@ type Service struct {
 	// since a passkey needs a fixed relying party ID.
 	wa   *webauthn.WebAuthn
 	rpID string
+	// emblems limits how often a guild changes its emblem.
+	emblems emblemTimes
 }
 
 // New makes a service.
@@ -758,11 +760,12 @@ func (s *Service) EndAccountSessions(ctx context.Context, account int64) (int, e
 	return len(ids), err
 }
 
+// The signup form always asks for the captcha. Failed logins do not
+// measure signups, and a bot that signs up from many addresses fails no
+// login (review decision 51). With NoCaptcha this asks nothing.
 func (s *Service) getSignup(w http.ResponseWriter, r *http.Request) {
 	p := s.newPage(w, r, "Sign up")
-	if s.limit.captchaFor(s.clientAddr(r), time.Now()) {
-		p.Captcha = s.captcha.Field()
-	}
+	p.Captcha = s.captcha.Field()
 	s.render(w, http.StatusOK, "signup.html", p)
 }
 
@@ -777,13 +780,11 @@ func (s *Service) postSignup(w http.ResponseWriter, r *http.Request) {
 	password := r.PostForm.Get("password")
 	p := s.newPage(w, r, "Sign up")
 	p.Name = shorten(name, MaxAccountName)
-	if s.limit.captchaFor(addr, now) {
-		p.Captcha = s.captcha.Field()
-		if ok, _ := s.captcha.Verify(ctx, r.PostForm, addr); !ok {
-			p.Error = "Complete the check below, then sign up again."
-			s.render(w, http.StatusBadRequest, "signup.html", p)
-			return
-		}
+	p.Captcha = s.captcha.Field()
+	if ok, _ := s.captcha.Verify(ctx, r.PostForm, addr); !ok {
+		p.Error = "Complete the check below, then sign up again."
+		s.render(w, http.StatusBadRequest, "signup.html", p)
+		return
 	}
 	switch {
 	case !ValidAccountName(name):

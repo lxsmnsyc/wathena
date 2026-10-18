@@ -23,7 +23,7 @@ mode: renewal
 # than stop_grace_period in docker-compose.yml.
 # shutdown_countdown: 10s
 
-# A captcha after repeated failed logins. Only none is ready for
+# A captcha on signup and after repeated failed logins. Only none is ready for
 # production: a real provider is not built yet.
 captcha: none
 

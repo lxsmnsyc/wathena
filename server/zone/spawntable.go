@@ -48,13 +48,19 @@ func NewSpawnHooks(mods *Mods, seed [32]byte) (*SpawnHooks, error) {
 	if mods == nil || mods.Testing {
 		return nil, errors.New("zone: the spawn hooks need Mods without Testing")
 	}
-	z := New("", nil, rng.FromKey(seed).Stream(), nil)
+	z := New("", nil, spawnHooksStream(seed), nil)
 	z.Mods = mods
 	if z.itemScripts() == nil {
 		return nil, errors.New("zone: the mods' Lua state could not be made; see the log")
 	}
 	return &SpawnHooks{z: z}, nil
 }
+
+// spawnHooksStream is the hooks' random stream for seed. The seed is a
+// secret node's key, so the stream is the secret ChaCha8 stream.
+// Players see the lines a hook's draws chose, and must not learn the
+// seed or the later draws from them.
+func spawnHooksStream(seed [32]byte) *rng.Rand { return rng.FromKey(seed).SecretStream() }
 
 // Run runs the hooks on one map's list.
 func (h *SpawnHooks) Run(m spawns.Map, list []spawns.Spawn, idx SpawnIndex, log *slog.Logger) []spawns.Spawn {

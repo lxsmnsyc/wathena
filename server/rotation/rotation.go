@@ -191,6 +191,11 @@ type Options struct {
 var (
 	ErrNoDungeon = errors.New("there is no such rotating dungeon")
 	ErrNoRegion  = errors.New("there is no such region")
+	// ErrAhead refuses a forced rotation of a dungeon whose date is
+	// already after the schedule's date for now, as an earlier force
+	// left it. Each force would move it one more date ahead and hold
+	// back its natural rotation.
+	ErrAhead = errors.New("the dungeon is already ahead of its schedule")
 )
 
 // Manager decides when changes happen, warns, and makes them through its
@@ -220,6 +225,7 @@ type unsaved struct {
 
 type request struct {
 	dungeon, region string
+	audit           func(Change) error
 	done            chan result
 }
 
@@ -358,10 +364,16 @@ func Due(opts Options, stored State, now time.Time) (State, []Change, error) {
 // town ID, Countdown from now, and returns it. A change of it that
 // comes sooner stays. The change waits on the goroutine that calls
 // Check.
-func (m *Manager) Force(ctx context.Context, dungeon, region string) (Change, error) {
+//
+// Rules:
+//   - audit, when not nil, runs with the change before it is planned.
+//     When it fails, nothing is planned and Force returns its error.
+//   - A dungeon whose date is already after the schedule's date for now
+//     is refused with ErrAhead.
+func (m *Manager) Force(ctx context.Context, dungeon, region string, audit func(Change) error) (Change, error) {
 	done := make(chan result, 1)
 	m.mu.Lock()
-	m.queue = append(m.queue, request{dungeon: dungeon, region: region, done: done})
+	m.queue = append(m.queue, request{dungeon: dungeon, region: region, audit: audit, done: done})
 	m.mu.Unlock()
 	select {
 	case r := <-done:
@@ -378,12 +390,15 @@ func (m *Manager) applyQueue(now time.Time) {
 	m.queue = nil
 	m.mu.Unlock()
 	for _, q := range list {
-		c, err := m.force(q.dungeon, q.region, now)
+		c, err := m.force(q.dungeon, q.region, q.audit, now)
 		q.done <- result{c, err}
 	}
 }
 
-func (m *Manager) force(dungeon, region string, now time.Time) (Change, error) {
+func (m *Manager) force(dungeon, region string, audit func(Change) error, now time.Time) (Change, error) {
+	if audit == nil {
+		audit = func(Change) error { return nil }
+	}
 	due := now.Add(Countdown)
 	if dungeon != "" {
 		spec, ok := m.specs[dungeon]
@@ -392,26 +407,43 @@ func (m *Manager) force(dungeon, region string, now time.Time) (Change, error) {
 		}
 		k := "rotation:" + dungeon
 		if p := m.planned[k]; p != nil && !p.Due.After(due) {
-			return *p, nil
+			return *p, audit(*p)
 		}
-		date := layout.DateOf(nextAfter(spec, m.state.Dates[dungeon], now, m.opts.Location), m.opts.Location)
+		active := m.state.Dates[dungeon]
+		if d := lastDate(spec, now, m.opts.Location); d != "" && active > d {
+			return Change{}, ErrAhead
+		}
+		date := layout.DateOf(nextAfter(spec, active, now, m.opts.Location), m.opts.Location)
 		if p := m.planned[k]; p != nil && p.Date == date {
 			// The same floors, sooner: what was built stays.
+			c := *p
+			c.Due, c.Forced = due, true
+			if err := audit(c); err != nil {
+				return Change{}, err
+			}
 			p.Due, p.Forced = due, true
 			return *p, nil
 		}
-		m.plan(&Change{Kind: KindRotation, Dungeon: dungeon, Date: date, Due: due, Forced: true})
-		return *m.planned[k], nil
+		c := Change{Kind: KindRotation, Dungeon: dungeon, Date: date, Due: due, Forced: true}
+		if err := audit(c); err != nil {
+			return Change{}, err
+		}
+		m.plan(&c)
+		return c, nil
 	}
 	if !slices.Contains(m.opts.Regions, region) {
 		return Change{}, ErrNoRegion
 	}
 	k := "region:" + region
 	if p := m.planned[k]; p != nil {
-		return *p, nil
+		return *p, audit(*p)
 	}
-	m.plan(&Change{Kind: KindRegion, Region: region, Season: m.state.Seasons[region] + 1, Due: due, Forced: true})
-	return *m.planned[k], nil
+	c := Change{Kind: KindRegion, Region: region, Season: m.state.Seasons[region] + 1, Due: due, Forced: true}
+	if err := audit(c); err != nil {
+		return Change{}, err
+	}
+	m.plan(&c)
+	return c, nil
 }
 
 // plan makes a change the next of its slot.

@@ -22,6 +22,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/fields"
 	"github.com/lxsmnsyc/wathena/server/gamedata"
+	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/retention"
@@ -69,6 +70,9 @@ type options struct {
 	TimeZone string `yaml:"time_zone"`
 	// Chat are the chat rate limits (decision 0018).
 	Chat chatOptions `yaml:"chat"`
+	// Connections are the game connection limits per client address
+	// (strategy section 7.4).
+	Connections connectionOptions `yaml:"connections"`
 	// Retention are the days the server keeps data that it deletes after
 	// a time (decision 0049).
 	Retention retentionOptions `yaml:"retention"`
@@ -207,6 +211,23 @@ type chatOptions struct {
 	LogDays int `yaml:"log_days"`
 }
 
+// connectionOptions are the gateway's limits per client address
+// (server/gateway/connlimit.go).
+type connectionOptions struct {
+	PerAddress  int           `yaml:"per_address"`
+	HelloBurst  int           `yaml:"hello_burst"`
+	HelloRefill time.Duration `yaml:"hello_refill"`
+}
+
+func (c connectionOptions) limits() gateway.ConnLimits {
+	return gateway.ConnLimits{PerAddress: c.PerAddress, Hello: gateway.Rate{Burst: c.HelloBurst, Every: c.HelloRefill}}
+}
+
+func defaultConnections() connectionOptions {
+	l := gateway.DefaultConnLimits()
+	return connectionOptions{PerAddress: l.PerAddress, HelloBurst: l.Hello.Burst, HelloRefill: l.Hello.Every}
+}
+
 // jailOptions are the jail map and its cells, rAthena's MAP_JAIL and
 // pc_jail cells by default.
 type jailOptions struct {
@@ -267,14 +288,15 @@ func (l *list) UnmarshalYAML(n *yaml.Node) error {
 
 func defaultOptions() options {
 	return options{
-		Listen:   "127.0.0.1:8300",
-		StartMap: "prontera",
-		Mode:     "renewal",
-		Captcha:  "none",
-		Build:    "all_1",
-		TimeZone: "UTC",
-		Chat:     chatOptions{Limits: chat.DefaultLimits()},
-		Jail:     jailOptions{Map: "sec_pri", Cells: [][2]int{{49, 75}, {24, 75}}},
+		Listen:      "127.0.0.1:8300",
+		StartMap:    "prontera",
+		Mode:        "renewal",
+		Captcha:     "none",
+		Build:       "all_1",
+		TimeZone:    "UTC",
+		Chat:        chatOptions{Limits: chat.DefaultLimits()},
+		Connections: defaultConnections(),
+		Jail:        jailOptions{Map: "sec_pri", Cells: [][2]int{{49, 75}, {24, 75}}},
 
 		ShutdownCountdown: 10 * time.Second,
 		Procedural:        proceduralOptions{FieldSize: 300},
@@ -343,7 +365,7 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.StringVar(&f.PublicURL, "account-url", "", "the same as --public-url")
 	flags.StringVar(&f.PlayURL, "play-url", "", "the web client URL that Play opens when the account page was not opened from a client (play_url)")
 	proxies := flags.String("trusted-proxies", "", "proxy addresses or CIDR blocks whose X-Forwarded-For is believed, comma-separated (trusted_proxies)")
-	flags.StringVar(&f.Captcha, "captcha", o.Captcha, "captcha after repeated failed logins: none, or dev for a development checkbox (captcha)")
+	flags.StringVar(&f.Captcha, "captcha", o.Captcha, "captcha on signup and after repeated failed logins: none, or dev for a development checkbox (captcha)")
 	flags.StringVar(&f.Mode, "mode", o.Mode, "rAthena mode whose recorded spawns to use: renewal or pre-renewal, or none (mode)")
 	flags.StringVar(&f.Build, "build", o.Build, "raised stats every novice starts with: all_1, melee, critical, magic, ranged, or tank. Other builds than all_1 are for testing (build)")
 	flags.StringVar(&f.StartItems, "start-items", "", "items every new character starts with, as id:amount pairs such as 501:10,512:20, for development (start_items)")
@@ -541,6 +563,14 @@ func validate(o options, s secrets) (settings, error) {
 	if o.Dev && !loopback(o.Listen) {
 		bad("dev", "lets anyone play any character, so listen must be a loopback address such as 127.0.0.1:8300")
 	}
+	// A proxy on the same host passes the loopback check, so dev also
+	// refuses the settings of a server behind one (review 2026-10).
+	if o.Dev && len(o.TrustedProxies) > 0 {
+		bad("dev", "lets anyone play any character, so it cannot run behind a proxy: remove trusted_proxies")
+	}
+	if u, err := url.Parse(o.PublicURL); o.Dev && o.PublicURL != "" && (err != nil || !loopbackHost(u.Hostname())) {
+		bad("dev", "lets anyone play any character, so public_url must be on a loopback host")
+	}
 	if o.ShutdownCountdown < 0 || o.ShutdownCountdown > 10*time.Minute {
 		bad("shutdown_countdown", "is 0 to 10m")
 	}
@@ -561,6 +591,18 @@ func validate(o options, s secrets) (settings, error) {
 	}
 	if err := st.Chat.Check(); err != nil {
 		bad("chat", "%v", err)
+	}
+	if st.Connections == (connectionOptions{}) {
+		st.Connections = def.Connections
+	}
+	if c := st.Connections; c.PerAddress < 1 || c.PerAddress > 10000 {
+		bad("connections.per_address", "is 1 to 10000")
+	}
+	if c := st.Connections; c.HelloBurst < 1 || c.HelloBurst > 1000 {
+		bad("connections.hello_burst", "is 1 to 1000")
+	}
+	if c := st.Connections; c.HelloRefill < 10*time.Millisecond || c.HelloRefill > time.Hour {
+		bad("connections.hello_refill", "is 10ms to 1h")
 	}
 	st.Retention = checkRetention(o, bad, func(w string) { st.Warnings = append(st.Warnings, w) })
 	checkClassic(o, bad, func(w string) { st.Warnings = append(st.Warnings, w) })

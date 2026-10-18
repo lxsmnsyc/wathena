@@ -55,6 +55,11 @@ func (w *World) Restore(ctx context.Context, r admin.Restore) (*adminv1.RestoreR
 		return nil, &admin.WorldError{Code: "not_found", Message: "There is no character with that ID."}
 	}
 	to := rows[0]
+	// A staff member cannot restore items to a character of their own
+	// account, as they cannot sanction it (review decision 51).
+	if to.AccountID == r.AccountID {
+		return nil, &admin.WorldError{Code: "conflict", Message: "You cannot restore items to a character of your own account."}
+	}
 	for try := range restoreTries {
 		if try > 0 {
 			select {

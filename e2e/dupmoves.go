@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -335,6 +336,10 @@ func endTrade(ctx context.Context, b *botclient.Bot) error {
 // connection instead and logs in again. Every bot must stay within 2
 // cells of the others.
 func TradeMove(prefix string, bots int, id uint32, c *TradeCounts) Move {
+	// The zone takes one trade request a second from a player (review
+	// 2026-10). An asker that asked less than a second ago does another
+	// move instead.
+	var asked sync.Map
 	return Move{Name: "trade", Do: func(ctx context.Context, b *botclient.Bot, rnd *rand.Rand) (bool, error) {
 		if err := endTrade(ctx, b); err != nil {
 			return false, ignoreDone(ctx, err)
@@ -346,6 +351,10 @@ func TradeMove(prefix string, bots int, id uint32, c *TradeCounts) Move {
 		var ok bool
 		var err error
 		if botIndex(b.Name, prefix)%2 == 1 {
+			if last, ok := asked.Load(b.Name); ok && time.Since(last.(time.Time)) < 1100*time.Millisecond {
+				return false, pause(ctx)
+			}
+			asked.Store(b.Name, time.Now())
 			opened, ok, err = askTrade(ctx, b, prefix, bots, rnd, c)
 		} else {
 			opened, ok, err = answerTrade(ctx, b, rnd, c)
@@ -400,6 +409,14 @@ func askTrade(ctx context.Context, b *botclient.Bot, prefix string, bots int, rn
 		wathenav1.TradeOutcome_TRADE_OUTCOME_NOT_FOUND, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED:
 		c.Refused.Add(1)
 		return 0, false, nil
+	case wathenav1.TradeOutcome_TRADE_OUTCOME_FAILED:
+		// Too soon after the last request: TradeMove waits a second
+		// between requests, and this covers the rest.
+		if e.GetTradeResult().GetName() == "" {
+			return 0, false, fmt.Errorf("asking %s to trade: %s", partner, o)
+		}
+		c.Refused.Add(1)
+		return 0, false, pause(ctx)
 	default:
 		return 0, false, fmt.Errorf("asking %s to trade: %s", partner, o)
 	}

@@ -2,14 +2,16 @@
 # Starts the Compose stack from deploy/compose with the placeholder pack,
 # as deploy/README.md describes, and checks it through Caddy:
 #   1. Makes the secrets, builds the images, and builds the placeholder
-#      assets into the assets volume with the wactl service.
+#      assets into the assets volume with the offline service.
 #   2. Makes a backup key, makes a procedural world and its staff
 #      account, then starts the stack without a backup recipient and
 #      waits until every service is healthy. The backup service waits
 #      and warns.
 #   3. Fetches the client, the account login page and the asset manifest
 #      over HTTPS from Caddy's local authority, and checks that the
-#      health checks are not public.
+#      health checks are not public. Checks that Caddy is not root, that
+#      PostgreSQL has no capabilities, and that the backup service has
+#      no migrator secret.
 #   4. Gives the backup service its recipient and starts it again,
 #      waits for its first encrypted backup, verifies it with the
 #      backup-verify service, restores it into an empty database, and
@@ -45,10 +47,10 @@ trap cleanup EXIT
 
 ./secrets.sh
 compose --profile tools build
-compose run --rm --no-deps wactl assets build --source placeholder --out /srv/assets
+compose run --rm offline assets build --source placeholder --out /srv/assets
 # The key is made in a container, whose /tmp goes with it. Only its
 # recipient goes to the backup service.
-compose run --rm --no-deps -T --entrypoint sh wactl -c \
+compose run --rm -T --entrypoint sh offline -c \
 	'wactl world backup-key new --out /tmp/identity.txt >/dev/null 2>&1 && cat /tmp/identity.txt' >"$WATHENA_BACKUP_IDENTITY"
 # The stack starts first without a recipient, as a new stack does.
 echo '# no recipient yet' >"$WATHENA_BACKUP_RECIPIENTS"
@@ -77,6 +79,20 @@ check() {
 	done
 }
 check
+
+# The hardening of the services (security review L18 and L27).
+if [ "$(compose exec -T caddy id -u)" != 65532 ]; then
+	echo "caddy runs as root" >&2
+	exit 1
+fi
+if ! compose exec -T postgres grep -q '^CapEff:[[:space:]]*0*$' /proc/1/status; then
+	echo "postgres has capabilities" >&2
+	exit 1
+fi
+if compose exec -T backup ls /run/secrets | grep -q migrate; then
+	echo "the backup service has the migrator's URL" >&2
+	exit 1
+fi
 
 # Without a recipient, the backup service runs, warns, and makes nothing.
 for i in $(seq 30); do

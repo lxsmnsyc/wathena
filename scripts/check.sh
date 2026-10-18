@@ -27,7 +27,8 @@
 #   queries   the generated sqlc code
 #   lint      golangci-lint, then with the procedural tag on the
 #             packages it changes
-#   security  govulncheck, gosec and sqlcheck.sh
+#   security  govulncheck, gosec, sqlcheck.sh and pnpm audit of the
+#             client
 #   fuzz      every fuzz test for 10 seconds, 4 at once, with the
 #             procedural tag.
 #             scripts/fuzz.sh 5m fuzzes longer.
@@ -374,6 +375,9 @@ step_security() {
 	go build -C tools/gosec -o "$work/gosec" github.com/securego/gosec/v2/cmd/gosec
 	"$work/gosec" -exclude-generated ./...
 	scripts/sqlcheck.sh
+	# The client's dependencies, build tools too (review 2026-10). It
+	# needs the network, as govulncheck does.
+	(cd client && pnpm audit --audit-level high)
 }
 
 step_fuzz() { scripts/fuzz.sh 10s; }

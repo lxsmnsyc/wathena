@@ -704,3 +704,16 @@ func background(ctx context.Context, stop context.CancelFunc, run func(context.C
 		<-done
 	}
 }
+
+// zoneInstanceKey names a map's zones in one run, for zoneStream.
+type zoneInstanceKey struct {
+	root rng.Node
+	id   string
+}
+
+// zoneInstances counts the zones zoneStream has made for each map, so a
+// zone that replaces another gets a stream of its own.
+var zoneInstances = struct {
+	sync.Mutex
+	made map[zoneInstanceKey]int64
+}{made: map[zoneInstanceKey]int64{}}

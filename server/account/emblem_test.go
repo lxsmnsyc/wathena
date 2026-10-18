@@ -73,25 +73,7 @@ func TestGuildEmblemUpload(t *testing.T) {
 	guilds.mu.Lock()
 	guilds.master = id
 	guilds.mu.Unlock()
-	upload := func(img []byte) (int, string) {
-		_, token := e.page(e.c, "/account/guild/emblem")
-		var b bytes.Buffer
-		w := multipart.NewWriter(&b)
-		_ = w.WriteField("csrf", token)
-		_ = w.WriteField("slot", "0")
-		f, _ := w.CreateFormFile("emblem", "emblem.png")
-		_, _ = f.Write(img)
-		_ = w.Close()
-		req, _ := http.NewRequest(http.MethodPost, e.srv.URL+"/account/guild/emblem", &b)
-		req.Header.Set("Content-Type", w.FormDataContentType())
-		resp, err := e.c.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() { _ = resp.Body.Close() }()
-		out, _ := io.ReadAll(resp.Body)
-		return resp.StatusCode, string(out)
-	}
+	upload := func(img []byte) (int, string) { return uploadEmblem(t, e, img) }
 	if code, out := upload(emblemPNG(t, 32)); code != http.StatusBadRequest || !strings.Contains(out, "24 by 24") {
 		t.Errorf("32 px: %d %s", code, out)
 	}
@@ -104,5 +86,77 @@ func TestGuildEmblemUpload(t *testing.T) {
 	guilds.mu.Unlock()
 	if len(got) == 0 || bytes.Equal(got, img) {
 		t.Errorf("the world got %d bytes; the upload must be re-encoded", len(got))
+	}
+}
+
+// uploadEmblem posts an emblem from e.c's account for the character in
+// slot 0.
+func uploadEmblem(t *testing.T, e *env, img []byte) (int, string) {
+	t.Helper()
+	_, token := e.page(e.c, "/account/guild/emblem")
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	_ = w.WriteField("csrf", token)
+	_ = w.WriteField("slot", "0")
+	f, _ := w.CreateFormFile("emblem", "emblem.png")
+	_, _ = f.Write(img)
+	_ = w.Close()
+	req, _ := http.NewRequest(http.MethodPost, e.srv.URL+"/account/guild/emblem", &b)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	resp, err := e.c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	out, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(out)
+}
+
+// TestGuildEmblemLimits checks the limits of emblem changes (review
+// decision 51):
+//   - A guild changes its emblem once per account.EmblemCooldown.
+//   - A post without a login is sent to the login page before its body
+//     is read.
+func TestGuildEmblemLimits(t *testing.T) {
+	guilds := &fakeGuilds{}
+	e := setup(t, func(c *account.Config) { c.Guilds = guilds })
+	e.signup(e.c, "emblemer", "correct horse battery")
+	e.makeCharacter(e.c, "Emblemer", "0")
+	var id int64
+	if err := e.admin.QueryRow(context.Background(), `SELECT id FROM characters WHERE name = 'Emblemer'`).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	guilds.mu.Lock()
+	guilds.master = id
+	guilds.mu.Unlock()
+	if code, out := uploadEmblem(t, e, emblemPNG(t, 24)); code != http.StatusOK {
+		t.Fatalf("first upload: %d %s", code, out)
+	}
+	guilds.mu.Lock()
+	guilds.got = nil
+	guilds.mu.Unlock()
+	if code, out := uploadEmblem(t, e, emblemPNG(t, 24)); code != http.StatusTooManyRequests || !strings.Contains(out, "a moment ago") {
+		t.Errorf("second upload: %d %s", code, out)
+	}
+	guilds.mu.Lock()
+	got := guilds.got
+	guilds.mu.Unlock()
+	if got != nil {
+		t.Error("the second upload reached the world")
+	}
+
+	anon := e.newClient()
+	req, _ := http.NewRequest(http.MethodPost, e.srv.URL+"/account/guild/emblem", strings.NewReader(strings.Repeat("x", 60_000)))
+	req.Header.Set("Content-Type", "multipart/form-data; boundary=x")
+	resp, err := anon.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Errorf("post without a login: %d", resp.StatusCode)
+	}
+	if loc := resp.Header.Get("Location"); !strings.Contains(loc, "login") {
+		t.Errorf("post without a login went to %q", loc)
 	}
 }

@@ -77,7 +77,11 @@ func RestoreMove(srv *Server, prefix string, bots int, c *RestoreCounts) Move {
 		if rnd.IntN(2) == 0 {
 			amount = 1
 		}
-		mail, code, err := srv.Restore(ctx, serial, to, amount)
+		// The request outlives the run's end, so a restore that the
+		// server commits as the run stops is still counted.
+		rctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), DefaultTimeout)
+		mail, code, err := srv.Restore(rctx, serial, to, amount)
+		cancel()
 		switch {
 		case err != nil:
 			return false, ignoreDone(ctx, err)

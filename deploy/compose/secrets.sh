@@ -9,11 +9,21 @@
 set -eu
 cd "$(dirname "$0")"
 umask 077
-mkdir -p secrets
 # Only this user may enter the folder. The files inside are readable by
 # anyone who can reach them, so the containers' users (postgres, nonroot)
-# can read their bind-mounted copies.
-chmod 700 secrets
+# can read their bind-mounted copies. Compose cannot set a secret file's
+# owner or mode without Swarm, so the folder's mode is what keeps them
+# private. A folder that lost its mode, such as in a copy, is refused.
+if [ -e secrets ]; then
+	mode=$(ls -ld secrets | cut -c1-10)
+	if [ ! -d secrets ] || [ ! -O secrets ] || [ "$mode" != drwx------ ]; then
+		echo "secrets.sh: $(pwd)/secrets must be a folder of this user with mode 0700, and is $mode." >&2
+		echo "Anyone on this machine may have read its files. Fix it with chmod 700 secrets, then think about changing the passwords and keys (deploy/README.md, \"Secrets\")." >&2
+		exit 1
+	fi
+else
+	mkdir -m 700 secrets
+fi
 
 new() {
 	if [ ! -s "secrets/$1" ]; then
@@ -25,6 +35,9 @@ new postgres_password "$(openssl rand -hex 32)"
 new migrator_password "$(openssl rand -hex 32)"
 new game_password "$(openssl rand -hex 32)"
 new account_password "$(openssl rand -hex 32)"
+# The role of the backup service. It reads every table and changes
+# nothing, so the service holds no owner rights.
+new backup_password "$(openssl rand -hex 32)"
 # The role that verify-backup restores with (decision 0048). Only the
 # verify profile uses it: its verify-init service makes the role.
 new verify_password "$(openssl rand -hex 32)"
@@ -38,6 +51,7 @@ url() {
 url wathena_migrator migrator_password migrate_database_url
 url wathena_game game_password game_database_url
 url wathena_account account_password account_database_url
+url wathena_backup backup_password backup_database_url
 # The verify role makes its temporary databases from the postgres
 # database. It has no rights on wathena.
 url wathena_verify verify_password verify_database_url postgres

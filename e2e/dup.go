@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/tools/botclient"
 )
 
@@ -475,7 +476,7 @@ func (d DupTest) name(i int) string { return fmt.Sprintf("%s%d", d.Prefix, i+1) 
 
 // dial logs bot i in.
 func (d DupTest) dial(ctx context.Context, i int) (*botclient.Bot, error) {
-	return botclient.Dial(ctx, d.Server.WS, []byte(d.name(i)), botclient.Options{Record: true})
+	return botclient.Dial(ctx, d.Server.WS, []byte(d.name(i)), botclient.Options{Record: true, Pace: gateway.NewPacer(gateway.Rates{}).Reserve})
 }
 
 // dupBots are the bots of a test: the connection each bot plays now,
@@ -727,6 +728,15 @@ func DropMove(id uint32) Move {
 			return false, ignoreDone(ctx, err)
 		}
 		if f := e.GetDropItemFailed(); f != nil {
+			if f.GetReason() == wathenav1.DropItemFailure_DROP_ITEM_FAILURE_TOO_MANY {
+				// The zone limits a player's drops and ground items
+				// (review 2026-10). The bot drops again later.
+				select {
+				case <-ctx.Done():
+				case <-time.After(time.Second):
+				}
+				return false, nil
+			}
 			return false, fmt.Errorf("drop of %d from slot %d failed: %s", amount, it.Slot, f.GetReason())
 		}
 		return true, nil

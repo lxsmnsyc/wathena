@@ -77,3 +77,44 @@ func TestHiddenPlayersStayVisibleToAllies(t *testing.T) {
 		t.Error("bob was not sent alice once she stopped hiding")
 	}
 }
+
+// TestHiddenMonstersAreNotSent checks that a monster under Hiding or
+// Cloaking is sent only to viewers that may see it: detectors. Others
+// who saw it get a vanish, and an appear when it shows again.
+func TestHiddenMonstersAreNotSent(t *testing.T) {
+	z := New("map/test", open(40), rng.FromKey([32]byte{2}).Stream(), nil)
+	z.Mods = &Mods{Monsters: map[uint32]Spawn{}}
+	b := add(z, "bob")
+	m := aiMob(t, z, 1002, b.entity.x+3, b.entity.y, 0, nil)
+	z.stepAt(50)
+	if _, known := b.netIDs.get(m); !known {
+		t.Fatal("bob does not see the monster before it hides")
+	}
+	events(b)
+	if m.sc == nil {
+		m.sc = sc.NewList()
+	}
+	m.sc.Option |= sc.OptionHide
+	m.optionChanged = true
+	z.stepAt(100)
+	if _, known := b.netIDs.get(m); known {
+		t.Error("bob still knows the hiding monster")
+	}
+	for _, e := range events(b) {
+		if o := e.GetOptionChange(); o != nil {
+			t.Error("bob was sent the hiding monster's option bits")
+		}
+	}
+	c := add(z, "carol")
+	c.entity.status.Mode |= modeDetector
+	z.stepAt(150)
+	if _, known := c.netIDs.get(m); !known {
+		t.Error("carol, a detector, does not see the hiding monster")
+	}
+	m.sc.Option &^= sc.OptionHide
+	m.optionChanged = true
+	z.stepAt(200)
+	if _, known := b.netIDs.get(m); !known {
+		t.Error("bob was not sent the monster once it stopped hiding")
+	}
+}

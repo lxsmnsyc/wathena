@@ -21,7 +21,13 @@
 
 # Builds the web client into /src/client/dist.
 FROM node:26-trixie-slim@sha256:ec7758ee051e457b468b32bde57b0879010b325bb9862718e9615225ce4aaae1 AS client
-RUN npm install --global --no-fund --no-audit pnpm@12.7.0
+# pnpm 12.7.0, pinned by SHA-256 like zig, so the registry cannot change
+# the tool that installs every other client package. Update the hash
+# with the version: npm pack pnpm@VERSION, then sha256sum.
+RUN cd /tmp && npm pack --silent pnpm@12.7.0 >/dev/null && \
+    echo "1a7fe4b36abead79ee13e2f2c2089ddd37fee016179b9fe56a85a44ef72aaf7f  pnpm-12.7.0.tgz" | sha256sum -c - && \
+    npm install --global --no-fund --no-audit /tmp/pnpm-12.7.0.tgz && \
+    rm /tmp/pnpm-12.7.0.tgz
 WORKDIR /src/client
 COPY client/package.json client/pnpm-lock.yaml client/pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.cache/pnpm-store \
@@ -81,7 +87,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     mkdir -p /out/srv/assets
 
 # wactl with the PostgreSQL 18 client tools.
-FROM postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 AS tools
+FROM postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336 AS tools
 RUN groupadd --gid 65532 nonroot && \
     useradd --uid 65532 --gid 65532 --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin nonroot && \
     install -d -m 0700 -o 65532 -g 65532 /backups

@@ -318,20 +318,34 @@ func TestItemCommands(t *testing.T) {
 
 func TestOriginAllowed(t *testing.T) {
 	g := &Gateway{Origins: []string{"https://play.example.com"}}
-	for origin, want := range map[string]bool{
-		"":                                      true, // not a browser page
-		"https://play.example.com":              true,
-		"http://play.example.com":               false, // the scheme counts
-		"https://play.example.com.evil.example": false,
-		"https://evil.example":                  false,
-		"http://game.example.com":               true, // the server's own host
+	for _, c := range []struct {
+		url, origin string
+		want        bool
+	}{
+		{"http://game.example.com/ws", "", true}, // not a browser page
+		{"http://game.example.com/ws", "https://play.example.com", true},
+		{"http://game.example.com/ws", "http://play.example.com", false}, // the scheme counts
+		{"http://game.example.com/ws", "https://play.example.com.evil.example", false},
+		{"http://game.example.com/ws", "https://evil.example", false},
+		// The server's own host counts only on loopback (review
+		// 2026-10): a DNS rebinding page has its domain as both.
+		{"http://game.example.com/ws", "http://game.example.com", false},
+		{"http://evil.example:8300/ws", "http://evil.example:8300", false},
+		{"http://127.0.0.1:8300/ws", "http://127.0.0.1:8300", true},
+		{"http://localhost:8300/ws", "http://localhost:8300", true},
+		{"http://[::1]:8300/ws", "http://[::1]:8300", true},
+		// The scheme of the request counts too.
+		{"http://127.0.0.1:8300/ws", "https://127.0.0.1:8300", false},
+		{"https://127.0.0.1:8300/ws", "http://127.0.0.1:8300", false},
+		{"https://127.0.0.1:8300/ws", "https://127.0.0.1:8300", true},
+		{"http://127.0.0.1:8300/ws", "http://127.0.0.1:8301", false},
 	} {
-		r := httptest.NewRequest("GET", "http://game.example.com/ws", nil)
-		if origin != "" {
-			r.Header.Set("Origin", origin)
+		r := httptest.NewRequest("GET", c.url, nil)
+		if c.origin != "" {
+			r.Header.Set("Origin", c.origin)
 		}
-		if got := g.originAllowed(r); got != want {
-			t.Errorf("%q: %v", origin, got)
+		if got := g.originAllowed(r); got != c.want {
+			t.Errorf("%s from %q: %v", c.url, c.origin, got)
 		}
 	}
 }

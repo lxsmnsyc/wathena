@@ -8,6 +8,7 @@ import (
 	"time"
 
 	adminv1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/admin/v1"
+	"github.com/lxsmnsyc/wathena/server/admin"
 	"github.com/lxsmnsyc/wathena/server/retention"
 )
 
@@ -57,6 +58,14 @@ func TestRetentionCall(t *testing.T) {
 	e.errorCode(e.signup("Owner"), "GET", "retention", "", nil, http.StatusForbidden, "two_factor")
 	// It is read-only: there is no other call at the path.
 	e.errorCode(gm, "POST", "retention", e.me(gm).GetCsrfToken(), nil, http.StatusNotFound, "not_found")
+
+	// The error of a failed run shows as a fixed text. The database's
+	// text stays in the server log.
+	e = setup(t, options{limits: manyCalls, retention: fakeRetention{status: retention.Status{Periods: p, LastRun: ran,
+		LastError: `chat: ERROR: function delete_old_chat(timestamp) does not exist (SQLSTATE 42883)`}}})
+	if v := get(e, e.withRole("Gamemaster", "game_master"), "retention", &adminv1.RetentionStatus{}); v.GetLastError() != admin.RetentionFailed {
+		t.Errorf("last error %q", v.GetLastError())
+	}
 
 	// Without a job, or when the job's status cannot be read, it answers
 	// unavailable.

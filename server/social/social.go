@@ -59,6 +59,9 @@ type Player struct {
 	// friendReq is the key of the player this one asked to be friends
 	// with, or that asked it, as sd->friend_req.
 	friendReq string
+	// nextFriendAsk is when the player may send its next friend
+	// request.
+	nextFriendAsk time.Time
 	// invite is the party invite the player has open, as
 	// sd->party_invite.
 	invite *invite

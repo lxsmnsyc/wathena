@@ -231,3 +231,28 @@ func TestChangeHost(t *testing.T) {
 type saverFunc func(c *character.Character)
 
 func (f saverFunc) Save(c *character.Character, _ bool) { f(c) }
+
+// TestZoneStreamPerInstance: a zone that replaces a map's zone, as a
+// season change does, gets a stream of its own. The first zone keeps
+// the rng-v1 label alone (review finding L35).
+func TestZoneStreamPerInstance(t *testing.T) {
+	root, err := rng.NewRoot([]byte("zone stream instances"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	first := zoneStream(root, "gen:field:0:0")
+	if want := root.Child("zone:gen:field:0:0").SecretStream(); first.Uint64() != want.Uint64() {
+		t.Error("the first zone does not use the label alone")
+	}
+	seen := map[uint64]bool{}
+	for range 3 {
+		v := zoneStream(root, "gen:field:0:0").Uint64()
+		if seen[v] {
+			t.Fatal("a replaced zone repeats an earlier zone's stream")
+		}
+		seen[v] = true
+	}
+	if seen[root.Child("zone:gen:field:0:0").SecretStream().Uint64()] {
+		t.Error("a replaced zone repeats the first zone's stream")
+	}
+}

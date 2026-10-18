@@ -23,17 +23,26 @@ type fakeChanges struct {
 
 func (f *fakeChanges) Status() rotation.Status { return f.status }
 
-func (f *fakeChanges) Force(_ context.Context, dungeon, region string) (rotation.Change, error) {
+func (f *fakeChanges) Force(_ context.Context, dungeon, region string, audit func(rotation.Change) error) (rotation.Change, error) {
 	due := time.Date(2026, 10, 17, 12, 10, 0, 0, time.UTC)
 	switch {
+	case dungeon == "ahead":
+		return rotation.Change{}, rotation.ErrAhead
 	case dungeon == "crypt":
-		f.forced = append(f.forced, dungeon)
 		c := rotation.Change{Kind: rotation.KindRotation, Dungeon: dungeon, Date: "2026-10-23", Due: due, Forced: true}
+		if err := audit(c); err != nil {
+			return rotation.Change{}, err
+		}
+		f.forced = append(f.forced, dungeon)
 		f.status.Rotations[0].Next = &c
 		return c, nil
 	case region == "t1":
+		c := rotation.Change{Kind: rotation.KindRegion, Region: region, Season: 1, Due: due, Forced: true}
+		if err := audit(c); err != nil {
+			return rotation.Change{}, err
+		}
 		f.forced = append(f.forced, region)
-		return rotation.Change{Kind: rotation.KindRegion, Region: region, Season: 1, Due: due, Forced: true}, nil
+		return c, nil
 	case dungeon != "":
 		return rotation.Change{}, rotation.ErrNoDungeon
 	}
@@ -100,5 +109,36 @@ func TestForceChange(t *testing.T) {
 	none := adminworld.New(adminworld.Config{Store: st, Log: slog.New(slog.DiscardHandler)})
 	if _, err := none.ForceChange(ctx, admin.ChangeOrder{Actor: actor, Dungeon: "crypt"}); !errors.As(err, &we) || we.Code != "not_found" {
 		t.Errorf("a world without changes: %v", err)
+	}
+}
+
+// TestForceChangeAuditFails: when the audit row cannot be written, the
+// change is not planned, and a dungeon ahead of its schedule is refused
+// (review finding L39).
+func TestForceChangeAuditFails(t *testing.T) {
+	adminPool := storetest.Migrated(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	game := storetest.As(t, adminPool, "wathena_game")
+	st := store.New(game, store.Options{Log: slog.New(slog.DiscardHandler)})
+	// A closed pool makes every audit write fail.
+	game.Close()
+	fc := &fakeChanges{status: rotation.Status{
+		Rotations: []rotation.RotationStatus{{Dungeon: "crypt", Rule: layout.RotationRule{Every: "weekly", Weekday: "friday", At: "20:00"}, Date: "2026-10-16"}},
+	}}
+	aw := adminworld.New(adminworld.Config{Store: st, Log: slog.New(slog.DiscardHandler), Tools: adminworld.Tools{Changes: fc}})
+	actor := admin.Actor{AccountID: 7, AccountName: "Admin1", Role: "admin"}
+	if _, err := aw.ForceChange(ctx, admin.ChangeOrder{Actor: actor, Dungeon: "crypt"}); err == nil {
+		t.Error("the force went on without its audit row")
+	}
+	if _, err := aw.ForceChange(ctx, admin.ChangeOrder{Actor: actor, Region: "t1"}); err == nil {
+		t.Error("the region's change went on without its audit row")
+	}
+	if len(fc.forced) != 0 {
+		t.Errorf("planned without an audit row: %v", fc.forced)
+	}
+	var we *admin.WorldError
+	if _, err := aw.ForceChange(ctx, admin.ChangeOrder{Actor: actor, Dungeon: "ahead"}); !errors.As(err, &we) || we.Code != "conflict" {
+		t.Errorf("a dungeon ahead of its schedule: %v", err)
 	}
 }

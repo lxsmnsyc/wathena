@@ -1,6 +1,9 @@
 package social
 
-import "slices"
+import (
+	"slices"
+	"time"
+)
 
 // Friend lists, as clif.cpp's friend packets:
 //   - A request needs the other player online, and room on the
@@ -12,6 +15,14 @@ import "slices"
 //   - A player who blocks the requester refuses at once, without seeing
 //     the request. rAthena does not check its ignore list here
 //     (decision 0020).
+//   - A player who has a request open from the same asker gets no
+//     second one, and an asker sends at most one request a second.
+//     rAthena has no such limits. Each request shows the asked player a
+//     dialog, so without them a client could flood another player's
+//     frames.
+
+// friendAskEvery is how often a player may send a friend request.
+const friendAskEvery = time.Second
 
 func (r *Registry) friendViews(p *Player) []FriendView {
 	out := make([]FriendView, 0, len(p.friends))
@@ -61,6 +72,18 @@ func (r *Registry) FriendAdd(p *Player, name string) FriendOutcome {
 		friendResult(p, FriendRefused, to.name)
 		return FriendRefused
 	}
+	if to.friendReq == p.key {
+		// The asked player has this request open already. It gets no
+		// second dialog. The request stays the asker's open one.
+		p.friendReq = to.key
+		return FriendRequestSent
+	}
+	now := r.now()
+	if now.Before(p.nextFriendAsk) {
+		// Too soon after the asker's last request.
+		return 0
+	}
+	p.nextFriendAsk = now.Add(friendAskEvery)
 	p.friendReq, to.friendReq = to.key, p.key
 	deliver(to, Notice{Kind: NoticeFriendRequest, Name: p.name})
 	friendResult(p, FriendRequestSent, to.name)

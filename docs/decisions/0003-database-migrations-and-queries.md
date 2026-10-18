@@ -81,7 +81,7 @@ Strategy section 7.8 asks for one role per service with only the rights it needs
 
 | Role | Rights |
 |---|---|
-| `wathena_migrator` | Owns the database and its schema. Only `wactl migrate` uses it. |
+| `wathena_migrator` | Owns the database and its schema. Only `wactl migrate`, restores and other manual `wactl` work use it. Compose backups connect as `wathena_backup`, which only reads (review 2026-10). |
 | `wathena_game` | Connects, reads the applied migrations, reads and inserts accounts, reads, inserts and updates characters, reads and writes inventory rows, and reads and deletes game tickets. No DDL, it cannot delete accounts or characters, and it cannot read passwords or login sessions. |
 | `wathena_account` | The account service. Reads and writes passwords, login sessions and game tickets, makes accounts and characters, and inserts new characters' start items. No DDL, and it cannot change or delete characters. See [decision 0004](0004-account-service-and-game-tickets.md). |
 

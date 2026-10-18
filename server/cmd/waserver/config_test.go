@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/lxsmnsyc/wathena/server/gateway"
 )
 
 // assetDir makes a folder that passes the assets check.
@@ -397,5 +399,69 @@ mods:
 	o.Mods.Budget.MemoryMB = 64
 	if _, err := validate(o, secrets{}); err == nil || !strings.Contains(err.Error(), "mods.budget") {
 		t.Errorf("a default above the most: %v", err)
+	}
+}
+
+// TestDevRefusesProxySettings checks that dev, which lets anyone play
+// any character, refuses the settings of a server behind a proxy on the
+// same host, which the loopback listen check lets through (review
+// 2026-10).
+func TestDevRefusesProxySettings(t *testing.T) {
+	assets := assetDir(t)
+	for name, c := range map[string]struct {
+		proxies list
+		public  string
+		ok      bool
+	}{
+		"plain":                 {ok: true},
+		"loopback public url":   {public: "http://127.0.0.1:8300", ok: true},
+		"trusted proxies":       {proxies: list{"127.0.0.1"}},
+		"public public url":     {public: "https://game.example.com"},
+		"public url, localhost": {public: "http://localhost:8300", ok: true},
+	} {
+		o := defaultOptions()
+		o.Assets, o.Dev, o.TrustedProxies, o.PublicURL = assets, true, c.proxies, c.public
+		_, err := validate(o, secrets{})
+		if c.ok != (err == nil) {
+			t.Errorf("%s: %v", name, err)
+		}
+		if err != nil && !strings.Contains(err.Error(), "dev:") {
+			t.Errorf("%s: no dev: in %v", name, err)
+		}
+	}
+}
+
+// TestConnectionsConfig checks the connection limits per address: the
+// defaults, a file that sets them, and the ranges.
+func TestConnectionsConfig(t *testing.T) {
+	assets := assetDir(t)
+	o := defaultOptions()
+	o.Assets, o.Dev = assets, true
+	st, err := validate(o, secrets{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := st.Connections.limits(); got != gateway.DefaultConnLimits() {
+		t.Errorf("defaults %+v", got)
+	}
+	p := writeConfig(t, "dev: true\nassets: "+assets+"\nconnections:\n  per_address: 4\n  hello_burst: 2\n  hello_refill: 10s\n")
+	o, _, err = parseOptions("waserver", []string{"--config", p}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err = validate(o, secrets{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := gateway.ConnLimits{PerAddress: 4, Hello: gateway.Rate{Burst: 2, Every: 10 * time.Second}}
+	if got := st.Connections.limits(); got != want {
+		t.Errorf("from the file %+v, want %+v", got, want)
+	}
+	o.Connections = connectionOptions{PerAddress: -1, HelloBurst: 5000, HelloRefill: time.Millisecond}
+	_, err = validate(o, secrets{})
+	for _, key := range []string{"connections.per_address", "connections.hello_burst", "connections.hello_refill"} {
+		if err == nil || !strings.Contains(err.Error(), key) {
+			t.Errorf("no %s in %v", key, err)
+		}
 	}
 }

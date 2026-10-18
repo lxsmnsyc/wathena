@@ -4,6 +4,7 @@
   display_name: Test Charm
   description: A charm for the end-to-end tests.
   weight: 10
+  buy: 200
   sell: 100
   location: [both_accessory]
   rolls:

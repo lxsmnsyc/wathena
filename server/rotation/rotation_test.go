@@ -206,17 +206,17 @@ func TestForce(t *testing.T) {
 	m.Check(context.Background(), now)
 	done := make(chan error, 3)
 	go func() {
-		c, err := m.Force(context.Background(), "crypt", "")
+		c, err := m.Force(context.Background(), "crypt", "", nil)
 		if err == nil && (c.Date != "2026-10-23" || !c.Forced || !c.Due.Equal(now.Add(Countdown+time.Second))) {
 			err = fmt.Errorf("rotation %+v", c)
 		}
 		done <- err
-		c, err = m.Force(context.Background(), "", "t2")
+		c, err = m.Force(context.Background(), "", "t2", nil)
 		if err == nil && (c.Region != "t2" || c.Season != 1 || !c.Forced) {
 			err = fmt.Errorf("region %+v", c)
 		}
 		done <- err
-		_, err = m.Force(context.Background(), "nope", "")
+		_, err = m.Force(context.Background(), "nope", "", nil)
 		if !errors.Is(err, ErrNoDungeon) {
 			err = fmt.Errorf("unknown dungeon: %w", err)
 		} else {
@@ -316,5 +316,83 @@ func TestDaylightSaving(t *testing.T) {
 	n := m.Status().Rotations[0].Next
 	if n == nil || n.Date != "2027-03-14" || n.Due.In(ny).Hour() != 3 || n.Due.In(ny).Minute() != 0 {
 		t.Errorf("next %+v", n)
+	}
+}
+
+// forceAt forces a change while the manager checks at now, and returns
+// what Force returned.
+func forceAt(m *Manager, now time.Time, dungeon, region string, audit func(Change) error) (Change, error) {
+	done := make(chan result, 1)
+	go func() {
+		c, err := m.Force(context.Background(), dungeon, region, audit)
+		done <- result{c, err}
+	}()
+	for {
+		m.Check(context.Background(), now)
+		select {
+		case r := <-done:
+			return r.c, r.err
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+}
+
+// TestForceAhead: a dungeon that a force moved past its schedule's date
+// cannot be forced again until real time catches up, so forces cannot
+// hold back its natural rotation (review finding L39).
+func TestForceAhead(t *testing.T) {
+	h, s := &fakeHost{}, &fakeStore{}
+	st := newState()
+	st.Dates["crypt"] = "2026-10-16"
+	m, _ := New(Options{Rotations: []Rotation{crypt()}, Location: manila, Host: h, Store: s}, st)
+	now := at("2026-10-18 12:00:00")
+	m.Check(context.Background(), now)
+	if c, err := forceAt(m, now, "crypt", "", nil); err != nil || c.Date != "2026-10-23" {
+		t.Fatalf("first force: %+v %v", c, err)
+	}
+	run(m, now.Add(time.Second), now.Add(Countdown+time.Second))
+	if m.State().Dates["crypt"] != "2026-10-23" {
+		t.Fatalf("state %+v", m.State())
+	}
+	later := now.Add(Countdown + 2*time.Second)
+	if c, err := forceAt(m, later, "crypt", "", nil); !errors.Is(err, ErrAhead) {
+		t.Errorf("second force: %+v %v", c, err)
+	}
+	// Once the 23rd's time came, a force may move it on again.
+	if c, err := forceAt(m, at("2026-10-23 20:00:01"), "crypt", "", nil); err != nil || c.Date != "2026-10-30" {
+		t.Errorf("force on the 23rd: %+v %v", c, err)
+	}
+}
+
+// TestForceAuditFirst: the audit runs before the change is planned, and
+// a failed audit plans nothing (review finding L39).
+func TestForceAuditFirst(t *testing.T) {
+	h, s := &fakeHost{}, &fakeStore{}
+	st := newState()
+	st.Dates["crypt"] = "2026-10-16"
+	m, _ := New(Options{Rotations: []Rotation{crypt()}, Regions: []string{"t1"}, Location: manila, Host: h, Store: s}, st)
+	now := at("2026-10-18 12:00:00")
+	m.Check(context.Background(), now)
+	fail := errors.New("no audit")
+	var seen []Change
+	audit := func(c Change) error {
+		seen = append(seen, c)
+		if p := m.planned[c.key()]; p != nil && p.Forced {
+			t.Errorf("the change %+v was planned before its audit", c)
+		}
+		return fail
+	}
+	if _, err := forceAt(m, now, "crypt", "", audit); !errors.Is(err, fail) {
+		t.Errorf("rotation: %v", err)
+	}
+	if _, err := forceAt(m, now, "", "t1", audit); !errors.Is(err, fail) {
+		t.Errorf("region: %v", err)
+	}
+	if len(seen) != 2 || seen[0].Date != "2026-10-23" || seen[1].Season != 1 {
+		t.Errorf("audited %+v", seen)
+	}
+	run(m, now.Add(time.Second), now.Add(Countdown+time.Second))
+	if len(h.applied) != 0 || m.State().Dates["crypt"] != "2026-10-16" {
+		t.Errorf("a change without its audit happened: %+v", h.applied)
 	}
 }

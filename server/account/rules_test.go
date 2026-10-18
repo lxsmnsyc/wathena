@@ -63,6 +63,12 @@ func TestPasswordProblem(t *testing.T) {
 		{"alice", "Password1", false},
 		{"alice", "RAGNAROK", false},
 		{"alice", "12345678", false},
+		{"alice", "password123", false},
+		{"alice", "QWERTY123", false},
+		{"alice", "qwerty123", false},
+		{"alice", "iloveyou2", false},
+		{"alice", "plum tractor velvet orbit", true},
+		{"alice", "Xk7#mQ2v-rTq9", true},
 	} {
 		if got := PasswordProblem(c.name, c.password) == ""; got != c.ok {
 			t.Errorf("PasswordProblem(%q, %q) ok = %v", c.name, c.password, got)

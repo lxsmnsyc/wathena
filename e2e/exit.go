@@ -12,6 +12,7 @@ import (
 	"time"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
+	"github.com/lxsmnsyc/wathena/server/gateway"
 	"github.com/lxsmnsyc/wathena/tools/botclient"
 )
 
@@ -222,7 +223,7 @@ func (x ExitCheck) Run(t *testing.T) ExitReport {
 	dial := func(i int) (*botclient.Bot, error) {
 		serving.RLock()
 		defer serving.RUnlock()
-		b, err := botclient.Dial(ctx, srv.WS, []byte(all[i].name), botclient.Options{Record: true})
+		b, err := botclient.Dial(ctx, srv.WS, []byte(all[i].name), botclient.Options{Record: true, Pace: gateway.NewPacer(gateway.Rates{}).Reserve})
 		if err != nil {
 			return nil, err
 		}

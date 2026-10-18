@@ -1388,6 +1388,15 @@ func (z *Zone) handle(c command) {
 		}
 		return
 	}
+	if (c.walkTo != nil || c.attack != nil) && (p.storage != nil || p.guild.storage != nil) {
+		// rAthena's pc_cant_act refuses a walk or an attack while a
+		// storage is open, so a player uses its storage only where it
+		// opened it and out of combat. The web client lets the player
+		// walk with the window open, so the walk or the attack closes
+		// the storage and goes on.
+		z.closeStorage(p)
+		z.closeGuildStorage(p, true)
+	}
 	if c.walkTo != nil && p.hasStore() {
 		// A vendor or a buying store owner does not walk, as
 		// clif_parse_WalkToXY with state.vending or state.buyingstore.
@@ -1763,8 +1772,8 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 	return events
 }
 
-// hiddenFrom reports whether a viewer must not be sent a player at all,
-// so a modified client cannot show it:
+// hiddenFrom reports whether a viewer must not be sent a player or a
+// monster at all, so a modified client cannot show it:
 //   - A GM under @hide, to everyone else. rAthena sends it as
 //     JT_INVISIBLE, which no client draws, to staff too.
 //   - A player under Hiding, Cloaking or Chase Walk, to everyone but
@@ -1772,8 +1781,11 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 //     unit's packets from enemies without intravision (clif_ally_only),
 //     and status_check_visibility lets detectors see it. Party members
 //     are its allies.
+//   - A monster under the same options, to every viewer it is an enemy
+//     of, unless the viewer is a detector. A player's summon is not an
+//     enemy of players, so they still see it.
 func hiddenFrom(e, viewer *entity) bool {
-	if e == viewer || e.player == nil {
+	if e == viewer || e.player == nil && e.monster == nil {
 		return false
 	}
 	if gmHidden(e) {
@@ -1782,7 +1794,10 @@ func hiddenFrom(e, viewer *entity) bool {
 	if l := e.sc; l == nil || l.Option&(statuschange.OptionHide|statuschange.OptionCloak|optionChasewalk) == 0 {
 		return false
 	}
-	if sameParty(e, viewer) {
+	if e.player != nil && sameParty(e, viewer) {
+		return false
+	}
+	if e.monster != nil && !isEnemy(e, viewer) {
 		return false
 	}
 	return viewer.status == nil || viewer.status.Mode&modeDetector == 0

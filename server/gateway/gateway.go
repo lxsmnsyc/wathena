@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"math"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"slices"
 	"strings"
@@ -24,6 +25,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/character"
 	chatpkg "github.com/lxsmnsyc/wathena/server/chat"
+	"github.com/lxsmnsyc/wathena/server/clientaddr"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/rules"
@@ -157,11 +159,18 @@ type Gateway struct {
 	// memory, for as long as the gateway runs.
 	Characters Characters
 	// Origins lists the web client origins pages may connect from, as
-	// scheme://host[:port], such as https://play.example.com. Pages on
-	// the server's own host may always connect. A request without an
-	// Origin header does not come from a browser page, and is accepted:
-	// the session token is what lets it in.
+	// scheme://host[:port], such as https://play.example.com, compared
+	// with the scheme. A page on the server's own loopback host and port,
+	// with the request's scheme, may also connect, for development. A
+	// request without an Origin header does not come from a browser
+	// page, and is accepted: the session token is what lets it in.
 	Origins []string
+	// TrustedProxies are the proxies whose X-Forwarded-For is believed,
+	// as the account service's, for the connection limits.
+	TrustedProxies []netip.Prefix
+	// Conns are the connection limits per client address
+	// (connlimit.go). DefaultConnLimits when zero.
+	Conns ConnLimits
 	Log     *slog.Logger
 	// Metrics counts each connection's bytes and messages. It may be
 	// nil.
@@ -191,6 +200,9 @@ type Gateway struct {
 	// in the last minute before a planned restart (decision 0031). It
 	// may be nil.
 	Closed func() (text string, closed bool)
+
+	connsOnce sync.Once
+	conns     *connLimit
 
 	mu     sync.Mutex
 	online map[int64]*online
@@ -305,6 +317,20 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "origin not allowed", http.StatusForbidden)
 		return
 	}
+	g.connsOnce.Do(func() {
+		l := g.Conns
+		if l == (ConnLimits{}) {
+			l = DefaultConnLimits()
+		}
+		g.conns = newConnLimit(l)
+	})
+	addr := clientaddr.From(r, g.TrustedProxies)
+	if ok, wait := g.conns.open(addr, time.Now()); !ok {
+		w.Header().Set("Retry-After", retryAfter(wait))
+		http.Error(w, "too many connections from this address", http.StatusTooManyRequests)
+		return
+	}
+	defer g.conns.close(addr)
 	ws, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		// originAllowed checked the origin, with the scheme, which
 		// OriginPatterns does not look at.
@@ -325,7 +351,11 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// originAllowed checks the Origin header against Origins.
+// originAllowed checks the Origin header against Origins, with the
+// scheme. A page on the request's own host and scheme is allowed only on
+// a loopback host, as a development server that serves the client
+// itself without a public URL. A DNS rebinding page has its own domain
+// as both Origin and Host, so it fails the loopback check.
 func (g *Gateway) originAllowed(r *http.Request) bool {
 	o := r.Header.Get("Origin")
 	if o == "" {
@@ -335,7 +365,24 @@ func (g *Gateway) originAllowed(r *http.Request) bool {
 		return true
 	}
 	u, err := url.Parse(o)
-	return err == nil && strings.EqualFold(u.Host, r.Host)
+	if err != nil || !strings.EqualFold(u.Host, r.Host) {
+		return false
+	}
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	return u.Scheme == scheme && loopbackHost(u.Hostname())
+}
+
+// loopbackHost reports whether a host name is localhost or a loopback
+// IP address.
+func loopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	a, err := netip.ParseAddr(host)
+	return err == nil && a.IsLoopback()
 }
 
 // errClosed ends a session that the server closed on purpose.

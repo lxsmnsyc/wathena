@@ -346,7 +346,11 @@ func TestCharacterRules(t *testing.T) {
 
 func TestLoginFailuresAndCaptcha(t *testing.T) {
 	e := setup(t, func(c *account.Config) { c.Captcha = account.DevCaptcha{} })
-	e.signup(e.c, "Victim", "the right password")
+	if resp, body := e.submit(e.c, "/account/signup", "/account/signup", url.Values{
+		"name": {"Victim"}, "password": {"the right password"}, "confirm": {"the right password"}, "dev_captcha": {"yes"},
+	}); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("signup: %d %s", resp.StatusCode, body)
+	}
 	c := e.newClient()
 	// A wrong password and an unknown name get the same answer.
 	_, wrong := e.login(c, "Victim", "a wrong password", nil)
@@ -374,6 +378,25 @@ func TestLoginFailuresAndCaptcha(t *testing.T) {
 	resp, body = e.login(c, "Victim", "the right password", url.Values{"dev_captcha": {"yes"}})
 	if resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("right password after the wait: %d %s", resp.StatusCode, body)
+	}
+}
+
+// TestSignupAsksCaptcha checks that the signup form asks for the
+// captcha from the first signup of an address, with no failed login
+// before it (review decision 51).
+func TestSignupAsksCaptcha(t *testing.T) {
+	e := setup(t, func(c *account.Config) { c.Captcha = account.DevCaptcha{} })
+	if body, _ := e.page(e.c, "/account/signup"); !strings.Contains(body, `name="dev_captcha"`) {
+		t.Errorf("the signup page shows no captcha: %s", body)
+	}
+	form := url.Values{"name": {"Botty"}, "password": {"a fine long password"}, "confirm": {"a fine long password"}}
+	resp, body := e.submit(e.c, "/account/signup", "/account/signup", form)
+	if resp.StatusCode != http.StatusBadRequest || !strings.Contains(body, "Complete the check") {
+		t.Fatalf("signup without the captcha: %d %s", resp.StatusCode, body)
+	}
+	form.Set("dev_captcha", "yes")
+	if resp, body := e.submit(e.c, "/account/signup", "/account/signup", form); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("signup with the captcha: %d %s", resp.StatusCode, body)
 	}
 }
 

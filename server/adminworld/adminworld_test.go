@@ -302,6 +302,28 @@ func TestRestoreFromEveryPlace(t *testing.T) {
 	}
 }
 
+// TestRestoreToOwnAccount checks that a staff member cannot restore
+// items to a character of their own account (review decision 51).
+func TestRestoreToOwnAccount(t *testing.T) {
+	e := setup(t)
+	rare := stack(0, 909, 1)
+	holder := e.character("Holder", rare)
+	own := e.character("Staffer")
+	var account int64
+	if err := e.admin.QueryRow(e.ctx, "SELECT account_id FROM characters WHERE id = $1", own).Scan(&account); err != nil {
+		t.Fatal(err)
+	}
+	r := restore(own, true, admin.RestoreItem{Serial: rare.Serial})
+	r.AccountID = account
+	var we *admin.WorldError
+	if _, err := e.aw.Restore(e.ctx, r); !errors.As(err, &we) || we.Code != "conflict" {
+		t.Fatalf("restore to the own account: %v", err)
+	}
+	if h := e.holders(rare.Serial); len(h) != 1 || h[0].Holder != "inventory" || h[0].ID != holder {
+		t.Errorf("the item moved: %+v", h)
+	}
+}
+
 // TestRestoreWhileLoggingInAndOut restores a stack while its holder logs
 // in and out over and over. Whatever the order, the serial ends in one
 // place, and the item's total stays.

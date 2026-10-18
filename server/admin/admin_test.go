@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -109,6 +110,7 @@ type env struct {
 	world   *world
 	srv     *httptest.Server
 	secrets map[string][]byte
+	handler *admin.Handler
 }
 
 type options struct {
@@ -162,6 +164,7 @@ func setup(t *testing.T, o options) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
+	e.handler = h
 	mux := http.NewServeMux()
 	mux.Handle(account.Prefix, svc)
 	mux.Handle(admin.Prefix, h)
@@ -359,6 +362,23 @@ func (e *env) auditRows() []string {
 // TestTwoFactorRule checks who /me says has a role, and that every
 // call but /me refuses a role without a second factor (review decision
 // 33).
+// TestMissingOwners checks that the names of staff.owners without an
+// account are found, so the server warns at startup (review decision
+// 51).
+func TestMissingOwners(t *testing.T) {
+	e := setup(t, options{owners: []string{"Owner", "Second"}})
+	ctx := context.Background()
+	missing, err := e.handler.MissingOwners(ctx)
+	if err != nil || !slices.Equal(missing, []string{"Owner", "Second"}) {
+		t.Fatalf("before signup: %v %v", missing, err)
+	}
+	e.signup("owner")
+	missing, err = e.handler.MissingOwners(ctx)
+	if err != nil || !slices.Equal(missing, []string{"Second"}) {
+		t.Fatalf("after signup: %v %v", missing, err)
+	}
+}
+
 func TestTwoFactorRule(t *testing.T) {
 	e := setup(t, options{})
 	anon := e.browser()

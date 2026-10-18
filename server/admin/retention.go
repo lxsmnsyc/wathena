@@ -34,9 +34,19 @@ func (h *Handler) retention(ctx context.Context, w http.ResponseWriter, r *http.
 	h.write(w, http.StatusOK, RetentionStatus(s))
 }
 
+// RetentionFailed is GET /retention's last_error when the last run
+// failed. The database's error text can name functions, tables and
+// constraints, so it stays in the server log, which the job writes it
+// to (review decision 51).
+const RetentionFailed = "The last run failed. The server log has the error."
+
 // RetentionStatus is GET /retention's answer for a job's status.
 func RetentionStatus(s retention.Status) *adminv1.RetentionStatus {
-	b := adminv1.RetentionStatus_builder{LastError: s.LastError, Skipped: s.Skipped,
+	lastError := ""
+	if s.LastError != "" {
+		lastError = RetentionFailed
+	}
+	b := adminv1.RetentionStatus_builder{LastError: lastError, Skipped: s.Skipped,
 		PartitionsDropped: int32(min(s.Partitions, 1<<30)), Warnings: s.Warnings, // #nosec G115 -- bounded.
 		LastRun: stamp(s.LastRun), LastSuccess: stamp(s.LastSuccess), NextRun: stamp(s.NextRun)}
 	for _, k := range retention.Kinds {

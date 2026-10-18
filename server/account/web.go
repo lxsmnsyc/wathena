@@ -3,12 +3,13 @@ package account
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/lxsmnsyc/wathena/server/clientaddr"
 )
 
 // Cookie names. Over HTTPS they take the __Host- prefix, which makes the
@@ -192,39 +193,7 @@ func originOf(raw string) string {
 // proxy is followed back through X-Forwarded-For, from the right, past
 // every trusted proxy.
 func (s *Service) clientAddr(r *http.Request) netip.Addr {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	addr, err := netip.ParseAddr(host)
-	if err != nil {
-		return netip.IPv4Unspecified()
-	}
-	addr = addr.Unmap()
-	if !s.trusted(addr) {
-		return addr
-	}
-	hops := strings.Split(strings.Join(r.Header.Values("X-Forwarded-For"), ","), ",")
-	for i := len(hops) - 1; i >= 0; i-- {
-		a, err := netip.ParseAddr(strings.TrimSpace(hops[i]))
-		if err != nil {
-			return addr
-		}
-		addr = a.Unmap()
-		if !s.trusted(addr) {
-			return addr
-		}
-	}
-	return addr
-}
-
-func (s *Service) trusted(a netip.Addr) bool {
-	for _, p := range s.cfg.TrustedProxies {
-		if p.Contains(a) {
-			return true
-		}
-	}
-	return false
+	return clientaddr.From(r, s.cfg.TrustedProxies)
 }
 
 // userAgent returns the request's User-Agent as valid UTF-8 of at most

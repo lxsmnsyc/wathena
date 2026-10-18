@@ -49,8 +49,8 @@ func DefaultRates() Rates {
 		// WalkTo runs a path search.
 		Walk: Rate{Burst: 20, Every: 100 * time.Millisecond},
 		// Attack, PickUp, UseItem, EquipItem, UnequipItem, InsertCard,
-		// RaiseStat, UseSkill and LearnSkill, as a player pressing
-		// hotkeys.
+		// RaiseStat, UseSkill, LearnSkill and guild skill ups, as a
+		// player pressing hotkeys.
 		Action: Rate{Burst: 30, Every: 50 * time.Millisecond},
 		// DropItem. The zone limits drops too (zone dropAllowed).
 		Drop: Rate{Burst: 10, Every: 200 * time.Millisecond},
@@ -62,7 +62,7 @@ func DefaultRates() Rates {
 		// Party, friend, guild, trade, mail, store, block, report and
 		// channel commands, which reach other players or the database.
 		Social: Rate{Burst: 20, Every: 200 * time.Millisecond},
-		// StoreSearch scans every store of the map.
+		// A StoreSearch query scans every store of the map.
 		Search:      Rate{Burst: 5, Every: time.Second},
 		MaxStrikes:  100,
 		StrikeEvery: 100 * time.Millisecond,
@@ -128,6 +128,11 @@ func kindOf(m *wathenav1.ClientMessage) commandKind {
 	case c.HasAttack(), c.HasPickUp(), c.HasUseItem(), c.HasEquipItem(), c.HasUnequipItem(),
 		c.HasInsertCard(), c.HasRaiseStat(), c.HasUseSkill(), c.HasLearnSkill():
 		return kindAction
+	case c.HasGuild() && c.GetGuild().HasSkillUp():
+		// A guild master raises guild skills as a player raises its own,
+		// a click each, and the change reaches no other player's screen
+		// but as a guild update.
+		return kindAction
 	case c.HasDropItem():
 		return kindDrop
 	case c.HasNpcClick(), c.HasNpcReply(), c.HasShopBuy(), c.HasShopSell(), c.HasShopClose():
@@ -139,7 +144,12 @@ func kindOf(m *wathenav1.ClientMessage) commandKind {
 		c.HasQuestActive():
 		return kindSocial
 	case c.HasStoreSearch():
-		return kindSearch
+		// Only a query scans the stores. Pages, clicks and closes follow
+		// the window, as NPC replies do.
+		if c.GetStoreSearch().HasQuery() {
+			return kindSearch
+		}
+		return kindNpc
 	}
 	return kindOther
 }

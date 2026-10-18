@@ -3,6 +3,7 @@ package social
 import (
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/rules"
@@ -306,6 +307,8 @@ func TestFriends(t *testing.T) {
 	limits := rules.DefaultLimits()
 	limits.Friends = 1
 	w := newWorld(t, limits, rules.DefaultParty(), "Ann", "Bob", "Cid")
+	now := time.Unix(1000, 0)
+	w.r.Clock = func() time.Time { return now }
 	if o := w.r.FriendAdd(w.ps["Ann"], "Bob"); o != FriendRequestSent {
 		t.Fatalf("add: %v", o)
 	}
@@ -345,7 +348,10 @@ func TestFriends(t *testing.T) {
 		t.Error("still friends")
 	}
 	// A refused request tells the requester.
-	w.r.FriendAdd(w.ps["Ann"], "Cid")
+	now = now.Add(friendAskEvery)
+	if o := w.r.FriendAdd(w.ps["Ann"], "Cid"); o != FriendRequestSent {
+		t.Fatalf("add Cid: %v", o)
+	}
 	w.r.FriendReply(w.ps["Cid"], "Ann", false)
 	if res, _ := w.boxes["Ann"].last(NoticeFriendResult); res.FriendOutcome != FriendRefused {
 		t.Errorf("result %+v", res)

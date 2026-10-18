@@ -20,4 +20,10 @@ Include:
 
 ## Supported versions
 
-wAthena has no release yet. Only the `main` branch is supported.
+| Version | Supported |
+|---|---|
+| The first tagged release | Yes. Security fixes come as patch releases. |
+| `main` | Yes, until the first tagged release. After it, use a release. |
+| Any other commit or fork | No. |
+
+This table is updated with each release. Known issues of the first release are in [docs/security/review-2026-10.md](docs/security/review-2026-10.md).

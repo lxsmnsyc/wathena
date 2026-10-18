@@ -19,11 +19,13 @@ The stack:
 | `db-init` | `postgres:18` | Runs on each `up`. Makes the database and roles from `roles.sql` on the first run, and sets the role passwords from the secrets on every run. |
 | `migrate` | `wathena/wactl` | Runs on each `up`, after `db-init`. Applies pending migrations as `wathena_migrator`. |
 | `waserver` | `wathena/waserver` | `waserver all`: the game at `/ws`, the account pages at `/account/`, the assets at `/assets/`, and the web client at `/`. Starts after `migrate` succeeds. |
+| `caddy-init` | `caddy:2` | Runs on each `up`. Gives Caddy's volumes to user 65532, whom Caddy runs as. |
 | `caddy` | `caddy:2` | The only service with public ports. Gets certificates and proxies everything to `waserver`. |
-| `backup` | `wathena/wactl` | Makes an encrypted backup once a day into the `backups` volume, and removes old ones. Without a recipient, it makes none and logs a warning every hour. See "Backups". |
+| `backup` | `wathena/wactl` | Makes an encrypted backup once a day into the `backups` volume, and removes old ones, as `wathena_backup`. Without a recipient, it makes none and logs a warning every hour. See "Backups". |
 | `verify-init` | `postgres:18` | Only with the `verify` profile. Makes the `wathena_verify` role and sets its password. |
 | `backup-verify` | `wathena/wactl` | Only with the `verify` profile, after `verify-init`. Restores the newest backup into a temporary database once a day and checks it. It needs the backup identity on the server. See "Backups". |
-| `wactl` | `wathena/wactl` | Not started by `up`. For `docker compose run`: making the world, building assets, backups and restores. |
+| `wactl` | `wathena/wactl` | Not started by `up`. For `docker compose run` as the migrator: making the world, backups and restores. |
+| `offline` | `wathena/wactl` | Not started by `up`. For `docker compose run`: building assets and other work on untrusted files. It has no network and no secrets. |
 
 The two wAthena images come from the repository's `Dockerfile`:
 
@@ -43,9 +45,11 @@ Run these in `deploy/compose`.
 4. Assets. Build them from your own game client into the `assets` volume. The repository ships no game files.
 
    ```text
-   docker compose run --rm --no-deps -v /path/to/client:/client:ro \
-     wactl assets build --source grf:/client --out /srv/assets
+   docker compose run --rm -v /path/to/client:/client:ro \
+     offline assets build --source grf:/client --out /srv/assets
    ```
+
+   - The `offline` service has no network and no database secrets. Game clients, art packs and mods are untrusted files, so a bug in a parser must not reach the database.
 
    - The client folder needs its `DATA.INI` and the GRF files it names. A kRO client takes about 21 minutes on 8 cores and gives 112,000 assets.
    - Run the same command again after a client update. Unchanged assets come from the build's cache.
@@ -62,6 +66,8 @@ Run these in `deploy/compose`.
    `--ruleset` must match `mode` in `waserver.yml`. The command applies the migrations first, and makes the world's secret seed.
 
    To give the account the owner role, put its name in `staff.owners` in `waserver.yml`, as the command prints. The role counts once the account turns on TOTP or a passkey and logs in with it. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
+
+   List only names that already have an account in `staff.owners`. Whoever signs up first with a listed name becomes an owner. At startup the server logs a warning for each listed name that has no account.
 6. Backup key. On your own machine, run `wactl world backup-key new --out backup-identity.txt`, or `age-keygen -o backup-identity.txt`. Keep the identity file offline. Put the recipient it prints, `age1...`, on a line of its own in `secrets/backup_recipients` on the server. See "Backups".
 7. Start: `docker compose up -d --wait`. It waits until every service is healthy. Open `https://WATHENA_DOMAIN/`, sign up, make a character and press Play.
 
@@ -97,8 +103,9 @@ Secrets never go into `.env`, the Compose file, the config file, an image, a pro
 | File in `secrets/` | Used by | As |
 |---|---|---|
 | `postgres_password` | `postgres`, `db-init` | The `postgres` superuser's password. |
-| `migrator_password`, `game_password`, `account_password` | `db-init` | The roles' passwords. `db-init` reads them inside psql, and turns statement logging off first. |
+| `migrator_password`, `game_password`, `account_password`, `backup_password` | `db-init` | The roles' passwords. `db-init` reads them inside psql, and turns statement logging off first. |
 | `migrate_database_url` | `migrate`, `wactl` | `WATHENA_MIGRATE_DATABASE_URL_FILE` |
+| `backup_database_url` | `backup` | `WATHENA_BACKUP_DATABASE_URL_FILE` |
 | `game_database_url` | `waserver` | `WATHENA_DATABASE_URL_FILE` |
 | `account_database_url` | `waserver` | `WATHENA_ACCOUNT_DATABASE_URL_FILE` |
 | `account_secret_key` | `waserver` | `WATHENA_ACCOUNT_SECRET_KEY_FILE`. Encrypts TOTP secrets. |
@@ -108,14 +115,20 @@ Secrets never go into `.env`, the Compose file, the config file, an image, a pro
 | `backup_identity` | `backup-verify` | Only for the `verify` profile, which you copy here yourself. `secrets.sh` never makes it. `WATHENA_BACKUP_IDENTITY` can name another file. |
 
 - Compose secrets on one machine are bind-mounted files. Anyone with root or Docker access on the host can read them.
-- `secrets/` is only open to its owner. The files in it are readable by others, so the containers' users can read their mounted copies.
+- `secrets/` is only open to its owner. The files in it are readable by others, so the containers' users can read their mounted copies. Compose without Swarm cannot set a secret file's owner or mode in the container.
+- `secrets.sh` refuses to run when `secrets/` is not a folder of your user with mode 0700. When you copy or move the stack, keep the mode, such as with `rsync -a` or `cp -a`, and check it with `ls -ld secrets`.
 - Back up `secrets/`, and above all `account_secret_key`, apart from the database backups. Keep the backup identity apart from both.
 - To change a password, delete its file, run `./secrets.sh`, then `docker compose up -d --wait --force-recreate`. `db-init` sets the new password.
+- After an update that adds a secret, such as `backup_password`, run `./secrets.sh` again before `up`. It keeps the files that exist.
 - To change `account_secret_key`, see "Changing the key".
 
 ### Security of the stack
 
-- `waserver` and `wactl` run as user 65532. `waserver`, `wactl`, `db-init` and Caddy have a read-only root filesystem, no Linux capabilities (Caddy keeps `NET_BIND_SERVICE`) and `no-new-privileges`. PostgreSQL has a read-only root filesystem too.
+- `waserver`, `wactl` and Caddy run as user 65532, and PostgreSQL as its `postgres` user. Every service has a read-only root filesystem, no Linux capabilities and `no-new-privileges`. Caddy keeps `NET_BIND_SERVICE`, since its binary has that file capability and does not start without it.
+- `caddy-init` runs as root with only `CHOWN` and `DAC_READ_SEARCH`, to give Caddy's volumes to user 65532. It has no network.
+- `waserver` refuses to start when its game or account database URL connects as a superuser, a role that may make roles or databases, a role that owns tables (the migrator), or, for the game URL, a role that can read `account_passwords`. With `--dev` it only logs a warning.
+- The backup service connects as `wathena_backup`, which reads every table and changes nothing. Only `migrate` and `wactl` get the migrator's URL.
+- Database traffic inside the stack is not encrypted. The `db` network is internal, so only the stack's containers are on it.
 - Only Caddy publishes ports. The database network is internal.
 - `waserver` believes `X-Forwarded-For` only from Caddy's fixed address on the edge network, for rate limits.
 - Caddy answers `/healthz` and `/readyz` with 404. Docker reaches them inside the network.
@@ -160,15 +173,31 @@ Wants=network-online.target
 [Service]
 User=wathena
 ExecStart=/usr/local/bin/waserver all --config /etc/wathena/waserver.yml
+# WATHENA_DATABASE_URL, WATHENA_ACCOUNT_DATABASE_URL and
+# WATHENA_ACCOUNT_SECRET_KEY. systemd reads it as root.
 EnvironmentFile=/etc/wathena/secrets.env
 Restart=on-failure
 RestartSec=2
 # Long enough for --shutdown-countdown and the last saves.
 TimeoutStopSec=90
+# Sandbox. Add ReadWritePaths= for any folder waserver must write.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+- Make the secrets file readable by root only: `chown root:root /etc/wathena/secrets.env` and `chmod 600 /etc/wathena/secrets.env`. Make it with `umask 077`, so it is never open to others.
+- `MemoryDenyWriteExecute=yes` is left out. wazero, which runs WebAssembly in some builds, may compile machine code at run time, which that option forbids. Test it on your host before you add it.
 
 ### Backups
 
@@ -198,7 +227,9 @@ wactl world backup-key new --out backup-identity.txt
 
 #### The backup service
 
-`backup` runs `wactl world backup --dir=/backups --every=24h --keep-daily=7 --keep-weekly=4` as the migrator role:
+`backup` runs `wactl world backup --dir=/backups --every=24h --keep-daily=7 --keep-weekly=4` as `wathena_backup`:
+
+- `wathena_backup` is a member of `pg_read_all_data`. It reads every table and changes nothing. The service has no migrator URL, so it cannot change the schema or the audit log. `db-init` makes the role, also on a stack made before it existed.
 
 - The first backup runs when the service starts and the folder has none from the last 24 hours. Then one runs every 24 hours.
 - Each backup is `world-<UTC time>.dump.age`, such as `world-20261018T030000Z.dump.age`, with a plain manifest `world-20261018T030000Z.json` beside it. The manifest has the release, the migration, the time, the size, the SHA-256 of the encrypted file, and the numbers of accounts, characters and item serials, and the zeny total. It holds no secrets.
@@ -245,7 +276,7 @@ wactl world verify-backup --in world-20261018T030000Z.dump.age --identity backup
 
 To turn it on:
 
-1. Copy the identity to `secrets/backup_identity` on the server, and run `chmod 644 secrets/backup_identity`, as `secrets.sh` does for the other secrets. The `secrets/` folder stays open to its owner only.
+1. Copy the identity to `secrets/backup_identity` on the server, and run `chmod 644 secrets/backup_identity`, as `secrets.sh` does for the other secrets, so the container's user can read it. The `secrets/` folder stays open to its owner only, so check it with `ls -ld secrets`.
 2. Start the profile: `docker compose --profile verify up -d --wait`.
 
 - It checks the newest backup at start and every 24 hours (`WATHENA_VERIFY_EVERY`). `docker compose logs backup-verify` shows each result.
@@ -282,6 +313,7 @@ docker compose up -d --wait
 - It runs `pg_restore` in one transaction, so a failed restore leaves the database empty. A changed byte in an encrypted backup stops the restore before it commits.
 - Keep the `account_secret_key` that was in use when the backup was made, or players with TOTP must use a recovery code.
 - A backup from an older release gets its new migrations from `migrate` on `up`.
+- Nothing signs a backup or its manifest. Anyone who can write the backups, or a copy of them, can encrypt a forged backup to the recipient, with a matching manifest. Restore only files you copied from the server yourself, and keep the copies where others cannot write.
 - `docker compose down -v` deletes every volume: the database, the backups, the assets and Caddy's certificates. Use plain `down` unless you mean that.
 
 ## Measure your own hardware
@@ -331,15 +363,16 @@ Set `GOMEMLIMIT` for the live server to the memory it may use, such as `GOMEMLIM
 4. Start `waserver all` with the secrets in the environment or in files, never on the command line. See "Environment".
 5. Put it behind a TLS proxy. Pass `--public-url https://...`, so cookies are `Secure` and passkeys work on its domain, and name the proxy with `--trusted-proxies`.
 
-`wactl migrate up` applies the migrations of a new release. `wactl world backup` and `restore` need `pg_dump` and `pg_restore` 18 on the PATH, and `verify-backup` needs `pg_restore`, `createdb` and `dropdb`. For scheduled backups, run `wactl world backup --dir /var/backups/wathena --every 24h --recipients-file FILE` as a service, such as a systemd unit with `Restart=on-failure`.
+`wactl migrate up` applies the migrations of a new release. Run `wactl world backup` as `wathena_backup`, through `WATHENA_BACKUP_DATABASE_URL`, and `restore` as the migrator. `wactl world backup` and `restore` need `pg_dump` and `pg_restore` 18 on the PATH, and `verify-backup` needs `pg_restore`, `createdb` and `dropdb`. For scheduled backups, run `wactl world backup --dir /var/backups/wathena --every 24h --recipients-file FILE` as a service, such as a systemd unit with `Restart=on-failure`.
 
 ## Database roles
 
 | Role | Used by | Rights |
 |---|---|---|
-| `wathena_migrator` | `wactl migrate`, `wactl world` | Owns the database and the schema. Alone makes the world and its first account. |
+| `wathena_migrator` | `wactl migrate`, `wactl world` other than `backup` | Owns the database and the schema. Alone makes the world and its first account. |
 | `wathena_game` | The game side of `waserver`, through `WATHENA_DATABASE_URL` | Reads and writes characters and inventories, reads and deletes game tickets, and reads the world without its seed. No DDL, and no access to passwords or login sessions. Deletes an account only through `delete_account`, once its player's deletion request is due on the database clock after a wait of at least 14 days (decision 0032). Deletes GM audit rows only through `delete_old_staff_audit`, for rows older than 30 days whose review, if they need one, is older than 30 days too (review decision 51). |
 | `wathena_account` | The account service, through `WATHENA_ACCOUNT_DATABASE_URL` | Reads and writes passwords, login sessions, game tickets, TOTP secrets, recovery codes and passkeys, and makes accounts and characters. No DDL, and cannot change or delete characters. Asks for account deletions only through `request_account_deletion`, which sets the times from the database clock. Adds audit rows and reviews, but cannot delete audit rows (review decision 51). |
+| `wathena_backup` | `wactl world backup`, in the `backup` service, through `WATHENA_BACKUP_DATABASE_URL` | A member of `pg_read_all_data`: reads every table and changes nothing. No DDL. Its backups hold what it reads, password hashes included. |
 | `wathena_verify` | `wactl world verify-backup` in the `backup-verify` service, through `WATHENA_VERIFY_DATABASE_URL` | `CREATEDB` and nothing else: it makes, fills and drops its temporary databases from the `postgres` database. It cannot connect to `wathena`. In Compose, `verify-init` makes it, only with the `verify` profile. |
 
 Without Docker, make the verify role only where you run `verify-backup`, as a superuser, and set its password with `\password wathena_verify`:
@@ -367,6 +400,7 @@ Each secret can also come from a file: `NAME_FILE` names the file that holds `NA
 | `WATHENA_ACCOUNT_SECRET_KEY` | 32 random bytes in base64. Encrypts TOTP secrets in the database with AES-256-GCM. |
 | `WATHENA_ACCOUNT_OLD_SECRET_KEYS` | Older keys, comma-separated, after a key change. They only open secrets sealed before the change. |
 | `WATHENA_MIGRATE_DATABASE_URL` | The migrator role's URL, for `wactl migrate` and `wactl world`. |
+| `WATHENA_BACKUP_DATABASE_URL` | The backup role's URL, for `wactl world backup`. Without it, `backup` uses `WATHENA_MIGRATE_DATABASE_URL`. |
 | `WATHENA_VERIFY_DATABASE_URL` | The URL of a role with `CREATEDB`, for `wactl world verify-backup`. |
 
 ## Changing the key

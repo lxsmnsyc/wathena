@@ -302,6 +302,9 @@ func runAll(name string, args []string) error {
 			return err
 		}
 		defer pool.Close()
+		if err := checkDatabaseRole(ctx, pool, true, cfg.Dev, log); err != nil {
+			return err
+		}
 		if worldRow, err = checkWorld(ctx, pool, cfg); err != nil {
 			return err
 		}
@@ -691,6 +694,7 @@ func runAll(name string, args []string) error {
 		},
 	})
 	gw := &gateway.Gateway{World: w, Sessions: gateway.DevSessions{}, Origins: cfg.Origins, Log: log, Metrics: &reg.Conns,
+		TrustedProxies: cfg.TrustedProxies, Conns: cfg.Connections.limits(),
 		Chat: cfg.Chat.Limits, CheckName: hub.Filter.CheckName, Limits: rules.LimitsOrDefault(worldRules), Closed: planner.Closed,
 		Mode: proc.mode}
 	go reg.Conns.Run(ctx)
@@ -782,6 +786,9 @@ func runAll(name string, args []string) error {
 			return err
 		}
 		defer pool.Close()
+		if err := checkDatabaseRole(ctx, pool, false, cfg.Dev, log); err != nil {
+			return err
+		}
 		hc.checks = append(hc.checks, pool.Ping)
 		sealer, err := loadSealer(cfg.Secrets)
 		if err != nil {
@@ -838,6 +845,7 @@ func runAll(name string, args []string) error {
 		if err != nil {
 			return err
 		}
+		adminAPI.WarnMissingOwners(ctx)
 	}
 	go w.Run(ctx)
 	go scheduler.Run(ctx)
@@ -938,7 +946,7 @@ func runAll(name string, args []string) error {
 				dbg.Handle("POST /debug/wathena/deletions", devDeletionsHandler(staffWorld))
 			}
 		}
-		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: dbg, ReadHeaderTimeout: 10 * time.Second})
+		servers = append(servers, &http.Server{Addr: cfg.DebugAddr, Handler: debugGuard(dbg), ReadHeaderTimeout: 10 * time.Second})
 	}
 	// planned is the restart that stopped the server, if one did.
 	var planned atomic.Pointer[restart.Plan]
@@ -1346,7 +1354,23 @@ func runRoot(seedText string) (rng.Node, error) {
 // zoneStream is a map's zone's stream from the run's root: each zone
 // has its own, so no zone's draws depend on another's (rng-v1, label
 // zone:<map ID>).
-func zoneStream(root rng.Node, id string) *rng.Rand { return root.Child("zone:" + id).SecretStream() }
+//
+// Rules:
+//   - The first zone of a map in a run uses the label alone.
+//   - A zone that replaces it, such as after a season change, uses the
+//     label with index n, where n counts the map's earlier zones. So a
+//     replaced zone never repeats an earlier zone's draws.
+func zoneStream(root rng.Node, id string) *rng.Rand {
+	zoneInstances.Lock()
+	k := zoneInstanceKey{root, id}
+	n := zoneInstances.made[k]
+	zoneInstances.made[k] = n + 1
+	zoneInstances.Unlock()
+	if n == 0 {
+		return root.Child("zone:" + id).SecretStream()
+	}
+	return root.Child("zone:"+id, n).SecretStream()
+}
 
 func secret() []byte {
 	b := make([]byte, 32)

@@ -719,3 +719,30 @@ func (b *syncBuffer) String() string {
 	defer b.mu.Unlock()
 	return b.buf.String()
 }
+
+// TestBackupURL: backup prefers --database, then the backup role's URL,
+// then the migrator's, so the Compose backup service needs no owner
+// rights (security review L18).
+func TestBackupURL(t *testing.T) {
+	for _, env := range []string{backupEnv, backupEnv + "_FILE", migrateEnv, migrateEnv + "_FILE"} {
+		t.Setenv(env, "")
+	}
+	if _, err := backupURL(""); err == nil || !strings.Contains(err.Error(), backupEnv) {
+		t.Errorf("no URL: %v", err)
+	}
+	t.Setenv(migrateEnv, "postgres://migrator@db/wathena")
+	if got, _ := backupURL(""); got != "postgres://migrator@db/wathena" {
+		t.Errorf("migrator only: %q", got)
+	}
+	file := filepath.Join(t.TempDir(), "url")
+	if err := os.WriteFile(file, []byte("postgres://backup@db/wathena\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(backupEnv+"_FILE", file)
+	if got, _ := backupURL(""); got != "postgres://backup@db/wathena" {
+		t.Errorf("backup role file: %q", got)
+	}
+	if got, _ := backupURL("postgres://flag@db/wathena"); got != "postgres://flag@db/wathena" {
+		t.Errorf("flag: %q", got)
+	}
+}

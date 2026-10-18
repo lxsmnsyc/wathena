@@ -70,7 +70,7 @@ type Tools struct {
 // world changes: a rotation.Manager.
 type ChangeManager interface {
 	Status() rotation.Status
-	Force(ctx context.Context, dungeon, region string) (rotation.Change, error)
+	Force(ctx context.Context, dungeon, region string, audit func(rotation.Change) error) (rotation.Change, error)
 }
 
 // tools is the state of the tools.
@@ -338,32 +338,36 @@ func (w *World) addChanges(out *adminv1.EventList) {
 }
 
 // ForceChange forces a rotation or a region's change after the
-// countdown, with its audit row (decision 0045).
+// countdown, with its audit row (decision 0045). The audit row is
+// written before the change is planned: when the write fails, nothing
+// is planned.
 func (w *World) ForceChange(ctx context.Context, o admin.ChangeOrder) (*adminv1.EventList, error) {
 	t := w.cfg.Tools
 	if t.Changes == nil {
 		return nil, &admin.WorldError{Code: "not_found", Message: "This world has no rotating dungeons or regions."}
 	}
-	c, err := t.Changes.Force(ctx, o.Dungeon, o.Region)
+	audit := func(c rotation.Change) error {
+		if w.cfg.Store == nil {
+			return nil
+		}
+		action, target, args := "events.rotate", o.Dungeon, map[string]any{"date": c.Date}
+		if o.Region != "" {
+			action, target, args = "events.change_region", o.Region, map[string]any{"season": c.Season}
+		}
+		args["at"] = c.Due.UTC().Format(time.RFC3339)
+		return w.cfg.Store.WriteAudit(ctx, store.AuditRow{AccountID: o.AccountID, AccountName: o.AccountName, Role: o.Role, Action: action,
+			Source: "admin", Target: target, Reason: o.Reason, Arguments: args})
+	}
+	_, err := t.Changes.Force(ctx, o.Dungeon, o.Region, audit)
 	switch {
 	case errors.Is(err, rotation.ErrNoDungeon):
 		return nil, &admin.WorldError{Code: "not_found", Message: "There is no such rotating dungeon."}
 	case errors.Is(err, rotation.ErrNoRegion):
 		return nil, &admin.WorldError{Code: "not_found", Message: "There is no such region."}
+	case errors.Is(err, rotation.ErrAhead):
+		return nil, &admin.WorldError{Code: "conflict", Message: "That dungeon is already ahead of its schedule. Wait for its next rotation."}
 	case err != nil:
 		return nil, err
-	}
-	action, target, args := "events.rotate", o.Dungeon, map[string]any{"date": c.Date}
-	if o.Region != "" {
-		action, target, args = "events.change_region", o.Region, map[string]any{"season": c.Season}
-	}
-	args["at"] = c.Due.UTC().Format(time.RFC3339)
-	if w.cfg.Store != nil {
-		err := w.cfg.Store.WriteAudit(ctx, store.AuditRow{AccountID: o.AccountID, AccountName: o.AccountName, Role: o.Role, Action: action,
-			Source: "admin", Target: target, Reason: o.Reason, Arguments: args})
-		if err != nil {
-			return nil, err
-		}
 	}
 	return w.Events(ctx)
 }

@@ -2,7 +2,7 @@
 
 - Status: proposed.
 - Date: 2026-10-18.
-- Code: [tools/wactl](../../tools/wactl) (`backup.go`, `backup_test.go`, `backup_db_test.go`, `world.go`, `main.go`, `release_test.go`), [server/store](../../server/store) (`backup.go`, `migrate.go`, `queries/backup.sql`, `db/backup.sql.go`), [deploy/compose](../../deploy/compose) (`docker-compose.yml`, `secrets.sh`, `init-db.sh`, `init-verify.sh`, `.env.example`), [Dockerfile](../../Dockerfile), [scripts/compose-smoke.sh](../../scripts/compose-smoke.sh), `go.mod`.
+- Code: [tools/wactl](../../tools/wactl) (`backup.go`, `backup_test.go`, `backup_db_test.go`, `world.go`, `main.go`, `release_test.go`), [server/store](../../server/store) (`backup.go`, `migrate.go`, `queries/backup.sql`, `db/backup.sql.go`), [deploy/compose](../../deploy/compose) (`docker-compose.yml`, `secrets.sh`, `init-db.sh`, `init-verify.sh`, `.env.example`), [deploy/postgres/roles.sql](../../deploy/postgres/roles.sql), [Dockerfile](../../Dockerfile), [scripts/compose-smoke.sh](../../scripts/compose-smoke.sh), `go.mod`.
 - Phase 8 step 2 (strategy section 15, "Phase 8"), strategy section 7.8, and review decision 48 of [proposal 0002](../proposals/0002-lua-api.md).
 - Lua API: none. Protocol: none. Settings: none in `waserver.yml`. New variables in `.env`: see "Compose".
 
@@ -50,7 +50,7 @@ wactl world verify-backup (--in FILE [--manifest FILE] | --dir DIR) [--identity 
 - `--out -` writes the backup to standard output, without a manifest.
 - `--dir DIR` makes `world-<UTC time>.dump.age`, or `.dump` with `--plain`, and `world-<UTC time>.json`. The time is like `20261018T030000Z`, so names sort by time. The folder is made with mode 0700 when it is missing.
 - `--every` needs `--dir`, and is at least one minute. Without `--every`, `--keep-daily` and `--keep-weekly` prune only when given.
-- It connects as the migrator role, as before, since that role owns every table.
+- It connects as a role that reads every table: `--database`, else `WATHENA_BACKUP_DATABASE_URL` or its `_FILE`, else the migrator's URL. In Compose that is `wathena_backup`. See "Database rights of backup".
 
 `restore`:
 
@@ -160,7 +160,7 @@ This is the rule of `restic forget --keep-daily --keep-weekly`, which many owner
 `verify-backup` uses its own role, not the migrator:
 
 - It needs `CREATEDB` to make and drop its temporary database, and nothing else.
-- The migrator role does not get `CREATEDB`. The backup service keeps the migrator's rights, and the verify service gets none of them.
+- The migrator role does not get `CREATEDB`. The verify service gets none of the migrator's rights.
 - In Compose the role is `wathena_verify`: `LOGIN CREATEDB NOSUPERUSER NOCREATEROLE NOREPLICATION NOBYPASSRLS`.
 - The `verify-init` service makes it when it is missing and sets its password, from `init-verify.sh`. The service is in the verify profile only, so a stack without that profile has no role that may make databases. `backup-verify` starts after it.
 - `verify-init` connects as the `postgres` superuser, as `db-init` does, since the migrator cannot make roles. It gets only the secrets `postgres_password` and `verify_password`. `backup-verify` still gets only the verify URL.
@@ -172,14 +172,24 @@ This is the rule of `restic forget --keep-daily --keep-weekly`, which many owner
 
 A role with `CREATEDB` can fill the disk with databases. On the server it runs only with the opt-in verify profile, and the database network has no route out.
 
+### Database rights of backup
+
+Changed after the security review of 2026-10 (findings L18 and L22). The backup service first connected as the migrator, which owns every table and can change the audit log. It only needs to read:
+
+- `wathena_backup` is `LOGIN` and a member of `pg_read_all_data`, with `CONNECT` on `wathena`. It has no other rights. `pg_dump`, the snapshot and the counts need only reads.
+- `roles.sql` makes it with the other roles. `db-init` makes it when it is missing, grants it, and sets its password from the secret `backup_password` on every `up`, so an older stack gets it too.
+- The `backup` service gets only `backup_database_url` and `backup_recipients`, through `WATHENA_BACKUP_DATABASE_URL_FILE`. It has no migrator URL.
+- `restore` still runs as the migrator, in the `wactl` service, since it makes the tables.
+- Without `WATHENA_BACKUP_DATABASE_URL`, `backup` falls back to the migrator's URL, so manual runs work as before.
+
 ### Compose
 
-- `backup` (always on): the tools image with `world backup --dir=/backups --recipients-file=/run/secrets/backup_recipients --every --keep-daily --keep-weekly --wait-for-recipient`, the `backups` volume, and the secrets `migrate_database_url` and `backup_recipients`. It starts after `migrate` and restarts unless stopped.
+- `backup` (always on): the tools image with `world backup --dir=/backups --recipients-file=/run/secrets/backup_recipients --every --keep-daily --keep-weekly --wait-for-recipient`, the `backups` volume, and the secrets `backup_database_url` and `backup_recipients`. It starts after `migrate` and restarts unless stopped.
 - `verify-init` (profile `verify`): the PostgreSQL image with `init-verify.sh`, and the secrets `postgres_password` and `verify_password`. It runs once per `up` of the profile.
 - `backup-verify` (profile `verify`): `world verify-backup --dir=/backups --identity=/run/secrets/backup_identity --every`, the `backups` volume read-only, and the secrets `verify_database_url` and `backup_identity`. Its environment has only the verify URL. It starts after `verify-init`.
 - `.env` variables: `WATHENA_BACKUP_EVERY` (24h), `WATHENA_BACKUP_KEEP_DAILY` (7), `WATHENA_BACKUP_KEEP_WEEKLY` (4), `WATHENA_VERIFY_EVERY` (24h), and `WATHENA_BACKUP_RECIPIENTS` and `WATHENA_BACKUP_IDENTITY`, which name other files for the two secrets.
 - The tools image has `/backups` owned by user 65532 with mode 0700, so the new volume is too.
-- `secrets.sh` makes `verify_password` and `verify_database_url` in its style. Only the verify profile uses them. It never makes the backup key, since the identity must not be made on the server. It makes `backup_recipients` with comments that say how to fill it, and prints a note while it has no recipient.
+- `secrets.sh` makes `backup_password` and `backup_database_url`, and `verify_password` and `verify_database_url`, in its style. Only the verify profile uses them. It never makes the backup key, since the identity must not be made on the server. It makes `backup_recipients` with comments that say how to fill it, and prints a note while it has no recipient.
 - Until the owner adds a recipient, the backup service runs and makes no backup, and logs a warning at start and every hour. So `docker compose up --wait` passes on a new stack. After adding the recipient, the owner runs `docker compose up -d --wait --force-recreate backup`. The setup guide still makes the key in the first start, before `up`.
 - `secrets/backup_identity` is needed only for the verify profile, and the owner copies it there on purpose.
 
@@ -209,12 +219,13 @@ Now `main` calls `UseFS` with the embedded files before any command. So every co
   - `TestKeepRule`: a table over dates, with daily runs across weeks, a new week, several backups a day, gaps, and an ISO week across the new year.
   - `TestPruneDir`: only wactl's names are removed. `TestWriteAtomic`: only the hidden temporary file exists during a write, nothing stays after a failure, and an existing file is never replaced.
   - `TestBackupNames`, `TestBackupKeyNew`, `TestRestoredProblems`, and `TestBackupLoop`: a run, the removal of a crash's temporary file, pruning, logs, and a clean stop.
+  - `TestBackupURL`: `--database` first, then the backup role's URL, then the migrator's.
   - `TestReleaseWactlOutsideRepository`: builds wactl as `scripts/release.sh` does and runs `sim economy` in a temporary folder outside the module. With PostgreSQL it also runs `world new` there and checks that the world is procedural. Without the fix it fails with "reference: go.mod not found above the working directory".
 - `tools/wactl` with PostgreSQL:
   - `TestBackupVerifyRestoreWithDatabase`: an encrypted backup of a world with accounts, characters, items and zeny, its manifest, `verify-backup --dir` and no temporary database left, a refused verify without the identity, refused restores with another identity, without an identity, and of a changed file, each leaving the database empty, a restore with the same counts, the empty-database rule, and a plain backup that verifies and restores.
   - `TestVerifyBackupMismatchWithDatabase`: one character more, less zeny, another migration and another hash in the manifest each fail, with no temporary database left.
 - The tests with PostgreSQL need `pg_dump`, `pg_restore`, `createdb` and `dropdb` on the PATH, and skip without them.
-- `scripts/compose-smoke.sh`: as in "Compose". It makes a procedural world with the default mode, from the reference data built into wactl (see "Reference data in wactl"). Its waserver config names no maps, since a procedural world runs its generated maps.
+- `scripts/compose-smoke.sh`: as in "Compose". The backup service makes its backups as `wathena_backup`, and the script checks that the service has no migrator URL. It makes a procedural world with the default mode, from the reference data built into wactl (see "Reference data in wactl"). Its waserver config names no maps, since a procedural world runs its generated maps.
   - On this machine (2026-10-18), Colima's port forwarding is broken, so the script's HTTPS checks from the host cannot connect. A copy of the script without the HTTPS checks passed, with the image build: `world new` made a procedural world in the tools image, `up --wait` passed without a recipient, the backup service warned and made no backup, it made an encrypted backup with a manifest after it was recreated with the recipient, `wathena_verify` was missing before `backup-verify` ran and present after, `backup-verify` verified the backup, and it restored with the identity.
 
 ## Lua API

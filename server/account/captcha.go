@@ -7,9 +7,10 @@ import (
 	"net/url"
 )
 
-// Captcha checks that a person, not a script, sends the login form. The
-// login page asks for it after repeated failures (Limits.AccountCaptcha
-// and Limits.IPCaptcha).
+// Captcha checks that a person, not a script, sends a form:
+//   - The login page asks for it after repeated failures
+//     (Limits.AccountCaptcha and Limits.IPCaptcha).
+//   - The signup page always asks for it.
 //
 // A real provider, such as hCaptcha, Turnstile or a self-hosted proof
 // of work, implements this interface. It is out of scope for now.

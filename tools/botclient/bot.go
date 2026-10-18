@@ -108,6 +108,7 @@ type Bot struct {
 	tradeSt   tradeState
 	marketSt  marketState
 	record    bool
+	pace      func(time.Time, *wathenav1.ClientMessage) time.Duration
 	events    []*wathenav1.Event
 	changed   chan struct{}
 
@@ -125,6 +126,10 @@ type Options struct {
 	// end-to-end tests need. Load tests leave it off, since the list
 	// grows for as long as the bot plays.
 	Record bool
+	// Pace, when set, says how long to wait before a message goes out,
+	// such as a gateway.Pacer's Reserve, so a bot that acts faster than
+	// people stays within the server's rates.
+	Pace func(now time.Time, m *wathenav1.ClientMessage) time.Duration
 }
 
 // Dial connects to a server's WebSocket URL, such as
@@ -138,7 +143,7 @@ func Dial(ctx context.Context, url string, token []byte, opts Options) (*Bot, er
 	}
 	conn.SetReadLimit(schema.MaxMessageBytes)
 	b := &Bot{Name: string(token), conn: conn, seen: map[uint32]*Entity{}, hit: map[uint32]bool{}, sent: map[uint32]time.Time{}, done: make(chan struct{}), ready: make(chan struct{}), ack: opts.Ack,
-		record: opts.Record, changed: make(chan struct{}), game: newGameState()}
+		record: opts.Record, pace: opts.Pace, changed: make(chan struct{}), game: newGameState()}
 	err = b.send(ctx, wathenav1.ClientMessage_builder{Hello: wathenav1.Hello_builder{
 		ProtocolVersion: schema.Version, SessionToken: token, ClientName: ClientName, Language: "en",
 	}.Build()}, false)
@@ -226,7 +231,17 @@ func (b *Bot) send(ctx context.Context, m wathenav1.ClientMessage_builder, track
 	b.wmu.Lock()
 	defer b.wmu.Unlock()
 	m.Seq = b.seq + 1
-	data, err := proto.Marshal(m.Build())
+	msg := m.Build()
+	if b.pace != nil {
+		if d := b.pace(time.Now(), msg); d > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(d):
+			}
+		}
+	}
+	data, err := proto.Marshal(msg)
 	if err != nil {
 		return err
 	}

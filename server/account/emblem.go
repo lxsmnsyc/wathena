@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/server/emblem"
 )
@@ -28,6 +30,46 @@ type Guilds interface {
 // maxEmblemForm is the largest emblem form read: the upload's 50,000
 // bytes and the form's other fields.
 const maxEmblemForm = emblem.MaxUpload + 16<<10
+
+// EmblemCooldown is the shortest time between two emblem changes of
+// one guild. Each change tells every member of the guild, so a master
+// cannot flood them with notices (review decision 51).
+const EmblemCooldown = time.Minute
+
+// emblemTimes keeps the time of each guild's last emblem change.
+type emblemTimes struct {
+	mu sync.Mutex
+	at map[int64]time.Time
+}
+
+// emblemWait returns how long a guild must wait before its next emblem
+// change, or 0.
+func (s *Service) emblemWait(guild int64, now time.Time) time.Duration {
+	s.emblems.mu.Lock()
+	defer s.emblems.mu.Unlock()
+	last, ok := s.emblems.at[guild]
+	if !ok || now.Sub(last) >= EmblemCooldown {
+		return 0
+	}
+	return EmblemCooldown - now.Sub(last)
+}
+
+// emblemChanged records a guild's emblem change. It drops the times
+// that no longer matter, so the map holds only the guilds that changed
+// their emblem within EmblemCooldown.
+func (s *Service) emblemChanged(guild int64, now time.Time) {
+	s.emblems.mu.Lock()
+	defer s.emblems.mu.Unlock()
+	if s.emblems.at == nil {
+		s.emblems.at = map[int64]time.Time{}
+	}
+	for g, t := range s.emblems.at {
+		if now.Sub(t) >= EmblemCooldown {
+			delete(s.emblems.at, g)
+		}
+	}
+	s.emblems.at[guild] = now
+}
 
 // guildView is a guild a character of the account masters.
 type guildView struct {
@@ -73,6 +115,26 @@ func (s *Service) getEmblem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) postEmblem(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), requestTimeout)
+	defer cancel()
+	// The session and the rate limit come before the body is read, so a
+	// caller without a login cannot make the server read the upload.
+	// The CSRF token is a field of the multipart form, so it comes after.
+	sess, ok, err := s.session(ctx, r)
+	if err != nil {
+		s.unavailable(w, r, err)
+		return
+	}
+	if !ok {
+		s.redirect(w, r, Prefix+"login")
+		return
+	}
+	if ok, wait := s.limit.allow(actAccount, s.clientAddr(r), time.Now()); !ok {
+		p := s.newPage(w, r, "Slow down")
+		p.Error = "Too many changes from your network. Try again in " + seconds(wait) + "."
+		s.render(w, http.StatusTooManyRequests, "message.html", p)
+		return
+	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxEmblemForm)
 	if err := r.ParseMultipartForm(maxEmblemForm); err != nil { // #nosec G120 -- MaxBytesReader bounds the body above.
 		s.render(w, http.StatusBadRequest, "message.html", &page{Title: "Bad request", Error: "The form could not be read. An emblem is at most 50,000 bytes."})
@@ -84,15 +146,8 @@ func (s *Service) postEmblem(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusForbidden, "message.html", p)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), requestTimeout)
-	defer cancel()
-	sess, ok := s.loggedIn(ctx, w, r)
-	if !ok {
-		return
-	}
 	p := s.newPage(w, r, "Guild emblem")
 	p.Account = sess.AccountName
-	var err error
 	if p.Guilds, err = s.masteredGuilds(ctx, sess.AccountID); err != nil {
 		s.unavailable(w, r, err)
 		return
@@ -114,6 +169,11 @@ func (s *Service) postEmblem(w http.ResponseWriter, r *http.Request) {
 	if guild == 0 {
 		p.Error = "Only a guild's master can change its emblem."
 		s.render(w, http.StatusForbidden, "emblem.html", p)
+		return
+	}
+	if wait := s.emblemWait(guild, time.Now()); wait > 0 {
+		p.Error = "The guild's emblem changed a moment ago. Try again in " + seconds(wait) + "."
+		s.render(w, http.StatusTooManyRequests, "emblem.html", p)
 		return
 	}
 	f, _, err := r.FormFile("emblem")
@@ -144,6 +204,7 @@ func (s *Service) postEmblem(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusConflict, "emblem.html", p)
 		return
 	}
+	s.emblemChanged(guild, time.Now())
 	s.log.Info("guild emblem changed", "account", sess.AccountID, "guild", guild)
 	p.Notice = "The guild has its new emblem."
 	s.render(w, http.StatusOK, "emblem.html", p)

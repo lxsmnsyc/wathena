@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, and step 4, the load tests, were built the same day.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day.
 
 Done:
 
@@ -174,6 +174,13 @@ Done:
   - `wabots` ships in the release. It places bots on generated fields and towns through the database, and walks routes to portals. The deploy guide tells owners how to measure their own hardware against a test world.
   - One large slowdown is reported, not fixed: 1,000 players in one town are over the tick budget in the zone's own work.
 
+- Phase 8 step 5, the security review (review decisions 51 to 53, [review 2026-10](security/review-2026-10.md)):
+  - Eight areas reviewed against the threat model by read-only reviewers, then checked with tests. 6 high, 19 medium and 39 low findings.
+  - Every high finding is fixed, and every medium one but the public map info, which is a known issue for a decision. Most low findings are fixed. The rest are known issues or accepted risks, listed in the review.
+  - New since the fix commits: connection limits per address with a `Hello` rate, a guarded debug address, a WebSocket `Origin` check with the scheme, hidden monsters sent only to who may see them, friend request limits, a circle for players' attack range, a common password list of about 65,000, a read-only backup role, non-root Caddy and capability-free PostgreSQL in Compose, and migration 00039.
+  - Tools: `govulncheck`, `gosec`, the fuzz tests, `pnpm audit` and `trivy`. See the review's "Tools". The fuzz tests ran 10 seconds each. The hour-long runs are left for before the release.
+  - SECURITY.md has the supported versions of the first release.
+
 Open review items:
 
 - Next step 27's details to review, in proposal 0002, "Next steps".
@@ -184,6 +191,7 @@ Open review items:
 - Next step 33's details to review, and the review items of decision 0045: the hooks and generation layers on rotating floors and changed fields, a Lua way to read a rotating dungeon's date or a region's season, forced changes across a restart and a cancel, new level bands with a world change, more than one rotating dungeon, and locale text and a banner for the warnings.
 - Decision 0046's review items: the model player and the targets, the economy checks and the `spawn_table` hooks, and a Lua way to read a field's simulated rates.
 - Decision 0050's review items: whether to document 500 players, the slowdown of 1,000 players in one town, and a way to place load test bots without a database URL.
+- The security review's items, in proposal 0002, next step 37: a Lua API change for `node:hash` on secret nodes, the public map info, owners by account ID, and a session factor for a verified passkey.
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -1544,9 +1552,9 @@ The full threat model, with assets, trust boundaries, and the status of each mit
 ### 7.4 Network and protocol
 
 - The gateway sets a maximum message size, a per-connection message rate, and a per-message-type rate. Messages over a rate are dropped, and a client that keeps exceeding them is disconnected. Chat has its own rate: lines over it are dropped, and only a sustained flood disconnects (0001-protocol.md). Each player also has a share of its zone's command queue, so one client cannot fill the queue for everyone. The numbers are in `server/gateway/limits.go` and docs/security/review-2026-10.md.
-- Connections per IP address are limited, which replaces rAthena's `ddos_*` settings in `conf/packet_athena.conf`.
+- Connections per IP address are limited, which replaces rAthena's `ddos_*` settings in `conf/packet_athena.conf`. An address may hold 32 game connections and open 20 at once, then one every 3 seconds, which also limits `Hello`. The address comes through `trusted_proxies`, as the account service's. Loopback addresses are not limited (`server/gateway/connlimit.go`).
 - Decoders never panic on bad input. A decode error closes that one connection. Each connection goroutine also recovers from panics, so one bad client cannot stop the server. Each zone recovers panics in its own goroutine too: a command's panic ends that player's session, and a panic the zone cannot contain stops that zone only.
-- The gateway checks the WebSocket `Origin` header. Server owners list the client domains they allow, including community forks they trust.
+- The gateway checks the WebSocket `Origin` header with its scheme. Server owners list the client domains they allow, including community forks they trust. A page on the server's own host counts only on a loopback host, so a DNS rebinding page fails.
 - The game endpoint sits behind a load balancer or proxy that can absorb connection floods. Internal service ports are not public.
 
 ### 7.5 Game integrity
@@ -3440,6 +3448,12 @@ Progress:
   - Load tests on the all-in-one release build with a procedural world in PostgreSQL, on the development machine, as section 3.8, "Load test results", records them. The documented count is 250 players on an Apple M2 with 8 GB shared with desktop apps and Docker. 500 is a review item.
   - Two procedural scenarios: `fields` and `graph`. `wabots` ships in the release, and deploy/README.md tells owners how to measure their own hardware.
   - A fix of players kept in memory after they left, found by the idle world's growing heap.
+- Step 5 is built (2026-10-18), review decisions 51 to 53, [review 2026-10](security/review-2026-10.md):
+  - The review: eight areas, read-only reviewers and a checking pass with tests, on Sonnet. The threat model's statuses are updated.
+  - Fixes: every high finding, every medium finding but the public map info, and most low findings, each with a test. Commits 88149d2, 9fd99ca and eaf4077, and a follow-up change.
+  - Connection limits per address and a rate limit on `Hello` (section 7.4).
+  - Known issues for the release notes are listed in the review's summary.
+  - SECURITY.md supports the first tagged release, and `main` until then.
 
 ### Phase 9: Modding ecosystem
 

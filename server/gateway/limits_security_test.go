@@ -69,6 +69,16 @@ func TestKindOf(t *testing.T) {
 		{wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{WalkTo: wathenav1.WalkTo_builder{}.Build()}.Build()}.Build(), kindWalk},
 		{wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{DropItem: wathenav1.DropItem_builder{}.Build()}.Build()}.Build(), kindDrop},
 		{chat(wathenav1.ChatChannel_CHAT_CHANNEL_LOCAL, "hi"), kindChat},
+		{wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{Guild: wathenav1.GuildCommand_builder{
+			SkillUp: proto.Uint32(10000)}.Build()}.Build()}.Build(), kindAction},
+		{wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{Guild: wathenav1.GuildCommand_builder{
+			Invite: proto.String("Bob")}.Build()}.Build()}.Build(), kindSocial},
+		{wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{StoreSearch: wathenav1.StoreSearchCommand_builder{
+			Query: wathenav1.StoreSearchQuery_builder{}.Build()}.Build()}.Build()}.Build(), kindSearch},
+		{wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{StoreSearch: wathenav1.StoreSearchCommand_builder{
+			Click: proto.Uint32(0)}.Build()}.Build()}.Build(), kindNpc},
+		{wathenav1.ClientMessage_builder{Command: wathenav1.Command_builder{StoreSearch: wathenav1.StoreSearchCommand_builder{
+			Close: proto.Bool(true)}.Build()}.Build()}.Build(), kindNpc},
 	} {
 		if got := kindOf(c.m); got != c.want {
 			t.Errorf("%v: kind %d, want %d", c.m, got, c.want)
