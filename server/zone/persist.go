@@ -216,6 +216,18 @@ func (z *Zone) save(p *Player, final bool) {
 	if s == nil {
 		return
 	}
+	if p.tainted {
+		// A panic may have left the player half changed (recover.go).
+		// Its session ends with its last saved copy, as is.
+		if final && !p.taintSaved {
+			p.taintSaved = true
+			if s.saver != nil && p.saved != nil {
+				s.saver.Save(p.saved, true)
+			}
+			s.done()
+		}
+		return
+	}
 	// The player's transfers are committed before its later saves.
 	if p.transferred {
 		z.commitTransfers()

@@ -232,6 +232,10 @@ func (z *Zone) commitTransfers() {
 	z.txOffline = nil
 	for _, p := range players {
 		p.transferred = false
+		if p.tainted {
+			// Its last saved copy ends its session (recover.go).
+			continue
+		}
 		if s := p.sess; s != nil && s.saver != nil && z.Committer != nil {
 			c := z.snapshot(p)
 			p.saved = c

@@ -1145,7 +1145,7 @@ func (h *Headless) SetStaffRole(player int64, role string) error {
 	if role != "" && (role == staff.Owner || !h.z.Staff.Roles().Exists(role)) {
 		return fmt.Errorf("%q is not a role; the roles are %s", role, strings.Join(h.z.Staff.Roles().Names(), ", "))
 	}
-	p.sess.staff = staff.Login{AccountName: p.Name, TwoFactor: true}
+	p.sess.staff = staff.Login{AccountName: p.Name, TwoFactor: true, Recent: true}
 	return h.z.Staff.StaffChanged(context.Background(), p.record.AccountID, role)
 }
 

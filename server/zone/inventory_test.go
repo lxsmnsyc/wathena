@@ -450,7 +450,7 @@ func TestPickUpOverweightOrFull(t *testing.T) {
 
 func TestOverweightRules(t *testing.T) {
 	// 10 Red Potions and 6 Jellopy: 76.0 of 100.0, over renewal's 70%.
-	z, a, b := invZone(t, StartItem{501, 10}, StartItem{909, 6})
+	z, a, _ := invZone(t, StartItem{501, 10}, StartItem{909, 6})
 	if a.overweight != item.Weight50 {
 		t.Fatalf("level %d", a.overweight)
 	}
@@ -462,9 +462,14 @@ func TestOverweightRules(t *testing.T) {
 	if a.entity.hp != 100 || a.sp != 10 {
 		t.Errorf("HP %d, SP %d while overweight", a.entity.hp, a.sp)
 	}
-	// Attacks still work at 76%.
-	z.handle(command{player: a, attack: &attackCommand{target: a.netIDs.id(b.entity), repeat: true}})
-	if a.entity.target != b.entity {
+	// Attacks still work at 76%. The target is a passive monster next to
+	// the player, since players do not attack players.
+	mob := &battle.Status{MaxHP: 1000, Hit: 200, ADelay: 1000, AMotion: 500, RHW: battle.Weapon{Range: 1}}
+	m := z.spawnOne(&Spawn{Mob: 1002, Name: "Poring", Amount: 1, X: a.entity.x, Y: a.entity.y + 1, Speed: 400, Status: mob, noRespawn: true})
+	m.x, m.y = a.entity.x, a.entity.y+1
+	z.stepAt(z.now + 50)
+	z.handle(command{player: a, attack: &attackCommand{target: a.netIDs.id(m), repeat: true}})
+	if a.entity.target != m {
 		t.Error("no attack at 76%")
 	}
 	// 14 more Jellopy make 90.0: the attack stops, and new ones are
@@ -475,7 +480,7 @@ func TestOverweightRules(t *testing.T) {
 	if a.overweight != item.Weight90 || a.entity.target != nil {
 		t.Fatalf("level %d, target %v", a.overweight, a.entity.target)
 	}
-	z.handle(command{player: a, attack: &attackCommand{target: a.netIDs.id(b.entity), repeat: true}})
+	z.handle(command{player: a, attack: &attackCommand{target: a.netIDs.id(m), repeat: true}})
 	if a.entity.target != nil {
 		t.Error("attacked at 90%")
 	}

@@ -1179,6 +1179,9 @@ const (
 	DropItemFailure_DROP_ITEM_FAILURE_CANNOT_DROP DropItemFailure = 3
 	// The copy is bound, and bound items cannot be dropped.
 	DropItemFailure_DROP_ITEM_FAILURE_BOUND DropItemFailure = 4
+	// The player dropped too many items too fast, or too many of its
+	// items, or of the map's, lie on the ground (review 2026-10).
+	DropItemFailure_DROP_ITEM_FAILURE_TOO_MANY DropItemFailure = 5
 )
 
 // Enum value maps for DropItemFailure.
@@ -1189,6 +1192,7 @@ var (
 		2: "DROP_ITEM_FAILURE_BAD_AMOUNT",
 		3: "DROP_ITEM_FAILURE_CANNOT_DROP",
 		4: "DROP_ITEM_FAILURE_BOUND",
+		5: "DROP_ITEM_FAILURE_TOO_MANY",
 	}
 	DropItemFailure_value = map[string]int32{
 		"DROP_ITEM_FAILURE_UNSPECIFIED": 0,
@@ -1196,6 +1200,7 @@ var (
 		"DROP_ITEM_FAILURE_BAD_AMOUNT":  2,
 		"DROP_ITEM_FAILURE_CANNOT_DROP": 3,
 		"DROP_ITEM_FAILURE_BOUND":       4,
+		"DROP_ITEM_FAILURE_TOO_MANY":    5,
 	}
 )
 
@@ -23005,13 +23010,14 @@ const file_wathena_v1_event_proto_rawDesc = "" +
 	"\x19USE_ITEM_FAILURE_COOLDOWN\x10\x05\x12\x1f\n" +
 	"\x1bUSE_ITEM_FAILURE_CANNOT_USE\x10\x06\x12\x1f\n" +
 	"\x1bUSE_ITEM_FAILURE_OVERWEIGHT\x10\a\x12#\n" +
-	"\x1fUSE_ITEM_FAILURE_INVENTORY_FULL\x10\b*\xb8\x01\n" +
+	"\x1fUSE_ITEM_FAILURE_INVENTORY_FULL\x10\b*\xd8\x01\n" +
 	"\x0fDropItemFailure\x12!\n" +
 	"\x1dDROP_ITEM_FAILURE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cDROP_ITEM_FAILURE_EMPTY_SLOT\x10\x01\x12 \n" +
 	"\x1cDROP_ITEM_FAILURE_BAD_AMOUNT\x10\x02\x12!\n" +
 	"\x1dDROP_ITEM_FAILURE_CANNOT_DROP\x10\x03\x12\x1b\n" +
-	"\x17DROP_ITEM_FAILURE_BOUND\x10\x04*\xcb\x01\n" +
+	"\x17DROP_ITEM_FAILURE_BOUND\x10\x04\x12\x1e\n" +
+	"\x1aDROP_ITEM_FAILURE_TOO_MANY\x10\x05*\xcb\x01\n" +
 	"\rPickUpFailure\x12\x1f\n" +
 	"\x1bPICK_UP_FAILURE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14PICK_UP_FAILURE_GONE\x10\x01\x12\x1d\n" +

@@ -37,6 +37,15 @@ func (z *Zone) warn(msg string, args ...any) {
 	slog.Warn(msg, args...)
 }
 
+// logError logs an error to the mods' log, or the default log.
+func (z *Zone) logError(msg string, args ...any) {
+	if z.Mods != nil && z.Mods.Log != nil {
+		z.Mods.Log.Error(msg, args...)
+		return
+	}
+	slog.Error(msg, args...)
+}
+
 // mountRule is the rule of the player's mount, or RuleNone.
 func (p *Player) mountRule() companion.Rule {
 	if p.mount == nil {

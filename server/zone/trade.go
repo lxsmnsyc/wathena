@@ -30,6 +30,12 @@ const tradeDistance = 2
 // maxTradeItems is the 10 deal slots of trade_tradeadditem.
 const maxTradeItems = 10
 
+// tradeAskEvery is how often a player may ask someone to trade, in
+// milliseconds. rAthena has no such limit. Each request shows the asked
+// player a dialog, so without one a client could flood another
+// player's frames with requests.
+const tradeAskEvery = 1000
+
 // skillBasic is NV_BASIC.
 const skillBasic = 1
 
@@ -133,6 +139,11 @@ func (z *Zone) tradeRequest(p *Player, netID uint32) {
 		p.pending = append(p.pending, tradeResult(wathenav1.TradeOutcome_TRADE_OUTCOME_NOT_FOUND, ""))
 		return
 	}
+	if t.tradeAsk == p && t.trade == nil {
+		// The asked player has this request open already. It gets no
+		// second dialog.
+		return
+	}
 	// A new request ends the requester's trade, as trade_traderequest.
 	if p.trade != nil {
 		z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
@@ -149,7 +160,13 @@ func (z *Zone) tradeRequest(p *Player, netID uint32) {
 		p.pending = append(p.pending, tradeResult(wathenav1.TradeOutcome_TRADE_OUTCOME_TOO_FAR, t.Name))
 		return
 	}
+	if z.now < p.nextTradeAsk {
+		// Too soon after the asker's last request.
+		p.pending = append(p.pending, tradeResult(wathenav1.TradeOutcome_TRADE_OUTCOME_FAILED, t.Name))
+		return
+	}
 	t.tradeAsk = p
+	p.nextTradeAsk = z.now + tradeAskEvery
 	t.pending = append(t.pending, wathenav1.Event_builder{TradeRequest: wathenav1.TradeRequest_builder{
 		From: p.Name, BaseLevel: uint32(max(p.progress.BaseLevel, 0)), // #nosec G115 -- a level.
 	}.Build()}.Build())

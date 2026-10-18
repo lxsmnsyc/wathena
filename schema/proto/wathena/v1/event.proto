@@ -1202,6 +1202,9 @@ enum DropItemFailure {
   DROP_ITEM_FAILURE_CANNOT_DROP = 3;
   // The copy is bound, and bound items cannot be dropped.
   DROP_ITEM_FAILURE_BOUND = 4;
+  // The player dropped too many items too fast, or too many of its
+  // items, or of the map's, lie on the ground (review 2026-10).
+  DROP_ITEM_FAILURE_TOO_MANY = 5;
 }
 
 // PickUpFailed tells the player why a PickUp did nothing.

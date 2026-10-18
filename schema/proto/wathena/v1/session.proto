@@ -149,4 +149,7 @@ enum DisconnectReason {
   // The account is set to be deleted. Its characters cannot play until
   // the deletion is cancelled. message has the date (decision 0032).
   DISCONNECT_REASON_ACCOUNT_DELETION = 12;
+  // A server error stopped the player's actions. The character is as
+  // it was at its last save (review 2026-10).
+  DISCONNECT_REASON_SERVER_ERROR = 13;
 }

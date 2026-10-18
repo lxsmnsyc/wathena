@@ -103,20 +103,31 @@ func (s *Session) ended() bool {
 	return s.end != endNone
 }
 
-// send queues a command in the session's zone. It returns false when the
-// zone's queue is full, which the caller should treat as too many
-// commands. A command sent while the player moves between zones is
-// dropped.
+// playerQueue is the most commands one player may have waiting in its
+// zone's queue, a share of the queue's 1024. One connection that sends
+// faster than the zone handles fills its own share, not the queue, so
+// other players' commands still go in.
+const playerQueue = 64
+
+// send queues a command in the session's zone. It returns false, and
+// drops the command, when the player's share of the queue or the queue
+// is full. The caller should treat that as too many commands. A command
+// sent while the player moves between zones is dropped.
 func (s *Session) send(c command) bool {
 	z, p := s.where()
 	if z == nil {
 		return true
 	}
-	c.player = p
+	c.player, c.queued = p, true
+	if p.queued.Add(1) > playerQueue {
+		p.queued.Add(-1)
+		return false
+	}
 	select {
 	case z.commands <- c:
 		return true
 	default:
+		p.queued.Add(-1)
 		return false
 	}
 }

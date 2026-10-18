@@ -33,6 +33,12 @@ type server struct {
 // serve runs one zone with a gateway and a metrics registry.
 func serve(t *testing.T, spawns []zone.Spawn) *server {
 	t.Helper()
+	return serveRates(t, spawns, gateway.Rates{})
+}
+
+// serveRates is serve with the gateway's rate limits.
+func serveRates(t *testing.T, spawns []zone.Spawn, rates gateway.Rates) *server {
+	t.Helper()
 	g := open(40)
 	z := zone.New("map/test", g, rng.FromKey([32]byte{3}).Stream(), spawns)
 	z.PlayerStatus = battle.Status{MaxHP: 1000, Hit: 200, BAtk: 50, ADelay: 300, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
@@ -42,7 +48,7 @@ func serve(t *testing.T, spawns []zone.Spawn) *server {
 	t.Cleanup(cancel)
 	go z.Run(ctx)
 	go reg.Conns.Run(ctx)
-	s := httptest.NewServer(&gateway.Gateway{World: z, Sessions: gateway.DevSessions{}, Metrics: &reg.Conns})
+	s := httptest.NewServer(&gateway.Gateway{World: z, Sessions: gateway.DevSessions{}, Metrics: &reg.Conns, Rates: rates})
 	t.Cleanup(s.Close)
 	d := httptest.NewServer(reg.Handler())
 	t.Cleanup(d.Close)
@@ -173,7 +179,10 @@ func TestScenario(t *testing.T) {
 // write, which made the duplication tests lose bots when their move
 // time ran out.
 func TestCancelledSendKeepsConnection(t *testing.T) {
-	s := serve(t, nil)
+	// The test sends far faster than the gateway's rates allow, so it
+	// lifts them.
+	fast := gateway.Rate{Burst: 1 << 20, Every: time.Nanosecond}
+	s := serveRates(t, nil, gateway.Rates{All: fast, Walk: fast, MaxStrikes: 1 << 20, StrikeEvery: time.Nanosecond})
 	b := dial(t, s, "Alice")
 	for i := range 2000 {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(i%50)*time.Microsecond)

@@ -63,7 +63,7 @@ func newGMWorld() *gmWorld {
 func (w *gmWorld) player(z *Zone, id, account int64, name string, x, y int, twoFactor bool) *Player {
 	c := savedCharacter()
 	c.ID, c.AccountID, c.Name, c.Map, c.X, c.Y = id, account, name, z.Map, x, y
-	c.Staff = staff.Login{AccountName: name + "Account", TwoFactor: twoFactor}
+	c.Staff = staff.Login{AccountName: name + "Account", TwoFactor: twoFactor, Recent: twoFactor}
 	sess := newSession(&saves{})
 	sess.staff = c.Staff
 	p := newPlayer(sess, c)
@@ -558,5 +558,35 @@ func TestLiftSanctionInZone(t *testing.T) {
 	z.liftSanction(alice, character.SanctionJail, jail.Start)
 	if e := alice.entity; e.x != 20 || e.y != 21 || z.jailed(alice) {
 		t.Errorf("after the lift at %d,%d, jailed %v", e.x, e.y, z.jailed(alice))
+	}
+}
+
+// TestGMItemNeedsRecentLogin: a staff session whose login is not recent
+// gets ReauthText for @item and @mute, makes nothing, and may still use
+// commands that need no recent login.
+func TestGMItemNeedsRecentLogin(t *testing.T) {
+	w := newGMWorld()
+	z := w.a
+	admin := w.player(z, 10, 1, "Admin", 10, 10, true)
+	admin.sess.staff.Recent = false
+	admin.maxWeight = 1 << 30
+	before := admin.inventory.Count(909)
+	say(z, admin, "@item Jellopy 25 event prize")
+	if got := lastSystem(admin); got != staff.ReauthText {
+		t.Errorf("@item answered %q, want %q", got, staff.ReauthText)
+	}
+	if got := admin.inventory.Count(909) - before; got != 0 {
+		t.Errorf("%d Jellopies made", got)
+	}
+	if len(z.txAudit) != 0 {
+		t.Errorf("audit %v", z.txAudit)
+	}
+	say(z, admin, "@mute Big Bob 10 spam")
+	if got := lastSystem(admin); got != staff.ReauthText {
+		t.Errorf("@mute answered %q, want %q", got, staff.ReauthText)
+	}
+	say(z, admin, "@hide")
+	if got := lastSystem(admin); got == staff.ReauthText || got == UnknownCommand {
+		t.Errorf("@hide answered %q", got)
 	}
 }

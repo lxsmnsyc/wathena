@@ -174,6 +174,9 @@ type Gateway struct {
 	// Mode is the world's mode and generator versions, which Welcome
 	// sends. The zero value is a classic world.
 	Mode WorldMode
+	// Rates are the command rate limits (limits.go). DefaultRates when
+	// zero.
+	Rates Rates
 	// CheckName checks the name of a --dev session's character against
 	// the chat filter and the reserved names (strategy section 7.10). It
 	// may be nil.
@@ -485,6 +488,14 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 		limits = chatpkg.DefaultLimits()
 	}
 	chat := newChatLimitFor(time.Now(), func(now time.Time) (int, time.Duration) { return limits.For(created, now) })
+	rates := g.Rates
+	if rates == (Rates{}) {
+		rates = DefaultRates()
+	}
+	commands := newCommandLimit(time.Now(), rates)
+	rateLimited := func() error {
+		return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_RATE_LIMITED, "Too many actions at once.")
+	}
 	for {
 		m, err := readMessage(ctx, c)
 		if err != nil {
@@ -498,6 +509,13 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_BAD_MESSAGE, "The client sent messages out of order.")
 		}
 		seq = m.GetSeq()
+		// A message over the connection's rates is dropped, and too
+		// many dropped messages end the connection.
+		if ok, over := commands.allow(time.Now(), kindOf(m)); over {
+			return rateLimited()
+		} else if !ok {
+			continue
+		}
 		var queued bool
 		switch {
 		case m.HasPing():
@@ -720,8 +738,10 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 			// Unknown commands are ignored, so newer clients still work.
 			queued = p.Ack(seq)
 		}
-		if !queued {
-			return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_RATE_LIMITED, "Too many actions at once.")
+		// The zone refused the command: the player's share of its queue
+		// is full. The command is dropped, as one over the rates.
+		if !queued && commands.strike(time.Now()) {
+			return rateLimited()
 		}
 	}
 }

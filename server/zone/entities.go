@@ -13,6 +13,9 @@ import "iter"
 type entitySet struct {
 	list  []*entity
 	count int
+	// items counts the ground items. Each ground item a player dropped
+	// also counts in its dropper's onGround.
+	items int
 	// uids counts the entities ever added, for their uid.
 	uids int64
 	// free are slots to reuse. freed are the slots of entities removed
@@ -47,6 +50,12 @@ func (s *entitySet) add(e *entity) {
 	e.uid = s.uids
 	s.list = append(s.list, e)
 	s.count++
+	if e.item != nil {
+		s.items++
+		if d := e.item.dropper; d != nil {
+			d.onGround++
+		}
+	}
 }
 
 // remove takes e out of the set. e keeps its slot until compact, so
@@ -58,6 +67,12 @@ func (s *entitySet) remove(e *entity) {
 	s.list[e.idx] = nil
 	e.idx = -1
 	s.count--
+	if e.item != nil {
+		s.items--
+		if d := e.item.dropper; d != nil {
+			d.onGround--
+		}
+	}
 	s.freed = append(s.freed, e.slot)
 }
 

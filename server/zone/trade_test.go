@@ -161,7 +161,8 @@ func TestTradeRefusals(t *testing.T) {
 		t.Errorf("far: %v", got)
 	}
 	b.entity.x = a.entity.x + 1
-	// A declined request.
+	// A declined request, once the asker may ask again.
+	z.now += tradeAskEvery
 	doTrade(z, a, TradeAction{Request: netIDOf(a, b)})
 	doTrade(z, b, TradeAction{Respond: true, Accept: false})
 	z.stepAt(z.now + 50)

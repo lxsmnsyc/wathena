@@ -9,8 +9,12 @@ import (
 	"maps"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
+	"github.com/lxsmnsyc/wathena/schema"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
@@ -82,6 +86,13 @@ type Player struct {
 
 	out    chan *wathenav1.ServerMessage
 	entity *entity
+	// queued counts the player's commands in the zone's queue, which
+	// Session.send keeps below playerQueue.
+	queued atomic.Int32
+	// tainted is set when a panic may have left the player's state
+	// half changed (recover.go). Its saves then write its last saved
+	// copy, once.
+	tainted, taintSaved bool
 	// netIDs are this connection's IDs for the entities it sees.
 	netIDs  netIDs
 	nextNet uint32
@@ -141,6 +152,14 @@ type Player struct {
 	// asked it to trade and waits for an answer (trade.go).
 	trade    *trade
 	tradeAsk *Player
+	// onGround counts the player's dropped items on the ground, and
+	// dropAt is its drop rate's next free time, in zone milliseconds
+	// (dropAllowed).
+	onGround int
+	dropAt   int64
+	// nextTradeAsk is when the player may next ask someone to trade, in
+	// zone milliseconds (tradeAskEvery).
+	nextTradeAsk int64
 	// currencies are the character's own currencies of
 	// data/currencies.yml, by ID (currency.go).
 	currencies map[uint32]int64
@@ -333,6 +352,9 @@ type entity struct {
 
 type command struct {
 	player *Player
+	// queued is set for a command that Session.send counted in the
+	// player's share of the queue (playerQueue).
+	queued bool
 	seq    uint32
 	walkTo *[2]int
 	attack *attackCommand
@@ -715,6 +737,9 @@ type Zone struct {
 	stale chan *Player
 	// stopped closes when Run returns, after the last saves.
 	stopped chan struct{}
+	// failed is set after a panic the zone cannot contain, which stops
+	// it (recover.go).
+	failed bool
 
 	// outbox holds messages for the sender, which runs while Run runs.
 	// See outbox.go.
@@ -792,6 +817,10 @@ func (z *Zone) Run(ctx context.Context) {
 	}()
 	z.asleep = true
 	for {
+		if z.failed {
+			z.failStop()
+			return
+		}
 		switch {
 		case len(z.players) > 0 && ticks == nil:
 			t = time.NewTicker(Tick)
@@ -805,8 +834,14 @@ func (z *Zone) Run(ctx context.Context) {
 		}
 		// Handlers of what the last event did run now, and what they
 		// queued goes to the sender in one batch.
-		z.runScripts()
-		z.commitTransfers()
+		z.safely("scripts", z.runScripts)
+		if z.failed {
+			continue
+		}
+		z.safely("commit", z.commitTransfers)
+		if z.failed {
+			continue
+		}
 		z.flush()
 		var schedC <-chan time.Time
 		if ticks == nil {
@@ -814,7 +849,7 @@ func (z *Zone) Run(ctx context.Context) {
 		}
 		select {
 		case <-schedC:
-			z.runSchedules()
+			z.safely("schedules", z.runSchedules)
 		case <-ctx.Done():
 			for _, p := range z.players {
 				z.save(p, true)
@@ -826,41 +861,51 @@ func (z *Zone) Run(ctx context.Context) {
 			return
 		case j := <-z.joins:
 			began := time.Now()
-			z.wake()
-			j.done <- z.join(j.player)
+			z.safely("join", func() {
+				z.wake()
+				j.done <- z.join(j.player)
+			})
 			z.Metrics.Handled(time.Since(began))
 		case h := <-z.arrivals:
 			began := time.Now()
-			z.wake()
-			z.arrive(h)
+			z.safely("arrival", func() {
+				z.wake()
+				z.arrive(h)
+			})
 			z.Metrics.Handled(time.Since(began))
 		case p := <-z.leaves:
 			began := time.Now()
-			z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+			z.safely("leave", func() { z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT) })
+			if z.failed {
+				// The leave may have stopped before the last save, which
+				// the session's Leave waits for.
+				p.tainted = true
+				z.save(p, true)
+			}
 			z.Metrics.Handled(time.Since(began))
 		case p := <-z.stale:
-			z.loggedInElsewhere(p)
+			z.safely("stale", func() { z.loggedInElsewhere(p) })
 		case f := <-z.control:
-			f()
+			z.safely("control", f)
 		case a := <-z.announces:
-			z.announce(a)
+			z.safely("announce", func() { z.announce(a) })
 		case n := <-z.notices:
-			z.worldNotice(n)
+			z.safely("notice", func() { z.worldNotice(n) })
 		case ev := <-z.restarts:
-			z.restartPlanned(ev)
+			z.safely("restart", func() { z.restartPlanned(ev) })
 		case ev := <-z.changes:
-			z.worldChanged(ev)
+			z.safely("world change", func() { z.worldChanged(ev) })
 		case in := <-z.chatIn:
-			z.receiveChat(in)
+			z.safely("chat", func() { z.receiveChat(in) })
 		case in := <-z.socialIn:
-			z.receiveSocial(in)
+			z.safely("social", func() { z.receiveSocial(in) })
 		case c := <-z.commands:
 			began := time.Now()
-			z.handle(c)
+			z.handleSafely(c)
 			z.Metrics.Handled(time.Since(began))
 		case <-ticks:
 			began := time.Now()
-			z.step()
+			z.safely("tick", z.step)
 			z.Metrics.Tick(time.Since(began), len(z.players))
 		}
 	}
@@ -948,7 +993,14 @@ func (z *Zone) JoinCharacter(ctx context.Context, c *character.Character, saver 
 		release()
 		return nil, ErrStopped
 	}
-	r := <-done
+	var r joinResult
+	select {
+	case r = <-done:
+	case <-z.stopped:
+		// The join panicked, and the zone stopped (recover.go).
+		release()
+		return nil, ErrStopped
+	}
 	s.Map, s.NetID, s.Tick = z.Map, r.netID, r.tick
 	return s, nil
 }
@@ -1163,8 +1215,11 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 	if reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT {
 		// Handlers see the player before it goes. map_quit ends the
 		// statuses that rAthena does not save, and timed bonuses that end
-		// on logout.
-		z.scriptEventFor("logout", modscript.Player(int64(p.charID)))
+		// on logout. A tainted player's handlers do not run, since they
+		// could move items that its last saved copy does not have.
+		if !p.tainted {
+			z.scriptEventFor("logout", modscript.Player(int64(p.charID)))
+		}
 		if en := z.statusEngine(); en != nil && p.entity.sc != nil {
 			en.Logout(z.unit(p.entity))
 		}
@@ -1229,6 +1284,9 @@ func (z *Zone) drop(p *Player) {
 
 func (z *Zone) handle(c command) {
 	p := c.player
+	if c.queued {
+		p.queued.Add(-1)
+	}
 	if p.gone() || !z.entities.has(p.entity) {
 		return
 	}
@@ -1375,10 +1433,11 @@ func (z *Zone) handle(c command) {
 	// not attack, as unit_attack.
 	if c.attack != nil && p.overweight != item.Weight90 && !me.cant().Attack && p.mountRule() != companion.RuleWugRider {
 		for e, id := range p.netIDs.all() {
-			// unit_attack's battle_check_target for summons: players hit
-			// only those alchemist_summon_setting allows.
-			if id == c.attack.target && e != me && e.status != nil && !e.dead &&
-				(e.monster == nil || e.monster.master == nil || isEnemy(me, e)) {
+			// unit_attack's battle_check_target: a player attacks only
+			// enemies. Other players are not enemies, since wAthena has
+			// no PvP maps, and summons are enemies only as
+			// alchemist_summon_setting allows.
+			if id == c.attack.target && e != me && e.status != nil && !e.dead && isEnemy(me, e) {
 				me.target, me.repeat, me.pickItem = e, c.attack.repeat, nil
 			}
 		}
@@ -1503,7 +1562,7 @@ func (z *Zone) stepAt(now int64) {
 	}
 	for e := range z.entities.all() {
 		if e.player != nil {
-			z.update(e.player)
+			z.updateSafely(e.player)
 		}
 	}
 	z.Metrics.Phase(metrics.PhaseSend, time.Since(acted))
@@ -1571,11 +1630,58 @@ func (z *Zone) update(p *Player) {
 		z.flushPages(p)
 		return
 	}
-	z.queue(p, wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
-		Tick: z.tick, AckSeq: p.ackSeq, Events: events,
-	}.Build()}.Build())
+	z.queueFrames(p, events)
 	p.fresh = false
 	z.flushPages(p)
+}
+
+// frameRoom is what a frame keeps free for its tick and its ack, and
+// eventHeader the most bytes an event's field tag and length take in a
+// frame under schema.MaxMessageBytes.
+const (
+	frameRoom   = 64
+	eventHeader = 4
+)
+
+// queueFrames sends a tick's events in one frame, or in several frames
+// of the same tick when one would pass schema.MaxMessageBytes, which the
+// gateway refuses to send. The client applies the frames in order, as it
+// does the extra frames that vanish a player who left. This happens when
+// a player first sees a crowd or many ground items at once.
+func (z *Zone) queueFrames(p *Player, events []*wathenav1.Event) {
+	frame := func(events []*wathenav1.Event) *wathenav1.ServerMessage {
+		return wathenav1.ServerMessage_builder{Frame: wathenav1.Frame_builder{
+			Tick: z.tick, AckSeq: p.ackSeq, Events: events,
+		}.Build()}.Build()
+	}
+	m := frame(events)
+	if proto.Size(m) <= schema.MaxMessageBytes {
+		z.queue(p, m)
+		return
+	}
+	limit := schema.MaxMessageBytes - frameRoom
+	start, size := 0, 0
+	for i, ev := range events {
+		n := proto.Size(ev) + eventHeader
+		if n > limit {
+			// No frame can carry it. It cannot happen with the events
+			// there are, and sending it would end the connection.
+			z.logError("a frame event is over the message size limit", "player", p.Name, "bytes", n)
+			if start < i {
+				z.queue(p, frame(events[start:i]))
+			}
+			start, size = i+1, 0
+			continue
+		}
+		if size+n > limit && start < i {
+			z.queue(p, frame(events[start:i]))
+			start, size = i, 0
+		}
+		size += n
+	}
+	if start < len(events) {
+		z.queue(p, frame(events[start:]))
+	}
 }
 
 // viewEvents adds the appear, move, stop and vanish events of what the
@@ -1596,9 +1702,7 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				if e.unit != nil && (e.unit.hidden || trapHiddenFrom(e, me)) {
 					continue
 				}
-				if e != me && gmHidden(e) {
-					// rAthena sends a hidden GM as JT_INVISIBLE, which no
-					// client draws, to staff too.
+				if hiddenFrom(e, me) {
 					continue
 				}
 				id, known := p.netIDs.get(e)
@@ -1643,7 +1747,7 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 	// of view.
 	for i := 0; i < len(p.netIDs.known); {
 		e := p.netIDs.known[i]
-		if (abs(e.x-me.x) <= ViewRange && abs(e.y-me.y) <= ViewRange && (e == me || !gmHidden(e))) || !z.entities.has(e) {
+		if (abs(e.x-me.x) <= ViewRange && abs(e.y-me.y) <= ViewRange && !hiddenFrom(e, me)) || !z.entities.has(e) {
 			i++
 			continue
 		}
@@ -1653,6 +1757,31 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 		events = append(events, vanish(id, wathenav1.VanishReason_VANISH_REASON_OUT_OF_SIGHT))
 	}
 	return events
+}
+
+// hiddenFrom reports whether a viewer must not be sent a player at all,
+// so a modified client cannot show it:
+//   - A GM under @hide, to everyone else. rAthena sends it as
+//     JT_INVISIBLE, which no client draws, to staff too.
+//   - A player under Hiding, Cloaking or Chase Walk, to everyone but
+//     itself, its party and detectors. rAthena's clif_send holds such a
+//     unit's packets from enemies without intravision (clif_ally_only),
+//     and status_check_visibility lets detectors see it. Party members
+//     are its allies.
+func hiddenFrom(e, viewer *entity) bool {
+	if e == viewer || e.player == nil {
+		return false
+	}
+	if gmHidden(e) {
+		return true
+	}
+	if l := e.sc; l == nil || l.Option&(statuschange.OptionHide|statuschange.OptionCloak|optionChasewalk) == 0 {
+		return false
+	}
+	if sameParty(e, viewer) {
+		return false
+	}
+	return viewer.status == nil || viewer.status.Mode&modeDetector == 0
 }
 
 func (z *Zone) appear(id uint32, e *entity) *wathenav1.Event {

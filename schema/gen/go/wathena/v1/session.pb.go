@@ -97,6 +97,9 @@ const (
 	// The account is set to be deleted. Its characters cannot play until
 	// the deletion is cancelled. message has the date (decision 0032).
 	DisconnectReason_DISCONNECT_REASON_ACCOUNT_DELETION DisconnectReason = 12
+	// A server error stopped the player's actions. The character is as
+	// it was at its last save (review 2026-10).
+	DisconnectReason_DISCONNECT_REASON_SERVER_ERROR DisconnectReason = 13
 )
 
 // Enum value maps for DisconnectReason.
@@ -115,6 +118,7 @@ var (
 		10: "DISCONNECT_REASON_KICKED",
 		11: "DISCONNECT_REASON_RESTART",
 		12: "DISCONNECT_REASON_ACCOUNT_DELETION",
+		13: "DISCONNECT_REASON_SERVER_ERROR",
 	}
 	DisconnectReason_value = map[string]int32{
 		"DISCONNECT_REASON_UNSPECIFIED":         0,
@@ -130,6 +134,7 @@ var (
 		"DISCONNECT_REASON_KICKED":              10,
 		"DISCONNECT_REASON_RESTART":             11,
 		"DISCONNECT_REASON_ACCOUNT_DELETION":    12,
+		"DISCONNECT_REASON_SERVER_ERROR":        13,
 	}
 )
 
@@ -1139,7 +1144,7 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\tWorldMode\x12\x1a\n" +
 	"\x16WORLD_MODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12WORLD_MODE_CLASSIC\x10\x01\x12\x19\n" +
-	"\x15WORLD_MODE_PROCEDURAL\x10\x02*\xe6\x03\n" +
+	"\x15WORLD_MODE_PROCEDURAL\x10\x02*\x8a\x04\n" +
 	"\x10DisconnectReason\x12!\n" +
 	"\x1dDISCONNECT_REASON_UNSPECIFIED\x10\x00\x12)\n" +
 	"%DISCONNECT_REASON_VERSION_UNSUPPORTED\x10\x01\x12%\n" +
@@ -1154,7 +1159,8 @@ const file_wathena_v1_session_proto_rawDesc = "" +
 	"\x18DISCONNECT_REASON_KICKED\x10\n" +
 	"\x12\x1d\n" +
 	"\x19DISCONNECT_REASON_RESTART\x10\v\x12&\n" +
-	"\"DISCONNECT_REASON_ACCOUNT_DELETION\x10\fB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
+	"\"DISCONNECT_REASON_ACCOUNT_DELETION\x10\f\x12\"\n" +
+	"\x1eDISCONNECT_REASON_SERVER_ERROR\x10\rB@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_wathena_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 8)

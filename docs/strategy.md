@@ -1543,9 +1543,9 @@ The full threat model, with assets, trust boundaries, and the status of each mit
 
 ### 7.4 Network and protocol
 
-- The gateway sets a maximum message size, a per-connection message rate, and a per-message-type rate. Clients that exceed them are disconnected. Chat is gentler: lines over its rate are dropped, and only a sustained flood disconnects (0001-protocol.md).
+- The gateway sets a maximum message size, a per-connection message rate, and a per-message-type rate. Messages over a rate are dropped, and a client that keeps exceeding them is disconnected. Chat has its own rate: lines over it are dropped, and only a sustained flood disconnects (0001-protocol.md). Each player also has a share of its zone's command queue, so one client cannot fill the queue for everyone. The numbers are in `server/gateway/limits.go` and docs/security/review-2026-10.md.
 - Connections per IP address are limited, which replaces rAthena's `ddos_*` settings in `conf/packet_athena.conf`.
-- Decoders never panic on bad input. A decode error closes that one connection. Each connection goroutine also recovers from panics, so one bad client cannot stop the server.
+- Decoders never panic on bad input. A decode error closes that one connection. Each connection goroutine also recovers from panics, so one bad client cannot stop the server. Each zone recovers panics in its own goroutine too: a command's panic ends that player's session, and a panic the zone cannot contain stops that zone only.
 - The gateway checks the WebSocket `Origin` header. Server owners list the client domains they allow, including community forks they trust.
 - The game endpoint sits behind a load balancer or proxy that can absorb connection floods. Internal service ports are not public.
 

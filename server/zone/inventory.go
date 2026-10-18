@@ -19,6 +19,22 @@ import (
 // tables.
 var floorItemLifetime = progression.DefaultConfig.FloorItemLifetime
 
+// Limits on items players drop (review 2026-10). rAthena has none, but
+// each ground item goes to every player in view, so without them one
+// player could fill a map with items and make every frame large.
+const (
+	// maxPlayerDrops is the most items a player's drops may have on the
+	// ground at once. Items fade after flooritem_lifetime, 60 seconds.
+	maxPlayerDrops = 50
+	// maxGroundItems is the most items on a map's ground for a player
+	// to drop one more. Monster loot is not limited.
+	maxGroundItems = 2000
+	// dropEvery and dropBurst limit how fast a player drops: dropBurst
+	// at once, then one every dropEvery milliseconds.
+	dropEvery = 200
+	dropBurst = 10
+)
+
 // StartItem is an item every player starts with, for development.
 type StartItem struct {
 	ID     uint32
@@ -406,13 +422,16 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 		// pc_candrop: msg 263 for a bound item.
 		fail(wathenav1.DropItemFailure_DROP_ITEM_FAILURE_BOUND)
 		return
+	case p.onGround >= maxPlayerDrops || z.entities.items >= maxGroundItems || !p.dropAllowed(z.now):
+		fail(wathenav1.DropItemFailure_DROP_ITEM_FAILURE_TOO_MANY)
+		return
 	}
 	lifetime := floorItemLifetime
 	if z.Progress != nil {
 		lifetime = z.Progress.FloorItemLifetime
 	}
 	e := p.entity
-	pl := progression.PlaceDrop(z.cellFree, e.x, e.y, z.rand)
+	pl := progression.PlaceDrop(z.freeNear(e.x, e.y, 2), e.x, e.y, z.rand)
 	// map_addflooritem copies the item, with its refine, cards and
 	// rolls. The copy keeps the stack's serial as its origin, so the
 	// copy picked up later logs where it came from.
@@ -422,10 +441,23 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 		origin:  s.Serial,
 		expires: z.now + lifetime,
 		fresh:   true,
+		dropper: p,
 	}
 	if z.deleteItem(p, slot, amount, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_DROPPED) {
 		z.entities.add(&entity{x: pl.X, y: pl.Y, item: g})
 	}
+}
+
+// dropAllowed takes one drop from the player's drop rate, dropBurst at
+// once and one every dropEvery after that, as a token bucket. It
+// reports false when none is left.
+func (p *Player) dropAllowed(now int64) bool {
+	next := max(p.dropAt, now) + dropEvery
+	if next-now > dropBurst*dropEvery {
+		return false
+	}
+	p.dropAt = next
+	return true
 }
 
 // usedEvents are the item uses a player sees this tick.

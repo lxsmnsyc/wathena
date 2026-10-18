@@ -127,6 +127,12 @@ func (z *Zone) gmCommand(p *Player, text string) {
 		z.answer(p, UnknownCommand)
 		return
 	}
+	// Commands that make items or sanction players need a login that
+	// proved who the player is recently (staff.NeedsRecentLogin).
+	if !p.sess.staff.Allows(c.permission) {
+		z.answer(p, staff.ReauthText)
+		return
+	}
 	c.run(z, p, gmCall{name: name, args: strings.TrimSpace(args), role: role, usage: c.usage})
 }
 
@@ -663,7 +669,7 @@ func DevStaffRole(ctx context.Context, hub *chat.Hub, reg *staff.Registry, name,
 	done := make(chan error, 1)
 	if !post(ctx, s, func(z *Zone, p *Player) {
 		if p.sess != nil {
-			p.sess.staff = staff.Login{AccountName: p.Name, TwoFactor: true}
+			p.sess.staff = staff.Login{AccountName: p.Name, TwoFactor: true, Recent: true}
 		}
 		done <- reg.StaffChanged(ctx, p.record.AccountID, role)
 	}) {

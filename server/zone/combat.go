@@ -85,6 +85,13 @@ func (e *entity) hpPermille() uint32 {
 
 func chebyshev(a, b *entity) int { return max(abs(a.x-b.x), abs(a.y-b.y)) }
 
+// inSight is the line of sight part of battle_check_range: a target
+// next to the unit is always reached, and one farther away only when no
+// cell between them blocks shots.
+func (z *Zone) inSight(e, t *entity) bool {
+	return chebyshev(e, t) < 2 || z.clearShot(e.x, e.y, t.x, t.y)
+}
+
 // fight runs every unit's attack for this tick.
 func (z *Zone) fight() {
 	for e := range z.entities.all() {
@@ -93,6 +100,13 @@ func (z *Zone) fight() {
 			continue
 		}
 		if e.dead || t.dead || !z.entities.has(t) || chebyshev(e, t) > ViewRange {
+			e.target = nil
+			continue
+		}
+		// battle_check_target: a target must be an enemy, so a player
+		// never fights another player outside PvP, whatever set the
+		// target.
+		if e.player != nil && !isEnemy(e, t) {
 			e.target = nil
 			continue
 		}
@@ -127,6 +141,24 @@ func (z *Zone) fight() {
 		// monster drops a target it no longer sees.
 		if e.monster != nil && z.now >= e.nextAttack && !z.visible(e, t, true) {
 			e.target = nil
+			continue
+		}
+		// battle_check_range: a target 2 or more cells away needs a
+		// clear shot, as path_search_long with CELL_CHKWALL.
+		if !z.inSight(e, t) {
+			// unit_attack_timer_sub: a unit that keeps attacking walks
+			// around the obstacle, with its chase range 2 less. Any
+			// other gives up.
+			switch {
+			case e.monster != nil:
+				if z.now >= e.nextAttack && !z.walkToBL(e, t, max(reach-2, 1), true) {
+					e.target = nil
+				}
+			case e.repeat && !e.cant().Move:
+				z.chase(e, t)
+			default:
+				e.target = nil
+			}
 			continue
 		}
 		// In range: stop walking, then attack at the attack delay.

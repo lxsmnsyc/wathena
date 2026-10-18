@@ -53,6 +53,9 @@ type groundItem struct {
 	expires int64
 	// fresh is set in the tick the item fell, so viewers see it drop.
 	fresh bool
+	// dropper is the player that dropped the item from its inventory,
+	// or nil, for maxPlayerDrops.
+	dropper *Player
 }
 
 // pickUp is a player's walk to an item it wants.
@@ -399,8 +402,10 @@ func (z *Zone) dropItems() {
 		}
 		dir := progression.DirCenter
 		looters := z.looterNames(f.first, f.second, f.third)
+		// PlaceItem looks 1 cell past a direction's cell, so 2 cells.
+		free := z.freeNear(f.x, f.y, 2)
 		for _, it := range f.items {
-			pl := progression.PlaceItem(z.cellFree, f.x, f.y, dir, z.rand)
+			pl := progression.PlaceItem(free, f.x, f.y, dir, z.rand)
 			z.entities.add(&entity{x: pl.X, y: pl.Y, item: &groundItem{
 				id: it.id, amount: max(it.amount, 1), subX: pl.SubX, subY: pl.SubY,
 				refine: it.refine, cards: it.cards, extra: it.extra,
@@ -419,7 +424,7 @@ func (z *Zone) dropItems() {
 // cellFree is map_cell_free for drops: the cell is walkable, away from
 // the map edge, and has no player or monster on it.
 func (z *Zone) cellFree(x, y int) bool {
-	if x < edgeCells || x > z.grid.Width-edgeCells || y < edgeCells || y > z.grid.Height-edgeCells || z.grid.NoPass(x, y) {
+	if !z.cellOpen(x, y) {
 		return false
 	}
 	for e := range z.entities.all() {
@@ -428,6 +433,31 @@ func (z *Zone) cellFree(x, y int) bool {
 		}
 	}
 	return true
+}
+
+// cellOpen is the part of cellFree that only reads the map.
+func (z *Zone) cellOpen(x, y int) bool {
+	return x >= edgeCells && x <= z.grid.Width-edgeCells && y >= edgeCells && y <= z.grid.Height-edgeCells && !z.grid.NoPass(x, y)
+}
+
+// freeNear is cellFree for the cells within r of (x, y), which walks the
+// entities once instead of once per cell tried. Placing items moves no
+// player or monster, so the answer holds while the items of one drop
+// are placed. Cells farther away fall back to cellFree.
+func (z *Zone) freeNear(x, y, r int) func(x, y int) bool {
+	side := 2*r + 1
+	taken := make([]bool, side*side)
+	for e := range z.entities.all() {
+		if (e.player != nil || e.monster != nil) && abs(e.x-x) <= r && abs(e.y-y) <= r {
+			taken[(e.y-y+r)*side+e.x-x+r] = true
+		}
+	}
+	return func(cx, cy int) bool {
+		if abs(cx-x) > r || abs(cy-y) > r {
+			return z.cellFree(cx, cy)
+		}
+		return z.cellOpen(cx, cy) && !taken[(cy-y+r)*side+cx-x+r]
+	}
 }
 
 // expireItems removes items that lay on the ground too long, as
