@@ -1062,6 +1062,16 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Out of scope.** Copying backups to other machines (owners use `rclone` or `rsync`), an admin screen for backups, and point-in-time recovery.
     - **No Lua API.**
 
+49. Retention jobs and the Compose config (phase 8 step 3). The user approved these on 2026-10-18:
+    - **Config.** One `retention` block in `waserver.yml` with `login_ip_days` (90), `chat_days` (30), `item_log_days` (180) and `audit_days` (730). Each value is 1 to 3650 days. A value above the default of strategy section 7.10 is allowed, but logs a warning at start and shows one on the admin status page. `chat.log_days` still works, with a warning.
+    - **Item and zeny logs.** A month partition is dropped once the whole month is older than the cutoff, so rows are kept at least 180 days and at most about 211. Rows in the default partition are deleted by date. The drop runs through a `SECURITY DEFINER` function, as `ensure_log_partitions` does, so the game role still cannot drop tables.
+    - **Staff audit log.** Rows older than `audit_days` are deleted with their reviews. Rows that wait for a review are kept until they are reviewed.
+    - **One daily job** in `waserver`, at start and every 24 hours. It logs the rows it deleted and exports metrics for the counts and the last run. The chat and login cleanups move into it.
+    - **Privacy page.** It shows the periods in effect, drops "comes in a later version", and adds that backups keep deleted data for up to 4 weeks with the default schedule, and that item logs may be kept up to 31 days longer.
+    - **Admin.** A read-only `GET /admin/api/v1/retention` lists the periods, the last run and the rows deleted. The status page shows it with any warnings.
+    - **Compose config.** `maps` and `start_map` move into a `classic:` block of `waserver.yml` that procedural worlds ignore, so the default Compose config runs in both world modes.
+    - **No Lua API.**
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
