@@ -689,7 +689,7 @@ CI's `loadtest` job runs 50 bots for 20 seconds on the placeholder map on every 
 
 | Mode | For | Setup |
 |---|---|---|
-| All-in-one | Most servers, up to about 2,000 players | One binary, `waserver all`, runs the gateway, account, world, and zone services in one process. PostgreSQL runs next to it. |
+| All-in-one | Most servers. The supported player count is what the phase 8 load test measured (section 3.8, "Load test results"). | One binary, `waserver all`, runs the gateway, account, world, and zone services in one process. PostgreSQL runs next to it. |
 | Distributed | Large worlds | Each service runs as its own process. Zones spread across several machines. Services use mutual TLS (section 7.2). |
 
 All-in-one details:
@@ -699,7 +699,7 @@ All-in-one details:
 - `wactl world new` creates the database, the first admin account, and the world seed. `wactl world backup` and `wactl world restore` wrap `pg_dump` and restore.
 - Service calls inside one process skip the network but use the same interfaces as the distributed mode. Tests run both.
 
-Minimum hardware for all-in-one with 500 players: 4 CPU cores, 8 GB RAM, and 50 GB SSD. The load tests in section 12 confirm or correct these numbers.
+Minimum hardware for all-in-one with 500 players: 4 CPU cores, 8 GB RAM, and 50 GB SSD. The load tests in section 12 confirm or correct these numbers. Owners can run the same load test on their own machine before they open a world.
 
 Updates:
 
@@ -3230,14 +3230,14 @@ Built with the `procedural` tag. Both world modes ship, with procedural as the d
 - GM audit logs, role-based GM permissions, and encrypted backups with restore tests (section 7.8).
 - Privacy settings and retention jobs (section 7.10).
 - Classic mode from the owner's GRF files: maps, converted NPCs, and fixed spawns from rAthena's data.
-- Load tests at 2,000 bots on the all-in-one build.
+- Load tests on the all-in-one release build, as large as the development machine allows. There is no rented machine (2026-10-18). The docs state the measured player count and the machine it ran on. The load test tool ships with the release, so owners can measure their own hardware.
 - A security review by the project against section 7. There is no paid review and no bug bounty (section 7.9).
 - Setup guide for server owners and a first-start guide for players.
 - A tagged release with signed binaries, images and a software bill of materials. The project runs no server or beta of its own (section 2.2).
 
 Exit criteria:
 
-- Load tests meet the budgets in section 3.8 at 2,000 bots.
+- Load tests meet the budgets in section 3.8 at the documented player count, and the docs make no capacity claim above what was measured.
 - All high and critical findings from the security review are fixed.
 - A new server owner can go from an empty machine to a running world with the setup guide in under 30 minutes.
 
