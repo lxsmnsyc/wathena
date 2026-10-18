@@ -244,7 +244,9 @@ One refactor is already going the right way. Skills are moving from large `switc
 
 - Support for the official Ragnarok Online client.
 - Including Gravity's assets in the repository, or hosting them on the project's own infrastructure. Server operators supply and serve them for their own servers (section 10.1).
-- Mobile-native apps. The web client should work on mobile browsers later.
+- Mobile-native apps. The web client has touch input as decision 0034 built it, and it is frozen there (2026-10-17).
+- Running a game server, a beta, or a world of the project's own. wAthena is server software, as rAthena is: server owners run their own worlds (2026-10-18).
+- Art packs. Server owners supply the art, such as their own GRF files through the GRF importer. The project ships the asset contract, the importer and placeholders only (2026-10-18).
 - Importing accounts, characters, or items from existing rAthena servers.
 
 ### 2.3 Decisions
@@ -1420,7 +1422,7 @@ Section 6.6 covers the sandbox and permissions. Additional Lua rules:
 - Go modules are pinned by `go.sum`. Web client packages are pinned by the lock file. Dependency updates go through review. Releases include a software bill of materials.
 - Release binaries are signed.
 - `SECURITY.md` explains how to report vulnerabilities privately, and states the target time for a first response.
-- An external security review happens before the public beta.
+- An external security review happens before the first release.
 
 ### 7.10 Player safety and privacy
 
@@ -2461,7 +2463,7 @@ These are estimates for one full-time developer. They will change after phase 0.
 | 5. Social and economy, tier 1 | 3 months |
 | 6. Web client, tier 1 | 3 months |
 | 7. Procedural mode | 4 months |
-| 8. First public release | 1 month |
+| 8. First release | 1 month |
 | 9. Modding ecosystem | 2 months, after release |
 | 10. After the first release | Ongoing |
 
@@ -2941,7 +2943,7 @@ The order from here:
       - Touch input is frozen as built in decision 0034. The touch and phone checks run only with `CHECKS=touch,phone`, and the phase 6 exit check plays on desktops by default, with its tier 1 coverage kept.
       - A server bug the bot runs found: a monster's Cloaking or Maximize Power ran its status timer again at once, forever, after 10 seconds, which hung its zone and grew `waserver` until the system killed it. The timer now ends the status for units that cannot consume SP, as rAthena's `status_damage` does (`TestMonsterCloakingEnds`).
       - Left: the live economy dashboards, rate settings the targets follow, monster skills other than heal and teleport in the simulator, a model player with skills and cards, economy checks of dungeon floors, a full bot playthrough to level 99, and a run on a real amd64 machine and in Safari.
-   Art: the generator names biome tilesets, and a table maps each tileset to textures and models. Development points the table at the operator's own build, such as one from the kRO client. A public release needs an original or licensed art pack, which is art work outside this phase. Without one, maps use placeholder textures. Steps 3 and 6, and steps 4, 5 and 7 if they need it, draft their Lua API for review before they are built.
+   Art: the generator names biome tilesets, and a table maps each tileset to textures and models. Development points the table at the operator's own build, such as one from the kRO client. Server owners supply the art, such as their own GRF files; the project ships no art pack (section 2.2). Without the owner's art, maps use placeholder textures. Steps 3 and 6, and steps 4, 5 and 7 if they need it, draft their Lua API for review before they are built.
 
 Reasons for this order:
 
@@ -3221,16 +3223,16 @@ Phase 7 is done (2026-10-18). [Decision 0046](decisions/0046-economy-and-phase-7
 - Economy: every field of 24 default worlds within 30% of its band's targets in the simulator (`TestEconomyChecks`), and bot runs within 20% of the simulator (`scripts/check.sh economy`).
 - Public seeds: `TestPublicSeed` for spawns and `TestPublicSeedLoot` for loot.
 
-### Phase 8: First public release
+### Phase 8: First release
 
 Built with the `procedural` tag, with procedural mode as the only world mode (section 14.2).
 
 - GM audit logs, role-based GM permissions, and encrypted backups with restore tests (section 7.8).
 - Privacy settings and retention jobs (section 7.10).
 - Load tests at 2,000 bots on the all-in-one build.
-- A security review. With one developer, this can be a paid review or a public bug bounty before the beta.
+- A security review. With one developer, this can be a paid review or a public bug bounty before the release.
 - Setup guide for server owners and a first-start guide for players.
-- Public beta.
+- A tagged release with signed binaries, images and a software bill of materials. The project runs no server or beta of its own (section 2.2).
 
 Exit criteria:
 
