@@ -29,9 +29,28 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 
 - `go build ./server/cmd/waserver` and `go test ./...` need a C compiler. Go uses the system one: clang on macOS, gcc on Linux.
 - Without a C compiler, or with `CGO_ENABLED=0`, the same code runs Lua compiled to WebAssembly in wazero. It is slower, and meant for development.
-- Release builds use `zig cc`: static musl binaries for Linux, and binaries for Windows and macOS. The Dockerfile and CI's `lua` and `lua-macos` jobs have the commands. Static Linux builds need `-Wl,-z,stack-size=8388608`, since Lua needs more C stack than musl's default.
+- Release builds use `zig cc`: static musl binaries for Linux, and binaries for Windows and macOS. `scripts/release.sh` and the Dockerfile have the commands (below, "Release builds"). Static Linux builds need `-Wl,-z,stack-size=8388608`, since Lua needs more C stack than musl's default.
 - At startup, `waserver` runs a self-test of the Lua runtime and refuses to start when it fails.
 - Procedural mode is in builds with the tag `procedural`: `go build -tags procedural ./server/cmd/waserver`. Builds without it run only classic worlds (strategy section 8.1, docs/decisions/0038-generator-core.md). See "World modes".
+
+### Release builds
+
+`scripts/release.sh` builds the release binaries (docs/decisions/0047-guild-towns-and-release-build.md):
+
+```text
+scripts/release.sh                     every target
+scripts/release.sh linux/amd64         only the targets named
+```
+
+- Targets: `linux/amd64`, `linux/arm64`, `darwin/arm64` and `windows/amd64`. The darwin build needs a Mac with `xcrun`.
+- It builds `waserver` with the web client built in, and `wactl`, both with the tag `procedural`. These binaries run procedural and classic worlds. `wactl world new --mode` picks a world's mode, and procedural is the default.
+- The version is the output of `git describe --tags --always --dirty`. `waserver version` and `wactl version` print it with the build's world modes, such as `v0.1.0 (modes: classic, procedural)`.
+- The output goes to `dist/<version>/`, which git ignores: `waserver-<os>-<arch>`, `wactl-<os>-<arch>`, `.exe` for Windows, and `SHA256SUMS`.
+- The builds repeat byte for byte on one machine: `-trimpath`, `-buildvcs=false`, `-buildid=`, stripped symbols, and fixed `CGO_CFLAGS`, `CGO_LDFLAGS`, `GOAMD64`, `GOARM64` and `GOFLAGS`.
+- It needs Go, zig 0.16.0, Node and pnpm (scripts/check.sh lists the versions). Each binary is about 105 MB, 22 MB compressed.
+- The binaries are not signed and have no software bill of materials yet.
+
+The Dockerfile builds the same way, for linux on the build machine's architecture. Its `VERSION` argument is the stamp, which Compose sets from `WATHENA_VERSION` (deploy/README.md).
 
 ## Development server
 
@@ -292,7 +311,7 @@ spawns:
 A procedural world's town services, quest boards, job guilds, rebirth NPC and the mods' generation layers come with the world (docs/decisions/0044-procedural-content.md, proposal 0002, review decision 46, mods/README.md, "Quest templates", "Generation layers" and "Core's NPCs"):
 
 - `wactl world new` runs the mods' `wa.generation` layers once on every generated field, town and dungeon floor, after the `spawn_table` hooks, in the hooks' Lua state, each layer with its own node of the secret branch. Their places and objects, and their bosses as spawn lines, are kept.
-- It then picks each town's 6 quest board quests from the quest templates and the stored spawns of the town's fields within 2 warps, further when none fits, with the town's secret node. Rewards scale with the town's band. Each class family's guild goes to one of the three lowest towns, near its `guild` place, with a hunt and a collect quest for the first and the second job tests, of monsters near levels 10 and 45. A `rebirth` place goes to the largest town of the highest band, and a `quest_board` place near each square.
+- It then picks each town's 6 quest board quests from the quest templates and the stored spawns of the town's fields within 2 warps, further when none fits, with the town's secret node. Rewards scale with the town's band. Each class family's guild goes to one of the three lowest towns whose band starts at level 20 or lower, or to the lowest town when no band starts that low (docs/decisions/0047-guild-towns-and-release-build.md), near its `guild` place, with a hunt and a collect quest for the first and the second job tests, of monsters near levels 10 and 45. A `rebirth` place goes to the largest town of the highest band, and a `quest_board` place near each square.
 - It writes `world_places`, `world_objects` and `world_quests` (migration 00034) with the layout, and the bosses into `world_spawns`. It prints how many quests, places and objects the world has, and the layers' notes.
 - `waserver` reads them as the game role. The places join their maps' places, for NPC records with `place` and `wa.places`, and `/gen/maps/<id>.json` lists them with the objects, which clients draw. Each quest becomes a quest record with its ID, from 900,000, named by its ID as core's are. A quest whose monster or item no longer loads is left out with a warning. The log says `world content loaded`.
 - Core's NPCs of procedural worlds stand at the places: a Kafra at `storage`, an Innkeeper at `inn`, a Refiner at `blacksmith`, dealers at `shop:tool`, `shop:weapon` and `shop:armor`, the Quest Board, the guild masters and the Valkyrie. They reach the world's quests, quest rewards, skill points, weight and the refiner through `wa.internal`, which only core may require.
@@ -427,6 +446,8 @@ waserver all --config waserver.yml
 waserver health [--url http://127.0.0.1:8300/readyz]
 waserver version
 ```
+
+`waserver version` prints the version and the build's world modes. `wactl version` does the same.
 
 Settings come from the defaults, then the YAML file that `--config` names, then the flags given on the command line. An unknown key in the file is an error. Secrets are refused in the file: they come from the environment (deploy/README.md, "Environment").
 

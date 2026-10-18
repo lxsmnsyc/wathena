@@ -39,9 +39,9 @@ const (
 //     median level within 10 of the band, and the field is within the
 //     economy tolerance of its band's targets.
 //   - Each class family has a job guild in a town, with tests for the
-//     first and the second job. The Swordman guild, the path's, stands in
-//     a town of a band that starts at level 20 or lower, so a Novice of
-//     job level 10 reaches it. The rebirth place stands in a town of the
+//     first and the second job. Every guild stands in a town of a band
+//     that starts at level 20 or lower, so a Novice of job level 10
+//     reaches it (decision 0047). The rebirth place stands in a town of the
 //     highest town band. A reborn High Novice climbs the same fields
 //     from level 1 again, to the Lord Knight's cap of 99.
 //
@@ -211,8 +211,9 @@ func levelPath(t *testing.T, seed string, pw *madeWorld) {
 		switch {
 		case m == nil || m.Kind != gen.KindTown:
 			t.Errorf("%s: no %s guild in a town", seed, f)
-		case f == "swordman" && m.Levels[0] > 20:
-			// The path's family: a Novice of job level 10 reaches it.
+		case m.Levels[0] > content.GuildLevel:
+			// Every family: a Novice of job level 10 reaches its guild
+			// without crossing harder fields (decision 0047).
 			t.Errorf("%s: the %s guild is in %s %v", seed, f, at, m.Levels)
 		}
 		for _, st := range content.Stages {

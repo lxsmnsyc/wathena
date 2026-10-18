@@ -7,13 +7,13 @@
     "guilds": [
       "swordman gen:town:t1",
       "mage gen:town:t4",
-      "archer gen:town:t2",
-      "acolyte gen:town:t1",
-      "merchant gen:town:t4",
-      "thief gen:town:t2"
+      "archer gen:town:t1",
+      "acolyte gen:town:t4",
+      "merchant gen:town:t1",
+      "thief gen:town:t4"
     ],
     "rebirth": "gen:town:t3",
-    "checksum": "67259b8803f44af4d23d53727e2aa4963a5b2240519ea391fba1f7c6701d5b89"
+    "checksum": "50aa75eeb4b1db09a358d7084653accded97ce60f4bea8a7e99285f3d71477e8"
   },
   {
     "seed": "golden-content-seed-0000000002",
@@ -23,12 +23,12 @@
     "guilds": [
       "swordman gen:town:t1",
       "mage gen:town:t3",
-      "archer gen:town:t2",
-      "acolyte gen:town:t1",
-      "merchant gen:town:t3",
-      "thief gen:town:t2"
+      "archer gen:town:t1",
+      "acolyte gen:town:t3",
+      "merchant gen:town:t1",
+      "thief gen:town:t3"
     ],
     "rebirth": "gen:town:t5",
-    "checksum": "1a01414ab9536754e66ec8cae7c3be6efe9279b6872d84907c871ada68bf7b82"
+    "checksum": "9b1b57515d0a0685b8c88d2d408935c2dc371861a9aa9b9863d0d6103f74188a"
   }
 ]

@@ -53,7 +53,15 @@ RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY . .
 COPY --from=client /src/client/dist client/dist
 ARG VERSION=dev
+# Flags of both binaries, as scripts/release.sh builds them (decision
+# 0047):
+#   - The procedural tag. The binaries run procedural and classic
+#     worlds; `wactl world new --mode` picks a world's mode.
+#   - VERSION is stamped into main.buildVersion. Compose passes
+#     WATHENA_VERSION. Set it to the output of git describe for a
+#     release, since .git is not in the build context.
 # Flags for waserver:
+#   - webclient builds the web client into the binary.
 #   - netgo and osusergo keep the resolver and user lookups in Go.
 #   - -static links musl into the binary, and -s strips it. With external
 #     linking, Go's own -s does not strip what zig links.
@@ -63,11 +71,12 @@ ENV ZIG_GLOBAL_CACHE_DIR=/root/.cache/zig
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/root/.cache/zig \
     CGO_ENABLED=1 CC="/opt/zig/zig cc -target $(uname -m)-linux-musl" \
-    go build -trimpath -buildvcs=false -tags webclient,netgo,osusergo \
+    go build -trimpath -buildvcs=false -tags procedural,webclient,netgo,osusergo \
       -ldflags "-s -w -X main.buildVersion=${VERSION} -linkmode external -extldflags '-static -s -Wl,-z,stack-size=8388608'" \
       -o /out/waserver ./server/cmd/waserver && \
-    CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags "-s -w" -o /out/wactl ./tools/wactl && \
-    /out/waserver version && \
+    CGO_ENABLED=0 go build -trimpath -buildvcs=false -tags procedural \
+      -ldflags "-s -w -X main.buildVersion=${VERSION}" -o /out/wactl ./tools/wactl && \
+    /out/waserver version && /out/wactl version && \
     mkdir -p /out/srv/assets
 
 # wactl with the PostgreSQL 18 client tools.

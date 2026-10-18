@@ -6,7 +6,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/lxsmnsyc/wathena/internal/buildinfo"
 )
+
+// buildVersion is set by release builds, such as scripts/release.sh and
+// the container image, with -ldflags "-X main.buildVersion=...".
+var buildVersion string
 
 const usage = `usage: wactl <command> [arguments]
 
@@ -36,6 +42,7 @@ commands:
   migrate status   list the database migrations and which are applied
   migrate up       apply pending database migrations
   sim economy      print a new procedural world's exp and zeny per hour by field
+  version          print the version and the world modes of the build
   world new        apply migrations, make the world and its first account
   world backup     write the database to a file with pg_dump
   world restore    load a backup into an empty database with pg_restore
@@ -44,6 +51,10 @@ commands:
 func main() {
 	if len(os.Args) >= 2 && os.Args[1] == "dev" {
 		exit(dev(os.Args[2:]))
+	}
+	if len(os.Args) == 2 && (os.Args[1] == "version" || os.Args[1] == "--version") {
+		fmt.Println(buildinfo.Line(buildVersion))
+		return
 	}
 	if len(os.Args) < 3 {
 		fmt.Fprint(os.Stderr, usage)

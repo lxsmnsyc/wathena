@@ -109,6 +109,11 @@ type Options struct {
 	// config, with those samples beside the test mods. Config's
 	// procedural.layout and spawns shape it. It needs Database.
 	Procedural bool
+	// Classic runs a classic world on the binaries of a release build:
+	// waserver and wactl built with -tags procedural, and a world that
+	// `wactl world new --mode classic` makes (decision 0047). It needs
+	// Database.
+	Classic bool
 }
 
 // Server is a running waserver.
@@ -368,14 +373,16 @@ func newServer(t testing.TB, o Options) *Server {
 	}
 	var wactl string
 	mods := b.mods
-	if o.Procedural {
+	if o.Procedural || o.Classic {
 		if !o.Database {
-			t.Fatal("Options.Procedural needs Options.Database")
+			t.Fatal("Options.Procedural and Options.Classic need Options.Database")
 		}
 		if bin, wactl, b, err = prepareProcedural(); err != nil {
 			t.Fatal(err)
 		}
-		mods = b.homeMods
+		if o.Procedural {
+			mods = b.homeMods
+		}
 	}
 	// A server waits for a free place, and frees it when the test ends.
 	places := servers
@@ -405,8 +412,11 @@ func newServer(t testing.TB, o Options) *Server {
 	if err := os.WriteFile(config, []byte(text+o.Config), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if o.Procedural {
-		newWorld(t, wactl, adminURL(t, admin), config, dir)
+	switch {
+	case o.Procedural:
+		newWorld(t, wactl, adminURL(t, admin), "procedural", config, dir)
+	case o.Classic:
+		newWorld(t, wactl, adminURL(t, admin), "classic", "", dir)
 	}
 	addr, debug := freeAddr(t), freeAddr(t)
 	if o.Maps == "" {
@@ -500,16 +510,20 @@ chat:
   refill: 10ms
 `
 
-// newWorld makes a procedural world in the test's database with
-// `wactl world new`, with the server's config for its layout.
-func newWorld(t testing.TB, wactl, dbURL, config, dir string) {
+// newWorld makes a world of a mode in the test's database with `wactl
+// world new`, with the server's config for a procedural world's layout.
+// A classic world takes no config.
+func newWorld(t testing.TB, wactl, dbURL, mode, config, dir string) {
 	t.Helper()
 	pw := filepath.Join(dir, "admin-password")
 	if err := os.WriteFile(pw, []byte("e2e layout password 1\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(wactl, "world", "new", "--mode", "procedural", "--name", "E2E", "--admin", "Owner1", // #nosec G204 -- a binary built by prepareProcedural.
-		"--admin-password-file", pw, "--config", config)
+	args := []string{"world", "new", "--mode", mode, "--name", "E2E", "--admin", "Owner1", "--admin-password-file", pw}
+	if config != "" {
+		args = append(args, "--config", config)
+	}
+	cmd := exec.Command(wactl, args...) // #nosec G204 -- a binary built by prepareProcedural.
 	cmd.Env = append(os.Environ(), "WATHENA_MIGRATE_DATABASE_URL="+dbURL)
 	out, err := cmd.CombinedOutput()
 	if err != nil {

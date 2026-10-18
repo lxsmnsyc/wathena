@@ -308,16 +308,33 @@ func (g *generator) boards() error {
 	return nil
 }
 
-// GuildTowns returns the town of each family's guild, in family order:
-// the towns by their band's lowest level, then number, take the
-// families in turn, the first three towns at most, so every guild stands
-// in a low town that Novices reach.
+// GuildLevel is the highest band start of a guild's town. A Novice
+// reaches job level 10 at about base level 10 to 15, so every guild
+// stands in a town of a band that starts at this level or lower.
+const GuildLevel = 20
+
+// GuildTowns returns the town of each family's guild, in family order
+// (decision 0047):
+//
+//   - The hosts are the towns of a band that starts at GuildLevel or
+//     lower, by their band's lowest level, then number, the first three
+//     at most.
+//   - A world without such a town has the lowest town as its one host.
+//   - The hosts take the families in turn.
+//
+// So every guild stands in a low town that a Novice reaches. A guild
+// gives its first and second job tests in one place, so the second job
+// tests stand in the same low town.
 func GuildTowns(towns []*layout.Map) []*layout.Map {
 	if len(towns) == 0 {
 		return nil
 	}
 	sorted := sortedTowns(towns)
-	hosts := min(len(sorted), 3)
+	hosts := 0
+	for hosts < len(sorted) && hosts < 3 && sorted[hosts].Levels[0] <= GuildLevel {
+		hosts++
+	}
+	hosts = max(hosts, 1)
 	out := make([]*layout.Map, len(Families))
 	for i := range Families {
 		out[i] = sorted[i%hosts]

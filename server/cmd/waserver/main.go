@@ -64,7 +64,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"runtime/debug"
 	"slices"
 	"strconv"
 	"strings"
@@ -81,6 +80,7 @@ import (
 	webclient "github.com/lxsmnsyc/wathena/client"
 	"github.com/lxsmnsyc/wathena/internal/assets/build"
 	"github.com/lxsmnsyc/wathena/internal/assets/serve"
+	"github.com/lxsmnsyc/wathena/internal/buildinfo"
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/reference/rathena"
@@ -135,7 +135,7 @@ commands:
   all       run every service in one process: the game, the account
             pages, the asset build and the web client
   health    check a running server's /readyz, for container health checks
-  version   print the version
+  version   print the version and the world modes of the build
 
 waserver [flags], with no command, is the same as waserver all [flags].
 Run waserver all -h for the flags.
@@ -153,8 +153,8 @@ func dispatch(args []string) (int, error) {
 		err = runAll("waserver all", args[1:])
 	case cmd == "health":
 		err = checkHealth(args[1:])
-	case cmd == "version":
-		fmt.Println(version())
+	case cmd == "version" || cmd == "--version":
+		fmt.Println(buildinfo.Line(buildVersion))
 		return 0, nil
 	case cmd == "help" || cmd == "-h" || cmd == "--help":
 		fmt.Print(usage)
@@ -179,33 +179,13 @@ func dispatch(args []string) (int, error) {
 	return 0, nil
 }
 
-// buildVersion is set by release builds, such as the container image,
-// with -ldflags "-X main.buildVersion=...".
+// buildVersion is set by release builds, such as scripts/release.sh
+// and the container image, with -ldflags "-X main.buildVersion=...".
 var buildVersion string
 
 // version returns buildVersion, or the module version and VCS revision
 // built into the binary.
-func version() string {
-	if buildVersion != "" {
-		return buildVersion
-	}
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return "unknown"
-	}
-	v := info.Main.Version
-	for _, s := range info.Settings {
-		switch s.Key {
-		case "vcs.revision":
-			v += " " + s.Value
-		case "vcs.modified":
-			if s.Value == "true" {
-				v += " (modified)"
-			}
-		}
-	}
-	return v
-}
+func version() string { return buildinfo.Version(buildVersion) }
 
 // checkHealth asks a running server whether it is ready. Container
 // images have no curl, so their health check runs this.

@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build.
 
 Done:
 
@@ -147,6 +147,12 @@ Done:
   - Touch input is frozen as built in decision 0034, and its browser checks run only on demand.
   - A monster's Cloaking or Maximize Power no longer loops its status timer forever, which hung a zone.
 
+- Phase 8 step 1, guild towns and the release build ([decision 0047](decisions/0047-guild-towns-and-release-build.md)):
+  - Every class family's guild stands in a town of a band that starts at level 20 or lower, so a Novice reaches every first job without crossing harder fields. The second job tests stay with their guild. `TestLevelPath` checks every guild. The change is in the content that `wactl world new` stores, so made worlds keep their guilds and there is no generator version 4.
+  - `scripts/release.sh` builds `waserver` and `wactl` with the `procedural` tag for linux/amd64, linux/arm64, darwin/arm64 and windows/amd64, stamped with `git describe`, into `dist/<version>/` with `SHA256SUMS`. Two runs gave the same checksums.
+  - `wactl version` is new, and both version commands print the build's world modes. The Dockerfile builds both binaries with the `procedural` tag and the version stamp.
+  - A binary with the `procedural` tag runs classic worlds: the e2e test `TestClassicWorldProceduralBuild`.
+
 Open review items:
 
 - Next step 27's details to review, in proposal 0002, "Next steps".
@@ -155,7 +161,7 @@ Open review items:
 - Next step 31's details to review, and the review items of decision 0043: a Lua way to list a player's quests or read a quest record, a minimap mark for `showevent`, `questinfo`, `setquestinfo` and `open_quest_ui`, options for the quest events, and quest calls for another character.
 - Next step 32's details to review, and the review items of decision 0044: a public exp reward call, a Lua way to read a world's quests, player fields for skill points and weight, a layer's read of map cells, a places scope of fields, objects of a mod's own art, board quest limits and repeats, and whether `world.generate` should be flagged.
 - Next step 33's details to review, and the review items of decision 0045: the hooks and generation layers on rotating floors and changed fields, a Lua way to read a rotating dungeon's date or a region's season, forced changes across a restart and a cancel, new level bands with a world change, more than one rotating dungeon, and locale text and a banner for the warnings.
-- Decision 0046's review items: whether every class family's guild should stand in a town of the first bands, the model player and the targets, the economy checks and the `spawn_table` hooks, and a Lua way to read a field's simulated rates.
+- Decision 0046's review items: the model player and the targets, the economy checks and the `spawn_table` hooks, and a Lua way to read a field's simulated rates.
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -3240,6 +3246,14 @@ Exit criteria:
 - Load tests meet the budgets in section 3.8 at the documented player count, and the docs make no capacity claim above what was measured.
 - All high and critical findings from the security review are fixed.
 - A new server owner can go from an empty machine to a running world with the setup guide in under 30 minutes.
+
+Progress:
+
+- Step 1 is built (2026-10-18), [decision 0047](decisions/0047-guild-towns-and-release-build.md):
+  - Guild towns: every class family's guild stands in a town of a band that starts at level 20 or lower, as decision 0046's first review item asked. `TestLevelPath` checks every family on three default worlds.
+  - Release build: `scripts/release.sh` builds both binaries with the `procedural` tag for the four targets, with a `git describe` version, flags that repeat the same bytes, and SHA-256 checksums. The Docker images use the same tag and stamp.
+  - Both world modes: a release binary runs classic worlds (`TestClassicWorldProceduralBuild`). Classic mode from the owner's GRF files, with converted NPCs and fixed spawns, is not built yet.
+  - Signing and the software bill of materials are a later step.
 
 ### Phase 9: Modding ecosystem
 

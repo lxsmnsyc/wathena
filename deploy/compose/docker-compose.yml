@@ -28,6 +28,8 @@ x-tools: &tools
   build:
     context: ../..
     target: tools
+    args:
+      VERSION: ${WATHENA_VERSION:-local}
   environment:
     WATHENA_MIGRATE_DATABASE_URL_FILE: /run/secrets/migrate_database_url
   secrets: [migrate_database_url]

@@ -196,10 +196,11 @@ func TestGenerate(t *testing.T) {
 	if !reflect.DeepEqual(tags[content.TagQuestBoard], []string{"gen:town:t1", "gen:town:t2"}) {
 		t.Errorf("quest boards %v", tags[content.TagQuestBoard])
 	}
-	for i, f := range content.Families {
-		want := []string{"gen:town:t1", "gen:town:t2"}[i%2]
-		if got := tags[content.GuildTag(f)]; len(got) != 1 || got[0] != want {
-			t.Errorf("the %s guild stands in %v, want %s", f, got, want)
+	// Only t1's band starts at level 20 or lower, so every guild stands
+	// there (decision 0047).
+	for _, f := range content.Families {
+		if got := tags[content.GuildTag(f)]; len(got) != 1 || got[0] != "gen:town:t1" {
+			t.Errorf("the %s guild stands in %v, want gen:town:t1", f, got)
 		}
 	}
 	if got := tags[content.TagRebirth]; len(got) != 1 || got[0] != "gen:town:t2" {
@@ -349,8 +350,35 @@ func TestRebirthTown(t *testing.T) {
 	if content.RebirthTown(nil, nil) != nil {
 		t.Error("a town without towns")
 	}
-	hosts := content.GuildTowns(towns)
-	if len(hosts) != len(content.Families) || hosts[0].ID != "a" || hosts[1].ID != "b" || hosts[2].ID != "c" || hosts[3].ID != "a" {
-		t.Errorf("guild towns %v", hosts)
+}
+
+// TestGuildTowns: the guilds stand in the towns of a band that starts
+// at level 20 or lower, the first three at most, by band and number, or
+// in the lowest town without one (decision 0047).
+func TestGuildTowns(t *testing.T) {
+	town := func(id string, n int64, low int) *layout.Map {
+		return &layout.Map{ID: id, Town: n, Levels: [2]int{low, low + 9}}
+	}
+	for _, c := range []struct {
+		name  string
+		towns []*layout.Map
+		want  string
+	}{
+		// The old rule took the third town, of band 41 to 50, here.
+		{"two low towns", []*layout.Map{town("h", 1, 1), town("e", 2, 15), town("x", 3, 41), town("y", 4, 61)}, "h e h e h e"},
+		{"three of four low", []*layout.Map{town("d", 4, 20), town("c", 3, 11), town("b", 2, 11), town("a", 1, 1)}, "a b c a b c"},
+		{"one low town", []*layout.Map{town("x", 2, 21), town("h", 1, 1)}, "h h h h h h"},
+		{"no low town", []*layout.Map{town("b", 2, 89), town("a", 1, 81)}, "a a a a a a"},
+	} {
+		var got []string
+		for _, h := range content.GuildTowns(c.towns) {
+			got = append(got, h.ID)
+		}
+		if strings.Join(got, " ") != c.want {
+			t.Errorf("%s: guild towns %v, want %s", c.name, got, c.want)
+		}
+	}
+	if content.GuildTowns(nil) != nil {
+		t.Error("guild towns without towns")
 	}
 }
