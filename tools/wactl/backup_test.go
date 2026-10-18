@@ -156,7 +156,8 @@ func TestBackupNeedsRecipient(t *testing.T) {
 		{"a recipient", []string{id.Recipient().String()}, nil, false, 1, ""},
 		{"a file and a recipient", []string{id.Recipient().String()}, []string{good}, false, 2, ""},
 		{"a bad recipient", []string{"age1nope"}, nil, false, 0, "not an age recipient"},
-		{"a file without recipients", nil, []string{empty}, false, 0, "no recipients"},
+		{"a file without recipients", nil, []string{empty}, false, 0, "a backup needs --recipient"},
+		{"a file without recipients and a good one", nil, []string{empty, good}, false, 1, ""},
 		{"an identity as a recipient", nil, []string{secret}, false, 0, "unknown recipient"},
 		{"a missing file", nil, []string{filepath.Join(dir, "missing")}, false, 0, "--recipients-file"},
 	} {
@@ -173,6 +174,107 @@ func TestBackupNeedsRecipient(t *testing.T) {
 	err := worldBackup([]string{"--dir", t.TempDir()})
 	if err == nil || !strings.Contains(err.Error(), "--recipient") {
 		t.Errorf("world backup without a recipient: %v", err)
+	}
+	// The schedule refuses too, unless it waits for a recipient.
+	none := file("no-recipient", "# no recipient yet\n")
+	err = worldBackup([]string{"--dir", t.TempDir(), "--every", "24h", "--recipients-file", none})
+	if !errors.Is(err, errNoRecipient) {
+		t.Errorf("a schedule without a recipient: %v", err)
+	}
+	for _, args := range [][]string{
+		{"--dir", t.TempDir(), "--wait-for-recipient", "--recipients-file", none},
+		{"--dir", t.TempDir(), "--every", "24h", "--wait-for-recipient", "--plain"},
+	} {
+		if err := worldBackup(args); err == nil || !strings.Contains(err.Error(), "--wait-for-recipient needs --every") {
+			t.Errorf("%v: %v", args, err)
+		}
+	}
+}
+
+// TestWaitForRecipient: without a recipient, the schedule logs a warning
+// at once and then every interval, makes nothing, and stops cleanly.
+func TestWaitForRecipient(t *testing.T) {
+	logs := &syncBuffer{}
+	log := slog.New(slog.NewTextHandler(logs, nil))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		waitForRecipient(ctx, log, 10*time.Millisecond)
+		close(done)
+	}()
+	for i := 0; strings.Count(logs.String(), "level=WARN msg=\"backups are off") < 3; i++ {
+		if i == 500 {
+			t.Fatalf("fewer than 3 warnings:\n%s", logs.String())
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	cancel()
+	<-done
+	if !strings.Contains(logs.String(), "stopped") {
+		t.Errorf("no stop in the log:\n%s", logs.String())
+	}
+}
+
+// TestRemoveStaleTemps: only hidden temporary files of wactl's pattern
+// that are older than the limit are removed.
+func TestRemoveStaleTemps(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Now()
+	old := now.Add(-25 * time.Hour)
+	// A name as writeAtomic makes it.
+	made, err := os.CreateTemp(dir, ".world-20261018T030000Z.dump.age.*.tmp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = made.Close()
+	stale := []string{filepath.Base(made.Name()), ".world-20261018T030000Z.json.42.tmp", ".world-20261018T030000Z.dump.7.tmp"}
+	kept := []string{
+		"world-20261017T030000Z.dump.age",          // a backup
+		"world-20261017T030000Z.json",              // its manifest
+		".world-20261018T030000Z.dump.age.9.tmp.x", // another suffix
+		".world-notes.tmp",                         // not wactl's name
+		".other-20261018T030000Z.json.1.tmp",       // not a backup's name
+		"world-20261018T030000Z.json.1.tmp",        // not hidden
+	}
+	for _, name := range append(slices.Clone(stale), kept...) {
+		p := filepath.Join(dir, name)
+		if err := os.WriteFile(p, []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(p, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A fresh file of the pattern, such as a backup in progress, stays.
+	fresh := ".world-20261018T040000Z.dump.age.5.tmp"
+	if err := os.WriteFile(filepath.Join(dir, fresh), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// So does a folder of the pattern.
+	folder := ".world-20261018T030000Z.json.8.tmp"
+	if err := os.Mkdir(filepath.Join(dir, folder), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(filepath.Join(dir, folder), old, old); err != nil {
+		t.Fatal(err)
+	}
+	removed, err := removeStaleTemps(dir, now, 24*time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	slices.Sort(removed)
+	slices.Sort(stale)
+	if !slices.Equal(removed, stale) {
+		t.Errorf("removed %v, want %v", removed, stale)
+	}
+	for _, name := range append(kept, fresh, folder) {
+		if _, err := os.Lstat(filepath.Join(dir, name)); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	if removed, err := removeStaleTemps(filepath.Join(dir, "missing"), now, 24*time.Hour); err != nil || len(removed) != 0 {
+		t.Errorf("a missing folder: %v, %v", removed, err)
 	}
 }
 
@@ -546,6 +648,10 @@ func TestBackupLoop(t *testing.T) {
 		_ = os.WriteFile(man, []byte("{}"), 0o600)
 	}
 	_ = os.WriteFile(filepath.Join(dir, "keep-me.txt"), []byte("x"), 0o600)
+	// A crash's temporary file of two days ago.
+	crashed := filepath.Join(dir, ".world-20261016T030000Z.dump.age.123.tmp")
+	_ = os.WriteFile(crashed, []byte("x"), 0o600)
+	_ = os.Chtimes(crashed, now.Add(-48*time.Hour), now.Add(-48*time.Hour))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var runs atomic.Int32
@@ -579,7 +685,10 @@ func TestBackupLoop(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, "keep-me.txt")); err != nil {
 		t.Error(err)
 	}
-	for _, want := range []string{"backup made", "removed an old backup", "stopped"} {
+	if _, err := os.Lstat(crashed); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the crash's temporary file: %v", err)
+	}
+	for _, want := range []string{"backup made", "removed an old backup", "removed a temporary file that a crash left", "stopped"} {
 		if !strings.Contains(logs.String(), want) {
 			t.Errorf("no %q in the log:\n%s", want, logs.String())
 		}

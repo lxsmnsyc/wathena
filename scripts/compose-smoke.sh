@@ -3,14 +3,17 @@
 # as deploy/README.md describes, and checks it through Caddy:
 #   1. Makes the secrets, builds the images, and builds the placeholder
 #      assets into the assets volume with the wactl service.
-#   2. Makes a backup key, makes the world and its staff account, then
-#      starts the stack and waits until every service is healthy.
+#   2. Makes a backup key, makes a procedural world and its staff
+#      account, then starts the stack without a backup recipient and
+#      waits until every service is healthy. The backup service waits
+#      and warns.
 #   3. Fetches the client, the account login page and the asset manifest
 #      over HTTPS from Caddy's local authority, and checks that the
 #      health checks are not public.
-#   4. Waits for the backup service's first encrypted backup, verifies
-#      it with the backup-verify service, restores it into an empty
-#      database, and starts again (decision 0048).
+#   4. Gives the backup service its recipient and starts it again,
+#      waits for its first encrypted backup, verifies it with the
+#      backup-verify service, restores it into an empty database, and
+#      starts again (decision 0048).
 # It removes the stack and its volumes at the end. It uses the project
 # name wathena-smoke and ports 18080 and 18443, so a local stack named
 # wathena keeps running.
@@ -26,12 +29,12 @@ export WATHENA_EDGE_SUBNET=${WATHENA_EDGE_SUBNET:-172.30.81.0/24} WATHENA_PROXY_
 export WATHENA_CONFIG="$work/waserver.yml"
 # The test's backup key, so the secrets of a local stack stay as they are.
 export WATHENA_BACKUP_RECIPIENTS="$work/backup_recipients" WATHENA_BACKUP_IDENTITY="$work/backup_identity"
+# A procedural world runs its generated maps, so the config names no
+# maps.
 cat >"$WATHENA_CONFIG" <<'EOF'
 listen: 0.0.0.0:8300
 assets: /srv/assets
-start_map: placeholder/map
-maps: all
-mode: none
+mode: renewal
 EOF
 chmod 644 "$WATHENA_CONFIG"
 compose() { docker compose --env-file .env.example "$@"; }
@@ -53,15 +56,16 @@ compose run --rm --no-deps wactl assets build --source placeholder --out /srv/as
 # recipient goes to the backup service.
 compose run --rm --no-deps -T --entrypoint sh wactl -c \
 	'wactl world backup-key new --out /tmp/identity.txt >/dev/null 2>&1 && cat /tmp/identity.txt' >"$WATHENA_BACKUP_IDENTITY"
-sed -n 's/^# public key: //p' "$WATHENA_BACKUP_IDENTITY" >"$WATHENA_BACKUP_RECIPIENTS"
-grep -q '^age1' "$WATHENA_BACKUP_RECIPIENTS"
+# The stack starts first without a recipient, as a new stack does.
+echo '# no recipient yet' >"$WATHENA_BACKUP_RECIPIENTS"
 # The containers' user must read the bind-mounted copies, as secrets.sh
 # does for its files.
 chmod 644 "$WATHENA_BACKUP_IDENTITY" "$WATHENA_BACKUP_RECIPIENTS"
 openssl rand -hex 16 >"$work/admin_password"
-# The placeholder pack has no game maps, so the world is classic. A
-# procedural world needs the reference data, which the tools image lacks.
-compose run --rm -T wactl world new --name Smoke --mode classic --admin Admin --admin-password-file - <"$work/admin_password"
+# The release's default mode is procedural, from the reference data
+# built into wactl (decision 0047).
+compose run --rm -T wactl world new --name Smoke --admin Admin --admin-password-file - <"$work/admin_password" >"$work/world.txt"
+grep -q 'made the procedural' "$work/world.txt"
 compose up -d --wait --wait-timeout 300
 
 check() {
@@ -79,6 +83,28 @@ check() {
 	done
 }
 check
+
+# Without a recipient, the backup service runs, warns, and makes nothing.
+for i in $(seq 30); do
+	compose logs --no-color backup >"$work/backup.log"
+	if grep -q 'msg="backups are off' "$work/backup.log"; then
+		break
+	fi
+	if [ "$i" = 30 ]; then
+		echo "no warning from the backup service without a recipient" >&2
+		cat "$work/backup.log" >&2
+		exit 1
+	fi
+	sleep 1
+done
+if compose exec -T backup ls /backups | grep -q '^world-'; then
+	echo "a backup without a recipient" >&2
+	exit 1
+fi
+# The service reads the recipient when it starts.
+sed -n 's/^# public key: //p' "$WATHENA_BACKUP_IDENTITY" >"$WATHENA_BACKUP_RECIPIENTS"
+grep -q '^age1' "$WATHENA_BACKUP_RECIPIENTS"
+compose up -d --force-recreate --wait --wait-timeout 300 backup
 
 # The backup service makes its first backup at start.
 for i in $(seq 120); do
@@ -101,7 +127,17 @@ if [ "$(head -c 22 "$work/world.dump.age")" != "age-encryption.org/v1" ]; then
 	echo "$backup is not an age file" >&2
 	exit 1
 fi
+# The verify role exists only once the verify profile runs.
+roles() { compose exec -T postgres psql -X -U postgres -tAc "SELECT count(*) FROM pg_roles WHERE rolname = 'wathena_verify'"; }
+if [ "$(roles)" != 0 ]; then
+	echo "the verify role exists without the verify profile" >&2
+	exit 1
+fi
 compose run --rm -T backup-verify world verify-backup --dir=/backups --identity=/run/secrets/backup_identity
+if [ "$(roles)" != 1 ]; then
+	echo "the verify profile made no verify role" >&2
+	exit 1
+fi
 compose down
 docker volume rm "${COMPOSE_PROJECT_NAME}_pgdata"
 compose run --rm -T -v "$WATHENA_BACKUP_IDENTITY:/keys/identity.txt:ro" wactl \

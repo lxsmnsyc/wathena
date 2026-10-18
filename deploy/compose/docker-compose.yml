@@ -6,6 +6,8 @@
 #   - db-init: runs once per `up`. Makes the database and roles from
 #     ../postgres/roles.sql on the first run, and sets the roles'
 #     passwords from the secrets on every run.
+#   - verify-init: only with the verify profile. Makes the
+#     wathena_verify role of backup-verify and sets its password.
 #   - migrate: runs once per `up`, after db-init. Applies pending
 #     migrations with `wactl migrate up` as the migrator role.
 #   - waserver: the game, the account pages, the assets and the web
@@ -16,7 +18,10 @@
 #     day with `wactl world backup --every`, and prunes old ones
 #     (decision 0048). It needs the recipient, the public key, in the
 #     backup_recipients secret. The identity, the private key, stays
-#     with the owner.
+#     with the owner. Without a recipient it makes no backup and logs a
+#     warning every hour. It reads the secret only when it starts, so
+#     run `docker compose up -d --force-recreate backup` after adding
+#     the recipient.
 #   - backup-verify: only with the verify profile. Restores the newest
 #     backup into a temporary database once a day and checks it. It
 #     puts the identity on the server, so a stolen server can decrypt
@@ -78,10 +83,31 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGDATABASE: postgres
-    secrets: [postgres_password, migrator_password, game_password, account_password, verify_password]
+    secrets: [postgres_password, migrator_password, game_password, account_password]
     volumes:
       - ../postgres/roles.sql:/deploy/roles.sql:ro
       - ./init-db.sh:/deploy/init-db.sh:ro
+    networks: [db]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # Makes the verify role only for the verify profile, so a stack
+  # without backup-verify has no role that may make databases.
+  verify-init:
+    image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+    <<: *hardening
+    profiles: [verify]
+    user: postgres
+    entrypoint: ["sh", "/deploy/init-verify.sh"]
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGDATABASE: postgres
+    secrets: [postgres_password, verify_password]
+    volumes:
+      - ./init-verify.sh:/deploy/init-verify.sh:ro
     networks: [db]
     depends_on:
       postgres:
@@ -111,6 +137,9 @@ services:
       - --every=${WATHENA_BACKUP_EVERY:-24h}
       - --keep-daily=${WATHENA_BACKUP_KEEP_DAILY:-7}
       - --keep-weekly=${WATHENA_BACKUP_KEEP_WEEKLY:-4}
+      # Without a recipient, wait and warn instead of failing, so
+      # `docker compose up --wait` passes on a new stack.
+      - --wait-for-recipient
     secrets: [migrate_database_url, backup_recipients]
     volumes:
       - backups:/backups
@@ -137,6 +166,9 @@ services:
     volumes:
       - backups:/backups:ro
     tmpfs: [/tmp]
+    depends_on:
+      verify-init:
+        condition: service_completed_successfully
 
   waserver:
     <<: *hardening

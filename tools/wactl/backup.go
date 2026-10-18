@@ -55,11 +55,24 @@ const (
 	// retryAfter is the wait after a failed scheduled run, when it is
 	// shorter than --every.
 	retryAfter = time.Hour
+	// noRecipientWarnEvery is how often --wait-for-recipient logs that
+	// backups are off.
+	noRecipientWarnEvery = time.Hour
+	// staleTempAge is the age after which a scheduled run removes a
+	// hidden temporary file that a crash left.
+	staleTempAge = 24 * time.Hour
 )
 
 // backupName matches the files that wactl makes in a backup folder.
 // Pruning only touches files that match it.
 var backupName = regexp.MustCompile(`^world-(\d{8}T\d{6}Z)\.(dump\.age|dump|json)$`)
+
+// tempName matches the hidden temporary files of writeAtomic for those
+// names, such as .world-20261018T030000Z.dump.age.123456.tmp.
+var tempName = regexp.MustCompile(`^\.world-\d{8}T\d{6}Z\.(dump\.age|dump|json)\.\d+\.tmp$`)
+
+// errNoRecipient is the refusal of a backup without a recipient.
+var errNoRecipient = errors.New("a backup needs --recipient or --recipients-file, the public key of `wactl world backup-key new`; --plain makes an unencrypted backup")
 
 // ageHeader starts every binary age file, and ageArmor every armored one.
 var (
@@ -144,21 +157,36 @@ func loadRecipients(values, files []string, plain bool) ([]age.Recipient, error)
 		out = append(out, r...)
 	}
 	for _, path := range files {
-		f, err := os.Open(path) // #nosec G304 -- the file the operator named.
+		b, err := os.ReadFile(path) // #nosec G304 -- the file the operator named.
 		if err != nil {
 			return nil, fmt.Errorf("--recipients-file: %w", err)
 		}
-		r, err := age.ParseRecipients(f)
-		_ = f.Close()
+		// A file of comments and blank lines has no recipient yet, as
+		// secrets.sh makes it. age's parser refuses such a file.
+		if !hasRecipientLine(b) {
+			continue
+		}
+		r, err := age.ParseRecipients(bytes.NewReader(b))
 		if err != nil {
 			return nil, fmt.Errorf("--recipients-file %s: %w", path, err)
 		}
 		out = append(out, r...)
 	}
 	if len(out) == 0 {
-		return nil, errors.New("a backup needs --recipient or --recipients-file, the public key of `wactl world backup-key new`; --plain makes an unencrypted backup")
+		return nil, errNoRecipient
 	}
 	return out, nil
+}
+
+// hasRecipientLine reports whether a recipients file has a line that
+// is not blank and not a # comment.
+func hasRecipientLine(b []byte) bool {
+	for line := range strings.Lines(string(b)) {
+		if l := strings.TrimSpace(line); l != "" && !strings.HasPrefix(l, "#") {
+			return true
+		}
+	}
+	return false
 }
 
 // loadIdentities reads an identity file, as backup-key new or age-keygen
@@ -472,6 +500,7 @@ func worldBackup(args []string) error {
 	every := fs.Duration("every", 0, "with --dir, run as a long-lived process and make a backup this often, such as 24h")
 	keepDaily := fs.Int("keep-daily", 7, "with --dir, keep the newest backup of each of this many UTC days")
 	keepWeekly := fs.Int("keep-weekly", 4, "with --dir, keep the newest backup of each of this many ISO weeks (Monday to Sunday, UTC)")
+	waitRecipient := fs.Bool("wait-for-recipient", false, "with --every, wait and log a warning every hour while the recipients files have no recipient, instead of failing; restart to read them again")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -489,11 +518,20 @@ func worldBackup(args []string) error {
 	if *every != 0 && *every < time.Minute {
 		return errors.New("--every must be at least 1m")
 	}
+	if *waitRecipient && (*every == 0 || *plain) {
+		return errors.New("--wait-for-recipient needs --every, and cannot go with --plain")
+	}
 	keep := keepRule{Daily: *keepDaily, Weekly: *keepWeekly}
 	if err := keep.check(); err != nil {
 		return err
 	}
 	recs, err := loadRecipients(recipients, recipientFiles, *plain)
+	if errors.Is(err, errNoRecipient) && *waitRecipient {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		waitForRecipient(ctx, slog.New(slog.NewTextHandler(os.Stderr, nil)), noRecipientWarnEvery)
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -545,9 +583,66 @@ func backupLine(m *backupManifest) string {
 		m.File, float64(m.Size)/(1<<20), m.Migration, m.Counts.Accounts, m.Counts.Characters, m.Counts.ItemSerials, m.Counts.Zeny)
 }
 
+// waitForRecipient is the backup schedule without a recipient, with
+// --wait-for-recipient. It makes no backup. It logs a warning at once
+// and then every interval until ctx ends. The recipients are read only
+// at start, so the owner restarts the service after adding one.
+func waitForRecipient(ctx context.Context, log *slog.Logger, every time.Duration) {
+	for {
+		log.Warn("backups are off: the recipients files have no recipient. Add the public key of `wactl world backup-key new`, then restart this service")
+		timer := time.NewTimer(every)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			log.Info("stopped")
+			return
+		case <-timer.C:
+		}
+	}
+}
+
+// removeStaleTemps removes the hidden temporary files in dir that match
+// tempName and were last changed more than maxAge before now. A crash
+// or SIGKILL during a backup leaves them. Other files stay. It returns
+// the names it removed.
+func removeStaleTemps(dir string, now time.Time, maxAge time.Duration) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var removed []string
+	var errs []error
+	for _, e := range entries {
+		if !e.Type().IsRegular() || !tempName.MatchString(e.Name()) {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				errs = append(errs, err)
+			}
+			continue
+		}
+		if now.Sub(info.ModTime()) <= maxAge {
+			continue
+		}
+		if err := os.Remove(filepath.Join(dir, e.Name())); err != nil && !errors.Is(err, os.ErrNotExist) {
+			errs = append(errs, err)
+			continue
+		}
+		removed = append(removed, e.Name())
+	}
+	return removed, errors.Join(errs...)
+}
+
 // backupLoop makes a backup in dir every interval until ctx ends:
 //   - The first run is due one interval after the newest backup in dir,
 //     or now, so a restart does not make an extra backup.
+//   - Before each backup it removes hidden temporary files older than
+//     a day, which a crash left.
 //   - After each backup it prunes dir by keep.
 //   - A failed run is logged and tried again after an hour, or after the
 //     interval when that is shorter.
@@ -569,6 +664,13 @@ func backupLoop(ctx context.Context, log *slog.Logger, job *backupJob, dir strin
 			return nil
 		}
 		start := job.now()
+		stale, err := removeStaleTemps(dir, start, staleTempAge)
+		for _, name := range stale {
+			log.Info("removed a temporary file that a crash left", "file", name)
+		}
+		if err != nil {
+			log.Error("removing old temporary files failed", "error", err.Error())
+		}
 		dump := job.dumpDir
 		if job.fake != nil {
 			dump = job.fake

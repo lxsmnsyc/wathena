@@ -90,6 +90,10 @@ None.
 - A comparison of release builds on two machines.
 - A Docker image build with the new flags. The disk of this machine was too full to build it in this step.
 
+## Later changes
+
+- A release `wactl world new`, outside the repository, failed for a procedural world with "reference: go.mod not found above the working directory". Only the mod commands read the reference data built into wactl. Now every command does, and the binary did not grow (decision 0048, "Reference data in wactl"). `waserver` read the built-in data already.
+
 ## Review items
 
 - Whether `content.GuildLevel` should be a setting of `procedural.layout`, for worlds whose bands start higher.

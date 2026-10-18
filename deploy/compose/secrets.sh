@@ -25,7 +25,8 @@ new postgres_password "$(openssl rand -hex 32)"
 new migrator_password "$(openssl rand -hex 32)"
 new game_password "$(openssl rand -hex 32)"
 new account_password "$(openssl rand -hex 32)"
-# The role that verify-backup restores with (decision 0048).
+# The role that verify-backup restores with (decision 0048). Only the
+# verify profile uses it: its verify-init service makes the role.
 new verify_password "$(openssl rand -hex 32)"
 # The key that encrypts TOTP secrets. Back it up apart from the database.
 new account_secret_key "$(openssl rand -base64 32)"
@@ -55,7 +56,7 @@ END
 	echo "made secrets/backup_recipients"
 fi
 if ! grep -q '^age1' secrets/backup_recipients; then
-	echo "note: secrets/backup_recipients has no recipient yet, so the backup service fails until you add one"
+	echo "note: secrets/backup_recipients has no recipient yet, so the backup service makes no backups until you add one and run: docker compose up -d --force-recreate backup"
 fi
 chmod 644 secrets/*
 echo "secrets are in $(pwd)/secrets"

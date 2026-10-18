@@ -19,8 +19,8 @@ import (
 )
 
 // The mod commands (strategy section 6.9, mods/README.md, "Tools"). They
-// read the reference data built into wactl, so they work outside the
-// repository.
+// read the reference data built into wactl, as every command does, so
+// they work outside the repository.
 
 // errFailed is the error of a command that printed its problems.
 var errFailed = errors.New("failed")

@@ -524,6 +524,9 @@ func newWorld(t testing.TB, wactl, dbURL, mode, config, dir string) {
 		args = append(args, "--config", config)
 	}
 	cmd := exec.Command(wactl, args...) // #nosec G204 -- a binary built by prepareProcedural.
+	// The test's folder is outside the repository, as for a release
+	// binary, so wactl reads the reference data built into it.
+	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "WATHENA_MIGRATE_DATABASE_URL="+dbURL)
 	out, err := cmd.CombinedOutput()
 	if err != nil {

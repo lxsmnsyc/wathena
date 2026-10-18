@@ -503,7 +503,7 @@ The web client:
 - Every client response has a strict Content Security Policy that allows only this origin and its WebSocket, and HSTS with an https public URL.
 - A production build plays on `/ws` of its own origin. `?server=` names another server, and `?viewer` opens the map viewer.
 
-The reference data that `waserver` reads at startup (`reference/rathena/extracts` and `mob_status.json` of both modes) is embedded in the binary by `reference/rathena/embed.go`, so it runs outside the repository. It adds 24 MB to the binary, about half of its 48 MB, and compresses to about 2 MB in the image. The client adds 0.9 MB.
+The reference data that `waserver` reads at startup (`reference/rathena/extracts` and `mob_status.json` of both modes) is embedded in the binary by `reference/rathena/embed.go`, so it runs outside the repository. It adds 24 MB to the binary, about half of its 48 MB, and compresses to about 2 MB in the image. The client adds 0.9 MB. `wactl` embeds the same files, and every `wactl` command reads them, so `wactl world new` makes a procedural world outside the repository too.
 
 Health checks:
 
@@ -519,7 +519,7 @@ On SIGTERM or Ctrl+C, `waserver` stops being ready, ends every game connection w
 
 ```text
 wactl world backup-key new --out backup-identity.txt
-wactl world backup --dir /backups --recipients-file recipients.txt [--every 24h --keep-daily 7 --keep-weekly 4]
+wactl world backup --dir /backups --recipients-file recipients.txt [--every 24h --keep-daily 7 --keep-weekly 4 --wait-for-recipient]
 wactl world backup --out world.dump.age --recipient age1...
 wactl world verify-backup --in world-20261018T030000Z.dump.age --identity backup-identity.txt --database postgres://me@localhost/postgres
 wactl world verify-backup --dir /backups --identity backup-identity.txt [--every 24h]
@@ -529,8 +529,9 @@ wactl world restore --in world-20261018T030000Z.dump.age --identity backup-ident
 - `backup-key new` writes an X25519 identity with mode 0600, never over a file, and prints its recipient. `age-keygen` makes the same keys.
 - `backup` streams `pg_dump`'s custom format through age into the file, so no plain copy touches disk. It refuses to run without `--recipient` or `--recipients-file`, unless `--plain` is given. `--out -` writes to standard output.
 - `--dir` names backups `world-<UTC time>.dump.age` with a manifest `world-<UTC time>.json` beside it: the release, the migration, the time, the size, the SHA-256 of the file, and the numbers of accounts, characters and item serials, and the zeny total. One database snapshot gives both the counts and the dump.
-- Files are written to a hidden temporary name and renamed when complete.
-- `--every` runs as a long-lived process. After each backup it keeps the newest backup of each of the last `--keep-daily` UTC days and of each of the last `--keep-weekly` ISO weeks (Monday to Sunday, UTC), and removes the others. It touches only files of its own names, and stops cleanly on SIGTERM.
+- Files are written to a hidden temporary name, `.world-<UTC time>.<extension>.<random>.tmp`, and renamed when complete.
+- `--every` runs as a long-lived process. After each backup it keeps the newest backup of each of the last `--keep-daily` UTC days and of each of the last `--keep-weekly` ISO weeks (Monday to Sunday, UTC), and removes the others. Before each backup it removes hidden temporary files older than 24 hours, which a crash left. It touches only files of its own names, and stops cleanly on SIGTERM.
+- `--wait-for-recipient`, with `--every`: when the recipients files have no recipient, the command makes no backup and does not fail. It logs a warning at start and every hour until it stops. It reads the files only at start, so restart it after adding a recipient. A recipient that does not parse still fails. Compose's `backup` service uses it.
 - `verify-backup` checks the hash against the manifest, decrypts, restores into a temporary database as a role with `CREATEDB` (`--database` or `WATHENA_VERIFY_DATABASE_URL`), checks that the migrations are the manifest's and not newer than this wactl's, compares the counts, and drops the database, also on failure. It exits with status 1 on any mismatch.
 - `restore` decrypts an age backup with `--identity`, and restores plain backups too. It restores only into an empty database, in one transaction, as before.
 

@@ -51,6 +51,10 @@ commands:
 `
 
 func main() {
+	// Every command reads the reference data built into wactl, not the
+	// folder in the repository, so a release binary works in any folder.
+	// The files are the repository's at build time.
+	useEmbeddedReference()
 	if len(os.Args) >= 2 && os.Args[1] == "dev" {
 		exit(dev(os.Args[2:]))
 	}

@@ -20,15 +20,16 @@ The stack:
 | `migrate` | `wathena/wactl` | Runs on each `up`, after `db-init`. Applies pending migrations as `wathena_migrator`. |
 | `waserver` | `wathena/waserver` | `waserver all`: the game at `/ws`, the account pages at `/account/`, the assets at `/assets/`, and the web client at `/`. Starts after `migrate` succeeds. |
 | `caddy` | `caddy:2` | The only service with public ports. Gets certificates and proxies everything to `waserver`. |
-| `backup` | `wathena/wactl` | Makes an encrypted backup once a day into the `backups` volume, and removes old ones. See "Backups". |
-| `backup-verify` | `wathena/wactl` | Only with the `verify` profile. Restores the newest backup into a temporary database once a day and checks it. It needs the backup identity on the server. See "Backups". |
+| `backup` | `wathena/wactl` | Makes an encrypted backup once a day into the `backups` volume, and removes old ones. Without a recipient, it makes none and logs a warning every hour. See "Backups". |
+| `verify-init` | `postgres:18` | Only with the `verify` profile. Makes the `wathena_verify` role and sets its password. |
+| `backup-verify` | `wathena/wactl` | Only with the `verify` profile, after `verify-init`. Restores the newest backup into a temporary database once a day and checks it. It needs the backup identity on the server. See "Backups". |
 | `wactl` | `wathena/wactl` | Not started by `up`. For `docker compose run`: making the world, building assets, backups and restores. |
 
 The two wAthena images come from the repository's `Dockerfile`:
 
 - `wathena/waserver` is distroless (no shell), with one static binary: `waserver` with the web client and the reference data built in. The binary is about 107 MB, 22 MB compressed (2026-10-18). The build compiles Lua with `zig cc` and links the binary against musl, so it stays static. zig is downloaded in the build and checked against a pinned SHA-256.
 - `wathena/wactl` is `wactl` on the `postgres:18` image, for `pg_dump` and `pg_restore`. 170 MB compressed, mostly the PostgreSQL image, which the stack pulls anyway.
-- Both binaries are built with the tag `procedural`, as `scripts/release.sh` builds them (docs/decisions/0047-guild-towns-and-release-build.md). They run procedural and classic worlds, and `wactl world new --mode` picks the mode. `WATHENA_VERSION` in `.env` is the version they print with `version`; set it to the output of `git describe --tags --always --dirty` for a release.
+- Both binaries are built with the tag `procedural`, as `scripts/release.sh` builds them (docs/decisions/0047-guild-towns-and-release-build.md). They run procedural and classic worlds, and `wactl world new --mode` picks the mode. Both have the reference data built in, so they need no copy of the repository. `WATHENA_VERSION` in `.env` is the version they print with `version`; set it to the output of `git describe --tags --always --dirty` for a release.
 
 You need Docker Engine with Compose 2.20 or later. For about 500 players, section 3.9 suggests 4 CPU cores, 8 GB of memory and 50 GB of SSD. Building assets from a full game client takes 4 GB of memory.
 
@@ -98,7 +99,7 @@ Secrets never go into `.env`, the Compose file, the config file, an image, a pro
 | `game_database_url` | `waserver` | `WATHENA_DATABASE_URL_FILE` |
 | `account_database_url` | `waserver` | `WATHENA_ACCOUNT_DATABASE_URL_FILE` |
 | `account_secret_key` | `waserver` | `WATHENA_ACCOUNT_SECRET_KEY_FILE`. Encrypts TOTP secrets. |
-| `verify_password` | `db-init` | The password of `wathena_verify`, the role of `backup-verify`. |
+| `verify_password` | `verify-init` | The password of `wathena_verify`, the role of `backup-verify`. Only the `verify` profile uses it. |
 | `verify_database_url` | `backup-verify` | `WATHENA_VERIFY_DATABASE_URL_FILE` |
 | `backup_recipients` | `backup` | The recipients of the backups, which you add. Not secret, but kept here. `WATHENA_BACKUP_RECIPIENTS` in `.env` can name another file. |
 | `backup_identity` | `backup-verify` | Only for the `verify` profile, which you copy here yourself. `secrets.sh` never makes it. `WATHENA_BACKUP_IDENTITY` can name another file. |
@@ -188,8 +189,9 @@ wactl world backup-key new --out backup-identity.txt
 - The standard `age-keygen -o backup-identity.txt` makes the same kind of key. Its `Public key:` line is the recipient.
 - Put the recipient on a line of its own in `secrets/backup_recipients` on the server. More lines encrypt to more keys, such as one per owner. `secrets.sh` makes the file with comments that say this.
 - Keep the identity offline, such as in a password manager or on two USB drives. Without it, no backup can be restored. Anyone with it can read every backup.
-- The backup service fails until the file has a recipient, and `docker compose up --wait` then fails too. `docker compose logs backup` says why.
-- To change the key, put the new recipient in the file and run `docker compose up -d --wait --force-recreate backup`. Keep the old identity while you keep backups made for it.
+- Until the file has a recipient, the backup service makes no backups. It keeps running, so `docker compose up --wait` passes, and logs a warning at start and every hour. `docker compose logs backup` shows it.
+- The service reads the file only when it starts. After you add a recipient, run `docker compose up -d --wait --force-recreate backup`. A plain restart may keep the old file, since Docker mounts the file and an editor may write a new one.
+- To change the key, put the new recipient in the file and run the same command. Keep the old identity while you keep backups made for it.
 
 #### The backup service
 
@@ -197,7 +199,7 @@ wactl world backup-key new --out backup-identity.txt
 
 - The first backup runs when the service starts and the folder has none from the last 24 hours. Then one runs every 24 hours.
 - Each backup is `world-<UTC time>.dump.age`, such as `world-20261018T030000Z.dump.age`, with a plain manifest `world-20261018T030000Z.json` beside it. The manifest has the release, the migration, the time, the size, the SHA-256 of the encrypted file, and the numbers of accounts, characters and item serials, and the zeny total. It holds no secrets.
-- Files are written under a hidden temporary name and renamed when complete, so a file with a backup's name is always complete. A crash can leave a hidden `.world-...tmp` file, which you can delete.
+- Files are written under a hidden temporary name and renamed when complete, so a file with a backup's name is always complete. A crash can leave a hidden temporary file, such as `.world-20261018T030000Z.dump.age.123456.tmp`. Each scheduled run removes such files older than 24 hours. It removes only names of this pattern.
 - After each backup, old backups are removed. The service keeps the newest backup of each of the last 7 UTC days that have one, and the newest backup of each of the last 4 ISO weeks (Monday to Sunday, UTC) that have one. With daily backups, that is the last 7 days and the Sunday backups of the 3 weeks before. Files with other names in the folder stay.
 - A failed backup is logged and tried again after an hour.
 - `.env` sets `WATHENA_BACKUP_EVERY`, `WATHENA_BACKUP_KEEP_DAILY` and `WATHENA_BACKUP_KEEP_WEEKLY`.
@@ -244,10 +246,10 @@ To turn it on:
 2. Start the profile: `docker compose --profile verify up -d --wait`.
 
 - It checks the newest backup at start and every 24 hours (`WATHENA_VERIFY_EVERY`). `docker compose logs backup-verify` shows each result.
-- It connects as `wathena_verify`, a role that may make databases and has no rights on the world's database. `db-init` makes it, and `secrets.sh` makes its password.
+- It connects as `wathena_verify`, a role that may make databases and has no rights on the world's database. `verify-init` makes it, only with the `verify` profile, and `secrets.sh` makes its password. A stack without the profile has no such role.
 - The temporary database lives on the stack's PostgreSQL. Keep free disk for one more copy of the database.
 
-To turn it off, run `docker compose rm -sf backup-verify` and delete `secrets/backup_identity`.
+To turn it off, run `docker compose rm -sf backup-verify` and delete `secrets/backup_identity`. The role stays. To remove it too, run `docker compose exec postgres psql -U postgres -c 'DROP ROLE wathena_verify'`. On a stack started before `verify-init` existed, `db-init` made the role on every `up`. The same command removes it there too.
 
 #### Decrypting with age
 
@@ -298,7 +300,7 @@ docker compose up -d --wait
 | `wathena_migrator` | `wactl migrate`, `wactl world` | Owns the database and the schema. Alone makes the world and its first account. |
 | `wathena_game` | The game side of `waserver`, through `WATHENA_DATABASE_URL` | Reads and writes characters and inventories, reads and deletes game tickets, and reads the world without its seed. No DDL, and no access to passwords or login sessions. Deletes an account only through `delete_account`, once its player's deletion request is due (decision 0032). |
 | `wathena_account` | The account service, through `WATHENA_ACCOUNT_DATABASE_URL` | Reads and writes passwords, login sessions, game tickets, TOTP secrets, recovery codes and passkeys, and makes accounts and characters. No DDL, and cannot change or delete characters. |
-| `wathena_verify` | `wactl world verify-backup` in the `backup-verify` service, through `WATHENA_VERIFY_DATABASE_URL` | `CREATEDB` and nothing else: it makes, fills and drops its temporary databases from the `postgres` database. It cannot connect to `wathena`. `db-init` makes it in Compose. |
+| `wathena_verify` | `wactl world verify-backup` in the `backup-verify` service, through `WATHENA_VERIFY_DATABASE_URL` | `CREATEDB` and nothing else: it makes, fills and drops its temporary databases from the `postgres` database. It cannot connect to `wathena`. In Compose, `verify-init` makes it, only with the `verify` profile. |
 
 Without Docker, make the verify role only where you run `verify-backup`, as a superuser, and set its password with `\password wathena_verify`:
 
