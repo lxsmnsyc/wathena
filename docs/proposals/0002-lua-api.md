@@ -1072,6 +1072,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Compose config.** `maps` and `start_map` move into a `classic:` block of `waserver.yml` that procedural worlds ignore, so the default Compose config runs in both world modes.
     - **No Lua API.**
 
+50. Load tests (phase 8 step 4). The user approved these on 2026-10-18:
+    - **Setup.** Release binaries from `scripts/release.sh`, PostgreSQL 18 in Docker, and a procedural world from `wactl world new`, all on the development machine (an Apple M2 with 8 GB). Bots run on the same machine at `nice 15` with `GOMAXPROCS=4`. Classic mode gets one Town run on the kRO maps.
+    - **Scenarios.** The five of phase 2 (Town, Crowd, Spread, Fight, Town with PostgreSQL saves), and two procedural ones: bots fighting on generated fields of several bands, and bots walking the generated map graph through portals.
+    - **Steps.** 250, 500, 750, 1,000 bots and up, with 3 minutes of measurement each. The documented capacity is the highest count at which every scenario except Crowd meets section 3.8: tick p99 under 10 ms, a tick maximum of 25 ms with rare spikes reported, and under 256 KB per player. Crowd is a stress test. Its results are reported but do not set the capacity.
+    - **Soak.** One 30-minute run at the documented count checks that memory and tick times stay flat.
+    - **Results.** New tables in strategy section 3.8, the capacity and minimum hardware lines of section 4, and "Measure your own hardware" in the deploy guide. `wabots` ships in the release.
+    - **Fixes.** Small slowdowns found are fixed in this step. Large ones are reported for a decision.
+    - **No Lua API.**
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
