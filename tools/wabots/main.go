@@ -3,10 +3,17 @@
 // metrics").
 //
 //	wabots --scenario town --assets <build> --metrics http://127.0.0.1:8301
+//	wabots version
 //
 // A scenario is one of botclient.Scenarios, or a YAML file with
 // --file. Flags override the scenario's settings. With --check, wabots
 // exits with status 1 when a budget of strategy section 3.8 is broken.
+//
+// The procedural scenarios, fields and graph, place the bots through the
+// database before they join, so they need --database or
+// WATHENA_DATABASE_URL. Run them against a test world, never a live one:
+// they change the bots' characters. Bots read generated maps' cells and
+// portals from the server, as the web client does.
 package main
 
 import (
@@ -16,6 +23,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"slices"
@@ -24,12 +32,24 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.yaml.in/yaml/v3"
 
+	"github.com/lxsmnsyc/wathena/internal/buildinfo"
 	"github.com/lxsmnsyc/wathena/server/world"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/tools/botclient"
 )
+
+// databaseEnv holds the database URL, so the password stays out of
+// process lists. It is waserver's variable.
+const databaseEnv = "WATHENA_DATABASE_URL"
+
+var stderr io.Writer = os.Stderr
+
+// buildVersion is set by release builds with
+// -ldflags "-X main.buildVersion=...", as scripts/release.sh does.
+var buildVersion string
 
 func main() {
 	if err := run(); err != nil {
@@ -39,6 +59,10 @@ func main() {
 }
 
 func run() error {
+	if len(os.Args) == 2 && os.Args[1] == "version" {
+		fmt.Println("wabots", buildinfo.Version(buildVersion))
+		return nil
+	}
 	names := make([]string, 0, len(botclient.Scenarios))
 	for n := range botclient.Scenarios {
 		names = append(names, n)
@@ -61,6 +85,10 @@ func run() error {
 	stay := flag.Bool("stay", false, "walk around the cell where the bot entered its map")
 	warpChance := flag.Float64("warp-chance", 0, "chance that a walk goes to a warp portal in view")
 	seed := flag.Uint64("seed", 0, "seed for the bots' choices")
+	database := flag.String("database", "", "PostgreSQL URL of the world, for the scenarios that place bots (fields, graph); prefer the "+databaseEnv+" environment variable")
+	fieldCount := flag.Int("fields", 8, "how many fields the fields scenario spreads the bots over, from the lowest band to the highest")
+	travel := flag.Bool("travel", false, "walk routes to the portals of generated maps")
+	place := flag.String("place", "", "where to put the bots through the database before they join: fields or towns of a procedural world")
 	jsonOut := flag.String("json", "", "file to write the report to as JSON")
 	check := flag.Bool("check", false, "exit with status 1 when a budget of strategy section 3.8 is broken")
 	flag.Parse()
@@ -107,6 +135,10 @@ func run() error {
 			sc.Behaviour.WarpChance = *warpChance
 		case "seed":
 			sc.Seed = *seed
+		case "travel":
+			sc.Behaviour.Travel = *travel
+		case "place":
+			sc.Place = *place
 		}
 	})
 	if sc.URL == "" || isSet("url") {
@@ -115,13 +147,50 @@ func run() error {
 	if sc.MetricsURL == "" || isSet("metrics") {
 		sc.MetricsURL = strings.TrimSuffix(*metricsURL, "/")
 	}
-	if *assets != "" {
-		sc.Behaviour.Grids = grids(*assets)
+	gen, err := newGenMaps(sc.URL)
+	if err != nil {
+		return err
 	}
+	var classic func(string) *path.Grid
+	if *assets != "" {
+		classic = grids(*assets)
+	}
+	sc.Behaviour.Grids = func(name string) *path.Grid {
+		if strings.HasPrefix(name, "gen:") {
+			return gen.grid(name)
+		}
+		if classic != nil {
+			return classic(name)
+		}
+		return nil
+	}
+	sc.Behaviour.Portals = gen.portals
 	sc.Progress = func(s string) { fmt.Fprintf(os.Stderr, "%s %s\n", time.Now().Format("15:04:05"), s) }
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	dbURL := *database
+	if dbURL == "" {
+		dbURL = os.Getenv(databaseEnv)
+	}
+	if sc.Place != "" || sc.Behaviour.Travel {
+		if dbURL == "" {
+			return fmt.Errorf("the scenario places bots or reads portals through the database: give --database or %s", databaseEnv)
+		}
+		db, err := pgxpool.New(ctx, dbURL)
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+		p := &placer{db: db, maps: gen, fields: *fieldCount}
+		if sc.Place != "" {
+			if err := p.place(ctx, &sc, sc.Names(), sc.Progress); err != nil {
+				return err
+			}
+		} else if _, err := p.load(ctx); err != nil {
+			return err
+		}
+	}
 	rep, err := sc.Run(ctx)
 	if err != nil {
 		return err

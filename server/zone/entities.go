@@ -144,6 +144,11 @@ func (n *netIDs) set(e *entity, id uint32) {
 	n.known = append(n.known, e)
 }
 
+// reset forgets every entity. A player that left its zone keeps no
+// other entity in memory then: otherwise each player that left would
+// keep the players it saw, and they the players they saw.
+func (n *netIDs) reset() { *n = netIDs{} }
+
 // del forgets e.
 func (n *netIDs) del(e *entity) {
 	i := int(e.slot)
@@ -186,17 +191,23 @@ type blockIndex struct {
 	used []int32
 }
 
+// clear empties the blocks, so a zone without players keeps no entity
+// of its last tick in memory, such as players that left.
+func (b *blockIndex) clear() {
+	for _, i := range b.used {
+		clear(b.blocks[i])
+		b.blocks[i] = b.blocks[i][:0]
+	}
+	b.used = b.used[:0]
+}
+
 // build puts every entity of the set into its block.
 func (b *blockIndex) build(width, height int, s *entitySet) {
 	if b.blocks == nil {
 		b.w, b.h = max(1, (width+blockSize-1)/blockSize), max(1, (height+blockSize-1)/blockSize)
 		b.blocks = make([][]*entity, b.w*b.h)
 	}
-	for _, i := range b.used {
-		clear(b.blocks[i])
-		b.blocks[i] = b.blocks[i][:0]
-	}
-	b.used = b.used[:0]
+	b.clear()
 	for _, e := range s.list {
 		if e == nil {
 			continue

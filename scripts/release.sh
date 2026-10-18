@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds the release binaries of waserver and wactl (decision 0047).
+# Builds the release binaries of waserver, wactl and wabots (decisions
+# 0047 and 0050).
 #
 #   scripts/release.sh                       every target, into dist/<version>
 #   scripts/release.sh linux/amd64 ...       only the targets named
@@ -10,6 +11,8 @@
 #   - waserver with the web client built into it, and wactl, both with
 #     the procedural tag. Such a binary runs procedural and classic
 #     worlds; `wactl world new --mode` picks the mode of a world.
+#   - wabots, the load test bots, so owners can measure their own
+#     hardware (deploy/README.md, "Measure your own hardware").
 #   - The version is the output of git describe --tags --always --dirty,
 #     stamped with -ldflags "-X main.buildVersion=...". waserver version
 #     and wactl version print it.
@@ -28,7 +31,7 @@
 # waserver runs Lua through cgo (decision 0002). zig cc compiles the C
 # code for every target. The Linux binaries link musl statically. The
 # darwin build needs the macOS SDK, so it runs on a Mac with xcrun only.
-# wactl needs no cgo.
+# wactl and wabots need no cgo.
 #
 # Tools: Go of go.mod, zig 0.16.0, Node 26 and pnpm (scripts/check.sh
 # lists the versions and hashes). Signing and the software bill of
@@ -118,11 +121,14 @@ for t in "${targets[@]}"; do
 	CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -trimpath -buildvcs=false \
 		-tags procedural -ldflags "$ldflags" \
 		-o "$out/wactl-$goos-$goarch$ext" ./tools/wactl
+	CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -trimpath -buildvcs=false \
+		-tags procedural -ldflags "$ldflags" \
+		-o "$out/wabots-$goos-$goarch$ext" ./tools/wabots
 done
 
 # The binaries of this machine run, as a check of the stamp and the tag.
 host="$(go env GOHOSTOS)-$(go env GOHOSTARCH)"
-for bin in waserver wactl; do
+for bin in waserver wactl wabots; do
 	if [ -x "$out/$bin-$host" ]; then
 		"$out/$bin-$host" version
 	fi

@@ -31,7 +31,7 @@ The two wAthena images come from the repository's `Dockerfile`:
 - `wathena/wactl` is `wactl` on the `postgres:18` image, for `pg_dump` and `pg_restore`. 170 MB compressed, mostly the PostgreSQL image, which the stack pulls anyway.
 - Both binaries are built with the tag `procedural`, as `scripts/release.sh` builds them (docs/decisions/0047-guild-towns-and-release-build.md). They run procedural and classic worlds, and `wactl world new --mode` picks the mode. Both have the reference data built in, so they need no copy of the repository. `WATHENA_VERSION` in `.env` is the version they print with `version`; set it to the output of `git describe --tags --always --dirty` for a release.
 
-You need Docker Engine with Compose 2.20 or later. For about 500 players, section 3.9 suggests 4 CPU cores, 8 GB of memory and 50 GB of SSD. Building assets from a full game client takes 4 GB of memory.
+You need Docker Engine with Compose 2.20 or later. The load tests of phase 8 measured 250 players on 4 CPU cores and 8 GB of memory (strategy section 3.9), with 50 GB of SSD suggested. For more players, measure your own hardware first (see "Measure your own hardware"). Building assets from a full game client takes 4 GB of memory.
 
 ### First start
 
@@ -283,6 +283,43 @@ docker compose up -d --wait
 - Keep the `account_secret_key` that was in use when the backup was made, or players with TOTP must use a recovery code.
 - A backup from an older release gets its new migrations from `migrate` on `up`.
 - `docker compose down -v` deletes every volume: the database, the backups, the assets and Caddy's certificates. Use plain `down` unless you mean that.
+
+## Measure your own hardware
+
+`wabots` ships with each release, next to `waserver` and `wactl`. It plays the load tests of strategy section 3.8 against a server, and checks the results against the budgets. Run it before you open a world, to learn how many players your machine holds.
+
+Always use a test world in a database of its own, never your live world. The bots log in with development sessions, make characters, and change their levels, items and places.
+
+1. Make the test world, as the migrator of a new database:
+
+   ```text
+   createdb wathena_loadtest
+   WATHENA_MIGRATE_DATABASE_URL=postgres://.../wathena_loadtest \
+     wactl world new --name "Load test" --admin Admin --admin-password-file -
+   ```
+
+2. Stop the live server, so the test measures the machine alone. Start `waserver` for the test world with development sessions and the debug address. Both need a loopback address:
+
+   ```text
+   WATHENA_DATABASE_URL=postgres://.../wathena_loadtest \
+     waserver all --dev --addr 127.0.0.1:8300 --debug-addr 127.0.0.1:8301 --assets /path/to/build
+   ```
+
+3. Run the bots on the same machine, in their own process at a low priority, so their CPU does not count as the server's:
+
+   ```text
+   WATHENA_DATABASE_URL=postgres://.../wathena_loadtest GOMAXPROCS=4 nice -n 15 \
+     wabots --scenario fields --bots 250 --metrics http://127.0.0.1:8301 --check
+   ```
+
+4. Run each scenario, and raise `--bots` by 250 while the budgets hold: `town`, `crowd`, `fight` (with `--place fields --fields 1` in a procedural world), `fields` and `graph`. `fields` and `graph` need the database URL, since they place the bots before they join. For a classic world, start `waserver` with `--map prontera` and give `wabots --assets` the same build. server/README.md, "Load tests and metrics", lists the scenarios and flags.
+5. Read the report. `all budgets met` means every zone's tick work stayed under 10 ms at p99 and 25 ms at most, and every bot's traffic within its budgets. Each line `over budget:` names what broke. A p99 of 10.5 ms can still be within the budget: count the ticks over 10 ms, which must be fewer than 1% of the zone's ticks. Rare ticks over 25 ms come from the machine as often as from the server. `--check` exits with status 1 on any broken budget, and `--json` writes the report.
+6. Repeat a step that is close to the budget. On a busy machine, results vary from run to run.
+7. Drop the test database when you are done: `dropdb wathena_loadtest`.
+
+Crowd puts every bot in view of every other, as at a town event. It is a stress test and breaks the budgets early on most machines.
+
+Set `GOMEMLIMIT` for the live server to the memory it may use, such as `GOMEMLIMIT=2GiB`. Each online player needs about 70 to 120 KB of live heap, and about twice that in process memory with Go's default `GOGC`. An idle procedural world of the default size holds about 370 MB of live heap and 600 MB of process memory.
 
 ## Without Docker
 

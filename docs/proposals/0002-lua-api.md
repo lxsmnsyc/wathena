@@ -1475,3 +1475,13 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
      - The admin IP search and the data export look back `login_ip_days`, not a fixed 90 days.
      - The table `retention_status` keeps the last run, its counts by kind and its errors. The job writes it as the game role. `GET /retention` reads it, so it shows a run of another process, and a run from before a restart.
    - Review items: whether `world.read` is the right permission for `GET /retention`.
+36. Build review decision 50: load tests (phase 8 step 4), with the scenarios `fields` and `graph` in `tools/botclient`, bot placement through the database and routes to portals in `wabots`, `wabots` in the release, the results in strategy section 3.8, and "Measure your own hardware" in the deploy guide. No Lua API changes. Done on 2026-10-18 ([decision 0050](../decisions/0050-load-tests.md)). Details to review:
+   - The phase 2 scenarios run in the procedural world's start town and its lowest field. Town uses new characters each step, which start at the start cell. Town with PostgreSQL uses the characters of an earlier run, spread over the town. Every procedural run loads and saves characters in PostgreSQL.
+   - `--place fields` puts each bot on one of `--fields` fields (8 by default), spread from the lowest band to the highest, as the economy simulator's model player of its band, with 50 potions, and its save point on its field. `--place towns` spreads the bots over the towns as the model player of the highest band. The update raises `save_version`.
+   - `wabots` reads generated maps from `/gen/maps/` and the world's links from `world_links`, and needs `--database` or `WATHENA_DATABASE_URL` for the procedural scenarios. The game role's rights are enough.
+   - A travelling bot walks a breadth-first route to a random portal more than 12 cells away, in legs of up to 24 cells, and picks another after three walks without moving.
+   - The p99 budget counts as met when fewer than 1% of a zone's ticks are over 10 ms, since the histogram rounds p99 up to its bucket.
+   - The documented capacity is 250: every run of every scenario but Crowd met the budgets there. At 500, 3 of 10 runs had 1.06% to 1.17% of their ticks over 10 ms, while the zone thread's CPU time p99 stayed under 6 ms.
+   - The classic run used Prontera's map files from the kRO client, since the full asset build did not fit on the disk.
+   - The zone fix: a sleeping zone clears its block index, a player that leaves its zone resets its IDs for what it saw, and the tick clears its hits and removals before it cuts them.
+   - Review items: whether to document 500 players, the slowdown of 1,000 players in one town, and a way to place bots without a database URL.

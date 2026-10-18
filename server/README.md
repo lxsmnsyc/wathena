@@ -1329,9 +1329,11 @@ The scenarios are in `tools/botclient/scenarios.go`. Each needs the server start
 | `crowd` | 500 | Stay within 10 cells of the start cell, so most see each other, as at an event. A walk every 2 seconds and 10 chat lines a second together. | `--map prontera` |
 | `spread` | 500 | As `town`, but a third of their walks go to a warp portal in view, so they spread over the maps. | `--map prontera --maps prontera,prt_fild08,prt_in,prt_fild05,prt_fild06,prt_fild07,prt_church,izlude` |
 | `fight` | 500 | Attack the nearest monster in view until it dies, walk on to find more, and say 0.5 chat lines a second together. | `--map prt_fild08 --build melee` |
+| `fields` | 500 | Fight on 8 generated fields of a procedural world, from the lowest band to the highest, as `fight` does. Each bot is the model player of its field's band (strategy section 8.13), with its save point on its field. 0.5 chat lines a second together. | A procedural world; `wabots --database` |
+| `graph` | 500 | Walk the generated map graph: each bot walks a route to a portal of its map, other than the one it came in at, and on through the next map. They start spread over the towns as the model player of the highest band, so the fields they cross do not kill them. 2 chat lines a second together. | A procedural world; `wabots --database` |
 | `smoke` | 50 | A walk every second and 5 chat lines a second together, on the 24 × 24 placeholder map. | `--map placeholder/map --mode none` |
 
-The 500-bot scenarios join 50 bots a second, warm up for 15 seconds (60 for `spread`), and measure for 3 minutes. `smoke` joins 25 a second, warms up for 3 seconds, and measures for 20. Flags change them: `--bots`, `--ramp`, `--warmup`, `--duration`, `--walk-every`, `--walk-radius`, `--chat-rate` (lines a second of all bots together), `--fight`, `--stay`, `--warp-chance`, `--prefix` and `--seed`. `--file` reads a scenario from YAML instead:
+The 500-bot scenarios join 50 bots a second, warm up for 15 seconds (60 for `spread` and `graph`), and measure for 3 minutes. `smoke` joins 25 a second, warms up for 3 seconds, and measures for 20. Flags change them: `--bots`, `--ramp`, `--warmup`, `--duration`, `--walk-every`, `--walk-radius`, `--chat-rate` (lines a second of all bots together), `--fight`, `--stay`, `--warp-chance`, `--prefix` and `--seed`. `--file` reads a scenario from YAML instead:
 
 ```yaml
 name: market
@@ -1346,11 +1348,21 @@ behaviour:
   stay: true
 ```
 
+The procedural scenarios place the bots before they join, through the database, so they need `--database` or `WATHENA_DATABASE_URL`:
+
+- `fields` and `--place fields` spread the bots over `--fields` fields (8 by default), picked from the lowest band to the highest. `--place fields --fields 1` puts every bot on the lowest field, as the `fight` runs of decision 0050 did.
+- `graph` and `--place towns` spread them over the towns.
+- Each bot's character gets the job, levels, stats, gear and 50 potions of the economy simulator's model player, a cell on its map that a path reaches from the map's first warp, and its save point there. The update raises `save_version`, so a save of an older session cannot undo it.
+- A bot whose character does not exist yet logs in once first, so the server makes it.
+- Run them against a test world, never a live one: they change the bots' characters.
+
+Bots read a generated map's cells from its WMAP and its portals from its info at `/gen/maps/`, as the web client does, and the world's links from the database. `--travel` walks the portal routes of `graph` in any scenario. `wabots version` prints the version.
+
 `--json` writes the report as JSON. `--check` exits with status 1 when a budget is broken: tick work p99 over 10 ms or maximum over 25 ms, or a bot over 8 KB/s from the server on average, 32 KB/s in its busiest second, or 1 KB/s to the server.
 
 Scenario bots use `--dev` sessions, so with a database each bot name becomes a dev account and character, which keeps its map and cell between runs. `botclient.Account` signs up, makes a character and gets a game ticket on the account pages instead, as `TestAccountFlow` does with `WATHENA_TEST_DATABASE_URL`. Scenarios do not use it yet, since the account service limits signups per address.
 
-The bots join at the server's `--map`, or at their saved map with a database. To load other maps, use `spread`, whose bots walk through warps.
+The bots join at the server's `--map`, or at their saved map with a database. To load other maps, use `spread`, whose bots walk through warps. In a procedural world, `fields` and `graph` place the bots first, and `graph`'s bots walk routes through the portals.
 
 ### Messages to connections
 
@@ -1385,4 +1397,4 @@ The `loadtest` step runs `TestLoadSmoke` in `tools/botclient`: it builds `waserv
 WATHENA_LOAD_TEST=1 go test -count=1 -run TestLoadSmoke -v ./tools/botclient
 ```
 
-The results of the 500-bot tests are in strategy section 3.8.
+The results of the load tests of phases 2 and 8 are in strategy section 3.8, "Load test results" (decision 0050). deploy/README.md, "Measure your own hardware", tells owners how to run them on their own machine. To read the live heap with the bots online, as phase 8 did, ask for `/debug/pprof/heap?gc=1` on the debug address, which forces a garbage collection, then read the metrics.

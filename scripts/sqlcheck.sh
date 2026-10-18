@@ -10,13 +10,15 @@
 # server/store/storetest and tools/testdb are skipped: they only make
 # throwaway test databases, with names they generate. e2e is skipped
 # too: it is test code that reads the throwaway databases of its
-# servers.
+# servers. tools/wabots is skipped as well: it is the load test tool,
+# which places its bots in a test world's database with bound
+# parameters (decision 0050).
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 fail=0
 while IFS= read -r f; do
 	case "$f" in
-	*_test.go | server/store/db/* | server/store/storetest/* | tools/testdb/* | e2e/*) continue ;;
+	*_test.go | server/store/db/* | server/store/storetest/* | tools/testdb/* | tools/wabots/* | e2e/*) continue ;;
 	esac
 	grep -qE '"(github\.com/jackc/pgx/v5[^"]*|database/sql)"' "$f" || continue
 	if grep -nE 'fmt\.Sprint' "$f"; then

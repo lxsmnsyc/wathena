@@ -245,6 +245,8 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	// Worn items end their equip contexts here, and start them again in
 	// the new zone.
 	z.unwearAll(p)
+	// The new zone makes a new Player, so this one forgets what it saw.
+	p.netIDs.reset()
 	// The send runs on its own goroutine, so two zones that hand players
 	// to each other never wait on each other. It starts once this zone's
 	// messages to the player went out, so they come before the new

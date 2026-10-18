@@ -36,6 +36,15 @@ type Behaviour struct {
 	// WarpChance is the chance that a walk goes to the nearest warp
 	// portal in view, which takes the bot to another map.
 	WarpChance float64 `yaml:"warp_chance"`
+	// Travel walks each bot along a route to a portal of its map, other
+	// than the one it arrived at, in legs of up to 24 cells. Each leg
+	// starts when the last one ended and WalkEvery has passed. It needs
+	// Grids and Portals; on a map without them, the bot walks as without
+	// Travel.
+	Travel bool `yaml:"travel"`
+	// Portals returns the cells of a map's warps by map name, for
+	// Travel.
+	Portals func(mapName string) [][2]int `yaml:"-"`
 	// PingEvery is the time between pings. 0 means none, as the web
 	// client sends none.
 	PingEvery time.Duration `yaml:"ping_every"`
@@ -74,6 +83,7 @@ func (b *Bot) Play(ctx context.Context, beh Behaviour, rnd *rand.Rand) error {
 	var targetSince time.Time
 	// home is where the bot entered its map, for Stay.
 	home := b.View()
+	var trip travel
 	lines := 0
 	// Bots that joined together start thinking at different times.
 	select {
@@ -107,9 +117,16 @@ func (b *Bot) Play(ctx context.Context, beh Behaviour, rnd *rand.Rand) error {
 				}
 			}
 		}
-		if err == nil && target == 0 && beh.WalkEvery > 0 && !now.Before(nextWalk) {
+		if err == nil && target == 0 && beh.WalkEvery > 0 && !now.Before(nextWalk) && (!beh.Travel || !v.Walking) {
 			nextWalk = now.Add(jitter(beh.WalkEvery))
-			if x, y, ok := beh.pick(v, home, rnd); ok {
+			x, y, ok := 0, 0, false
+			if beh.Travel {
+				x, y, ok = beh.travelPick(&trip, v, rnd)
+			}
+			if !ok {
+				x, y, ok = beh.pick(v, home, rnd)
+			}
+			if ok {
 				err = b.WalkTo(ctx, x, y)
 			}
 		}

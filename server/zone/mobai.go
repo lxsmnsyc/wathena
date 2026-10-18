@@ -132,6 +132,7 @@ func (z *Zone) mobHits(e *entity) {
 	m := e.monster
 	for len(m.hits) > 0 && z.now >= m.hits[0].at {
 		h := m.hits[0]
+		m.hits[0] = mobHit{}
 		m.hits = m.hits[1:]
 		if z.entities.has(h.src) && !h.src.dead {
 			z.mobSetAttacked(e, h.src, h.normal)

@@ -41,6 +41,11 @@ type Scenario struct {
 	ChatRate float64 `yaml:"chat_rate"`
 	// Seed makes the bots' choices repeatable.
 	Seed uint64 `yaml:"seed"`
+	// Place, for a procedural world, is where wabots puts the bots
+	// through the database before they join: "fields" spreads them over
+	// fields of several bands, and "towns" over the towns. Empty leaves
+	// each bot where its character is.
+	Place string `yaml:"place"`
 	// MetricsURL is the server's --debug-addr as a URL, such as
 	// http://127.0.0.1:8301. When set, the server's counts reset when
 	// measuring starts, and the report includes them.
@@ -96,6 +101,19 @@ type player struct {
 	peak [2]uint64
 }
 
+// Names returns the bots' character names, in order.
+func (s *Scenario) Names() []string {
+	prefix := s.NamePrefix
+	if prefix == "" {
+		prefix = "bot"
+	}
+	out := make([]string, s.Bots)
+	for i := range out {
+		out[i] = fmt.Sprintf("%s%d", prefix, i+1)
+	}
+	return out
+}
+
 func (s *Scenario) progress(format string, args ...any) {
 	if s.Progress != nil {
 		s.Progress(fmt.Sprintf(format, args...))
@@ -110,10 +128,7 @@ func (s *Scenario) Run(ctx context.Context) (*Report, error) {
 	if s.URL == "" || s.Bots <= 0 || s.Duration <= 0 {
 		return nil, errors.New("botclient: a scenario needs a URL, bots and a duration")
 	}
-	prefix := s.NamePrefix
-	if prefix == "" {
-		prefix = "bot"
-	}
+	names := s.Names()
 	if s.ChatRate > 0 {
 		s.Behaviour.ChatEvery = time.Duration(float64(s.Bots) / s.ChatRate * float64(time.Second))
 	}
@@ -150,7 +165,7 @@ func (s *Scenario) Run(ctx context.Context) (*Report, error) {
 			dial, cancel := context.WithTimeout(ctx, 30*time.Second)
 			defer cancel()
 			began := time.Now()
-			b, err := Dial(dial, s.URL, fmt.Appendf(nil, "%s%d", prefix, i+1), Options{Ack: ack})
+			b, err := Dial(dial, s.URL, []byte(names[i]), Options{Ack: ack})
 			if err != nil {
 				p.err = err
 				addErr(err)

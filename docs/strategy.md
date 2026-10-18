@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, and step 3, retention jobs and the Compose config, were built the same day.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, and step 4, the load tests, were built the same day.
 
 Done:
 
@@ -167,6 +167,13 @@ Done:
   - The privacy page shows the periods in effect, the backups row and the note that item logs may be kept up to 31 days longer.
   - `maps` and `start_map` moved into a `classic:` block that procedural worlds ignore, so the default Compose config runs both world modes. The old keys still work, with a warning.
 
+- Phase 8 step 4, the load tests ([decision 0050](decisions/0050-load-tests.md)):
+  - The release build ran a procedural world of 52 maps with PostgreSQL, with bots from 250 to 1,500 in the five scenarios of phase 2 and two new ones: `fields`, fights on 8 fields of every band, and `graph`, walks through the map graph's portals. Classic mode ran Town on the kRO Prontera.
+  - The documented capacity is 250 players, on the shared 8 GB Apple M2: every run of every scenario but Crowd met section 3.8 there. At 500 the zone's work fits, with a thread CPU time p99 under 6 ms, but 3 of 10 runs had just over 1% of their ticks over 10 ms, from the machine's memory pressure. Spread over many maps, 1,500 bots met the budgets.
+  - A fix: zones kept every player that left in memory, through the block index of a sleeping zone and each player's IDs for what it saw. Tests with weak pointers check that the players are freed.
+  - `wabots` ships in the release. It places bots on generated fields and towns through the database, and walks routes to portals. The deploy guide tells owners how to measure their own hardware against a test world.
+  - One large slowdown is reported, not fixed: 1,000 players in one town are over the tick budget in the zone's own work.
+
 Open review items:
 
 - Next step 27's details to review, in proposal 0002, "Next steps".
@@ -176,6 +183,7 @@ Open review items:
 - Next step 32's details to review, and the review items of decision 0044: a public exp reward call, a Lua way to read a world's quests, player fields for skill points and weight, a layer's read of map cells, a places scope of fields, objects of a mod's own art, board quest limits and repeats, and whether `world.generate` should be flagged.
 - Next step 33's details to review, and the review items of decision 0045: the hooks and generation layers on rotating floors and changed fields, a Lua way to read a rotating dungeon's date or a region's season, forced changes across a restart and a cancel, new level bands with a world change, more than one rotating dungeon, and locale text and a banner for the warnings.
 - Decision 0046's review items: the model player and the targets, the economy checks and the `spawn_table` hooks, and a Lua way to read a field's simulated rates.
+- Decision 0050's review items: whether to document 500 players, the slowdown of 1,000 players in one town, and a way to place load test bots without a database URL.
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:
@@ -611,6 +619,148 @@ CI runs the server budgets in load tests (section 12). A change that breaks a bu
 
 #### Load test results
 
+##### Phase 8
+
+The load tests of phase 8 step 4, on 2026-10-18, as review decision 50 set them ([decision 0050](decisions/0050-load-tests.md)). How to run them is in server/README.md, "Load tests and metrics", and owners can run them on their own machine (deploy/README.md, "Measure your own hardware").
+
+Setup:
+
+- The release binaries of `scripts/release.sh` for darwin/arm64, with the fix below. `waserver all` with `--dev` on a loopback address, and PostgreSQL 18 in Docker.
+- A procedural world that `wactl world new` made with its defaults: 30 fields of 300 × 300 cells, 5 towns, 6 dungeons with 17 floors, 52 maps in all, and 8,236 monsters. Each zone runs in its own goroutine, and a zone without players does not tick.
+- Classic mode: one Town run on the kRO Prontera, in a classic world in PostgreSQL. The full kRO asset build did not fit on the disk, so the build held the placeholder pack and Prontera's map files from the kRO client.
+- `wabots` from the release, in its own process at `nice 15` with `GOMAXPROCS=4`.
+- The machine: an Apple M2 (4 performance and 4 efficiency cores) with 8 GB. It was shared with desktop apps (a browser, an editor and a chat app) and with Colima's Docker VM, which holds 5 GB and ran other projects' containers too. 6.3 to 9.3 GB of swap were in use, and the kernel decompressed a median of 14,700 memory pages a second (about 230 MB/s) through the runs.
+- Steps of 250, 500, 750 and 1,000 bots, and 1,250 and 1,500 for Fields and Graph. Bots join at 50 a second and play for 15 seconds (60 for Spread and Graph) before 3 minutes of measurement. Every step ran once, and some at 500 again.
+
+Scenarios. The phase 2 scenarios run in the procedural world's start town and its lowest field. Every bot's character is loaded from and saved to PostgreSQL.
+
+| Scenario | Maps | What the bots do |
+|---|---|---|
+| Town | `gen:town:t1`, the start town | As in phase 2. The characters are new, so all of them start at the start cell. |
+| Town with PostgreSQL | `gen:town:t1` | As Town, with the characters of an earlier run, which start where they were saved, spread over the town. |
+| Crowd | `gen:town:t1` | As in phase 2. |
+| Spread | `gen:town:t1` and its fields | As in phase 2. Most bots stay in the town, since its gates are far from the start cell. |
+| Fight | `gen:field:4:0`, the lowest field (levels 1 to 10) | Every bot is the economy simulator's model player of level 5, as `--place fields --fields 1` sets it, and fights as in phase 2. |
+| Fields | 8 fields, from levels 1 to 10 up to 90 to 99 | The bots spread evenly over the fields, each as its band's model player, and fight. |
+| Graph | Every map | The bots start in the 5 towns as the model player of level 99 and walk routes to portals, map after map. |
+
+Tick work per zone, in ms, for the zone with the most ticks over 10 ms. Quantiles are rounded up to their bucket, which is at most 12.5% wide, so a p99 of 10.5 ms can be under 10 ms. The ticks over 10 ms are exact: p99 is under 10 ms when fewer than 1% of the ticks are over it. "Any zone" is the highest maximum of every zone, and the ticks over 25 ms of every zone with players.
+
+| Scenario | Bots | Zone (players) | p50 | p99 | p99.9 | Max | Ticks over 10 ms | Ticks over 25 ms | Any zone: max, ticks over 25 ms | Server CPU | p99 under 10 ms |
+|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| Town | 250 | `t1` (250) | 1.6 | 10.5 | 54.5 | 96.4 | 35 of 3,596 | 9 | 96.4, 9 | 0.12 cores | yes |
+| | 500 | `t1` (499) | 2.1 | 12.6 | 83.9 | 203 | 42 of 3,594 | 18 | 203, 18 | 0.20 cores | no |
+| | 500, second run | `t1` (498) | 2.4 | 6.3 | 10.5 | 15.0 | 5 of 3,600 | 0 | 15.0, 0 | 0.21 cores | yes |
+| | 750 | `t1` (749) | 2.9 | 25.2 | 117 | 681 | 105 of 3,577 | 35 | 681, 35 | 0.28 cores | no |
+| | 1,000 | `t1` (1,000) | 5.2 | 92.3 | 403 | 643 | 654 of 3,517 | 223 | 643, 223 | 0.44 cores | no |
+| Town with PostgreSQL | 250 | `t1` (244) | 1.2 | 2.1 | 3.4 | 5.7 | 0 of 3,600 | 0 | 5.7, 0 | 0.10 cores | yes |
+| | 500 | `t1` (494) | 2.6 | 4.7 | 10.5 | 17.8 | 3 of 3,600 | 0 | 17.8, 0 | 0.19 cores | yes |
+| | 750 | `t1` (739) | 1.7 | 2.9 | 6.8 | 7.2 | 0 of 3,600 | 0 | 7.2, 0 | 0.20 cores | yes |
+| | 1,000 | `t1` (983) | 2.0 | 2.9 | 8.4 | 15.0 | 2 of 3,600 | 0 | 15.0, 0 | 0.23 cores | yes |
+| Crowd | 250 | `t1` (250) | 3.7 | 16.8 | 168 | 236 | 75 of 3,586 | 23 | 236, 23 | 0.24 cores | no |
+| | 500 | `t1` (500) | 6.3 | 151 | 537 | 748 | 600 of 3,431 | 219 | 748, 219 | 0.42 cores | no |
+| | 750 | `t1` (750) | 14.7 | 336 | 671 | 1,390 | 2,838 of 3,022 | 747 | 1,390, 747 | 0.81 cores | no |
+| | 1,000 | `t1` (244 at the end) | 3.1 | 185 | 470 | 917 | 639 of 3,386 | 524 | 917, 524 | 0.49 cores | no, 756 bots lost |
+| Spread | 250 | `t1` (226) | 1.8 | 6.3 | 14.7 | 22.6 | 12 of 3,600 | 0 | 22.6, 0 | 0.14 cores | yes |
+| | 500 | `t1` (443) | 1.8 | 7.9 | 83.9 | 159 | 28 of 3,595 | 12 | 159, 15 | 0.20 cores | yes |
+| | 750 | `t1` (675) | 1.8 | 18.9 | 92.3 | 188 | 65 of 3,597 | 27 | 188, 38 | 0.22 cores | no |
+| | 1,000 | `t1` (894) | 2.6 | 14.7 | 83.9 | 118 | 61 of 3,597 | 14 | 118, 19 | 0.30 cores | no |
+| Fight | 250 | `field:4:0` (230) | 3.4 | 6.8 | 25.2 | 105 | 12 of 3,592 | 3 | 105, 6 | 0.15 cores | yes |
+| | 500 | `field:4:0` (473) | 2.6 | 10.5 | 29.4 | 56.1 | 32 of 3,599 | 5 | 56.1, 5 | 0.18 cores | yes |
+| | 500, second run | `field:4:0` (472) | 2.6 | 9.4 | 46.1 | 59.1 | 22 of 3,600 | 7 | 59.1, 8 | 0.18 cores | yes |
+| | 500, third run | `field:4:0` (484) | 2.6 | 10.5 | 75.5 | 174 | 39 of 3,597 | 5 | 174, 5 | 0.17 cores | no |
+| | 750 | `field:4:0` (719) | 2.6 | 15.7 | 151 | 229 | 59 of 3,590 | 20 | 229, 20 | 0.20 cores | no |
+| | 1,000 | `field:4:0` (959) | 3.4 | 12.6 | 41.9 | 319 | 50 of 3,595 | 13 | 319, 14 | 0.26 cores | no |
+| Fields | 250 | `field:4:2` (32) | 0.9 | 3.4 | 12.6 | 20.0 | 7 of 3,600 | 0 | 20.0, 0 | 0.22 cores | yes |
+| | 500 | `field:0:3` (62) | 0.7 | 3.7 | 12.6 | 20.3 | 7 of 3,600 | 0 | 44.1, 8 | 0.26 cores | yes |
+| | 750 | `field:0:1` (93) | 1.3 | 4.7 | 18.9 | 35.7 | 6 of 3,599 | 3 | 35.7, 7 | 0.23 cores | yes |
+| | 1,000 | `field:0:1` (125) | 1.4 | 6.3 | 50.3 | 91.1 | 20 of 3,599 | 7 | 91.1, 41 | 0.21 cores | yes |
+| | 1,250 | `field:0:1` (156) | 1.4 | 18.9 | 151 | 493 | 87 of 3,571 | 30 | 671, 167 | 0.28 cores | no |
+| | 1,500 | `field:4:2` (188) | 0.9 | 4.7 | 27.3 | 62.3 | 16 of 3,599 | 4 | 117, 30 | 0.29 cores | yes |
+| Graph | 250 | `field:0:2` (6) | 0.3 | 2.6 | 12.6 | 35.8 | 5 of 3,600 | 1 | 60.9, 9 | 0.29 cores | yes |
+| | 500 | `field:1:3` (26) | 0.2 | 1.7 | 14.7 | 44.9 | 7 of 3,597 | 1 | 147, 25 | 0.26 cores | yes |
+| | 750 | `field:1:2` (34) | 0.4 | 3.7 | 37.7 | 124 | 14 of 3,597 | 5 | 157, 77 | 0.26 cores | yes |
+| | 1,000 | `field:1:2` (45) | 0.4 | 3.1 | 18.9 | 108 | 13 of 3,598 | 2 | 108, 57 | 0.25 cores | yes |
+| | 1,250 | `field:2:2` (78) | 0.3 | 2.9 | 23.1 | 28.0 | 8 of 3,601 | 2 | 77.2, 24 | 0.29 cores | yes |
+| | 1,500 | `field:0:3` (21) | 0.2 | 3.7 | 62.9 | 639 | 17 of 3,579 | 6 | 1,158, 126 | 0.37 cores | yes |
+| Classic Town, `prontera` | 250 | `prontera` (250) | 2.6 | 6.8 | 25.2 | 125 | 18 of 3,596 | 3 | 125, 3 | 0.15 cores | yes |
+| | 500 | `prontera` (500) | 1.8 | 10.5 | 75.5 | 221 | 38 of 3,595 | 13 | 221, 13 | 0.20 cores | no |
+
+The second Town run at 500 and the third Fight run at 500 ran on a diagnostic build, not kept in the code, that pins each zone goroutine to its thread and also reads the thread's CPU time per tick, as in phase 2:
+
+| Run | Wall time p50, p99, p99.9, max | Thread CPU time p50, p99, p99.9, max |
+|---|---:|---:|
+| Town, 500 | 2.4, 6.3, 10.5, 15.0 ms | 2.4, 4.7, 5.8, 7.5 ms |
+| Fight, 500 | 2.6, 10.5, 75.5, 174 ms | 2.6, 5.8, 9.4, 13.4 ms |
+| Town, 1,000 | 4.2, 37.7, 109, 288 ms | 4.2, 14.7, 21.0, 23.5 ms |
+
+Bandwidth per bot, in KB/s, counted as WebSocket bytes without TCP, IP or TLS headers:
+
+| Scenario | Bots | Server to client, average (mean, max) | Busiest second (mean, max) | Client to server, average (max) | Frames per second |
+|---|---:|---:|---:|---:|---:|
+| Town | 250 | 0.57, 0.92 | 2.6, 4.3 | 0.01 | 9.4 |
+| | 500 | 1.07, 1.72 | 4.9, 8.4 | 0.01 | 12.9 |
+| | 1,000 | 1.88, 3.18 | 8.3, 16.4 | 0.01 | 15.3 |
+| Town with PostgreSQL | 1,000 | 0.63, 0.97 | 1.6, 3.3 | 0.01 | 11.1 |
+| Crowd | 250 | 4.47, 4.61 | 7.9, 9.7 | 0.01 | 19.9 |
+| | 500 | 8.07, 8.43 | 18.9, 24.2 | 0.01 | 18.9 |
+| | 750 | 11.36, 11.89 | 45.8, 60.2 | 0.01 | 16.4 |
+| Spread | 500 | 0.51, 0.83 | 1.7, 3.7 | 0.01 | 8.8 |
+| Fight | 500 | 0.47, 0.77 | 1.6, 3.2 | 0.01 | 7.3 |
+| | 1,000 | 0.80, 1.30 | 2.7, 5.5 | 0.01 | 9.9 |
+| Fields | 1,000 | 0.16, 0.95 | 0.6, 3.1 | 0.01 | 3.4 |
+| Graph | 1,000 | 0.25, 0.65 | 1.8, 6.4 | 0.01 | 4.6 |
+| Classic Town | 500 | 1.24, 1.99 | 5.0, 8.1 | 0.01 | 13.9 |
+
+Memory. The live heap is read after a forced garbage collection 10 seconds before each measurement ended, with every bot online. "Per player" is that heap less the heap of the idle world before the scenario's steps, divided by the bots.
+
+| Scenario | Bots | Live heap | Per player | Go memory | Largest RSS | GC pause p99, max | Allocation |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Idle procedural world | 0 | 368 MB | | 580 to 620 MB | | | |
+| Town with PostgreSQL | 250 | 386 MB | 74 KB | 700 MB | 614 MB | 1.8, 1.8 ms | 2 MB/s |
+| | 1,000 | 436 MB | 69 KB | 992 MB | 814 MB | 1.3, 1.3 ms | 17 MB/s |
+| Town | 1,000 | 556 MB | 91 KB | 1,316 MB | 747 MB | 10.5, 10.5 ms | 32 MB/s |
+| Fight | 500 | 422 MB | 91 KB | 992 MB | 726 MB | 3.1, 3.1 ms | 7 MB/s |
+| | 1,000 | 482 MB | 106 KB | 1,077 MB | 876 MB | 1.3, 1.3 ms | 20 MB/s |
+| Fields | 1,000 | 476 MB | 78 KB | 1,078 MB | 762 MB | 0.8, 0.8 ms | 11 MB/s |
+| | 1,500 | 576 MB | 120 KB | 1,316 MB | 851 MB | 0.8, 0.8 ms | 17 MB/s |
+| Graph | 1,000 | 504 MB | 71 KB | 1,148 MB | 779 MB | 0.8, 0.8 ms | 17 MB/s |
+| | 1,500 | 585 MB | 102 KB | 1,329 MB | 1,008 MB | 10.5, 10.5 ms | 25 MB/s |
+| Idle classic world, `prontera` | 0 | 121 MB | | | | | |
+| Classic Town | 500 | 158 MB | 72 KB | 426 MB | 366 MB | 2.1, 2.1 ms | 12 MB/s |
+
+Go memory is all the memory the Go runtime mapped, and never goes down within a process. RSS is low, since the kernel kept most of the server's pages compressed or in swap.
+
+Soak: Fight at 250 bots for 30 minutes, at the documented count, in a server started for it. A sampler read the server's measurements every minute and started them again, and read the live heap after a forced garbage collection every 5 minutes. Quantiles per minute, for `gen:field:4:0`:
+
+| Minutes | Players on the field | p50 | p99 | Max | Ticks over 10 ms | Ticks over 25 ms | Live heap | Go memory | Swap in use | Server CPU |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 to 5 | 242 to 232 | 1.3 to 3.4 | 11.5 to 21.0 | 235 | 83 of 6,001 (1.38%) | 32 | 393 MB | 838 MB | 8.1 to 8.4 GB | 0.09 to 0.14 cores |
+| 5 to 10 | 229 to 227 | 1.4 to 3.9 | 8.4 to 11.5 | 172 | 50 of 6,007 (0.83%) | 6 | 393 MB | 867 MB | 8.1 to 8.5 GB | 0.10 to 0.16 cores |
+| 10 to 15 | 224 to 209 | 2.9 to 3.9 | 6.3 to 9.4 | 23 | 20 of 6,009 (0.33%) | 0 | 393 MB | 868 MB | 8.0 to 8.1 GB | 0.13 to 0.17 cores |
+| 15 to 20 | 210 | 1.8 to 3.4 | 9.4 to 23.1 | 342 | 83 of 6,001 (1.38%) | 25 | 395 MB | 868 MB | 7.8 to 9.1 GB | 0.11 to 0.16 cores |
+| 20 to 25 | 209 to 206 | 3.1 to 3.7 | 7.3 to 10.5 | 29 | 35 of 6,011 (0.58%) | 2 | 394 MB | 868 MB | 8.1 to 8.5 GB | 0.15 to 0.17 cores |
+| 25 to 30 | 203 to 200 | 2.0 to 3.4 | 9.4 to 10.5 | 502 | 38 of 4,798 (0.79%) | 7 | | 868 MB | 7.9 to 8.2 GB | 0.12 to 0.17 cores |
+
+- Memory stayed flat: the live heap was 393 to 395 MB at every 5-minute mark, Go memory stopped growing at 868 MB after 12 minutes, and the goroutines stayed at 894. The idle world before the soak held 368 MB.
+- Tick times stayed flat, without a trend: 0.89% of the 30 minutes' ticks were over 10 ms, so the p99 of the whole run was under 10 ms. 12 of the 29 one-minute windows had 1% or more, in bursts that followed the swap in use, as in minutes 15 to 20, when it rose to 9.1 GB.
+- Bots killed 66,623 monsters. Players on the field fell from 242 to 200, as bots walked into the field's warps and played on the next maps. No bot lost its connection.
+
+Against the budgets:
+
+- The documented capacity is 250 players on this machine: every run of every scenario but Crowd met section 3.8 at 250. At 500, each scenario met the budgets in at least one run, but a Town run, a Fight run and the classic Town run had 1.06% to 1.17% of their ticks over 10 ms. Decision 0050 explains the choice.
+- The zone's own work fits the budget at 500. The diagnostic build measured a thread CPU time p99 of 4.7 ms in Town and 5.8 ms in Fight, with maxima of 7.5 and 13.4 ms. The long ticks are waits: in the Fight run, ticks of up to 174 ms took at most 13.4 ms of CPU. Outside Crowd, the server process used at most 0.44 cores. The machine's memory, not the server's CPU, set the limit.
+- At 1,000 in one town, the zone's own work is over the budget: a thread CPU time p99 of 14.7 ms in Town. A town of 1,000 players near one cell is a crowd. The send phase grows with the players in view of each other (decision 0050, "Large slowdowns").
+- Players spread over many maps hold up better. Graph met the budgets at every step up to 1,500. Fields met them at every step but 1,250, where one zone had 2.4% of its ticks over 10 ms. Town with PostgreSQL, whose players are spread over the town, met them at 1,000.
+- The maximum of 25 ms is broken by rare ticks in most runs, as in phase 2. The diagnostic runs show that they are waits, not work.
+- Crowd is a stress test. It breaks the budgets from 250, and at 1,000 the server closed 756 connections that fell behind, as in phase 2 before its fixes. Its average from the server passes 8 KB/s at 500.
+- Bandwidth is within the budgets in every scenario but Crowd. A town of 1,000 bots near the start cell averages 1.9 KB/s, with 16.4 KB/s in the busiest second. Fields average 0.16 KB/s, within the 2 KB/s field budget.
+- Memory per online player: 70 to 120 KB of live heap above the idle world. With Go's default `GOGC=100`, the heap grows to about twice the live heap, so about 140 to 240 KB, within the 256 KB budget. The idle procedural world itself holds 368 MB of live heap: its generated maps, its zones and the game data.
+- Joining, from opening the WebSocket to the first frame, took about 50 ms at p50 and at most 2.2 seconds, in the Crowd run of 1,000. The budget is 2 seconds.
+- A first pass of these runs found that the server kept every player that left in memory. The fix is below. The tables are from the code with the fix.
+
+##### Phase 2
+
 The 500-bot tests of phase 2, on 2026-10-01. How to run them is in server/README.md, "Load tests and metrics".
 
 Setup:
@@ -709,7 +859,7 @@ CI's `loadtest` job runs 50 bots for 20 seconds on the placeholder map on every 
 
 | Mode | For | Setup |
 |---|---|---|
-| All-in-one | Most servers. The supported player count is what the phase 8 load test measured (section 3.8, "Load test results"). | One binary, `waserver all`, runs the gateway, account, world, and zone services in one process. PostgreSQL runs next to it. |
+| All-in-one | Most servers. The phase 8 load test measured 250 players on an Apple M2 with 8 GB shared with desktop apps (section 3.8, "Load test results"). | One binary, `waserver all`, runs the gateway, account, world, and zone services in one process. PostgreSQL runs next to it. |
 | Distributed | Large worlds | Each service runs as its own process. Zones spread across several machines. Services use mutual TLS (section 7.2). |
 
 All-in-one details:
@@ -719,7 +869,9 @@ All-in-one details:
 - `wactl world new` creates the database, the first admin account, and the world seed. `wactl world backup` and `wactl world restore` wrap `pg_dump` and `pg_restore`. Backups are encrypted with age to the owner's key, and a Compose service makes one each day and removes old ones. `wactl world verify-backup` restores a backup into a temporary database and checks it against its manifest (decision 0048).
 - Service calls inside one process skip the network but use the same interfaces as the distributed mode. Tests run both.
 
-Minimum hardware for all-in-one with 500 players: 4 CPU cores, 8 GB RAM, and 50 GB SSD. The load tests in section 12 confirm or correct these numbers. Owners can run the same load test on their own machine before they open a world.
+Measured capacity: the all-in-one release build met the budgets of section 3.8 with 250 players on an Apple M2 (4 performance and 4 efficiency cores) with 8 GB, shared with desktop apps and Docker (phase 8, 2026-10-18, decision 0050). The server used under half a core. The machine's memory set the limit. The docs claim no larger count.
+
+Minimum hardware for all-in-one with 250 players: 4 CPU cores, 8 GB RAM, and 50 GB SSD, as measured. More players need a measurement on the owner's machine. Owners run the same load test against a test world before they open one (deploy/README.md, "Measure your own hardware").
 
 Updates:
 
@@ -3281,6 +3433,10 @@ Progress:
   - Visibility: the job logs its counts, exports Prometheus metrics of the rows deleted and the last success on the debug address, and `GET /admin/api/v1/retention` (`world.read`) shows the periods and the last run on the World screen.
   - Privacy page: the periods in effect, the backups row, and the 31 days of the item logs.
   - Compose config: `maps` and `start_map` are in a `classic:` block that procedural worlds ignore, so `deploy/compose/waserver.yml` runs both modes, and the smoke test uses it.
+- Step 4 is built (2026-10-18), [decision 0050](decisions/0050-load-tests.md):
+  - Load tests on the all-in-one release build with a procedural world in PostgreSQL, on the development machine, as section 3.8, "Load test results", records them. The documented count is 250 players on an Apple M2 with 8 GB shared with desktop apps and Docker. 500 is a review item.
+  - Two procedural scenarios: `fields` and `graph`. `wabots` ships in the release, and deploy/README.md tells owners how to measure their own hardware.
+  - A fix of players kept in memory after they left, found by the idle world's growing heap.
 
 ### Phase 9: Modding ecosystem
 

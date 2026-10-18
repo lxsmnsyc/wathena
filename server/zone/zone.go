@@ -801,6 +801,7 @@ func (z *Zone) Run(ctx context.Context) {
 			t, ticks = nil, nil
 			z.asleep = true
 			z.Metrics.Asleep()
+			z.blocks.clear()
 		}
 		// Handlers of what the last event did run now, and what they
 		// queued goes to the sender in one batch.
@@ -1196,6 +1197,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 	// script that goes on cannot change the saved character.
 	z.closeTalk(p)
 	z.drop(p)
+	p.netIDs.reset()
 }
 
 // remove takes a player out of the zone. Viewers see it vanish for a
@@ -1517,6 +1519,10 @@ func (z *Zone) stepAt(now int64) {
 			e.item.fresh = false
 		}
 	}
+	// clear drops the entities from the arrays too, so a player that
+	// left is not kept in memory by the last tick's hits.
+	clear(z.hits)
+	clear(z.removed)
 	z.hits = z.hits[:0]
 	z.removed = z.removed[:0]
 	// Every player has seen the removals now, those of this tick and those

@@ -36,6 +36,25 @@ var Scenarios = map[string]Scenario{
 		Bots: 500, Ramp: 50, Warmup: 15 * time.Second, Duration: 3 * time.Minute, ChatRate: 0.5,
 		Behaviour: Behaviour{WalkEvery: 3 * time.Second, WalkRadius: 12, Fight: true},
 	},
+	// Players fight on generated fields of several bands of a procedural
+	// world. wabots spreads the bots over 8 fields from the lowest band
+	// to the highest, each as the model player of its field's band, with
+	// its save point on its field, so a bot that dies comes back there.
+	// Server: a world that wactl world new made; wabots --database.
+	"fields": {
+		Bots: 500, Ramp: 50, Warmup: 15 * time.Second, Duration: 3 * time.Minute, ChatRate: 0.5, Place: "fields",
+		Behaviour: Behaviour{WalkEvery: 3 * time.Second, WalkRadius: 12, Fight: true},
+	},
+	// Players walk the generated map graph of a procedural world: each
+	// walks a route to a portal of its map, other than the one it came
+	// in at, and on through the next map. They start spread over the
+	// towns as the model player of the highest band, so the fields they
+	// cross do not kill them, and do not fight.
+	// Server: a world that wactl world new made; wabots --database.
+	"graph": {
+		Bots: 500, Ramp: 50, Warmup: 60 * time.Second, Duration: 3 * time.Minute, ChatRate: 2, Place: "towns",
+		Behaviour: Behaviour{WalkEvery: 3 * time.Second, WalkRadius: 12, Travel: true},
+	},
 	// A short run for CI against the placeholder map, where every bot
 	// sees every other. Rates are higher than in a town.
 	// Server: --map placeholder/map.

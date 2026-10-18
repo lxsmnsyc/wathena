@@ -32,3 +32,37 @@ func TestParseScenario(t *testing.T) {
 		t.Error("an unknown field was accepted")
 	}
 }
+
+func TestSpreadBands(t *testing.T) {
+	var fields []worldMap
+	for i := range 30 {
+		lo := 1 + (29-i)*3
+		fields = append(fields, worldMap{id: string(rune('a' + i)), kind: "field", band: [2]int{lo, lo + 9}})
+	}
+	got := spreadBands(fields, 8)
+	if len(got) != 8 || got[0].band[0] != 1 || got[7].band[0] != 88 {
+		t.Fatalf("%v", got)
+	}
+	for i := 1; i < len(got); i++ {
+		if got[i].band[0] <= got[i-1].band[0] {
+			t.Errorf("bands not rising: %v", got)
+		}
+	}
+	if got := spreadBands(fields[:3], 8); len(got) != 3 {
+		t.Errorf("fewer fields than asked: %v", got)
+	}
+}
+
+func TestHTTPBase(t *testing.T) {
+	for in, want := range map[string]string{
+		"ws://127.0.0.1:8300/ws":    "http://127.0.0.1:8300",
+		"wss://game.example.com/ws": "https://game.example.com",
+	} {
+		if got, err := httpBase(in); err != nil || got != want {
+			t.Errorf("%s: %q, %v", in, got, err)
+		}
+	}
+	if _, err := httpBase("http://127.0.0.1/ws"); err == nil {
+		t.Error("an http URL was taken")
+	}
+}
