@@ -1105,6 +1105,12 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Price rule.** An item record that breaks rAthena's buy and sell rule (buy / 124 below sell / 75) is a load error.
     - **Mod whispers.** They carry the mod's ID and show in the client as server lines with a `[Mod <id>]` prefix, with no reply tab.
 
+54. Security review decisions (phase 8 step 5). The user approved these on 2026-10-19:
+    - **`node:hash` on secret nodes** uses HMAC-SHA256 keyed by the node, so it cannot be inverted. Public nodes keep their hash, so the client and the server still agree. Generation runs once at world creation, so existing worlds keep their stored content. Only mods that hash secret nodes in new worlds see different values.
+    - **`/gen/maps` stays public.** Map names, bands and places are visible in play and are public by decision 0044. Spawns and loot are not in it.
+    - **Owners by account ID.** `wactl world new` records the first admin account's ID as the owner. `staff.owners` by name still works for existing worlds, with a startup warning.
+    - **Passkeys for staff** count as a second factor only when the passkey verified its user (PIN or biometric).
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
