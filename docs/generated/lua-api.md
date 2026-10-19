@@ -1371,11 +1371,11 @@ Heals as itemheal, with its bonuses from VIT, INT and skills.
 
 #### `player:heal_percent(heal)`
 
-Heals as percentheal.
+Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1 (review decision 56).
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `heal` | `wa.HealSpec` | Amounts in percent. |
+| `heal` | `wa.HealSpec` | Amounts in percent, from -100 to 100. |
 
 #### `player:heal_fully()`
 
@@ -4067,7 +4067,7 @@ Changes the value.
 | `job_level_up` | mod, event | `player: wa.Player` | The player gained a job level. |
 | `job_change` | mod, event | `change: wa.JobChange` | The player changed jobs: player:change_job, player:rebirth, or a converted jobchange. It fires after the stats and skills of the new job are set. |
 | `click` | npc | `player: wa.Player, conversation: wa.Conversation` | A player talks to the NPC. |
-| `touch` | npc | `player: wa.Player` | A player stepped into the NPC's touch area, the record's touch field, as rAthena's OnTouch. It fires once each time the player comes in: on a step, or when it arrives on a cell of the area. Hidden and dead players fire it too. It has no conversation. |
+| `touch` | npc | `player: wa.Player, conversation: wa.Conversation` | A player stepped into the NPC's touch area, the record's touch field, as rAthena's OnTouch. It fires once each time the player comes in: on a step, or when it arrives on a cell of the area. Hidden and dead players fire it too. The handlers run in a conversation with the player, which shows nothing until a handler shows a step (review decision 56). A touch while the player talks to an NPC waits until that conversation ends, and runs only if the player is still in the area then. |
 | `untouch` | npc | `player: wa.Player` | A player who fired touch left the NPC's touch area: a step out of it, a warp, or a logout. A player who left the map can only be compared: reading it raises an error. |
 | `use` | item | `player: wa.Player` | The item is used. |
 | `damage` | item | `hit: wa.Damage` | A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3). |

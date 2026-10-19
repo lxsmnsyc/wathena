@@ -78,6 +78,24 @@ func TestPercentHeal(t *testing.T) {
 	}
 }
 
+// TestPercentLoss checks the negative rates of pc_percentheal, as
+// status_percent_change computes them.
+func TestPercentLoss(t *testing.T) {
+	for _, c := range []struct{ rate, maxValue, want int }{
+		{0, 1000, 0}, {50, 1000, 0},
+		{-30, 1000, 300},
+		{-100, 1000, 1000}, {-150, 1000, 1000},
+		// A loss below 1 takes 1.
+		{-1, 50, 1},
+		// apply_rate divides first above 100000.
+		{-5, 150001, 150001 / 100 * 5},
+	} {
+		if got := PercentLoss(c.rate, c.maxValue); got != c.want {
+			t.Errorf("%+v: %d", c, got)
+		}
+	}
+}
+
 func TestCap(t *testing.T) {
 	for _, c := range []struct{ heal, cur, maxValue, want int64 }{
 		{50, 10, 100, 50}, {50, 80, 100, 20}, {50, 100, 100, 0}, {-5, 10, 100, 0},

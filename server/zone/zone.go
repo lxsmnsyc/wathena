@@ -225,6 +225,10 @@ type Player struct {
 	// touching are the NPCs whose touch area holds the player, in the
 	// order it came into them (touch.go).
 	touching []*entity
+	// touchQueue are touches that came while the player talked, and
+	// touchAt is when the next may run (touch.go).
+	touchQueue []*touchEvent
+	touchAt    int64
 	// rewarp is rAthena's count_rewarp: warps in a row onto warp areas.
 	rewarp int
 	// warpTo is a warp a script asked for. It happens once the script's
@@ -1571,6 +1575,7 @@ func (z *Zone) stepAt(now int64) {
 	z.autosave()
 	z.runScripts()
 	z.talkTimers()
+	z.queuedTouches()
 	if z.scripts != nil {
 		z.scripts.Advance(z.now)
 		z.flushDeferred()

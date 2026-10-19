@@ -47,7 +47,8 @@ scripts/release.sh linux/amd64         only the targets named
 - The version is the output of `git describe --tags --always --dirty`. `waserver version` and `wactl version` print it with the build's world modes, such as `v0.1.0 (modes: classic, procedural)`.
 - The output goes to `dist/<version>/`, which git ignores: `waserver-<os>-<arch>`, `wactl-<os>-<arch>`, `.exe` for Windows, and `SHA256SUMS`.
 - The builds repeat byte for byte on one machine: `-trimpath`, `-buildvcs=false`, `-buildid=`, stripped symbols, and fixed `CGO_CFLAGS`, `CGO_LDFLAGS`, `GOAMD64`, `GOARM64` and `GOFLAGS`.
-- It needs Go, zig 0.16.0, Node and pnpm (scripts/check.sh lists the versions). Each binary is about 105 MB, 22 MB compressed.
+- It needs Go, zig 0.16.0, Node and pnpm (scripts/check.sh lists the versions). For darwin/arm64, `waserver` and `wactl` are about 49 MB and `wabots` 35 MB.
+- It runs `go generate ./reference/rathena` first, and builds with the tag `gzextracts`, so the binaries embed gzipped copies of the extracts (review decision 56).
 - The binaries are not signed and have no software bill of materials yet.
 
 The Dockerfile builds the same way, for linux on the build machine's architecture. Its `VERSION` argument is the stamp, which Compose sets from `WATHENA_VERSION` (deploy/README.md).
@@ -520,7 +521,11 @@ The web client:
 - Every client response has a strict Content Security Policy that allows only this origin and its WebSocket, and HSTS with an https public URL.
 - A production build plays on `/ws` of its own origin. `?server=` names another server, and `?viewer` opens the map viewer.
 
-The reference data that `waserver` reads at startup (`reference/rathena/extracts` and `mob_status.json` of both modes) is embedded in the binary by `reference/rathena/embed.go`, so it runs outside the repository. It adds 24 MB to the binary, about half of its 48 MB, and compresses to about 2 MB in the image. The client adds 0.9 MB. `wactl` embeds the same files, and every `wactl` command reads them, so `wactl world new` makes a procedural world outside the repository too.
+The reference data that `waserver` reads at startup (`reference/rathena/extracts` of both modes) is embedded in the binary, so it runs outside the repository. `wactl` embeds the same files, and every `wactl` command reads them, so `wactl world new` makes a procedural world outside the repository too. The extracts stay JSON in git (review decision 56):
+
+- A plain `go build` or `go test` embeds the JSON files, 93 MB, through `reference/rathena/embed.go`. A clean checkout needs no extra step.
+- The release builds and the Docker image run `go generate ./reference/rathena`, which writes gzipped copies into `reference/rathena/gz`, 11.6 MB, and build with the tag `gzextracts`, which embeds them instead. git ignores the folder, and a build with the tag fails without it.
+- The client adds 0.9 MB.
 
 Health checks:
 
@@ -1212,8 +1217,9 @@ Quests follow rAthena's `quest.cpp` (proposal 0002, review decision 45, [decisio
 - Clicking an NPC within 15 cells starts its `click` handler, or opens its shop. A player has one conversation at a time, and cannot act while it lasts.
 - A conversation ends when its script ends, when the player cancels it, leaves, dies, or changes map, and after rAthena's timeouts: 60 seconds for next, menus and close, and 180 seconds for text and number input.
 - Shops follow rAthena's buy and sell rules: Discount and Overcharge, weight, and zeny up to 2,147,483,647. A shop's costs may also take items and currencies, and an item may have a stock.
-- Kafras save, teleport, heal, rent pushcarts, and open the account's storage and the guild storage, with rAthena's fees, the free tickets and the Basic Skill check.
+- Kafras save, teleport, heal, rent pushcarts, and open the account's storage and the guild storage, with rAthena's fees, the free tickets and the Basic Skill check. Niflheim's Kafra takes HP and SP, with `player:heal_percent`'s negative amounts, which never take HP below 1 (review decision 56).
 - An NPC with a touch area runs its `touch` handler when a player steps into the area, and `untouch` when it leaves, as rAthena's `OnTouch` (review decision 55, mods/README.md, "Touch areas"). The zone checks the player's cell after each step and on the cell it arrives on, after the warps. Converted warp portals with an `OnTouch_` script use it.
+- A `touch` handler runs in a conversation with the player, so it may show a dialog (review decision 56). A touch while the player talks waits until the conversation ends, as rAthena's event queue: at most 2 wait, and the first runs 100 ms after the end, if the player is still in the area. A warp that a touch or untouch handler asks for happens once the handler ran or paused.
 - The save point is kept in the `characters` table. A dead character is saved at its save point, and a player who dies goes back there.
 - Character and account variables of `wa.variables` save with the character. Server variables save right after they change, and again when the server stops. Without a database they live in memory.
 

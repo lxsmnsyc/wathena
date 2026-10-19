@@ -19,6 +19,9 @@
 
 # Go
 /vendor/
+# The gzipped extracts that go generate makes for release builds
+# (reference/rathena/doc.go).
+/reference/rathena/gz/
 coverage.out
 
 # Node

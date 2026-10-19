@@ -279,6 +279,7 @@ func (n *npcConv) npcScript() (string, error) {
 		}
 	}
 	bodies := map[string][]string{}
+	touchDialog := false
 	// A body may name more labels, with a monster command.
 	for i := 0; i < len(n.eventOrder); i++ {
 		e := n.eventOrder[i]
@@ -290,7 +291,7 @@ func (n *npcConv) npcScript() (string, error) {
 			calls := n.bodyCalls
 			n.bodyCalls = nil
 			if err == nil {
-				err = n.checkTouchBody(e, bodies[e], calls)
+				touchDialog = n.touchHasDialog(bodies[e], calls)
 			}
 		}
 		if err != nil {
@@ -298,7 +299,7 @@ func (n *npcConv) npcScript() (string, error) {
 		}
 		n.ok("event " + e)
 	}
-	n.touch = touch != ""
+	n.touch, n.touchDialog = touch != "", touchDialog
 	if len(handler) == 0 && len(setup) == 0 && len(n.eventOrder) == 0 {
 		return "", nil
 	}
@@ -345,10 +346,12 @@ func (n *npcConv) npcScript() (string, error) {
 			f.line(format, n.eventFns[e])
 		}
 	}
-	switch touch {
-	case "ontouch_":
+	switch {
+	case touch == "ontouch_" && touchDialog:
+		f.line("R.touch_one(%s, true)", n.eventFns[touch])
+	case touch == "ontouch_":
 		f.line("R.touch_one(%s)", n.eventFns[touch])
-	case "ontouch":
+	case touch == "ontouch":
 		f.need("events")
 		f.line(`events.on("touch", %s)`, n.eventFns[touch])
 	}
@@ -384,16 +387,16 @@ func (n *npcConv) npcScript() (string, error) {
 // match.
 var dialogCode = regexp.MustCompile(`conversation:|\(conversation[,)]`)
 
-// checkTouchBody checks that an OnTouch or OnTouch_ part converts to a
-// touch handler. The touch event has the player and no conversation
-// (review decision 55), so a part with a dialog, or that calls a
-// function with one, does not convert. calls are the functions the part
-// calls itself.
-func (n *npcConv) checkTouchBody(label string, lines []string, calls map[string]bool) error {
-	why := "a dialog, which a touch handler cannot show: the touch event has no conversation"
+// touchHasDialog reports whether an OnTouch or OnTouch_ part shows a
+// dialog, or calls a function that does. The touch event has a
+// conversation (review decision 56), so such a part converts. Only
+// R.touch_one needs to know: it cannot show the dialog to the next
+// player in the area when the first one leaves (rathena.lua). calls
+// are the functions the part calls itself.
+func (n *npcConv) touchHasDialog(lines []string, calls map[string]bool) bool {
 	for _, l := range lines {
 		if dialogCode.MatchString(l) {
-			return unsupported("event "+label, "%s", why)
+			return true
 		}
 	}
 	direct := make([]string, 0, len(calls))
@@ -402,10 +405,10 @@ func (n *npcConv) checkTouchBody(label string, lines []string, calls map[string]
 	}
 	for _, name := range n.c.functionsOf(direct) {
 		if f := n.c.converted[name]; f != nil && dialogCode.MatchString(f.Lua) {
-			return unsupported("event "+label, "%s, in %s", why, f.Name)
+			return true
 		}
 	}
-	return nil
+	return false
 }
 
 // eventFn returns the local function of an event label, and adds it.

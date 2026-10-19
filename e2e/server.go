@@ -114,6 +114,11 @@ type Options struct {
 	// `wactl world new --mode classic` makes (decision 0047). It needs
 	// Database.
 	Classic bool
+	// Assets is an asset build to run in place of the test's, such as a
+	// full kRO build (review decision 55). With it, and Maps empty, the
+	// server gets no --map and --maps, so Config's classic block sets
+	// the maps and the start map.
+	Assets string
 }
 
 // Server is a running waserver.
@@ -384,6 +389,26 @@ func newServer(t testing.TB, o Options) *Server {
 			mods = b.homeMods
 		}
 	}
+	if o.Assets != "" {
+		// Another build has no e2e_field, so the fixture's treasure hunt
+		// hides its chests on the start map, as client/scripts does.
+		mods = filepath.Join(t.TempDir(), "mods")
+		if err := os.CopyFS(mods, os.DirFS(b.mods)); err != nil {
+			t.Fatal(err)
+		}
+		events := filepath.Join(mods, "fixture", "data", "events.yml")
+		data, err := os.ReadFile(events)
+		if err != nil {
+			t.Fatal(err)
+		}
+		moved := strings.Replace(string(data), "maps: [e2e_field]", "maps: [placeholder/map]", 1)
+		if moved == string(data) {
+			t.Fatal("the fixture's treasure hunt no longer names e2e_field")
+		}
+		if err := os.WriteFile(events, []byte(moved), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	// A server waits for a free place, and frees it when the test ends.
 	places := servers
 	if race {
@@ -419,13 +444,19 @@ func newServer(t testing.TB, o Options) *Server {
 		newWorld(t, wactl, adminURL(t, admin), "classic", "", dir)
 	}
 	addr, debug := freeAddr(t), freeAddr(t)
-	if o.Maps == "" {
-		o.Maps = StartMap + "," + strings.TrimPrefix(FieldMap, "map/")
+	assets, maps := b.assets, []string{"--map", StartMap, "--maps", o.Maps}
+	switch {
+	case o.Assets != "" && o.Maps == "":
+		assets, maps = o.Assets, nil
+	case o.Assets != "":
+		assets, maps = o.Assets, maps[2:]
+	case o.Maps == "":
+		maps[3] = StartMap + "," + strings.TrimPrefix(FieldMap, "map/")
 	}
-	args := []string{"--config", config, "--assets", b.assets, "--map", StartMap,
-		"--maps", o.Maps, "--dev", "--mode", "renewal",
+	args := append([]string{"--config", config, "--assets", assets}, maps...)
+	args = append(args, "--dev", "--mode", "renewal",
 		"--addr", addr, "--debug-addr", debug, "--origins", "", "--shutdown-countdown", "0",
-		"--seed", o.Seed, "--start-job", o.StartJob, "--start-items", o.StartItems, "--mods", mods}
+		"--seed", o.Seed, "--start-job", o.StartJob, "--start-items", o.StartItems, "--mods", mods)
 	if o.Ruleset != "" {
 		args = append(args, "--ruleset", o.Ruleset)
 	}

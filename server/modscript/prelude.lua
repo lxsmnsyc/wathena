@@ -3178,8 +3178,8 @@ function R.check_condition(mod_id, module, name)
 	return m[name]() and true or false
 end
 
--- converse runs the click handlers of an NPC in a conversation's
--- thread, one after the other.
+-- converse runs the click or touch handlers of an NPC in a
+-- conversation's thread, one after the other.
 function R.converse(player_id, conversation_id, ...)
 	local p = new_player(player_id)
 	local c = new_conversation(conversation_id)

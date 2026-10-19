@@ -23,6 +23,22 @@ import (
 //   - The events run when the zone runs its script events, after the
 //     walks. A touch whose player left the area or the zone by then does
 //     not run, as npc_event_sub checks the area again.
+//   - A touch runs the NPC's touch handlers in a conversation with the
+//     player, so they may show a dialog as rAthena's OnTouch (review
+//     decision 56). A touch while the player talks to an NPC waits until
+//     the conversation ends, as npc_event_sub queues it in the player's
+//     eventqueue: at most maxTouchQueue wait, and later ones are
+//     dropped. The first runs touchQueueDelay after the conversation
+//     ended, as npc_event_dequeue's timer, and the area is checked again
+//     then. untouch runs at once, with no conversation.
+
+// Touches that wait for a conversation to end: rAthena's MAX_EVENTQUEUE,
+// and the delay of npc_event_dequeue's pc_addeventtimer, in
+// milliseconds.
+const (
+	maxTouchQueue   = 2
+	touchQueueDelay = 100
+)
 
 // TouchArea is an NPC's touch area: XSpan and YSpan cells around it.
 type TouchArea struct {
@@ -75,6 +91,8 @@ func (z *Zone) untouchAll(p *Player) {
 		z.queueTouch(n, p, true)
 	}
 	p.touching = nil
+	clear(p.touchQueue)
+	p.touchQueue = p.touchQueue[:0]
 }
 
 func (z *Zone) queueTouch(n *entity, p *Player, untouch bool) {
@@ -87,16 +105,60 @@ func (z *Zone) queueTouch(n *entity, p *Player, untouch bool) {
 // runTouch runs an NPC's touch or untouch handlers.
 func (z *Zone) runTouch(t *touchEvent) {
 	n := t.npc.npc
-	if n.script == nil {
+	if n.script == nil || z.scripts == nil {
 		return
 	}
-	event := "untouch"
-	if !t.untouch {
-		event = "touch"
-		// npc_event_sub: the player must still be in the area.
-		if z.players[t.player.charID] != t.player || !slices.Contains(t.player.touching, t.npc) {
-			return
+	p := t.player
+	if t.untouch {
+		_, _ = z.scripts.Touch(n.script, "untouch", int64(p.charID))
+		if z.players[p.charID] == p {
+			z.afterTalk(p)
 		}
+		return
 	}
-	z.scripts.Touch(n.script, event, int64(t.player.charID))
+	// npc_event_sub: the player must still be in the area.
+	if z.players[p.charID] != p || !slices.Contains(p.touching, t.npc) {
+		return
+	}
+	if p.talk != nil {
+		// npc_event_sub queues the event while the player talks.
+		if len(p.touchQueue) < maxTouchQueue {
+			p.touchQueue = append(p.touchQueue, t)
+			p.touchAt = z.now + touchQueueDelay
+		}
+		return
+	}
+	conv, err := z.scripts.Touch(n.script, "touch", int64(p.charID))
+	if err != nil {
+		if z.Mods != nil && z.Mods.Log != nil {
+			z.Mods.Log.Warn("NPC touch failed", "map", z.Map, "npc", n.Name, "err", err)
+		}
+		return
+	}
+	if conv != nil && !conv.Done && p.talk == nil {
+		p.talk = &talk{conv: conv, npc: t.npc}
+	}
+	z.afterTalk(p)
+}
+
+// queuedTouches runs the touches that waited for a conversation, one at
+// a time, touchQueueDelay after the player stopped talking, as
+// npc_event_dequeue does when a script ends.
+func (z *Zone) queuedTouches() {
+	for _, p := range z.players {
+		if len(p.touchQueue) == 0 {
+			continue
+		}
+		if p.talk != nil {
+			p.touchAt = z.now + touchQueueDelay
+			continue
+		}
+		if z.now < p.touchAt {
+			continue
+		}
+		t := p.touchQueue[0]
+		p.touchQueue[0] = nil
+		p.touchQueue = p.touchQueue[1:]
+		z.runTouch(t)
+	}
 }

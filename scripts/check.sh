@@ -21,7 +21,8 @@
 #   mods      generated Lua files, the sample mods with a wactl built
 #             with the procedural tag, a new mod
 #   lua       vendored Lua, lua.wasm, the WebAssembly build,
-#             and the release builds with zig
+#             and the release builds with zig, with the gzipped
+#             extracts that go generate makes
 #   loadtest  the 50-bot smoke test
 #   schema    buf lint and the generated protocol code
 #   queries   the generated sqlc code
@@ -314,10 +315,13 @@ step_lua() {
 	else
 		echo "part skipped: the static musl test runs on Linux x86_64 only"
 	fi
+	# The release builds embed the gzipped extracts (review decision 56).
+	go generate ./reference/rathena
+	go test -count=1 -tags gzextracts ./reference/rathena
 	local static="-linkmode external -extldflags '-static -s -Wl,-z,stack-size=8388608'"
 	build() {
 		echo "== $1/$2"
-		CGO_ENABLED=1 GOOS=$1 GOARCH=$2 CC="zig cc -target $3" go build -trimpath -tags netgo,osusergo \
+		CGO_ENABLED=1 GOOS=$1 GOARCH=$2 CC="zig cc -target $3" go build -trimpath -tags netgo,osusergo,gzextracts \
 			-ldflags "-s -w $4" -o "$work/waserver-$1-$2" ./server/cmd/waserver
 	}
 	build linux amd64 x86_64-linux-musl "$static"
@@ -328,7 +332,7 @@ step_lua() {
 		sdk=$(xcrun --show-sdk-path)
 		CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
 			CC="zig cc -target aarch64-macos --sysroot $sdk -L/usr/lib -F$sdk/System/Library/Frameworks" \
-			go build -trimpath -tags netgo,osusergo -ldflags "-s -w" -o "$work/waserver-darwin-arm64" ./server/cmd/waserver
+			go build -trimpath -tags netgo,osusergo,gzextracts -ldflags "-s -w" -o "$work/waserver-darwin-arm64" ./server/cmd/waserver
 		if [ "$(uname -m)" = arm64 ]; then
 			"$work/waserver-darwin-arm64" version
 		fi

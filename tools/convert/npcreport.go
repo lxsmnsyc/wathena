@@ -225,7 +225,7 @@ var warpSprites = map[string]bool{"45": true, "WARPNPC": true, "139": true, "HID
 // touchTable writes the coverage of NPCs with an OnTouch or OnTouch_
 // label, and of script NPCs with a warp sprite.
 func (r *NPCResult) touchTable(b *strings.Builder) {
-	type counts struct{ total, placed, touch int }
+	type counts struct{ total, placed, touch, dialog int }
 	var scripts, lines, warps counts
 	reasons := map[string]int{}
 	for _, n := range r.NPCs {
@@ -240,6 +240,9 @@ func (r *NPCResult) touchTable(b *strings.Builder) {
 			}
 			if n.Touch {
 				lines.touch++
+				if n.TouchDialog {
+					lines.dialog++
+				}
 			}
 			if n.DuplicateOf == "" {
 				scripts.total++
@@ -248,6 +251,9 @@ func (r *NPCResult) touchTable(b *strings.Builder) {
 				}
 				if n.Touch {
 					scripts.touch++
+					if n.TouchDialog {
+						scripts.dialog++
+					}
 				}
 				for _, u := range n.Unsupported {
 					if strings.HasPrefix(u, "event ontouch") {
@@ -263,15 +269,18 @@ func (r *NPCResult) touchTable(b *strings.Builder) {
 			}
 			if n.Touch {
 				warps.touch++
+				if n.TouchDialog {
+					warps.dialog++
+				}
 			}
 		}
 	}
 	b.WriteString("## Touch areas\n\n")
-	b.WriteString("`OnTouch` and `OnTouch_` labels become the `touch` event, and the line's span the record's `touch` field (review decision 55). `OnTouch_` runs for one player at a time through `R.touch_one`. A touch handler has no conversation, so a label with a dialog does not convert.\n\n")
-	b.WriteString("| NPCs | Lines | Placed | With a touch area |\n|---|---:|---:|---:|\n")
-	fmt.Fprintf(b, "| Scripts with OnTouch or OnTouch_ | %d | %d | %d |\n", scripts.total, scripts.placed, scripts.touch)
-	fmt.Fprintf(b, "| Lines with OnTouch or OnTouch_, duplicates too | %d | %d | %d |\n", lines.total, lines.placed, lines.touch)
-	fmt.Fprintf(b, "| Script NPCs with a warp sprite, duplicates too | %d | %d | %d |\n\n", warps.total, warps.placed, warps.touch)
+	b.WriteString("`OnTouch` and `OnTouch_` labels become the `touch` event, and the line's span the record's `touch` field (review decision 55). `OnTouch_` runs for one player at a time through `R.touch_one`. A touch handler runs in a conversation with the player, so a label with a dialog converts (review decision 56). A touch label that does not convert fails on other commands, which the command table lists.\n\n")
+	b.WriteString("| NPCs | Lines | Placed | With a touch area | With a dialog on touch |\n|---|---:|---:|---:|---:|\n")
+	fmt.Fprintf(b, "| Scripts with OnTouch or OnTouch_ | %d | %d | %d | %d |\n", scripts.total, scripts.placed, scripts.touch, scripts.dialog)
+	fmt.Fprintf(b, "| Lines with OnTouch or OnTouch_, duplicates too | %d | %d | %d | %d |\n", lines.total, lines.placed, lines.touch, lines.dialog)
+	fmt.Fprintf(b, "| Script NPCs with a warp sprite, duplicates too | %d | %d | %d | %d |\n\n", warps.total, warps.placed, warps.touch, warps.dialog)
 	if len(reasons) > 0 {
 		b.WriteString("| Why a touch label does not convert | Scripts |\n|---|---:|\n")
 		type kv struct {

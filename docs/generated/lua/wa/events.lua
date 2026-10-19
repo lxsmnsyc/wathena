@@ -20,7 +20,7 @@ local events = {}
 ---@overload fun(name: "job_level_up", handler: fun(player: wa.Player)): wa.EventHandle
 ---@overload fun(name: "job_change", handler: fun(change: wa.JobChange)): wa.EventHandle
 ---@overload fun(name: "click", handler: fun(player: wa.Player, conversation: wa.Conversation)): wa.EventHandle
----@overload fun(name: "touch", handler: fun(player: wa.Player)): wa.EventHandle
+---@overload fun(name: "touch", handler: fun(player: wa.Player, conversation: wa.Conversation)): wa.EventHandle
 ---@overload fun(name: "untouch", handler: fun(player: wa.Player)): wa.EventHandle
 ---@overload fun(name: "use", handler: fun(player: wa.Player)): wa.EventHandle
 ---@overload fun(name: "damage", handler: fun(hit: wa.Damage)): wa.EventHandle

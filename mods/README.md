@@ -1344,13 +1344,15 @@ Rules, as rAthena's:
 
 #### Touch areas
 
-An NPC record with `touch: {x_span, y_span}` has a touch area (review decision 55). Its handlers get the player:
+An NPC record with `touch: {x_span, y_span}` has a touch area (review decision 55). Its `touch` handlers get the player and a conversation with it, as a click's do (review decision 56). Its `untouch` handlers get the player:
 
 ```lua
 local events = require "wa.events"
 
 return function()
-  events.on("touch", function(player)
+  events.on("touch", function(player, conversation)
+    conversation:say("[Gate Keeper]", "Go on in.")
+    conversation:close()
     player:warp("prt_in", 50, 50)
   end)
   events.on("untouch", function(player)
@@ -1364,7 +1366,10 @@ end
 - `untouch` runs when the player leaves the area: a step out of it, a warp, or a logout.
 - Hidden and dead players fire `touch` too, as rAthena's `OnTouch`.
 - A step onto a warp that takes the player touches no area: warps come first, as in rAthena.
-- A touch has no conversation, so a handler cannot show a dialog. It may warp the player, give items, or say a line with `npc:say_aloud`.
+- `touch` handlers run in a conversation with the player, as rAthena's `OnTouch` with a dialog. A handler that shows nothing opens no window.
+- A touch while the player talks to an NPC waits until that conversation ends, as rAthena queues it: at most two wait, and the first runs 100 ms after the conversation ended. It runs only if the player is still in the area then.
+- `untouch` handlers get no conversation.
+- A warp asked for in a `touch` or `untouch` handler happens once the handler ran or paused, as in a conversation.
 - Touch handlers run as a click does, so a mod over its CPU budget still runs them.
 - Converted `OnTouch_` labels run for one player at a time, and not for a hiding or dead player, through `R.touch_one` in `scripts/lib/rathena.lua` ("Core's NPCs" below).
 
@@ -2627,7 +2632,7 @@ The server checks every entry at start with the rules of `bonuses.add`. `when` i
 | Call | Permission | Meaning |
 |---|---|---|
 | `player:item_heal { hp = n, sp = n }` | None | rAthena's `itemheal`, with its bonuses from VIT, INT and skills. An amount can be `{ min, max }`, drawn as `rand`, HP first. |
-| `player:heal_percent { hp = n, sp = n }` | None | rAthena's `percentheal`. |
+| `player:heal_percent { hp = n, sp = n }` | None | rAthena's `percentheal`. A negative amount takes that percent of the maximum, and never takes HP below 1 (review decision 56). |
 | `player:give_item(item, amount, { rent_seconds = s, roll = r })` | `player.give_items` | rAthena's `getitem`, and `rentitem` with `rent_seconds`. Rentals do not expire yet. `roll` is `"random"`, `"default"` or a table of values ("Rolled item values" above); a table also needs `items.modify_rolls`. |
 | `player:give_item_from_group(group)` | `player.give_items` | rAthena's `getgroupitem`: one use of an item group from `items.group "BLUEBOX"`, with rAthena's group rules. |
 | `player:warp(map, x, y)` | `player.warp` | Moves the player after the event. Returns false when the map does not run. |
@@ -2701,7 +2706,9 @@ The extract keeps the script NPCs of the folders the first release needs, and of
 
 - `OnTouch` becomes an `events.on("touch", ...)` handler, and `OnTouch_` a handler through `R.touch_one`: one player at a time, not a hiding or dead player, and the next player in the area when that one leaves, as `npc_touchnext_areanpc`. When a script has both, `OnTouch_` wins, as in rAthena.
 - The line's span becomes the record's `touch` field. A line without a span gets no touch area. A line without a sprite (-1) that has a touch area gets the sprite `HIDDEN_NPC`, which shows nothing.
-- An `OnTouch` or `OnTouch_` label with a dialog, or that calls a function with one, does not convert: a touch has no conversation.
+- An `OnTouch` or `OnTouch_` label with a dialog converts: it talks in the touch's conversation (review decision 56).
+- `R.touch_one` with a dialog does not run for the next player already in the area when the first one leaves, since that player has no conversation. It runs for the next player who comes in. rAthena shows the dialog to the player already in the area.
+- `percentheal` with a negative amount converts to `player:heal_percent`, which takes HP and SP. So every Kafra converts fully, Niflheim's too.
 - Kafra pushcart rental converts: `F_KafCart` checks the class, the cart and Pushcart, takes the Free Ticket for the Cart Service or the fee, and gives the cart with `player:set_cart`.
 
 To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`.
@@ -2716,7 +2723,7 @@ Core also has NPCs of its own, written for wAthena: the Job Master (see "Job cha
 - A guild master per class family at `guild:<family>` runs the guild's tests: a Novice at job level 10 with Basic Skill level 9 hunts, collects and talks to become its first job, and a first job at job level 40 with no skill points left does the same for its second jobs. A High Novice and a transcendent first job change without a test.
 - The Valkyrie at `rebirth` follows `npc/jobs/valkyrie.txt`: a second class at base level 99 and job level 50 with no items, zeny, cart, falcon, mount or skill points left becomes a High Novice, with a Knife and a Cotton Shirt.
 
-Their scripts are under `scripts/procedural/`. The converter maps `jobchange` to `player:change_job` with `force`, `jobchange Job_Novice_High` and the `resetlvl(1)` after it to `player:rebirth`, `resetskill` and `resetstatus` to the reset calls, and the `Upper` parameter to the job tests. The coverage report of each mode is in [docs/generated](../docs/generated).
+Their scripts are under `scripts/procedural/`. The converter maps `jobchange` to `player:change_job` with `force`, and `jobchange <job>,Upper` of `Job_Change` too for a player who is not transcendent or a baby, `jobchange Job_Novice_High` and the `resetlvl(1)` after it to `player:rebirth`, `resetskill` and `resetstatus` to the reset calls, and the `Upper` parameter to the job tests. The coverage report of each mode is in [docs/generated](../docs/generated).
 
 ## Tools
 

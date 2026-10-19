@@ -1549,11 +1549,20 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
      - Migration 00041 adds the session factor `passkey_verified`. A staff role counts only for a session with `totp`, `recovery_code` or `passkey_verified`.
      - Three known issues are gone from the release notes: the passkey without user verification, `/gen/maps`, which is now an accepted risk, and `node:hash` on a secret node.
      - Review items: a reauth with a passkey without user verification still refreshes the 10-minute window on an account without TOTP, as a password does. `staff.owners` by name is not yet removed.
-38. Build review decision 55, part A (phase 8 step 6): more NPC folders, touch areas, bosses, Kafras and the pre-renewal warning. Done on 2026-10-19 ([decision 0051](../decisions/0051-classic-mode-npcs.md)). Part B, the full kRO run, the browser check and the release notes, comes next. Details to review:
-   - The Lua API changes are those of decision 55: the record field `touch: {x_span, y_span}`, each 0 to 100 cells and needing a `script`, and the NPC events `touch` and `untouch` with the player. No other change was made.
-   - `touch` fires once each time a player comes into the area, for hidden and dead players too, as rAthena's `OnTouch`. `untouch` fires on a step out, a warp or a logout. They run only in the NPC's own context, and as a click does for the CPU budget.
+38. Build review decision 55, part A (phase 8 step 6): more NPC folders, touch areas, bosses, Kafras and the pre-renewal warning. Done on 2026-10-19 ([decision 0051](../decisions/0051-classic-mode-npcs.md)). Part B, review decision 56 with the full kRO run, the browser check and the release notes, was done the same day ([decision 0052](../decisions/0052-classic-mode-part-b.md)). Details to review:
+   - The Lua API changes of part A are those of decision 55: the record field `touch: {x_span, y_span}`, each 0 to 100 cells and needing a `script`, and the NPC events `touch` and `untouch` with the player.
+   - The Lua API changes of part B are those of decision 56:
+     - `touch` handlers get `(player, conversation)` and run in a conversation, as `click` handlers. A touch while the player talks waits until the conversation ends: at most 2 wait, the first 100 ms after the end, and only if the player is still in the area, as rAthena's `eventqueue`.
+     - `player:heal_percent` takes negative amounts, which take that percent of the maximum and never take HP below 1. rAthena kills at -100.
+   - No other Lua API change was made.
+   - `touch` fires once each time a player comes into the area, for hidden and dead players too, as rAthena's `OnTouch`. `untouch` fires on a step out, a warp or a logout, with no conversation. They run only in the NPC's own context, and as a click does for the CPU budget.
    - Converted `OnTouch_` runs through `R.touch_one`, for one player at a time, as rAthena's `touching_id`.
+   - Touch labels with a dialog convert now: renewal places 329 of 1,265 scripts with a touch label, up from 47, and pre-renewal 210 of 682, up from 28. Every Kafra converts fully, Niflheim's too.
+   - The release binaries embed gzipped extracts, made by `go generate` with the `gzextracts` tag. waserver went from 131.4 MB to 49.3 MB for darwin/arm64.
+   - The kRO run and the browser check passed on a build of four of the client's maps. The full kRO build stopped twice at the 3 GB floor of free disk.
    - Review items:
-     - A conversation for touch handlers. A dialog blocks 288 touch scripts in renewal and 188 in pre-renewal. It is a Lua API addition beyond decision 55, so it is not made.
-     - A way to take HP and SP, such as `player:heal_percent` with negative amounts, for the Niflheim branch of `F_KafStor` and `F_KafEnd`. It is a Lua API addition, so it is not made.
-     - The part files of the extract: 16.3 MB of JSON in renewal, or gzip at 3.3 MB.
+     - The kRO run and the browser check on the full kRO build.
+     - `R.touch_one` with a dialog and a player already in the area when the first one leaves. Matching rAthena needs a way to start a conversation with another player, a Lua API addition.
+     - Clicking an NPC that has a touch area and no touch label when a player steps into it, as rAthena does.
+     - The `skill` command, which the renewal first job changers need. It is a Lua API addition.
+     - `percentheal -100` and the Poison Bottle: rAthena kills, and wAthena leaves 1 HP, as decision 56 says.

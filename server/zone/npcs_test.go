@@ -384,3 +384,36 @@ func TestReloadMidConversation(t *testing.T) {
 		t.Fatalf("a new conversation got %q", got)
 	}
 }
+
+// TestHealPercentTakes checks review decision 56: player:heal_percent
+// with a negative amount takes that percent of the maximum, as
+// percentheal, and never takes HP below 1. A positive amount still
+// heals, beside a negative one.
+func TestHealPercentTakes(t *testing.T) {
+	z, p, n, logs := npcZone(t, `
+local events = require "wa.events"
+return function()
+  local step = 0
+  events.on("click", function(player)
+    step = step + 1
+    if step == 1 then player:heal_percent { hp = -30, sp = -50 } end
+    if step == 2 then player:heal_percent { hp = -100, sp = -100 } end
+    if step == 3 then player:heal_percent { hp = 10, sp = -1 } end
+  end)
+end`)
+	p.entity.hp, p.sp = 150, 50
+	click(z, p, n)
+	if p.entity.hp != 90 || p.sp != 25 {
+		t.Fatalf("-30%% and -50%%: HP %d, SP %d, want 90 and 25: %s", p.entity.hp, p.sp, logs)
+	}
+	click(z, p, n)
+	if p.entity.hp != 1 || p.sp != 0 || p.entity.dead {
+		t.Fatalf("-100%%: HP %d, SP %d, dead %v, want 1 and 0", p.entity.hp, p.sp, p.entity.dead)
+	}
+	p.sp = 10
+	click(z, p, n)
+	// 10% of 200 HP heals 20. -1% of 50 SP is 0, which takes 1.
+	if p.entity.hp != 21 || p.sp != 9 {
+		t.Fatalf("10%% and -1%%: HP %d, SP %d, want 21 and 9", p.entity.hp, p.sp)
+	}
+}

@@ -1,15 +1,18 @@
-// Package rathena embeds the reference files that waserver reads at
-// startup, so a release binary needs no copy of this folder.
-//
-// waserver imports it, and wactl for its mod commands, which run
-// outside the repository. Tests and other tools read the folder on disk
-// through internal/reference.
+//go:build !gzextracts
+
 package rathena
 
-import "embed"
+import (
+	"embed"
+	"io/fs"
+)
 
 // Files holds the extracts of both modes, at the same paths as in this
-// folder.
+// folder: the JSON files themselves in this build.
+var Files fs.FS = files
+
+// files lists the extracts. internal/gzextracts reads this list, so the
+// gzipped copies are the same files.
 //
 //go:embed extracts/renewal/progression.json extracts/renewal/client_tables.json
 //go:embed extracts/renewal/items.json extracts/renewal/spawns.json
@@ -27,4 +30,4 @@ import "embed"
 //go:embed extracts/pre-renewal/equipment.json extracts/pre-renewal/refine_db.json extracts/pre-renewal/monster_groups.json
 //go:embed extracts/pre-renewal/status.json extracts/pre-renewal/skills.json extracts/pre-renewal/skill_trees.json
 //go:embed extracts/pre-renewal/monsters.json extracts/pre-renewal/random_options.json extracts/pre-renewal/item_trade.json extracts/pre-renewal/shops.json extracts/pre-renewal/quests.json
-var Files embed.FS
+var files embed.FS

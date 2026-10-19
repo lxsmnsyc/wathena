@@ -63,6 +63,22 @@ func PercentHeal(hpRate, spRate, maxHP, maxSP int) (int, int) {
 	return part(hpRate, maxHP), part(spRate, maxSP)
 }
 
+// PercentLoss is the part of pc_percentheal that takes HP or SP: a
+// negative rate takes that percent of the maximum, through
+// status_percent_damage and status_percent_change. -100 or less takes
+// the maximum, and a rate that takes less than 1 takes 1. A rate of 0
+// or more takes nothing. The caller keeps HP at 1 or more (review
+// decision 56).
+func PercentLoss(rate, maxValue int) int {
+	switch {
+	case rate >= 0:
+		return 0
+	case rate <= -100:
+		return max(maxValue, 1)
+	}
+	return max(applyRate(maxValue, -rate), 1)
+}
+
 // applyRate is rAthena's apply_rate macro.
 func applyRate(v, rate int) int {
 	switch {

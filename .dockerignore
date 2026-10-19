@@ -24,6 +24,9 @@ dist
 generated
 bin
 backups
+# The gzipped extracts of a local go generate. The image build makes
+# its own.
+reference/rathena/gz
 # Backups, keys and environment files anywhere in the tree.
 **/*.age
 **/*.dump

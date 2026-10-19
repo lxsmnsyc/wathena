@@ -517,21 +517,27 @@ function R.hiding(player)
 end
 
 -- touch_one runs fn as rAthena's OnTouch_: for one player in the NPC's
--- area at a time (nd->touching_id). A player who is hiding or dead does
--- not start it. When the player it ran for leaves the area, it runs for
--- the next player in the area who can start it, as
--- npc_touchnext_areanpc does. rAthena picks that player by its place in
--- the map's blocks; touch_one picks the one that came in first.
-function R.touch_one(fn)
+-- area at a time (nd->touching_id), with the player and the touch's
+-- conversation. A player who is hiding or dead does not start it. When
+-- the player it ran for leaves the area, it runs for the next player in
+-- the area who can start it, as npc_touchnext_areanpc does. rAthena
+-- picks that player by its place in the map's blocks; touch_one picks
+-- the one that came in first.
+--
+-- dialog is set when fn shows a dialog. The next player then has no
+-- conversation, since it did not touch the NPC just now, so touch_one
+-- leaves the NPC free and runs fn for the next player who comes in.
+-- rAthena would show the dialog to the player already in the area.
+function R.touch_one(fn, dialog)
 	local inside, touching = {}, nil
 	local function can(player)
 		return player.hp > 0 and not R.hiding(player)
 	end
-	events.on("touch", function(player)
+	events.on("touch", function(player, conversation)
 		inside[#inside + 1] = player
 		if touching == nil and can(player) then
 			touching = player
-			fn(player)
+			fn(player, conversation)
 		end
 	end)
 	events.on("untouch", function(player)
@@ -545,6 +551,9 @@ function R.touch_one(fn)
 			return
 		end
 		touching = nil
+		if dialog then
+			return
+		end
 		for _, p in ipairs(inside) do
 			if can(p) then
 				touching = p

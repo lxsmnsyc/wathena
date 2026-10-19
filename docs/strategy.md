@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day.
 
 Done:
 
@@ -187,7 +187,7 @@ Done:
   - Bosses keep rAthena's boss flag, variance and fixed cell. The MVP player gets its prize line, as `clif_mvp_item`.
   - Kafra pushcart rental converts. Niflheim's negative `percentheal` still needs an API call.
   - A pre-renewal classic world warns at start that it is experimental.
-  - Part B, the full kRO run, the browser check and the release notes, comes next.
+  - Part B followed the same day ([decision 0052](decisions/0052-classic-mode-part-b.md), review decision 56): touch handlers with a conversation, negative `player:heal_percent`, gzipped extracts in the release binaries, the kRO end-to-end run and browser check, and the release notes list in docs/generated/classic-coverage.md.
 
 Open review items:
 
@@ -3467,6 +3467,13 @@ Progress:
   - Touch areas, boss spawns as rAthena's, the MVP prize line, and Kafra pushcart rental.
   - Pre-renewal classic is marked experimental, with a warning at start and a note in the deploy guide.
   - Part B: the full kRO end-to-end run, the browser check and the release notes.
+- Step 6 part B is built (2026-10-19), [decision 0052](decisions/0052-classic-mode-part-b.md), review decision 56:
+  - Touch handlers run in a conversation, so touch labels with a dialog convert. A touch while the player talks waits, as rAthena's event queue. renewal places 4,957 NPCs of 15,337 lines, up from 4,587, and pre-renewal 3,065 of 8,390, up from 2,805.
+  - `player:heal_percent` takes negative amounts and never takes HP below 1, so every Kafra converts fully, Niflheim's too.
+  - The release binaries embed gzipped extracts, made by `go generate` at build time. The JSON stays in git, and plain builds embed it.
+  - The kRO run and the browser check, opt-in behind `WATHENA_KRO_ASSETS`. The full kRO build stopped twice at the 3 GB floor of free disk, so both ran on a build of four of the client's maps. The bot saved and stored at a Kafra, bought from a shop, warped to prt_fild08, killed a Poring, came back, took the Kafra's teleport to Payon and became a Taekwon. In Chromium, Prontera loaded, the player walked, and an NPC's dialog opened. A run on the full build is a review item.
+  - `jobchange <job>,Upper`, rAthena's `Job_Change`, converts for normal players, so job change NPCs that call it change jobs.
+  - The release notes list, docs/generated/classic-coverage.md, from the converter's reports, linked from deploy/README.md, "Classic mode".
 
 ### Phase 9: Modding ecosystem
 

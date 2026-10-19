@@ -18,6 +18,8 @@ import (
 //   - A click starts a conversation: a thread that runs the click
 //     handlers. Methods that wait for the player, such as choose, pause
 //     the thread. The zone resumes it with the player's answer.
+//   - A touch starts one too, for its touch handlers (review decision
+//     56). It shows nothing until a handler shows a step.
 //   - A conversation that ends without its script, such as when the
 //     player leaves, is resumed with "closed": its pending call raises
 //     an error that is not logged as a failure.
@@ -127,6 +129,9 @@ type Conversation struct {
 	Cancelled bool
 	// Done is set once the thread finished.
 	Done bool
+	// Touch is set for the conversation of a touch, rather than a
+	// click.
+	Touch bool
 
 	ctx    *Context
 	thread *script.Thread
@@ -235,11 +240,17 @@ func (r *Runtime) Click(n *NPC, player int64) (*Conversation, error) {
 	if len(vals) == 0 {
 		return nil, nil
 	}
+	return r.converse(n, c, player, false, vals)
+}
+
+// converse runs handlers in a new conversation's thread, with the
+// player and the conversation.
+func (r *Runtime) converse(n *NPC, c *Context, player int64, touch bool, vals []script.Value) (*Conversation, error) {
 	th, err := r.s.NewThread(r.fns.converse.Value())
 	if err != nil {
 		return nil, err
 	}
-	conv := &Conversation{ID: r.newID(), Player: player, NPC: n.ID, ctx: c, thread: th}
+	conv := &Conversation{ID: r.newID(), Player: player, NPC: n.ID, Touch: touch, ctx: c, thread: th}
 	if c.conversations == nil {
 		c.conversations = map[int64]*Conversation{}
 	}
@@ -251,14 +262,31 @@ func (r *Runtime) Click(n *NPC, player int64) (*Conversation, error) {
 }
 
 // Touch runs an NPC's touch or untouch handlers with a player (review
-// decision 55): event is "touch" when the player steps into the NPC's
-// touch area, and "untouch" when it leaves it. They run as a click does,
-// since a player triggers them: a mod over its CPU budget still runs
-// them.
-func (r *Runtime) Touch(n *NPC, event string, player int64) {
+// decisions 55 and 56): event is "touch" when the player steps into the
+// NPC's touch area, and "untouch" when it leaves it. They run as a click
+// does, since a player triggers them: a mod over its CPU budget still
+// runs them.
+//
+// The touch handlers run in a conversation with the player, as a
+// click's, so they may show a dialog as rAthena's OnTouch. Touch returns
+// it, or nil when the NPC has no touch handler. The untouch handlers get
+// no conversation.
+func (r *Runtime) Touch(n *NPC, event string, player int64) (*Conversation, error) {
 	c := n.Context()
 	if c == nil {
-		return
+		return nil, nil
+	}
+	if event == "touch" {
+		var vals []script.Value
+		for _, h := range r.handlers[event] {
+			if h.ctx == c && !h.removed {
+				vals = append(vals, h.fn.Value())
+			}
+		}
+		if len(vals) == 0 {
+			return nil, nil
+		}
+		return r.converse(n, c, player, true, vals)
 	}
 	for _, h := range slices.Clone(r.handlers[event]) {
 		if h.ctx != c || h.removed || c.ended {
@@ -268,6 +296,7 @@ func (r *Runtime) Touch(n *NPC, event string, player int64) {
 			r.failed(c, "event "+event, err)
 		}
 	}
+	return nil, nil
 }
 
 // ResumeConversation goes on with a paused conversation, with the answer
@@ -305,7 +334,11 @@ func (r *Runtime) resume(conv *Conversation, args ...script.Value) {
 	if err != nil {
 		r.afterError()
 		if !strings.Contains(err.Error(), r.closed) {
-			r.failed(conv.ctx, "click", err)
+			what := "click"
+			if conv.Touch {
+				what = "event touch"
+			}
+			r.failed(conv.ctx, what, err)
 		}
 	}
 	if done || err != nil {

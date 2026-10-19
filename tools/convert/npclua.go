@@ -126,8 +126,8 @@ type npcConv struct {
 	// written calls, for checkTouchBody.
 	bodyCalls map[string]bool
 	// touch is set when the script has a touch handler: OnTouch or
-	// OnTouch_.
-	touch bool
+	// OnTouch_. touchDialog is set when it shows a dialog.
+	touch, touchDialog bool
 }
 
 func (c *npcConverter) newNPCConv(l *npcLine) *npcConv {

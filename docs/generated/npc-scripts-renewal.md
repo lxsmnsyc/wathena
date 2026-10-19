@@ -10,13 +10,13 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 |---|---:|---:|---:|---:|---:|
 | barter | 114 | 0 | 103 | 6 | 5 |
 | marketshop | 45 | 0 | 45 | 0 | 0 |
-| script | 7067 | 2610 | 2456 | 154 | 4457 |
-| script (duplicate) | 7798 | 1695 | 1678 | 17 | 6103 |
+| script | 7067 | 2915 | 2803 | 112 | 4152 |
+| script (duplicate) | 7798 | 1760 | 1741 | 19 | 6038 |
 | shop | 300 | 269 | 300 | 0 | 0 |
 | shop (duplicate) | 13 | 13 | 13 | 0 | 0 |
-| Kafras (scripts that call F_Kafra) | 55 | 54 | 0 | 54 | 1 |
+| Kafras (scripts that call F_Kafra) | 55 | 54 | 54 | 0 | 1 |
 | Dialog NPCs (only talk, menus and emotions) | 3521 | 2304 | 2304 | 0 | 1217 |
-| Job change NPCs (script NPCs of the jobs folders) | 710 | 187 | 181 | 6 | 523 |
+| Job change NPCs (script NPCs of the jobs folders) | 710 | 259 | 235 | 24 | 451 |
 
 - Shops that are not placed have no map or no sprite: scripts open them with `callshop`, which converts to `player:open_shop`.
 - cashshop, itemshop, pointshop, marketshop and barter shops become shops with a cost and a stock. Players cannot sell to them, as in rAthena.
@@ -45,37 +45,32 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 
 | Folder | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
-| airports | 63 | 53 | 53 | 0 | 10 |
-| cities | 947 | 680 | 663 | 17 | 267 |
+| airports | 63 | 55 | 55 | 0 | 8 |
+| cities | 947 | 698 | 681 | 17 | 249 |
 | events | 150 | 110 | 110 | 0 | 40 |
 | guides | 95 | 11 | 11 | 0 | 84 |
 | guild3 | 10 | 0 | 0 | 0 | 10 |
 | instances | 671 | 4 | 4 | 0 | 667 |
-| jobs | 1804 | 428 | 421 | 7 | 1376 |
-| kafras | 97 | 87 | 22 | 65 | 10 |
+| jobs | 1804 | 506 | 481 | 25 | 1298 |
+| kafras | 97 | 87 | 87 | 0 | 10 |
 | merchants | 690 | 223 | 197 | 26 | 467 |
-| other | 3466 | 565 | 557 | 8 | 2901 |
-| quests | 6622 | 2044 | 1996 | 48 | 4578 |
-| warps | 250 | 100 | 100 | 0 | 150 |
+| other | 3466 | 579 | 565 | 14 | 2887 |
+| quests | 6622 | 2285 | 2236 | 49 | 4337 |
+| warps | 250 | 117 | 117 | 0 | 133 |
 
 ## Touch areas
 
-`OnTouch` and `OnTouch_` labels become the `touch` event, and the line's span the record's `touch` field (review decision 55). `OnTouch_` runs for one player at a time through `R.touch_one`. A touch handler has no conversation, so a label with a dialog does not convert.
+`OnTouch` and `OnTouch_` labels become the `touch` event, and the line's span the record's `touch` field (review decision 55). `OnTouch_` runs for one player at a time through `R.touch_one`. A touch handler runs in a conversation with the player, so a label with a dialog converts (review decision 56). A touch label that does not convert fails on other commands, which the command table lists.
 
-| NPCs | Lines | Placed | With a touch area |
-|---|---:|---:|---:|
-| Scripts with OnTouch or OnTouch_ | 1265 | 47 | 46 |
-| Lines with OnTouch or OnTouch_, duplicates too | 4935 | 448 | 447 |
-| Script NPCs with a warp sprite, duplicates too | 2089 | 143 | 54 |
+| NPCs | Lines | Placed | With a touch area | With a dialog on touch |
+|---|---:|---:|---:|---:|
+| Scripts with OnTouch or OnTouch_ | 1265 | 329 | 327 | 279 |
+| Lines with OnTouch or OnTouch_, duplicates too | 4935 | 795 | 791 | 334 |
+| Script NPCs with a warp sprite, duplicates too | 2089 | 259 | 170 | 116 |
 
 | Why a touch label does not convert | Scripts |
 |---|---:|
-| event ontouch: a dialog, which a touch handler cannot show: the touch event has no conversation | 133 |
-| event ontouch_: a dialog, which a touch handler cannot show: the touch event has no conversation | 127 |
-| event ontouch_: a dialog, which a touch handler cannot show: the touch event has no conversation, in find_13_2 | 23 |
 | event ontouchnpc | 18 |
-| event ontouch: a dialog, which a touch handler cannot show: the touch event has no conversation, in Guard_13_1 | 4 |
-| event ontouch: a dialog, which a touch handler cannot show: the touch event has no conversation, in F_geoborg_text | 1 |
 
 ## Commands
 
@@ -83,77 +78,77 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 
 | Command | Scripts | NPC full | NPC partly | NPC not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| mes | 3893 | 2236 | 149 | 1508 | 3893 |  |
-| close | 3362 | 2165 | 149 | 1048 | 3362 |  |
-| next | 3004 | 1746 | 147 | 1111 | 3004 |  |
-| variables | 1648 | 735 | 150 | 763 | 1559 | $@god_check1 is a temporary server variable (28); $@god_check2 is a temporary server variable (10); $@thana_summon is a temporary server variable (5) |
-| select | 1597 | 844 | 115 | 638 | 1597 |  |
-| end | 1113 | 613 | 106 | 394 | 1113 |  |
-| countitem | 708 | 281 | 88 | 339 | 708 |  |
-| warp | 707 | 409 | 77 | 221 | 686 | to a computed map (14) |
-| close2 | 647 | 345 | 58 | 244 | 647 |  |
-| callfunc | 608 | 116 | 154 | 338 | 495 |  |
-| strcharinfo | 556 | 223 | 54 | 279 | 556 |  |
-| emotion | 544 | 210 | 54 | 280 | 365 | on a player or another NPC (154) |
-| delitem | 484 | 236 | 83 | 165 | 484 |  |
+| mes | 3896 | 2581 | 107 | 1208 | 3896 |  |
+| close | 3376 | 2470 | 107 | 799 | 3376 |  |
+| next | 3009 | 2002 | 105 | 902 | 3009 |  |
+| variables | 1659 | 941 | 108 | 610 | 1570 | $@god_check1 is a temporary server variable (28); $@god_check2 is a temporary server variable (10); $@thana_summon is a temporary server variable (5) |
+| select | 1600 | 998 | 72 | 530 | 1600 |  |
+| end | 1129 | 890 | 64 | 175 | 1129 |  |
+| warp | 719 | 585 | 34 | 100 | 698 | to a computed map (14) |
+| countitem | 713 | 392 | 28 | 293 | 713 |  |
+| close2 | 649 | 469 | 27 | 153 | 649 |  |
+| callfunc | 609 | 212 | 112 | 285 | 496 |  |
+| strcharinfo | 565 | 343 | 5 | 217 | 565 |  |
+| emotion | 547 | 272 | 24 | 251 | 364 | on a player or another NPC (158) |
+| delitem | 489 | 318 | 23 | 148 | 489 |  |
 | event onenable | 469 | 0 | 0 | 469 | 0 |  |
-| rand | 464 | 243 | 21 | 200 | 464 |  |
-| checkweight | 424 | 106 | 11 | 307 | 424 |  |
+| rand | 465 | 269 | 39 | 157 | 465 |  |
+| checkweight | 425 | 121 | 11 | 293 | 425 |  |
+| getarg | 395 | 151 | 104 | 140 | 354 | outside a function (41) |
 | questinfo | 395 | 0 | 0 | 395 | 0 |  |
-| getarg | 391 | 62 | 146 | 183 | 351 | outside a function (40) |
-| getitem | 372 | 220 | 27 | 125 | 372 |  |
-| changequest | 325 | 216 | 3 | 106 | 325 |  |
-| cutin | 311 | 101 | 64 | 146 | 311 |  |
+| getitem | 377 | 247 | 27 | 103 | 377 |  |
+| changequest | 335 | 247 | 3 | 85 | 335 |  |
+| cutin | 311 | 170 | 4 | 137 | 311 |  |
+| setquest | 290 | 139 | 22 | 129 | 290 |  |
 | parameter | 289 | 0 | 15 | 274 | 0 |  |
-| setquest | 287 | 113 | 18 | 156 | 287 |  |
-| input | 273 | 81 | 74 | 118 | 273 |  |
-| npctalk | 262 | 43 | 8 | 211 | 50 | as another NPC (207) |
-| Zeny | 250 | 126 | 78 | 46 | 250 |  |
-| isbegin_quest | 230 | 61 | 6 | 163 | 230 |  |
+| input | 276 | 136 | 25 | 115 | 276 |  |
+| npctalk | 262 | 43 | 9 | 210 | 50 | as another NPC (207) |
+| Zeny | 253 | 195 | 18 | 40 | 253 |  |
+| isbegin_quest | 230 | 72 | 7 | 151 | 230 |  |
 | parameter MaxWeight | 220 | 0 | 0 | 220 | 0 |  |
-| setarray | 200 | 26 | 66 | 108 | 200 |  |
-| checkquest | 196 | 57 | 18 | 121 | 196 |  |
-| event ontouch_ | 172 | 19 | 0 | 153 | 22 | a dialog, which a touch handler cannot show: the touch event has no conversation (127); a dialog, which a touch handler cannot show: the touch event has no conversation, in find_13_2 (23) |
+| setarray | 200 | 98 | 20 | 82 | 200 |  |
+| checkquest | 197 | 60 | 21 | 116 | 197 |  |
+| event ontouch_ | 177 | 163 | 0 | 14 | 177 |  |
+| event ontouch | 171 | 142 | 24 | 5 | 171 |  |
 | isequipped | 171 | 0 | 0 | 171 | 0 |  |
-| event ontouch | 167 | 23 | 5 | 139 | 29 | a dialog, which a touch handler cannot show: the touch event has no conversation (133); a dialog, which a touch handler cannot show: the touch event has no conversation, in Guard_13_1 (4); a dialog, which a touch handler cannot show: the touch event has no conversation, in F_geoborg_text (1) |
-| close3 | 162 | 55 | 61 | 46 | 162 |  |
-| erasequest | 153 | 54 | 9 | 90 | 153 |  |
-| callsub | 147 | 14 | 62 | 71 | 146 | s_text is not a label of this part of the script (1) |
-| donpcevent | 145 | 0 | 0 | 145 | 0 |  |
-| percentheal | 136 | 20 | 61 | 55 | 29 | a negative amount, which takes HP or SP (45) |
+| close3 | 162 | 118 | 0 | 44 | 162 |  |
+| erasequest | 153 | 69 | 12 | 72 | 153 |  |
+| callsub | 148 | 78 | 2 | 68 | 147 | s_text is not a label of this part of the script (1) |
+| donpcevent | 146 | 0 | 0 | 146 | 0 |  |
+| percentheal | 136 | 114 | 0 | 22 | 136 |  |
 | event ondisable | 118 | 0 | 0 | 118 | 0 |  |
-| completequest | 114 | 43 | 9 | 62 | 114 |  |
-| getexp | 114 | 0 | 2 | 112 | 0 |  |
+| getexp | 116 | 0 | 2 | 114 | 0 |  |
+| completequest | 115 | 50 | 9 | 56 | 115 |  |
+| specialeffect | 114 | 0 | 1 | 113 | 0 |  |
 | callfunc F_time_limit_recorder | 113 | 0 | 0 | 113 | 0 | it does not parse: at 323 near ",": set needs a variable (113) |
-| specialeffect | 110 | 0 | 1 | 109 | 0 |  |
 | getargcount | 107 | 0 | 34 | 73 | 107 |  |
-| getskilllv | 104 | 14 | 49 | 41 | 103 | a computed skill (1) |
-| checkre | 100 | 23 | 51 | 26 | 100 |  |
+| specialeffect2 | 105 | 40 | 6 | 59 | 105 |  |
+| getskilllv | 104 | 63 | 0 | 41 | 103 | a computed skill (1) |
+| checkre | 101 | 73 | 2 | 26 | 101 |  |
 | cloakonnpc | 100 | 0 | 0 | 100 | 0 |  |
-| specialeffect2 | 100 | 30 | 5 | 65 | 100 |  |
 | disablenpc | 97 | 0 | 0 | 97 | 0 |  |
-| getitemname | 91 | 35 | 16 | 40 | 91 |  |
-| savepoint | 88 | 29 | 51 | 8 | 88 |  |
+| getitemname | 91 | 41 | 16 | 34 | 91 |  |
+| savepoint | 88 | 76 | 5 | 7 | 88 |  |
+| viewpoint | 85 | 83 | 0 | 2 | 85 |  |
 | disable_items | 84 | 0 | 0 | 84 | 0 |  |
-| viewpoint | 84 | 9 | 49 | 26 | 84 |  |
 | cloakoffnpcself | 77 | 0 | 1 | 76 | 0 |  |
-| basicskillcheck | 72 | 12 | 49 | 11 | 72 |  |
-| openstorage | 65 | 13 | 49 | 3 | 65 |  |
-| strnpcinfo | 63 | 4 | 23 | 36 | 53 | other than the name and the map (10) |
+| basicskillcheck | 72 | 61 | 0 | 11 | 72 |  |
+| openstorage | 65 | 62 | 0 | 3 | 65 |  |
+| strnpcinfo | 64 | 28 | 0 | 36 | 54 | other than the name and the map (10) |
 | event oncommandon | 60 | 0 | 0 | 60 | 0 |  |
-| checkcart | 58 | 6 | 49 | 3 | 58 |  |
-| setcart | 57 | 6 | 49 | 2 | 57 |  |
-| dispbottom | 56 | 6 | 49 | 1 | 56 |  |
+| checkcart | 58 | 55 | 0 | 3 | 58 |  |
+| setcart | 57 | 55 | 0 | 2 | 57 |  |
+| dispbottom | 56 | 55 | 0 | 1 | 56 |  |
 | getgmlevel | 56 | 0 | 20 | 36 | 0 |  |
-| logmes | 55 | 5 | 49 | 1 | 55 |  |
+| logmes | 55 | 54 | 0 | 1 | 55 |  |
 | unknown_d | 54 | 0 | 0 | 54 | 0 |  |
-| guildopenstorage | 52 | 1 | 49 | 2 | 52 |  |
-| implode | 52 | 0 | 49 | 3 | 52 |  |
+| guildopenstorage | 52 | 50 | 0 | 2 | 52 |  |
+| implode | 52 | 49 | 0 | 3 | 52 |  |
 | setunittitle | 51 | 0 | 0 | 51 | 0 |  |
 | event onreset | 50 | 0 | 0 | 50 | 0 |  |
-| getguildname | 50 | 0 | 49 | 1 | 50 |  |
+| getguildname | 50 | 49 | 0 | 1 | 50 |  |
 | callshop | 48 | 39 | 0 | 9 | 43 | Pet_Items is not a shop (1); a computed shop (1); the shop barter_ill_luanda does not convert (1) |
-| getarraysize | 42 | 4 | 24 | 14 | 40 | not of a variable (2) |
+| getarraysize | 42 | 28 | 1 | 13 | 40 | not of a variable (2) |
 | getmonsterinfo | 42 | 0 | 5 | 37 | 0 |  |
 | parameter SkillPoint | 38 | 0 | 0 | 38 | 0 |  |
 | enablenpc | 37 | 0 | 0 | 37 | 0 |  |
@@ -167,9 +162,9 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | skill | 31 | 0 | 0 | 31 | 0 |  |
 | event onstart | 26 | 0 | 0 | 26 | 0 |  |
 | event ontouchnpc | 25 | 0 | 0 | 25 | 0 |  |
-| deletearray | 24 | 0 | 23 | 1 | 24 |  |
+| deletearray | 24 | 23 | 0 | 1 | 24 |  |
+| mapannounce | 24 | 13 | 0 | 11 | 24 |  |
 | gettime | 22 | 0 | 0 | 22 | 0 |  |
-| mapannounce | 22 | 9 | 0 | 13 | 22 |  |
 | progressbar | 22 | 3 | 5 | 14 | 22 |  |
 | event onstartarena | 21 | 0 | 0 | 21 | 0 |  |
 | cloakonnpcself | 20 | 0 | 1 | 19 | 0 |  |
@@ -188,7 +183,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer60000 | 13 | 0 | 0 | 13 | 0 |  |
 | mesitemlink | 12 | 5 | 0 | 7 | 8 | arguments (4) |
 | npcskill | 12 | 0 | 0 | 12 | 0 |  |
-| sc_start | 12 | 1 | 0 | 11 | 12 |  |
+| sc_start | 12 | 3 | 0 | 9 | 12 |  |
 | getcharid | 11 | 1 | 1 | 9 | 10 | of another character (1) |
 | getequipid | 11 | 0 | 0 | 11 | 0 |  |
 | getmapusers | 11 | 0 | 9 | 2 | 0 |  |
@@ -196,11 +191,11 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | setd | 11 | 0 | 9 | 2 | 0 |  |
 | cloakoffnpc | 10 | 0 | 0 | 10 | 0 |  |
 | getd | 10 | 0 | 0 | 10 | 0 |  |
+| hideoffnpc | 10 | 0 | 0 | 10 | 0 |  |
 | sleep2 | 10 | 4 | 0 | 6 | 10 |  |
 | unittalk | 10 | 0 | 0 | 10 | 0 |  |
 | event onmymobdead | 9 | 0 | 0 | 9 | 0 |  |
 | gettimetick | 9 | 0 | 5 | 4 | 0 |  |
-| hideoffnpc | 9 | 0 | 0 | 9 | 0 |  |
 | labels | 9 | 0 | 0 | 9 | 0 | L_Mission: a label inside a block (2); L_AskQuestions: a label inside a block (1); L_Mes: a label inside a block (1) |
 | waitingroom | 9 | 0 | 0 | 9 | 0 |  |
 | event onstop_timer | 8 | 0 | 0 | 8 | 0 |  |
@@ -282,7 +277,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npcshopupdate | 2 | 1 | 0 | 1 | 2 |  |
 | readbook | 2 | 0 | 0 | 2 | 0 |  |
 | replacestr | 2 | 0 | 0 | 2 | 0 |  |
-| sc_end | 2 | 0 | 0 | 2 | 2 |  |
+| sc_end | 2 | 2 | 0 | 0 | 2 |  |
 | setnpcdisplay | 2 | 0 | 0 | 2 | 0 |  |
 | assignment | 1 | 0 | 0 | 1 | 0 |  |
 | assignment in an expression | 1 | 0 | 0 | 1 | 0 |  |
@@ -406,10 +401,10 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | F_KO_Survival_rps | npc/re/jobs/2e/kagerou_oboro.txt:1094 | partly | emotion: on a player or another NPC |
 | F_KO_Survival_warp | npc/re/jobs/2e/kagerou_oboro.txt:994 | whole |  |
 | F_KafCart | npc/kafras/functions_kafras.txt:337 | whole |  |
-| F_KafEnd | npc/kafras/functions_kafras.txt:448 | partly | percentheal: a negative amount, which takes HP or SP |
+| F_KafEnd | npc/kafras/functions_kafras.txt:448 | whole |  |
 | F_KafInfo | npc/kafras/functions_kafras.txt:399 | whole |  |
 | F_KafSet | npc/kafras/functions_kafras.txt:605 | whole |  |
-| F_KafStor | npc/kafras/functions_kafras.txt:198 | partly | percentheal: a negative amount, which takes HP or SP |
+| F_KafStor | npc/kafras/functions_kafras.txt:198 | whole |  |
 | F_KafTele | npc/kafras/functions_kafras.txt:287 | whole |  |
 | F_KafTeleDoram | npc/re/kafras/Kafra_Teleportation_Services.txt:9 | whole |  |
 | F_Kafra | npc/kafras/functions_kafras.txt:75 | whole |  |
@@ -456,10 +451,10 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 |---|---:|---:|---:|
 | npc/airports/airships.txt | 32 | 25 | 7 |
 | npc/airports/einbroch.txt | 7 | 7 | 0 |
-| npc/airports/hugel.txt | 1 | 0 | 1 |
+| npc/airports/hugel.txt | 1 | 1 | 0 |
 | npc/airports/izlude.txt | 1 | 0 | 1 |
 | npc/airports/lighthalzen.txt | 6 | 6 | 0 |
-| npc/airports/rachel.txt | 1 | 0 | 1 |
+| npc/airports/rachel.txt | 1 | 1 | 0 |
 | npc/airports/yuno.txt | 10 | 10 | 0 |
 | npc/cities/alberta.txt | 11 | 10 | 1 |
 | npc/cities/aldebaran.txt | 31 | 29 | 2 |
@@ -469,23 +464,23 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/cities/comodo.txt | 18 | 18 | 0 |
 | npc/cities/einbech.txt | 25 | 25 | 0 |
 | npc/cities/einbroch.txt | 41 | 41 | 0 |
-| npc/cities/geffen.txt | 16 | 13 | 3 |
+| npc/cities/geffen.txt | 16 | 14 | 2 |
 | npc/cities/gonryun.txt | 14 | 13 | 1 |
 | npc/cities/hugel.txt | 10 | 10 | 0 |
 | npc/cities/izlude.txt | 11 | 2 | 9 |
 | npc/cities/jawaii.txt | 28 | 13 | 15 |
-| npc/cities/lighthalzen.txt | 139 | 124 | 15 |
-| npc/cities/louyang.txt | 19 | 17 | 2 |
+| npc/cities/lighthalzen.txt | 139 | 126 | 13 |
+| npc/cities/louyang.txt | 19 | 18 | 1 |
 | npc/cities/lutie.txt | 10 | 9 | 1 |
 | npc/cities/manuk.txt | 31 | 0 | 31 |
-| npc/cities/morocc.txt | 33 | 30 | 3 |
+| npc/cities/morocc.txt | 33 | 31 | 2 |
 | npc/cities/moscovia.txt | 8 | 6 | 2 |
-| npc/cities/niflheim.txt | 6 | 2 | 4 |
-| npc/cities/payon.txt | 15 | 11 | 4 |
+| npc/cities/niflheim.txt | 6 | 4 | 2 |
+| npc/cities/payon.txt | 15 | 12 | 3 |
 | npc/cities/prontera.txt | 23 | 22 | 1 |
 | npc/cities/rachel.txt | 30 | 29 | 1 |
 | npc/cities/splendide.txt | 36 | 1 | 35 |
-| npc/cities/umbala.txt | 18 | 15 | 3 |
+| npc/cities/umbala.txt | 18 | 17 | 1 |
 | npc/cities/veins.txt | 46 | 46 | 0 |
 | npc/cities/yuno.txt | 14 | 6 | 8 |
 | npc/events/gdevent_aru.txt | 73 | 55 | 18 |
@@ -494,11 +489,11 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/jobs/1-1e/gunslinger.txt | 2 | 1 | 1 |
 | npc/jobs/1-1e/ninja.txt | 3 | 2 | 1 |
 | npc/jobs/1-1e/taekwon.txt | 1 | 0 | 1 |
-| npc/jobs/2-1/assassin.txt | 114 | 1 | 113 |
+| npc/jobs/2-1/assassin.txt | 114 | 10 | 104 |
 | npc/jobs/2-1/blacksmith.txt | 9 | 8 | 1 |
-| npc/jobs/2-1/hunter.txt | 396 | 5 | 391 |
+| npc/jobs/2-1/hunter.txt | 396 | 6 | 390 |
 | npc/jobs/2-1/knight.txt | 14 | 6 | 8 |
-| npc/jobs/2-1/priest.txt | 23 | 1 | 22 |
+| npc/jobs/2-1/priest.txt | 23 | 3 | 20 |
 | npc/jobs/2-1/wizard.txt | 14 | 2 | 12 |
 | npc/jobs/2-1a/AssassinCross.txt | 1 | 0 | 1 |
 | npc/jobs/2-1a/HighPriest.txt | 1 | 0 | 1 |
@@ -506,13 +501,13 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/jobs/2-1a/LordKnight.txt | 1 | 0 | 1 |
 | npc/jobs/2-1a/Sniper.txt | 1 | 0 | 1 |
 | npc/jobs/2-1a/WhiteSmith.txt | 1 | 0 | 1 |
-| npc/jobs/2-1e/StarGladiator.txt | 5 | 3 | 2 |
+| npc/jobs/2-1e/StarGladiator.txt | 5 | 4 | 1 |
 | npc/jobs/2-2/alchemist.txt | 6 | 3 | 3 |
 | npc/jobs/2-2/bard.txt | 1 | 0 | 1 |
-| npc/jobs/2-2/crusader.txt | 18 | 2 | 16 |
+| npc/jobs/2-2/crusader.txt | 18 | 3 | 15 |
 | npc/jobs/2-2/dancer.txt | 21 | 4 | 17 |
-| npc/jobs/2-2/monk.txt | 60 | 23 | 37 |
-| npc/jobs/2-2/rogue.txt | 35 | 6 | 29 |
+| npc/jobs/2-2/monk.txt | 60 | 25 | 35 |
+| npc/jobs/2-2/rogue.txt | 35 | 10 | 25 |
 | npc/jobs/2-2/sage.txt | 14 | 5 | 9 |
 | npc/jobs/2-2a/Champion.txt | 1 | 0 | 1 |
 | npc/jobs/2-2a/Clown.txt | 1 | 0 | 1 |
@@ -550,7 +545,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/merchants/socket_enchant.txt | 10 | 8 | 2 |
 | npc/merchants/socket_enchant2.txt | 4 | 0 | 4 |
 | npc/merchants/wander_pet_food.txt | 2 | 1 | 1 |
-| npc/other/arena/arena_aco.txt | 55 | 4 | 51 |
+| npc/other/arena/arena_aco.txt | 55 | 5 | 50 |
 | npc/other/arena/arena_lvl50.txt | 44 | 1 | 43 |
 | npc/other/arena/arena_lvl60.txt | 43 | 1 | 42 |
 | npc/other/arena/arena_lvl70.txt | 44 | 1 | 43 |
@@ -563,7 +558,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/bulletin_boards.txt | 19 | 19 | 0 |
 | npc/other/comodo_gambling.txt | 4 | 2 | 2 |
 | npc/other/divorce.txt | 1 | 0 | 1 |
-| npc/other/fortune.txt | 3 | 1 | 2 |
+| npc/other/fortune.txt | 3 | 2 | 1 |
 | npc/other/guildpvp.txt | 1 | 0 | 1 |
 | npc/other/gympass.txt | 1 | 0 | 1 |
 | npc/other/hugel_bingo.txt | 150 | 3 | 147 |
@@ -574,16 +569,16 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/monster_race.txt | 202 | 10 | 192 |
 | npc/other/poring_war.txt | 37 | 1 | 36 |
 | npc/other/powernpc.txt | 5 | 2 | 3 |
-| npc/other/pvp.txt | 26 | 7 | 19 |
-| npc/other/turbo_track.txt | 2141 | 377 | 1764 |
+| npc/other/pvp.txt | 26 | 12 | 14 |
+| npc/other/turbo_track.txt | 2141 | 384 | 1757 |
 | npc/quests/bard_quest.txt | 11 | 9 | 2 |
 | npc/quests/bunnyband.txt | 1 | 1 | 0 |
 | npc/quests/cooking_quest.txt | 5 | 1 | 4 |
 | npc/quests/counteragent_mixture.txt | 3 | 3 | 0 |
 | npc/quests/doomed_swords.txt | 5 | 5 | 0 |
 | npc/quests/doomed_swords_quest.txt | 3 | 2 | 1 |
-| npc/quests/eye_of_hellion.txt | 15 | 6 | 9 |
-| npc/quests/first_class/tu_acolyte.txt | 15 | 7 | 8 |
+| npc/quests/eye_of_hellion.txt | 15 | 8 | 7 |
+| npc/quests/first_class/tu_acolyte.txt | 15 | 10 | 5 |
 | npc/quests/first_class/tu_archer.txt | 14 | 6 | 8 |
 | npc/quests/first_class/tu_ma_th01.txt | 16 | 0 | 16 |
 | npc/quests/first_class/tu_magician01.txt | 2 | 1 | 1 |
@@ -591,9 +586,9 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/first_class/tu_sword.txt | 6 | 4 | 2 |
 | npc/quests/first_class/tu_thief01.txt | 1 | 0 | 1 |
 | npc/quests/guildrelay.txt | 84 | 0 | 84 |
-| npc/quests/gunslinger_quests.txt | 6 | 5 | 1 |
+| npc/quests/gunslinger_quests.txt | 6 | 6 | 0 |
 | npc/quests/juice_maker.txt | 3 | 3 | 0 |
-| npc/quests/kiel_hyre_quest.txt | 110 | 69 | 41 |
+| npc/quests/kiel_hyre_quest.txt | 110 | 80 | 30 |
 | npc/quests/lvl4_weapon_quest.txt | 10 | 9 | 1 |
 | npc/quests/mage_solution.txt | 2 | 2 | 0 |
 | npc/quests/monstertamers.txt | 4 | 3 | 1 |
@@ -606,33 +601,33 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/obb_quest.txt | 4 | 3 | 1 |
 | npc/quests/okolnir.txt | 574 | 0 | 574 |
 | npc/quests/partyrelay.txt | 24 | 6 | 18 |
-| npc/quests/quests_13_1.txt | 180 | 63 | 117 |
-| npc/quests/quests_13_2.txt | 264 | 28 | 236 |
-| npc/quests/quests_airship.txt | 34 | 21 | 13 |
-| npc/quests/quests_alberta.txt | 29 | 24 | 5 |
+| npc/quests/quests_13_1.txt | 180 | 77 | 103 |
+| npc/quests/quests_13_2.txt | 264 | 81 | 183 |
+| npc/quests/quests_airship.txt | 34 | 25 | 9 |
+| npc/quests/quests_alberta.txt | 29 | 25 | 4 |
 | npc/quests/quests_aldebaran.txt | 1 | 1 | 0 |
-| npc/quests/quests_amatsu.txt | 35 | 22 | 13 |
-| npc/quests/quests_ayothaya.txt | 50 | 14 | 36 |
-| npc/quests/quests_brasilis.txt | 49 | 10 | 39 |
+| npc/quests/quests_amatsu.txt | 35 | 23 | 12 |
+| npc/quests/quests_ayothaya.txt | 50 | 33 | 17 |
+| npc/quests/quests_brasilis.txt | 49 | 11 | 38 |
 | npc/quests/quests_comodo.txt | 22 | 22 | 0 |
-| npc/quests/quests_ein.txt | 34 | 22 | 12 |
+| npc/quests/quests_ein.txt | 34 | 24 | 10 |
 | npc/quests/quests_geffen.txt | 3 | 2 | 1 |
-| npc/quests/quests_gonryun.txt | 72 | 13 | 59 |
-| npc/quests/quests_hugel.txt | 87 | 27 | 60 |
+| npc/quests/quests_gonryun.txt | 72 | 15 | 57 |
+| npc/quests/quests_hugel.txt | 87 | 40 | 47 |
 | npc/quests/quests_izlude.txt | 1 | 0 | 1 |
 | npc/quests/quests_juperos.txt | 89 | 13 | 76 |
-| npc/quests/quests_lighthalzen.txt | 105 | 45 | 60 |
-| npc/quests/quests_louyang.txt | 46 | 24 | 22 |
+| npc/quests/quests_lighthalzen.txt | 105 | 52 | 53 |
+| npc/quests/quests_louyang.txt | 46 | 29 | 17 |
 | npc/quests/quests_lutie.txt | 2 | 2 | 0 |
-| npc/quests/quests_morocc.txt | 65 | 17 | 48 |
-| npc/quests/quests_moscovia.txt | 102 | 32 | 70 |
-| npc/quests/quests_nameless.txt | 96 | 42 | 54 |
-| npc/quests/quests_niflheim.txt | 11 | 5 | 6 |
+| npc/quests/quests_morocc.txt | 65 | 21 | 44 |
+| npc/quests/quests_moscovia.txt | 102 | 35 | 67 |
+| npc/quests/quests_nameless.txt | 96 | 53 | 43 |
+| npc/quests/quests_niflheim.txt | 11 | 10 | 1 |
 | npc/quests/quests_payon.txt | 4 | 3 | 1 |
-| npc/quests/quests_prontera.txt | 27 | 11 | 16 |
-| npc/quests/quests_rachel.txt | 75 | 30 | 45 |
+| npc/quests/quests_prontera.txt | 27 | 17 | 10 |
+| npc/quests/quests_rachel.txt | 75 | 52 | 23 |
 | npc/quests/quests_umbala.txt | 10 | 3 | 7 |
-| npc/quests/quests_veins.txt | 120 | 74 | 46 |
+| npc/quests/quests_veins.txt | 120 | 81 | 39 |
 | npc/quests/quests_yuno.txt | 12 | 9 | 3 |
 | npc/quests/seals/brisingamen_seal.txt | 32 | 9 | 23 |
 | npc/quests/seals/god_global.txt | 1 | 0 | 1 |
@@ -640,7 +635,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/seals/megingard_seal.txt | 16 | 5 | 11 |
 | npc/quests/seals/mjolnir_seal.txt | 6 | 1 | 5 |
 | npc/quests/seals/seal_status.txt | 1 | 0 | 1 |
-| npc/quests/seals/sleipnir_seal.txt | 18 | 5 | 13 |
+| npc/quests/seals/sleipnir_seal.txt | 18 | 10 | 8 |
 | npc/quests/skills/acolyte_skills.txt | 1 | 0 | 1 |
 | npc/quests/skills/alchemist_skills.txt | 12 | 10 | 2 |
 | npc/quests/skills/archer_skills.txt | 2 | 0 | 2 |
@@ -650,7 +645,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/skills/crusader_skills.txt | 3 | 1 | 2 |
 | npc/quests/skills/dancer_skills.txt | 2 | 0 | 2 |
 | npc/quests/skills/hunter_skills.txt | 1 | 0 | 1 |
-| npc/quests/skills/knight_skills.txt | 7 | 5 | 2 |
+| npc/quests/skills/knight_skills.txt | 7 | 6 | 1 |
 | npc/quests/skills/mage_skills.txt | 1 | 0 | 1 |
 | npc/quests/skills/merchant_skills.txt | 3 | 0 | 3 |
 | npc/quests/skills/monk_skills.txt | 2 | 0 | 2 |
@@ -660,12 +655,12 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/skills/swordman_skills.txt | 3 | 0 | 3 |
 | npc/quests/skills/thief_skills.txt | 2 | 1 | 1 |
 | npc/quests/skills/wizard_skills.txt | 2 | 1 | 1 |
-| npc/quests/thana_quest.txt | 47 | 2 | 45 |
-| npc/quests/the_sign_quest.txt | 101 | 39 | 62 |
+| npc/quests/thana_quest.txt | 47 | 3 | 44 |
+| npc/quests/the_sign_quest.txt | 101 | 46 | 55 |
 | npc/re/airports/izlude.txt | 5 | 5 | 0 |
 | npc/re/cities/alberta.txt | 9 | 8 | 1 |
 | npc/re/cities/comodo.txt | 4 | 4 | 0 |
-| npc/re/cities/dewata.txt | 50 | 30 | 20 |
+| npc/re/cities/dewata.txt | 50 | 38 | 12 |
 | npc/re/cities/dicastes.txt | 35 | 2 | 33 |
 | npc/re/cities/eclage.txt | 5 | 5 | 0 |
 | npc/re/cities/izlude.txt | 71 | 55 | 16 |
@@ -746,23 +741,23 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/re/jobs/1-1/thief.txt | 2 | 1 | 1 |
 | npc/re/jobs/1-1e/taekwon.txt | 1 | 1 | 0 |
 | npc/re/jobs/2-2/crusader.txt | 5 | 1 | 4 |
-| npc/re/jobs/2e/kagerou_oboro.txt | 64 | 3 | 61 |
-| npc/re/jobs/2e/rebellion.txt | 23 | 9 | 14 |
-| npc/re/jobs/3-1/archbishop.txt | 56 | 6 | 50 |
-| npc/re/jobs/3-1/guillotine_cross.txt | 67 | 10 | 57 |
-| npc/re/jobs/3-1/mechanic.txt | 10 | 3 | 7 |
+| npc/re/jobs/2e/kagerou_oboro.txt | 64 | 23 | 41 |
+| npc/re/jobs/2e/rebellion.txt | 23 | 10 | 13 |
+| npc/re/jobs/3-1/archbishop.txt | 56 | 7 | 49 |
+| npc/re/jobs/3-1/guillotine_cross.txt | 67 | 14 | 53 |
+| npc/re/jobs/3-1/mechanic.txt | 10 | 4 | 6 |
 | npc/re/jobs/3-1/ranger.txt | 31 | 0 | 31 |
-| npc/re/jobs/3-1/rune_knight.txt | 33 | 12 | 21 |
-| npc/re/jobs/3-1/warlock.txt | 18 | 3 | 15 |
-| npc/re/jobs/3-2/genetic.txt | 27 | 15 | 12 |
-| npc/re/jobs/3-2/minstrel.txt | 45 | 8 | 37 |
-| npc/re/jobs/3-2/royal_guard.txt | 15 | 1 | 14 |
-| npc/re/jobs/3-2/shadow_chaser.txt | 22 | 13 | 9 |
+| npc/re/jobs/3-1/rune_knight.txt | 33 | 13 | 20 |
+| npc/re/jobs/3-1/warlock.txt | 18 | 5 | 13 |
+| npc/re/jobs/3-2/genetic.txt | 27 | 16 | 11 |
+| npc/re/jobs/3-2/minstrel.txt | 45 | 25 | 20 |
+| npc/re/jobs/3-2/royal_guard.txt | 15 | 2 | 13 |
+| npc/re/jobs/3-2/shadow_chaser.txt | 22 | 15 | 7 |
 | npc/re/jobs/3-2/sorcerer.txt | 7 | 4 | 3 |
-| npc/re/jobs/3-2/sura.txt | 15 | 4 | 11 |
+| npc/re/jobs/3-2/sura.txt | 15 | 5 | 10 |
 | npc/re/jobs/3-2/wanderer.txt | 27 | 12 | 15 |
 | npc/re/jobs/doram/spirit_handler.txt | 24 | 13 | 11 |
-| npc/re/jobs/novice/academy.txt | 514 | 203 | 311 |
+| npc/re/jobs/novice/academy.txt | 514 | 209 | 305 |
 | npc/re/jobs/novice/supernovice_ex.txt | 2 | 1 | 1 |
 | npc/re/jobs/repair.txt | 24 | 22 | 2 |
 | npc/re/kafras/Kafra_Teleportation_Services.txt | 12 | 12 | 0 |
@@ -867,10 +862,10 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/re/quests/eden/eden_121_130.txt | 8 | 1 | 7 |
 | npc/re/quests/eden/eden_131_140.txt | 1 | 0 | 1 |
 | npc/re/quests/eden/eden_common.txt | 45 | 5 | 40 |
-| npc/re/quests/eden/eden_quests.txt | 21 | 2 | 19 |
+| npc/re/quests/eden/eden_quests.txt | 21 | 3 | 18 |
 | npc/re/quests/eden/eden_service.txt | 3 | 2 | 1 |
 | npc/re/quests/eden/eden_tutorial.txt | 7 | 0 | 7 |
-| npc/re/quests/first_class/tu_archer.txt | 3 | 1 | 2 |
+| npc/re/quests/first_class/tu_archer.txt | 3 | 2 | 1 |
 | npc/re/quests/garden_of_time.txt | 41 | 2 | 38 |
 | npc/re/quests/homun_s.txt | 10 | 3 | 7 |
 | npc/re/quests/illusion_investigation.txt | 12 | 3 | 9 |
@@ -886,30 +881,30 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/re/quests/quests_13_1.txt | 10 | 8 | 2 |
 | npc/re/quests/quests_14_3.txt | 12 | 11 | 1 |
 | npc/re/quests/quests_14_3_bis.txt | 197 | 109 | 88 |
-| npc/re/quests/quests_15_1.txt | 190 | 90 | 100 |
-| npc/re/quests/quests_15_2.txt | 152 | 63 | 89 |
-| npc/re/quests/quests_16_1.txt | 366 | 108 | 258 |
+| npc/re/quests/quests_15_1.txt | 190 | 91 | 99 |
+| npc/re/quests/quests_15_2.txt | 152 | 64 | 88 |
+| npc/re/quests/quests_16_1.txt | 366 | 110 | 256 |
 | npc/re/quests/quests_16_2.txt | 184 | 70 | 114 |
-| npc/re/quests/quests_17_1.txt | 246 | 87 | 159 |
+| npc/re/quests/quests_17_1.txt | 246 | 88 | 158 |
 | npc/re/quests/quests_17_2.txt | 231 | 118 | 113 |
 | npc/re/quests/quests_18.txt | 337 | 85 | 251 |
 | npc/re/quests/quests_aldebaran.txt | 3 | 2 | 1 |
-| npc/re/quests/quests_dewata.txt | 54 | 5 | 49 |
+| npc/re/quests/quests_dewata.txt | 54 | 7 | 47 |
 | npc/re/quests/quests_dicastes.txt | 160 | 10 | 150 |
 | npc/re/quests/quests_dungeons_200.txt | 29 | 10 | 19 |
-| npc/re/quests/quests_eclage.txt | 181 | 54 | 127 |
+| npc/re/quests/quests_eclage.txt | 181 | 63 | 118 |
 | npc/re/quests/quests_exp_175.txt | 6 | 3 | 3 |
 | npc/re/quests/quests_glastheim.txt | 3 | 2 | 1 |
-| npc/re/quests/quests_illusion_dungeons.txt | 299 | 102 | 197 |
+| npc/re/quests/quests_illusion_dungeons.txt | 299 | 104 | 195 |
 | npc/re/quests/quests_izlude.txt | 5 | 5 | 0 |
 | npc/re/quests/quests_lighthalzen.txt | 5 | 5 | 0 |
-| npc/re/quests/quests_malangdo.txt | 148 | 40 | 108 |
-| npc/re/quests/quests_malaya.txt | 135 | 39 | 96 |
+| npc/re/quests/quests_malangdo.txt | 148 | 43 | 105 |
+| npc/re/quests/quests_malaya.txt | 135 | 44 | 91 |
 | npc/re/quests/quests_mora.txt | 102 | 12 | 90 |
 | npc/re/quests/quests_morocc.txt | 15 | 13 | 2 |
-| npc/re/quests/quests_nameless.txt | 2 | 1 | 1 |
+| npc/re/quests/quests_nameless.txt | 2 | 2 | 0 |
 | npc/re/quests/quests_niflheim.txt | 1 | 0 | 1 |
-| npc/re/quests/quests_rockridge.txt | 273 | 124 | 148 |
+| npc/re/quests/quests_rockridge.txt | 273 | 125 | 147 |
 | npc/re/quests/quests_veins.txt | 1 | 0 | 1 |
 | npc/re/quests/seals/brisingamen_seal.txt | 2 | 0 | 2 |
 | npc/re/quests/seals/megingard_seal.txt | 2 | 0 | 2 |
@@ -923,12 +918,12 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/re/quests/woe_te/te_mission_prt.txt | 26 | 0 | 26 |
 | npc/re/warps/cities/dicastes.txt | 15 | 0 | 15 |
 | npc/re/warps/cities/eclage.txt | 2 | 2 | 0 |
-| npc/re/warps/cities/einbech.txt | 1 | 0 | 1 |
-| npc/re/warps/cities/einbroch.txt | 1 | 0 | 1 |
+| npc/re/warps/cities/einbech.txt | 1 | 1 | 0 |
+| npc/re/warps/cities/einbroch.txt | 1 | 1 | 0 |
 | npc/re/warps/cities/izlude.txt | 10 | 0 | 10 |
-| npc/re/warps/cities/malaya.txt | 14 | 9 | 5 |
-| npc/re/warps/cities/prontera.txt | 7 | 0 | 7 |
-| npc/re/warps/dungeons/amicitia.txt | 1 | 0 | 1 |
+| npc/re/warps/cities/malaya.txt | 14 | 14 | 0 |
+| npc/re/warps/cities/prontera.txt | 7 | 4 | 3 |
+| npc/re/warps/dungeons/amicitia.txt | 1 | 1 | 0 |
 | npc/re/warps/dungeons/ein_dun.txt | 1 | 0 | 1 |
 | npc/re/warps/dungeons/iz_dun.txt | 2 | 2 | 0 |
 | npc/re/warps/dungeons/mag_dun.txt | 2 | 0 | 2 |
@@ -937,11 +932,11 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/re/warps/guildcastles.txt | 12 | 1 | 11 |
 | npc/re/warps/other/TrainingZone123.txt | 8 | 1 | 7 |
 | npc/re/warps/other/ba_2whs.txt | 2 | 0 | 2 |
-| npc/re/warps/other/ba_maison.txt | 3 | 1 | 2 |
-| npc/re/warps/other/ba_pw.txt | 3 | 0 | 3 |
+| npc/re/warps/other/ba_maison.txt | 3 | 2 | 1 |
+| npc/re/warps/other/ba_pw.txt | 3 | 2 | 1 |
 | npc/re/warps/other/dimensional_gap.txt | 4 | 4 | 0 |
 | npc/re/warps/other/un_myst.txt | 9 | 9 | 0 |
-| npc/re/warps/other/verus.txt | 67 | 0 | 67 |
+| npc/re/warps/other/verus.txt | 67 | 2 | 65 |
 | npc/warps/cities/umbala.txt | 1 | 1 | 0 |
 | npc/warps/cities/yuno.txt | 13 | 13 | 0 |
 | npc/warps/dungeons/alde_dun.txt | 4 | 4 | 0 |

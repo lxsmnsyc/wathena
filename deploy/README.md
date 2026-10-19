@@ -87,6 +87,20 @@ Run these in `deploy/compose`.
 - `docker-compose.yml` passes `--public-url` and `--trusted-proxies` from `.env`.
 - Change a setting, then run `docker compose up -d --wait`.
 
+### Classic mode
+
+A classic world runs rAthena's maps from your client's GRF files, with rAthena's NPCs and spawns converted at start (review decision 55). To run one:
+
+- Make the world with `wactl world new --mode classic`.
+- Build the assets from your client, as in "First start", step 4.
+- In `waserver.yml`, set `mode: renewal`, and in the `classic` block set `start_map: prontera` and `maps: all`.
+
+Classic mode ships with `mode: renewal`. Not every rAthena NPC converts yet:
+
+- [docs/generated/classic-coverage.md](../docs/generated/classic-coverage.md) lists what does not convert, for the release notes: the NPC lines by folder, the most common commands that block the rest, and the systems that are not built, such as instances, sieges, battlegrounds and the MVP tomb.
+- `go run ./tools/wactl convert classic --report docs/generated/classic-coverage.md` writes it again from the converter's coverage reports.
+- The full coverage reports are [npc-scripts-renewal.md](../docs/generated/npc-scripts-renewal.md) and [npc-scripts-pre-renewal.md](../docs/generated/npc-scripts-pre-renewal.md).
+
 ### Local mode
 
 For a test on your own machine, set `WATHENA_DOMAIN=localhost`. Caddy then signs a certificate with its own local authority instead of asking Let's Encrypt. If ports 80 and 443 are taken, use others, such as `WATHENA_HTTP_PORT=8080` and `WATHENA_HTTPS_PORT=8443`, and open `https://localhost:8443/`.

@@ -893,9 +893,8 @@ func (b *body) commandErr(name string, args []Expr) error {
 		if err != nil {
 			return err
 		}
-		if hp.static != nil && *hp.static < 0 || sp.static != nil && *sp.static < 0 {
-			return unsupported("percentheal", "a negative amount, which takes HP or SP")
-		}
+		// A negative amount takes HP or SP, and never HP below 1 (review
+		// decision 56).
 		var parts []string
 		if hp.static == nil || *hp.static != 0 {
 			parts = append(parts, "hp = "+hp.asInt())
@@ -1546,12 +1545,23 @@ func (b *body) jobchange(args []Expr) error {
 	if len(args) < 1 || len(args) > 3 {
 		return unsupported("jobchange", "arguments")
 	}
+	upper := ""
 	if len(args) >= 2 {
 		up, err := b.expr(args[1])
 		if err != nil {
 			return err
 		}
-		if up.static == nil || *up.static != 0 {
+		id, isUpper := args[1].(*Ident)
+		isUpper = isUpper && strings.EqualFold(id.Name, "Upper")
+		switch {
+		case up.static != nil && *up.static == 0:
+		case isUpper && b.n.allowStubs:
+			// jobchange <job>,Upper keeps the player's own line, as
+			// Job_Change does. A normal player's change converts. A
+			// transcendent or baby player's fails when it is reached,
+			// and the function stays partly converted.
+			upper = up.code
+		default:
 			return unsupported("jobchange", "a transcendent or baby flag")
 		}
 	}
@@ -1568,6 +1578,14 @@ func (b *body) jobchange(args []Expr) error {
 		return nil
 	}
 	b.n.file.need("jobs")
+	if upper != "" {
+		err := unsupported("jobchange", "a transcendent or baby flag")
+		b.n.fail(errFeature(err))
+		b.n.stubs = append(b.n.stubs, describeError(errFeature(err), err))
+		b.line("if %s ~= 0 then", upper)
+		b.line("  R.unsupported(%s)", luaString(errFeature(err)))
+		b.line("end")
+	}
 	b.line("player:change_job(%s, { force = true })", job.asInt())
 	return nil
 }

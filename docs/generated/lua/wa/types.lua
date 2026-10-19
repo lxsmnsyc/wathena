@@ -417,8 +417,8 @@ function wa_Player:give_zeny(amount) end
 ---@param heal wa.HealSpec
 function wa_Player:item_heal(heal) end
 
----Heals as percentheal.
----@param heal wa.HealSpec Amounts in percent.
+---Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1 (review decision 56).
+---@param heal wa.HealSpec Amounts in percent, from -100 to 100.
 function wa_Player:heal_percent(heal) end
 
 ---Heals all HP and SP.

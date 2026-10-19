@@ -266,3 +266,173 @@ func TestTouchOneConverted(t *testing.T) {
 		t.Fatalf("with a hiding player in the area: %q", got)
 	}
 }
+
+// talker is an NPC script whose touch handler talks to the player.
+const talker = `
+local context = require "wa.context"
+local events = require "wa.events"
+return function()
+  local npc = context:get_instance()
+  events.on("touch", function(player, conversation)
+    conversation:say("[" .. npc.name .. "]", "Halt, " .. player.name .. ".")
+    conversation:wait_for_next()
+    conversation:say("Pass.")
+  end)
+end`
+
+// TestTouchConversation checks review decision 56: a touch handler
+// talks to the player in a conversation, as rAthena's OnTouch with mes,
+// and the player cannot walk while it lasts.
+func TestTouchConversation(t *testing.T) {
+	z, _ := touchZone(t, talker)
+	a := joinAt(z, "a", 10, 20)
+	walkTo(t, z, a, 19, 20)
+	ev := events(a)
+	if got := lines(ev); got != "[Gate]|Halt, a." {
+		t.Fatalf("touch dialog: %q", got)
+	}
+	if a.talk == nil || lastDialog(ev).GetNext() != true {
+		t.Fatalf("no conversation that waits for next: %v", a.talk)
+	}
+	z.handle(command{player: a, walkTo: &[2]int{10, 20}})
+	z.stepAt(z.now + 500)
+	if a.entity.x != 19 || a.entity.y != 20 {
+		t.Fatalf("the player walked while it talked: %d,%d", a.entity.x, a.entity.y)
+	}
+	ev = next(z, a, ev)
+	if got := lines(ev); got != "Pass." || lastDialog(ev).GetClose() != true {
+		t.Fatalf("after next: %q", got)
+	}
+	answer(z, a, reply(lastDialog(ev).GetDialog(), func(b *wathenav1.NpcReply_builder) { b.Close = new(true) }))
+	if a.talk != nil {
+		t.Fatal("the conversation did not end")
+	}
+}
+
+// TestTouchQueue checks that a touch while the player talks waits until
+// the conversation ends, as npc_event_sub queues it: two NPCs whose
+// areas overlap both fire on one step, the second shows its dialog
+// touchQueueDelay after the first ended, and a queued touch whose
+// player left the area by then does not run.
+func TestTouchQueue(t *testing.T) {
+	z, _ := touchZone(t, talker)
+	z.stopScripts()
+	z.npcsStarted = false
+	gate := NPC{Name: "example.test:Gate", DisplayName: "Gate", X: 20, Y: 20, Sprite: 45, Script: "example.test:scripts/npc.lua",
+		Touch: &TouchArea{XSpan: 1, YSpan: 1}}
+	post := gate
+	post.Name, post.DisplayName, post.Y = "example.test:Post", "Post", 21
+	z.SetNPCs([]NPC{gate, post})
+	z.startScripts()
+	z.startNPCs()
+	a := joinAt(z, "a", 10, 20)
+	walkTo(t, z, a, 19, 21)
+	ev := events(a)
+	if got := lines(ev); got != "[Gate]|Halt, a." {
+		t.Fatalf("first touch: %q", got)
+	}
+	if len(a.touchQueue) != 1 {
+		t.Fatalf("%d touches wait, want 1", len(a.touchQueue))
+	}
+	ev = next(z, a, ev)
+	z.handle(command{player: a, npcReply: reply(lastDialog(ev).GetDialog(), func(b *wathenav1.NpcReply_builder) { b.Close = new(true) })})
+	ended := z.now
+	var got string
+	for got == "" && z.now < ended+1000 {
+		z.stepAt(z.now + 50)
+		got = lines(events(a))
+	}
+	if got != "[Post]|Halt, a." {
+		t.Fatalf("the queued touch: %q", got)
+	}
+	if z.now < ended+touchQueueDelay {
+		t.Fatalf("the queued touch ran %d ms after the conversation ended", z.now-ended)
+	}
+
+	// A queued touch checks the area again when it runs.
+	z.closeTalk(a)
+	walkTo(t, z, a, 10, 21)
+	events(a)
+	walkTo(t, z, a, 19, 21)
+	events(a)
+	if len(a.touchQueue) != 1 {
+		t.Fatalf("%d touches wait, want 1", len(a.touchQueue))
+	}
+	z.closeTalk(a)
+	a.touchQueue[0].player.touching = nil
+	for range 5 {
+		z.stepAt(z.now + 50)
+	}
+	if got := lines(events(a)); got != "" || a.talk != nil {
+		t.Fatalf("a queued touch out of the area ran: %q", got)
+	}
+}
+
+// TestTouchWarp checks that a warp a touch handler asks for happens once
+// the handler ran, as for a click.
+func TestTouchWarp(t *testing.T) {
+	z, _ := touchZone(t, `
+local events = require "wa.events"
+return function()
+  events.on("touch", function(player) player:warp("map/test", 5, 6) end)
+end`)
+	a := joinAt(z, "a", 10, 20)
+	z.walk(a.entity, 19, 20)
+	for range 100 {
+		z.stepAt(z.now + 50)
+		if a.entity.x == 5 {
+			break
+		}
+	}
+	if a.entity.x != 5 || a.entity.y != 6 {
+		t.Fatalf("the touch did not warp the player: %d,%d", a.entity.x, a.entity.y)
+	}
+}
+
+// TestTouchDialogConverted runs a converted OnTouch_ label with a dialog
+// (review decision 56): the player who steps in sees it, and when that
+// player leaves, R.touch_one does not run it for a player already in the
+// area, who has no conversation, but for the next player who comes in.
+func TestTouchDialogConverted(t *testing.T) {
+	lua := convertedTouch(t, `{ end; OnTouch_: mes "[Gate]"; mes "Halt, " + strcharinfo(0) + "."; close; }`)
+	z, _ := touchZone(t, "return function() end")
+	z.Statuses = testStatuses(t)
+	coreMods(t, z)
+	logs := &syncBuffer{}
+	z.Mods.Log = slog.New(slog.NewTextHandler(logs, nil))
+	z.Mods.Server = variables.NewServer(nil, nil)
+	z.Mods.Scripts[0].Files["scripts/npcs/Gate_t.lua"] = lua
+	z.stopScripts()
+	z.npcsStarted = false
+	z.SetNPCs([]NPC{{Name: "core:Gate#t", DisplayName: "Gate", X: 20, Y: 20, Sprite: 45, Script: "core:scripts/npcs/Gate_t.lua",
+		Touch: &TouchArea{XSpan: 1, YSpan: 1}}})
+	z.startScripts()
+	z.startNPCs()
+	a := joinAt(z, "a", 10, 20)
+	b := joinAt(z, "b", 10, 21)
+	walkTo(t, z, a, 19, 20)
+	ev := events(a)
+	if got := lines(ev); got != "[Gate]|Halt, a." {
+		t.Fatalf("first player: %q: %s", got, logs)
+	}
+	answer(z, a, reply(lastDialog(ev).GetDialog(), func(b *wathenav1.NpcReply_builder) { b.Close = new(true) }))
+	walkTo(t, z, b, 19, 21)
+	if got := lines(events(b)); got != "" {
+		t.Fatalf("second player while the first is in: %q", got)
+	}
+	walkTo(t, z, a, 10, 20)
+	for range 3 {
+		z.stepAt(z.now + 50)
+	}
+	if got := lines(events(b)); got != "" || b.talk != nil {
+		t.Fatalf("the player in the area got the dialog: %q", got)
+	}
+	c := joinAt(z, "c", 10, 19)
+	walkTo(t, z, c, 19, 19)
+	if got := lines(events(c)); got != "[Gate]|Halt, c." {
+		t.Fatalf("the next player who came in: %q", got)
+	}
+	if strings.Contains(logs.String(), "level=WARN") {
+		t.Fatalf("logs: %s", logs)
+	}
+}

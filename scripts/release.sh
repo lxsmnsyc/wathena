@@ -13,6 +13,9 @@
 #     worlds; `wactl world new --mode` picks the mode of a world.
 #   - wabots, the load test bots, so owners can measure their own
 #     hardware (deploy/README.md, "Measure your own hardware").
+#   - All three with the gzextracts tag: they embed gzipped copies of
+#     the rAthena extracts, which go generate makes first (review
+#     decision 56, reference/rathena/doc.go).
 #   - The version is the output of git describe --tags --always --dirty,
 #     stamped with -ldflags "-X main.buildVersion=...". waserver version
 #     and wactl version print it.
@@ -73,6 +76,9 @@ SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
 export GOFLAGS=-mod=readonly GOAMD64=v1 GOARM64=v8.0 CGO_CFLAGS=-O2 CGO_LDFLAGS=-O2
 export ZIG_GLOBAL_CACHE_DIR="${ZIG_GLOBAL_CACHE_DIR:-$HOME/.cache/zig}"
 
+echo "== the gzipped extracts"
+go generate ./reference/rathena
+
 echo "== the web client"
 (
 	cd client
@@ -116,13 +122,13 @@ for t in "${targets[@]}"; do
 	esac
 	echo "== $t"
 	CGO_ENABLED=1 GOOS=$goos GOARCH=$goarch CC="$cc" go build -trimpath -buildvcs=false \
-		-tags procedural,webclient,netgo,osusergo -ldflags "$ldflags $extra" \
+		-tags procedural,gzextracts,webclient,netgo,osusergo -ldflags "$ldflags $extra" \
 		-o "$out/waserver-$goos-$goarch$ext" ./server/cmd/waserver
 	CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -trimpath -buildvcs=false \
-		-tags procedural -ldflags "$ldflags" \
+		-tags procedural,gzextracts -ldflags "$ldflags" \
 		-o "$out/wactl-$goos-$goarch$ext" ./tools/wactl
 	CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -trimpath -buildvcs=false \
-		-tags procedural -ldflags "$ldflags" \
+		-tags procedural,gzextracts -ldflags "$ldflags" \
 		-o "$out/wabots-$goos-$goarch$ext" ./tools/wabots
 done
 

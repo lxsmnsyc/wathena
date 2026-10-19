@@ -63,6 +63,14 @@
 //   and warps into the new first floor, which the page generates
 //   (decision 0045). Chromium only.
 //
+// - kro: kro-check.ts runs the classic world of the full kRO run
+//   (review decision 55): `wactl world new --mode classic` in a database
+//   of WATHENA_TEST_DATABASE_URL, and a waserver built with -tags
+//   procedural on every map of the kRO asset build that
+//   WATHENA_KRO_ASSETS names. The page loads Prontera, the player walks,
+//   and a converted NPC's dialog opens. It runs only when
+//   WATHENA_KRO_ASSETS is set. Chromium only.
+//
 // - gen: the map generator module (src/world/gen.wasm) gives the golden
 //   checksums of shared/gen/testdata in Chromium (GEN_BROWSERS adds others),
 //   whatever BROWSERS says (decision 0038): fields, dungeon floors and
@@ -120,6 +128,7 @@ import { checkLayout } from './layout-check.ts';
 import { checkQuests } from './quests-check.ts';
 import { checkPlaces } from './places-check.ts';
 import { checkRotation } from './rotation-check.ts';
+import { checkKRO } from './kro-check.ts';
 import type * as GeneratorModule from '../src/world/generator.ts';
 
 const repo = join(import.meta.dirname, '..', '..');
@@ -1143,6 +1152,13 @@ try {
           await checkRotation(name, browser, { repo, client, ...assets }, check);
         } else {
           console.log(`skip ${name} rotation: the game checks run in Chromium`);
+        }
+      }
+      if (wanted('kro')) {
+        if (name === 'chromium') {
+          await checkKRO(name, browser, { repo, client, ...assets }, check);
+        } else {
+          console.log(`skip ${name} kro: the game checks run in Chromium`);
         }
       }
       if (wanted('exit')) {

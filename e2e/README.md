@@ -21,6 +21,7 @@ WATHENA_TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:55432/postgres
   - A Jellopy costs 1 Jellopy, so the duplication tests buy with an item cost and keep the totals.
 - Chat commands of the fixture reach the market calls: `!currency <name> <n>` and `!pay <name> <n>` give and take a currency, `!mailbox` opens the mailbox, `!mail <to|self> <item> <amount> [<zeny>]` sends a mail from the "Postmaster", `!buyingstore <slots>` opens the buying store setup, `!search <uses> <show|open>` opens the store search, `!autotrade` puts the speaker on autotrade, and `!stock <item> <n>` sets a stock at the Exchange. The fixture's vend hook refuses Contraband, and its vend and buying_store_sale events tell both players what changed hands. The server's config approves `mail.send`, `currencies.modify` and `shops.modify` for the fixture.
 - `Options.Procedural` runs a procedural world: `waserver` and `wactl` built with `-tags procedural`, and a world that `wactl world new --mode procedural --config` makes in the test's database, with the server's config and the Home Village sample beside the test mods. `Options.Config`'s `procedural.layout` shapes it. It needs `Options.Database`.
+- `Options.Assets` runs another asset build in place of the test's, such as a full kRO build. With it and no `Options.Maps`, the server gets no `--map` and `--maps`, so the `classic` block of `Options.Config` sets the start map and the maps.
 - The fixture's `!spawn <monster>` places a monster by its name, such as `PORING`, next to the speaker, for the quests of procedural worlds.
 - The fixture's `!slayer` places a Slayer next to the speaker, a monster that attacks on sight and kills in one hit, so a test sees a death and the way back to the save point.
 - The fixture also has the Training Dummy, a Dummy worth a million base and job exp, which `!trainer` places next to the speaker, for a level up in the browser checks' exit check. The Kafra opens the guild storage too, with "Guild storage". The Test Charm has a `description`.
@@ -210,6 +211,23 @@ How long:
 - By default the moves run for 40 seconds, the restart left out, so the `test` step stays short.
 - `WATHENA_EXIT_MINUTES` sets the minutes of moves. The `e2e` step of `scripts/check.sh` sets it to 30.
 - `WATHENA_EXIT_REPORT` names a file the test writes its numbers to. The `e2e` step prints that file, since `go test` without `-v` hides the log of a test that passed.
+
+## The kRO check
+
+`TestClassicKRO` is the full kRO run of review decision 55. It runs only when `WATHENA_KRO_ASSETS` names a full kRO asset build, and with PostgreSQL. Normal test runs skip it.
+
+```text
+go run ./tools/wactl assets build --source placeholder --source grf:data/kro/client --out /tmp/kro-build
+WATHENA_KRO_ASSETS=/tmp/kro-build WATHENA_TEST_DATABASE_URL=... go test -run TestClassicKRO -v -timeout 30m ./e2e/
+```
+
+- The build needs about 2.4 GB of disk. Without that much, a smaller build is enough for the bot: the placeholder pack and the `.rsw`, `.gnd` and `.gat` files of `prontera`, `prt_fild08`, `payon` and `payon_in01`, copied from the client into a `map` folder and built with `--source ro:<folder>`. Decision 0052 ran it this way.
+- The world is classic, from `wactl world new --mode classic`, and the server runs `classic: {start_map: prontera, maps: all}` with `mode: renewal`.
+- A new Novice of base level 20 and job level 10 starts in Prontera and learns Basic Skill. At a Kafra it saves and stores 2 Jellopies. It buys 3 Apples from the Fruit Gardener, a converted shop. It walks into the south warp to `prt_fild08`, kills a Poring, Lunatic or Fabre there, and walks back. It takes the Kafra's teleport to Payon and becomes a Taekwon at the Phoenix, a converted job change NPC, in three talks.
+- The renewal job changers of the first jobs in Prontera, Izlude and the other towns do not convert: they need the `skill` command. The Taekwon job change does, so the check uses it.
+- The bot walks along routes over the build's cells, through rAthena's warps of `warps.json`, and keeps off warp areas until it means to take one.
+- The fixture's treasure hunt hides its chests on the start map, since such a build has no `e2e_field`.
+- With `-v`, the log has one line per step with its result.
 
 ## Running every check
 

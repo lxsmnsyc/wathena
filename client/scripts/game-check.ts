@@ -119,6 +119,15 @@ export interface GameOptions {
    * events.
    */
   procedural?: boolean;
+  /**
+   * A classic world that `wactl world new --mode classic` made in the
+   * database of env, on a waserver built with -tags procedural, as the
+   * release builds are (review decision 55). The server gets no --map,
+   * so the config's classic block sets the start map and the maps.
+   */
+  classic?: boolean;
+  /** How long the server may take to start, in seconds: 120 by default. */
+  startSeconds?: number;
 }
 
 /**
@@ -244,7 +253,10 @@ export async function startGame(
   const waserver = buildServer(
     repo,
     dir,
-    opts.fields !== undefined || opts.layout === true || opts.procedural === true,
+    opts.fields !== undefined ||
+      opts.layout === true ||
+      opts.procedural === true ||
+      opts.classic === true,
   );
   const mods = installMods(repo, dir, wactl, opts.mods ?? []);
   const config = join(dir, `waserver-${opts.name ?? 'game'}.yml`);
@@ -261,7 +273,8 @@ export async function startGame(
   const server: ChildProcess = spawn(
     waserver,
     [
-      ...['--config', config, '--assets', build, '--map', 'placeholder/map'],
+      ...['--config', config, '--assets', build],
+      ...(opts.classic === true ? [] : ['--map', 'placeholder/map']),
       ...['--mode', 'renewal', '--addr', `127.0.0.1:${port}`, '--debug-addr', `127.0.0.1:${debug}`],
       ...['--origins', origin, '--shutdown-countdown', '0', '--mods', mods],
       ...['--start-items', opts.startItems ?? '501:10,909:20,1201:1,2101:1'],
@@ -316,12 +329,13 @@ export async function startGame(
       reject(new Error(`waserver exited with ${code}:\n${log.slice(-3000)}`));
     });
   });
+  const seconds = opts.startSeconds ?? 120;
   await Promise.race([
     serving,
     new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error(`waserver did not start in 120 seconds:\n${log.slice(-3000)}`));
-      }, 120_000);
+        reject(new Error(`waserver did not start in ${seconds} seconds:\n${log.slice(-3000)}`));
+      }, seconds * 1000);
     }),
   ]);
   // vite.config.ts reads these when the server starts.

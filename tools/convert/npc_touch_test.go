@@ -12,7 +12,7 @@ import (
 )
 
 // touchNPCs are NPCs written for the tests of OnTouch and OnTouch_
-// (review decision 55). Their names are the keys.
+// (review decisions 55 and 56). Their names are the keys.
 var touchNPCs = map[string]string{
 	// A warp portal script, as rAthena's warps folders have.
 	"Touch Warp#t": `{
@@ -33,12 +33,11 @@ OnTouch:
 	// OnTouch_ wins over OnTouch, as npc_touch_areanpc runs OnTouch only
 	// without OnTouch_.
 	"Touch Both#t": `{ end; OnTouch: npctalk "each"; end; OnTouch_: npctalk "one"; end; }`,
-	// A dialog in OnTouch needs a conversation, which touch does not
-	// have.
+	// A dialog in OnTouch uses the touch's conversation.
 	"Touch Talk#t": `{ end; OnTouch: mes "Hello."; close; }`,
-	// So does a function with a dialog.
+	// So does a function with a dialog. R.touch_one knows of it.
 	"Touch Func#t": `{ end; OnTouch_: callfunc "F_TouchTalk"; end; }`,
-	// A function without one is fine.
+	// A function without one too.
 	"Touch Quiet#t": `{ end; OnTouch_: callfunc "F_TouchQuiet"; end; }`,
 	// An NPC without a sprite still has its area: HIDDEN_NPC.
 	"Touch Hidden#t": `{ end; OnTouch: npctalk "boo"; end; }`,
@@ -93,13 +92,12 @@ func touchResult(t *testing.T) *NPCResult {
 
 func TestNPCTouchConvert(t *testing.T) {
 	res := touchResult(t)
-	dialog := "a dialog, which a touch handler cannot show: the touch event has no conversation"
 	want := map[string]struct{ unsupported, record string }{
 		"Touch Warp#t":    {"", `sprite: WARPNPC, display_name: Touch Warp, script: scripts/npcs/Touch_Warp_t.lua, touch: {x_span: 1, y_span: 1}}`},
 		"Touch Each#t":    {"", `touch: {x_span: 3, y_span: 2}}`},
 		"Touch Both#t":    {"", `touch: {x_span: 1, y_span: 1}}`},
-		"Touch Talk#t":    {"event ontouch: " + dialog, ""},
-		"Touch Func#t":    {"event ontouch_: " + dialog + ", in F_TouchTalk", ""},
+		"Touch Talk#t":    {"", `touch: {x_span: 1, y_span: 1}}`},
+		"Touch Func#t":    {"", `touch: {x_span: 1, y_span: 1}}`},
 		"Touch Quiet#t":   {"", `touch: {x_span: 1, y_span: 1}}`},
 		"Touch Hidden#t":  {"", `sprite: HIDDEN_NPC, display_name: Touch Hidden, script: scripts/npcs/Touch_Hidden_t.lua, touch: {x_span: 1, y_span: 1}}`},
 		"Touch No Span#t": {"", `script: scripts/npcs/Touch_No_Span_t.lua}`},
@@ -121,6 +119,8 @@ func TestNPCTouchConvert(t *testing.T) {
 		"Touch Each#t":  `events.on("touch", event_ontouch)`,
 		"Touch Both#t":  "R.touch_one(event_ontouch_)",
 		"Touch Quiet#t": "R.touch_one(event_ontouch_)",
+		"Touch Talk#t":  `events.on("touch", event_ontouch)`,
+		"Touch Func#t":  "R.touch_one(event_ontouch_, true)",
 	} {
 		var n *NPC
 		for _, x := range res.NPCs {
@@ -134,8 +134,11 @@ func TestNPCTouchConvert(t *testing.T) {
 		if name == "Touch Both#t" && strings.Contains(n.Lua, "event_ontouch =") {
 			t.Errorf("%s: OnTouch converted beside OnTouch_:\n%s", name, n.Lua)
 		}
+		if n.TouchDialog != (name == "Touch Talk#t" || name == "Touch Func#t") {
+			t.Errorf("%s: TouchDialog %v", name, n.TouchDialog)
+		}
 	}
-	for _, name := range []string{"Touch Warp#t", "Touch Each#t"} {
+	for _, name := range []string{"Touch Warp#t", "Touch Each#t", "Touch Talk#t"} {
 		var n *NPC
 		for _, x := range res.NPCs {
 			if x.Source == name {

@@ -95,6 +95,26 @@ func TestNPCReportsCurrent(t *testing.T) {
 	}
 }
 
+// TestClassicNotesCurrent checks the release notes list of classic mode
+// in docs/generated (review decision 55).
+func TestClassicNotesCurrent(t *testing.T) {
+	path := "../../" + ClassicNotesPath
+	got := loadCore(t, reference.Renewal).NPCs.ClassicNotes()
+	if *update {
+		if err := os.WriteFile(path, []byte(got), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	want, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(want) != got {
+		t.Errorf("%s is not current: run go run ./tools/wactl convert classic --report %s", ClassicNotesPath, ClassicNotesPath)
+	}
+}
+
 // setTargets are the parse errors of set on a reference that is not a
 // variable, such as set getvariableofnpc(.x, "NPC"), 1; or set
 // getarg(0), 1;, which the parser does not read yet.
@@ -153,5 +173,24 @@ func TestShopsConvert(t *testing.T) {
 		if mode == reference.Renewal && barters == 0 {
 			t.Errorf("%s: no barter shops", mode)
 		}
+	}
+}
+
+// TestJobChangeUpper checks rAthena's Job_Change, jobchange <job>,Upper:
+// a normal player's change converts, and a transcendent or baby
+// player's fails when it is reached, so the function stays partly
+// converted.
+func TestJobChangeUpper(t *testing.T) {
+	f := loadCore(t, reference.Renewal).NPCs.Functions["job_change"]
+	if f == nil {
+		t.Fatal("no Job_Change")
+	}
+	want := "  if (jobs.is_transcendent(player.job) and 1 or (jobs.is_baby(player.job) and 2 or 0)) ~= 0 then\n" +
+		"    R.unsupported(\"jobchange\")\n  end\n  player:change_job((R.arg(args, 0) or 0), { force = true })\n"
+	if !strings.Contains(f.Lua, want) {
+		t.Errorf("Job_Change:\n%s", f.Lua)
+	}
+	if strings.Join(f.Stubs, "; ") != "jobchange: a transcendent or baby flag" {
+		t.Errorf("stubs %q", f.Stubs)
 	}
 }

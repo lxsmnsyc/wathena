@@ -133,6 +133,9 @@ type NPC struct {
 	// TouchLabel is set when the script, or its source's, has an
 	// OnTouch or OnTouch_ label, converted or not.
 	TouchLabel bool
+	// TouchDialog is set when the touch handler that converted shows a
+	// dialog (review decision 56). Duplicates take it from their source.
+	TouchDialog bool
 }
 
 // touchLabel finds an OnTouch or OnTouch_ label in a script.
@@ -435,7 +438,7 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 			n.Unsupported = append(n.Unsupported, "duplicate: the source "+l.DuplicateOf+" did not convert")
 			return n
 		}
-		n.Status, n.Script, n.touch = src.converted, src.Script, src.touch
+		n.Status, n.Script, n.touch, n.TouchDialog = src.converted, src.Script, src.touch, src.TouchDialog
 	} else {
 		n.TouchLabel = touchLabel.MatchString(l.Script)
 		nc := c.newNPCConv(l)
@@ -451,7 +454,7 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 			return n
 		}
 		n.Status = Full
-		n.touch = nc.touch
+		n.touch, n.TouchDialog = nc.touch, nc.touchDialog
 		for _, f := range n.Functions {
 			if fn := c.converted[f]; fn != nil && (len(fn.Stubs) > 0 || fn.Err != "") {
 				n.Status = Partial

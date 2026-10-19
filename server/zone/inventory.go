@@ -351,6 +351,8 @@ func (z *Zone) heal(p *Player, h *item.Heal) {
 	st := e.status
 	hp, sp := h.Roll(z.rand)
 	if h.Command == "percentheal" {
+		// A negative rate takes HP or SP (review decision 56).
+		z.percentLoss(p, item.PercentLoss(hp, st.MaxHP), item.PercentLoss(sp, st.MaxSP))
 		hp, sp = item.PercentHeal(hp, sp, st.MaxHP, st.MaxSP)
 	} else {
 		hp, sp = item.ItemHeal(hp, sp, st.Vit, st.Int, p.char.Skills)
@@ -370,6 +372,28 @@ func (z *Zone) heal(p *Player, h *item.Heal) {
 		}.Build()}.Build())
 	}
 	if gotSP > 0 {
+		if s := z.battleStats(p); s != nil {
+			p.pending = append(p.pending, s)
+		}
+	}
+}
+
+// percentLoss takes HP and SP for a percentheal with a negative rate,
+// as status_percent_damage does with status_damage's passive flag: no
+// damage number, and no status ends. HP stays at 1 or more, as
+// status_percent_change's "must not kill" cap. rAthena kills at -100;
+// wAthena does not (review decision 56). SP stops at 0.
+func (z *Zone) percentLoss(p *Player, hp, sp int) {
+	if hp <= 0 && sp <= 0 {
+		return
+	}
+	e := p.entity
+	if take := min(int64(hp), e.hp-1); take > 0 && !e.dead {
+		e.hp -= take
+		e.hpChanged = true
+	}
+	if take := min(int64(sp), p.sp); take > 0 {
+		p.sp -= take
 		if s := z.battleStats(p); s != nil {
 			p.pending = append(p.pending, s)
 		}

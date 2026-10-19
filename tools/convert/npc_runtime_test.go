@@ -319,8 +319,18 @@ func TestRunConvertedNPCs(t *testing.T) {
 						// The player steps into the touch area and out
 						// again.
 						touches++
-						rt.Touch(npc, "touch", 1)
-						rt.Touch(npc, "untouch", 1)
+						conv, err := rt.Touch(npc, "touch", 1)
+						if err != nil {
+							t.Errorf("%s: touch: %v", n.Name, err)
+						}
+						// A touch that shows a dialog waits in its
+						// conversation, which closes as the player leaves.
+						if conv != nil && !conv.Done {
+							rt.CloseConversation(conv)
+						}
+						if _, err := rt.Touch(npc, "untouch", 1); err != nil {
+							t.Errorf("%s: untouch: %v", n.Name, err)
+						}
 					}
 					if !npc.Clickable() {
 						continue

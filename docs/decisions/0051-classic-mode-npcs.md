@@ -6,6 +6,7 @@
 - Docs: [mods/README.md](../../mods/README.md) ("NPCs: data/npcs.yml", "Touch areas", "Core's NPCs"), [tools/convert/README.md](../../tools/convert/README.md), [server/README.md](../../server/README.md) ("Spawns", "NPCs"), [reference/rathena/README.md](../../reference/rathena/README.md) ("NPCs"), [deploy/README.md](../../deploy/README.md) ("Settings"), the coverage reports in [docs/generated](../generated).
 - Phase 8 step 6, part A (strategy section 15, "Phase 8"), and review decision 55 of [proposal 0002](../proposals/0002-lua-api.md).
 - Lua API: the NPC record field `touch`, and the events `touch` and `untouch`, as decision 55 approved. No other change. Protocol: none. Settings: none.
+- Part B: [decision 0052](0052-classic-mode-part-b.md) builds review decision 56: touch handlers with a conversation, negative `player:heal_percent`, and gzipped extracts in the release binaries. It also has the full kRO run, the browser check and the release notes list. What this record says of touch dialogs and Niflheim's `percentheal` was true until then.
 
 ## Context
 
@@ -146,6 +147,8 @@ What rAthena announces when an MVP dies (`mob_dead`):
 - Part B can run the full kRO world with the new NPCs and take the release notes from the reports.
 
 ## Review items
+
+Review decision 56 settled the first three items, and [decision 0052](0052-classic-mode-part-b.md) built them. The NPC-to-NPC commands of the last item stay in phase 10.
 
 - A conversation for touch handlers, so touch labels with a dialog convert. It is a Lua API addition beyond decision 55: `touch` would get `(player, conversation)` and could start a conversation as a click does.
 - A way to take HP and SP, such as `player:heal_percent` with negative amounts, as `percentheal` does, for Niflheim's Kafra. It is a Lua API addition.

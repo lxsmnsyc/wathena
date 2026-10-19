@@ -105,6 +105,30 @@ func convertNPCs(args []string) error {
 	return nil
 }
 
+// convertClassic writes the release notes list of classic mode (review
+// decision 55): what does not convert in a classic world with mode
+// renewal, from the converter's NPC coverage. Classic ships with
+// renewal, so the list is renewal's.
+func convertClassic(args []string) error {
+	fs := newFlags("convert classic")
+	report := fs.String("report", "", "file to write the list into, such as "+convert.ClassicNotesPath)
+	_ = fs.Parse(args)
+	core, err := convert.LoadCore(reference.Renewal)
+	if err != nil {
+		return err
+	}
+	notes := core.NPCs.ClassicNotes()
+	if *report == "" {
+		fmt.Print(notes)
+		return nil
+	}
+	if err := os.WriteFile(*report, []byte(notes), 0o600); err != nil {
+		return err
+	}
+	fmt.Printf("wrote %s\n", *report)
+	return nil
+}
+
 // convertMonsters converts rAthena's monster skills from the extracts in
 // reference/rathena, as waserver does when it starts. This command writes
 // core's data/monsters.yml for reading, and the coverage report.
