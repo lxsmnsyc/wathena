@@ -332,6 +332,9 @@ func (b *body) callfunc(args []Expr) (val, error) {
 		return val{}, err
 	}
 	b.n.calls[key] = true
+	if b.n.bodyCalls != nil {
+		b.n.bodyCalls[key] = true
+	}
 	vals, err := b.args(args[1:])
 	if err != nil {
 		return val{}, err
@@ -1150,6 +1153,7 @@ func walkStmts(list []Stmt, fn func(Stmt)) {
 				walkStmts([]Stmt{s.Else}, fn)
 			}
 		case *Switch:
+			walkStmts(s.Pre, fn)
 			for _, cs := range s.Cases {
 				walkStmts(cs.Body, fn)
 			}

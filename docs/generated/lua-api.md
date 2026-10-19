@@ -4067,7 +4067,8 @@ Changes the value.
 | `job_level_up` | mod, event | `player: wa.Player` | The player gained a job level. |
 | `job_change` | mod, event | `change: wa.JobChange` | The player changed jobs: player:change_job, player:rebirth, or a converted jobchange. It fires after the stats and skills of the new job are set. |
 | `click` | npc | `player: wa.Player, conversation: wa.Conversation` | A player talks to the NPC. |
-| `touch` | npc | `player: wa.Player` | A player walks into the NPC's area. It does not fire yet. |
+| `touch` | npc | `player: wa.Player` | A player stepped into the NPC's touch area, the record's touch field, as rAthena's OnTouch. It fires once each time the player comes in: on a step, or when it arrives on a cell of the area. Hidden and dead players fire it too. It has no conversation. |
+| `untouch` | npc | `player: wa.Player` | A player who fired touch left the NPC's touch area: a step out of it, a warp, or a logout. A player who left the map can only be compared: reading it raises an error. |
 | `use` | item | `player: wa.Player` | The item is used. |
 | `damage` | item | `hit: wa.Damage` | A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3). |
 | `skill_used` | item, mod, event | `use: wa.SkillUse` | A skill took effect, after its cast time. An interrupted cast does not fire it. An item's handler hears the wearer's skills. A mod or event context hears every skill of its map: options narrow it. |
@@ -4110,7 +4111,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `untouch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
 
 ### wa.BonusName
 

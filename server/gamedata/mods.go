@@ -280,6 +280,9 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 		if n.Script != "" {
 			zn.Script = n.ScriptMod + ":" + n.Script
 		}
+		if n.Touch != nil {
+			zn.Touch = &zone.TouchArea{XSpan: n.Touch.XSpan, YSpan: n.Touch.YSpan}
+		}
 		if n.Place != nil {
 			out.PlaceNPCs = append(out.PlaceNPCs, PlaceNPC{NPC: zn, Place: *n.Place})
 			continue

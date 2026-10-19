@@ -361,6 +361,9 @@ func runAll(name string, args []string) error {
 	if err != nil {
 		return err
 	}
+	if w := preRenewalClassicWarning(cfg.Mode, proc.set == nil); w != "" {
+		log.Warn(w)
+	}
 	// The mods' asset builds are checked now, and served with the client
 	// data (decision 0033).
 	modArt, err := modassets.Load(loaded.all, modassets.Options{MaxBytes: int64(cfg.Mods.MaxAssetMB) << 20, Log: log})
@@ -1165,6 +1168,17 @@ func worldMode(w store.World) gateway.WorldMode {
 		return gateway.WorldMode{}
 	}
 	return gateway.WorldMode{Procedural: true, GeneratorVersion: w.GeneratorVersion, RNGVersion: w.RNGVersion}
+}
+
+// preRenewalClassicWarning is the warning for a classic world in
+// pre-renewal mode, which is experimental until core's pre-renewal
+// ruleset exists (review decision 55, phase 10 item 1). It is "" for any
+// other world.
+func preRenewalClassicWarning(mode string, classic bool) string {
+	if !classic || mode != string(reference.PreRenewal) {
+		return ""
+	}
+	return "pre-renewal classic worlds are experimental until core.ruleset.pre_renewal matches rAthena's pre-renewal (phase 10); the first release supports classic worlds with mode: renewal"
 }
 
 // rulesetBase is the ruleset base that the mode or the world row fixes:

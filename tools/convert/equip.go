@@ -326,6 +326,9 @@ func (r *equipRun) loop(cond Expr, body, post Stmt, do bool, en env, guard Expr)
 // switchStmt picks the case of a static value. A switch on a game value
 // becomes one guard per case, when every case ends with a break.
 func (r *equipRun) switchStmt(s *Switch, en env, guard Expr) (flow, error) {
+	if len(s.Pre) > 0 {
+		return flow{}, unsupported("switch", "a statement before the first case")
+	}
 	v, err := r.resolve(s.Value, en)
 	if err != nil {
 		return flow{}, err

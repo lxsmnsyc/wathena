@@ -1543,3 +1543,11 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
      - Migration 00041 adds the session factor `passkey_verified`. A staff role counts only for a session with `totp`, `recovery_code` or `passkey_verified`.
      - Three known issues are gone from the release notes: the passkey without user verification, `/gen/maps`, which is now an accepted risk, and `node:hash` on a secret node.
      - Review items: a reauth with a passkey without user verification still refreshes the 10-minute window on an account without TOTP, as a password does. `staff.owners` by name is not yet removed.
+38. Build review decision 55, part A (phase 8 step 6): more NPC folders, touch areas, bosses, Kafras and the pre-renewal warning. Done on 2026-10-19 ([decision 0051](../decisions/0051-classic-mode-npcs.md)). Part B, the full kRO run, the browser check and the release notes, comes next. Details to review:
+   - The Lua API changes are those of decision 55: the record field `touch: {x_span, y_span}`, each 0 to 100 cells and needing a `script`, and the NPC events `touch` and `untouch` with the player. No other change was made.
+   - `touch` fires once each time a player comes into the area, for hidden and dead players too, as rAthena's `OnTouch`. `untouch` fires on a step out, a warp or a logout. They run only in the NPC's own context, and as a click does for the CPU budget.
+   - Converted `OnTouch_` runs through `R.touch_one`, for one player at a time, as rAthena's `touching_id`.
+   - Review items:
+     - A conversation for touch handlers. A dialog blocks 288 touch scripts in renewal and 188 in pre-renewal. It is a Lua API addition beyond decision 55, so it is not made.
+     - A way to take HP and SP, such as `player:heal_percent` with negative amounts, for the Niflheim branch of `F_KafStor` and `F_KafEnd`. It is a Lua API addition, so it is not made.
+     - The part files of the extract: 16.3 MB of JSON in renewal, or gzip at 3.3 MB.

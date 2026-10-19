@@ -122,6 +122,12 @@ type npcConv struct {
 	eventLabels map[string]bool
 	eventFns    map[string]string
 	eventOrder  []string
+	// bodyCalls, when set, collects the functions that the part being
+	// written calls, for checkTouchBody.
+	bodyCalls map[string]bool
+	// touch is set when the script has a touch handler: OnTouch or
+	// OnTouch_.
+	touch bool
 }
 
 func (c *npcConverter) newNPCConv(l *npcLine) *npcConv {
@@ -253,6 +259,9 @@ func (n *npcConv) scanArrays(stmts []Stmt) {
 			}
 		case *Switch:
 			expr(s.Value)
+			for _, x := range s.Pre {
+				stmt(x)
+			}
 			for _, cs := range s.Cases {
 				for _, x := range cs.Body {
 					stmt(x)
@@ -1014,6 +1023,12 @@ func (b *body) switchStmt(s *Switch) error {
 	b.line("do")
 	b.indent++
 	b.line("local %s = %s", name, v.code)
+	if len(s.Pre) > 0 {
+		if err := b.block(s.Pre); err != nil {
+			b.indent--
+			return err
+		}
+	}
 	labels := make([]string, len(s.Cases))
 	var conds []string
 	def := ""

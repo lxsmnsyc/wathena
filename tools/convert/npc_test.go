@@ -17,7 +17,7 @@ import (
 var goldenNPCs = []string{"kaf_prontera", "Kafra Service", "Woman#payon", "Wayne", "Inn Employee#Ahlma", "Tool Dealer#prt1",
 	"Slot Move Card Sales#slo", "Cursed Spirit#nif", "Dancer Kim#fild"}
 
-var goldenFunctions = []string{"f_kafra", "f_kafset", "f_kaftele", "f_kafend", "f_kafinfo", "f_kafstor", "f_canopenstorage", "f_setkafcode", "f_entkafcode", "f_checkkafcode", "f_innmaid"}
+var goldenFunctions = []string{"f_kafra", "f_kafcart", "f_kafset", "f_kaftele", "f_kafend", "f_kafinfo", "f_kafstor", "f_canopenstorage", "f_setkafcode", "f_entkafcode", "f_checkkafcode", "f_innmaid"}
 
 func TestNPCGolden(t *testing.T) {
 	res := loadCore(t, reference.Renewal).NPCs
@@ -95,24 +95,22 @@ func TestNPCReportsCurrent(t *testing.T) {
 	}
 }
 
-// jobParseFailures are the job change scripts the parser does not read
-// yet, by file: set on getvariableofnpc, a condition as a statement, and
-// statements before the first case of a switch.
-var jobParseFailures = map[string]bool{
-	"npc/jobs/1-1e/taekwon.txt": true, "npc/jobs/2-1/assassin.txt": true, "npc/jobs/2-1/priest.txt": true,
-	"npc/jobs/2-2/monk.txt": true, "npc/jobs/2-2e/SoulLinker.txt": true, "npc/re/jobs/novice/academy.txt": true,
-}
+// setTargets are the parse errors of set on a reference that is not a
+// variable, such as set getvariableofnpc(.x, "NPC"), 1; or set
+// getarg(0), 1;, which the parser does not read yet.
+const setTargets = "set needs a variable"
 
 // TestParseNPCScripts parses every NPC script and function of both
-// modes. Only the three scripts rAthena itself reads with warnings fail,
-// and the job change scripts of jobParseFailures.
+// modes. Only the three scripts rAthena itself reads with errors fail,
+// such as a colon for a semicolon, and the scripts with set on a
+// reference of setTargets.
 func TestParseNPCScripts(t *testing.T) {
 	for _, mode := range reference.Modes {
 		res := loadCore(t, mode).NPCs
 		bad := 0
 		for _, n := range res.NPCs {
 			for _, u := range n.Unsupported {
-				if strings.HasPrefix(u, "parse") && !jobParseFailures[n.File] {
+				if strings.HasPrefix(u, "parse") && !strings.Contains(u, setTargets) {
 					bad++
 				}
 			}

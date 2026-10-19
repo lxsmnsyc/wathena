@@ -219,8 +219,12 @@ type Player struct {
 	// zone, which starts with MapChange.
 	mapChange bool
 	// touchOnEnter is set until the zone checks the cell the player
-	// entered on for warps, as clif_parse_LoadEndAck does.
+	// entered on for warps and touch areas, as clif_parse_LoadEndAck
+	// does.
 	touchOnEnter bool
+	// touching are the NPCs whose touch area holds the player, in the
+	// order it came into them (touch.go).
+	touching []*entity
 	// rewarp is rAthena's count_rewarp: warps in a row onto warp areas.
 	rewarp int
 	// warpTo is a warp a script asked for. It happens once the script's
@@ -675,6 +679,9 @@ type Zone struct {
 	// their scripts run.
 	npcHandles  map[int64]*entity
 	npcsStarted bool
+	// touchNPCs are the NPCs with a touch area and a script, in the
+	// order SetNPCs placed them (touch.go).
+	touchNPCs []*entity
 	// emotions are this tick's emotions over NPCs and monsters.
 	emotions []npcEmotion
 	// prevThink is when the monster AI last ran.
@@ -1258,6 +1265,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 // remove takes a player out of the zone. Viewers see it vanish for a
 // reason.
 func (z *Zone) remove(p *Player, reason wathenav1.VanishReason) {
+	z.untouchAll(p)
 	z.entities.remove(p.entity)
 	delete(z.players, p.charID)
 	z.forget(p.entity)
@@ -1515,12 +1523,15 @@ func (z *Zone) stepAt(now int64) {
 			}
 			// unit_walktoxy_timer touches the warp on each cell a
 			// player enters. A warp that takes the player ends the
-			// walk.
+			// walk. Otherwise the player steps into and out of NPCs'
+			// touch areas.
 			if p := e.player; p != nil {
 				if w := z.warpAt(e.x, e.y); w != nil && z.target(p, w) != nil {
 					e.path = e.path[:0]
 					warped = append(warped, warpTouch{p, w})
 					touched = true
+				} else {
+					z.touchAreas(p)
 				}
 			}
 		}
@@ -1530,6 +1541,8 @@ func (z *Zone) stepAt(now int64) {
 			p.touchOnEnter = false
 			if w := z.warpAt(e.x, e.y); w != nil && !touched && len(e.path) == 0 && z.target(p, w) != nil {
 				warped = append(warped, warpTouch{p, w})
+			} else if !touched {
+				z.touchAreas(p)
 			}
 		}
 	}

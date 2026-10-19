@@ -1019,8 +1019,7 @@ const (
 )
 
 // Events lists every event name and the context kinds that can listen
-// to it. touch is a name the next steps fire, listed so a typo is told
-// apart from an event of another kind.
+// to it.
 var Events = map[string][]string{
 	"login":         {KindMod, KindEvent},
 	"logout":        {KindMod, KindEvent},
@@ -1031,9 +1030,12 @@ var Events = map[string][]string{
 	// job_change follows a job change (review decision 24).
 	"job_change": {KindMod, KindEvent},
 	"click":      {KindNPC},
-	"touch":      {KindNPC},
-	"use":        {KindItem},
-	"damage":     {KindItem},
+	// touch and untouch run with a player who steps into or out of the
+	// NPC's touch area (review decision 55).
+	"touch":   {KindNPC},
+	"untouch": {KindNPC},
+	"use":     {KindItem},
+	"damage":  {KindItem},
 	// skill_used is an item event, and an event of mod and event
 	// contexts (review decision 18).
 	"skill_used": {KindItem, KindMod, KindEvent},

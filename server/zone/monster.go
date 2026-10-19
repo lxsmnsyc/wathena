@@ -22,8 +22,16 @@ type Spawn struct {
 	// Status is the monster's battle status. Monsters without one cannot
 	// be attacked.
 	Status *battle.Status
-	// RespawnMs is how long after dying a monster comes back.
-	RespawnMs int
+	// RespawnMs is how long after dying a monster comes back, and
+	// RespawnVarianceMs the most time a death adds to it at random, as
+	// rAthena's spawn delay1 and delay2 (mob_setdelayspawn).
+	RespawnMs, RespawnVarianceMs int
+	// Boss is set for rAthena's boss_monster lines.
+	Boss bool
+	// FixedCell places each monster on X and Y without looking for a
+	// free cell, as mob_spawn does for a boss whose area is one cell. A
+	// cell that cannot be walked on places it anywhere on the map.
+	FixedCell bool
 	// Reward is the monster's level, exp and drops. Monsters without one
 	// give nothing when they die.
 	Reward *progression.Mob
@@ -199,6 +207,16 @@ func (z *Zone) monsterSpawned(e *entity) {
 	}
 }
 
+// respawnDelay is mob_setdelayspawn: the spawn's delay, plus a random
+// part of its variance, and at least 1 second.
+func (z *Zone) respawnDelay(s *Spawn) int64 {
+	d := s.RespawnMs
+	if s.RespawnVarianceMs > 0 {
+		d += z.rand.IntN(s.RespawnVarianceMs)
+	}
+	return int64(max(d, 1000))
+}
+
 // Clear is a cell a spawn keeps clear, R cells around.
 type Clear struct{ X, Y, R int }
 
@@ -215,6 +233,14 @@ func (s *Spawn) cleared(x, y int) bool {
 // spawnCell picks a random walkable cell in a spawn's area, or anywhere
 // when the area is empty or full, outside the spawn's clear cells.
 func (z *Zone) spawnCell(s *Spawn) (int, int, bool) {
+	if s.FixedCell && s.X > 0 && s.Y > 0 {
+		if s.X < z.grid.Width && s.Y < z.grid.Height && !z.grid.NoPass(s.X, s.Y) {
+			return s.X, s.Y, true
+		}
+		// npc_parse_mob spawns a fixed cell that cannot be reached
+		// anywhere on the map.
+		return z.anyCell(s)
+	}
 	if s.X > 0 || s.Y > 0 {
 		for range 50 {
 			x := s.X + z.rand.IntN(2*s.W+1) - s.W
@@ -224,6 +250,12 @@ func (z *Zone) spawnCell(s *Spawn) (int, int, bool) {
 			}
 		}
 	}
+	return z.anyCell(s)
+}
+
+// anyCell picks a random walkable cell of the map outside the spawn's
+// clear cells.
+func (z *Zone) anyCell(s *Spawn) (int, int, bool) {
 	for range 1000 {
 		x, y := z.rand.IntN(z.grid.Width), z.rand.IntN(z.grid.Height)
 		if !z.grid.NoPass(x, y) && !s.cleared(x, y) {

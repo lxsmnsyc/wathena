@@ -364,6 +364,7 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 - `buys_from_players: false` hides the sell tab. It is on by default.
 - `discount: false` keeps Discount and Compulsion Discount from lowering the shop's zeny prices, as rAthena's `shop` line with `no`. It is on by default, as in rAthena. Items and currencies are never discounted. In the list form, `discount` goes beside `shop`.
 - A record with `shop` and no `map` is a shop that only scripts open, with `player:open_shop`.
+- `touch: {x_span, y_span}` gives the NPC a touch area: the cells within `x_span` and `y_span` of its cell, each 0 to 100, as rAthena's `OnTouch` area (review decision 55). It needs a `script`, whose `touch` and `untouch` handlers run ("NPC scripts" below).
 
 ```yaml
 - name: Tool Dealer#prt1
@@ -387,6 +388,17 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
         cost: {items: [{item: Jellopy, amount: 5}], currency: {tokens: 1}}
         stock: 3
         restock: daily
+```
+
+```yaml
+# A portal that warps a player who steps within one cell of it.
+- name: Old Gate
+  map: prontera
+  x: 150
+  y: 60
+  sprite: WARPNPC
+  script: scripts/npc/old_gate.lua
+  touch: {x_span: 1, y_span: 1}
 ```
 
 ```yaml
@@ -1227,7 +1239,7 @@ end
 
 Event contexts can listen to the events of mod contexts.
 
-`touch`, for NPCs whose area a player walks into, is a name that registers and does not fire yet.
+`touch` and `untouch` run for NPCs with a touch area: a player stepped into it, or left it ("Touch areas" below).
 
 - `events.on` checks the name. An unknown name, or an event of another context kind, such as `click`, raises an error during setup.
 - Handlers run in registration order. A failing handler is logged and does not stop the others.
@@ -1329,6 +1341,32 @@ Rules, as rAthena's:
 - When the player leaves, dies, changes map, or the conversation times out, the waiting call raises the error "the conversation was closed". A handler may catch it with `pcall`, but cannot talk any more, and the player is gone when it left. The runtime does not log it as a failure.
 - A warp asked for in a conversation happens when the conversation pauses or ends, and ends it.
 - A reload ends the mod's NPC contexts, and starts them again with the new files. Conversations that run finish on the old version.
+
+#### Touch areas
+
+An NPC record with `touch: {x_span, y_span}` has a touch area (review decision 55). Its handlers get the player:
+
+```lua
+local events = require "wa.events"
+
+return function()
+  events.on("touch", function(player)
+    player:warp("prt_in", 50, 50)
+  end)
+  events.on("untouch", function(player)
+    -- The player left the area. A player who left the map can only be
+    -- compared with ==.
+  end)
+end
+```
+
+- `touch` runs when a player steps into the area: after each step, and on the cell a player arrives on, once its first frame went out, as rAthena's `npc_touch_area_allnpc`. It runs once until the player leaves.
+- `untouch` runs when the player leaves the area: a step out of it, a warp, or a logout.
+- Hidden and dead players fire `touch` too, as rAthena's `OnTouch`.
+- A step onto a warp that takes the player touches no area: warps come first, as in rAthena.
+- A touch has no conversation, so a handler cannot show a dialog. It may warp the player, give items, or say a line with `npc:say_aloud`.
+- Touch handlers run as a click does, so a mod over its CPU budget still runs them.
+- Converted `OnTouch_` labels run for one player at a time, and not for a hiding or dead player, through `R.touch_one` in `scripts/lib/rathena.lua` ("Core's NPCs" below).
 
 ### Saved variables: wa.variables
 
@@ -2646,7 +2684,7 @@ A zone loads an item's script the first time a player uses it there, and keeps a
 
 ## Core's NPCs
 
-`waserver` converts rAthena's NPC scripts and shops when it starts, from the mode's `npcs.json` and `item_prices.json` in `reference/rathena/extracts` ([decision 0008](../docs/decisions/0008-converted-npcs.md)):
+`waserver` converts rAthena's NPC scripts and shops when it starts, from the mode's `npcs.json`, its part files and `item_prices.json` in `reference/rathena/extracts` ([decision 0008](../docs/decisions/0008-converted-npcs.md)):
 
 - `data/npcs.yml` places every NPC that converts and every zeny shop.
 - `scripts/npcs/<name>.lua` is the entry script of a script NPC. Its duplicates name the same file.
@@ -2659,7 +2697,14 @@ To read them:
 go run ./tools/wactl convert npcs --mode renewal --out /tmp/core-npcs
 ```
 
-To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`. Kafra pushcart rental says it is not available yet.
+The extract keeps the script NPCs of the folders the first release needs, and of rAthena's `quests`, `warps` and `events` folders in part files of `npcs.json`, each below 2 MB (review decision 55). What converts loads. What does not is listed in the coverage report, by folder, by command and by file.
+
+- `OnTouch` becomes an `events.on("touch", ...)` handler, and `OnTouch_` a handler through `R.touch_one`: one player at a time, not a hiding or dead player, and the next player in the area when that one leaves, as `npc_touchnext_areanpc`. When a script has both, `OnTouch_` wins, as in rAthena.
+- The line's span becomes the record's `touch` field. A line without a span gets no touch area. A line without a sprite (-1) that has a touch area gets the sprite `HIDDEN_NPC`, which shows nothing.
+- An `OnTouch` or `OnTouch_` label with a dialog, or that calls a function with one, does not convert: a touch has no conversation.
+- Kafra pushcart rental converts: `F_KafCart` checks the class, the cart and Pushcart, takes the Free Ticket for the Cart Service or the fee, and gives the cart with `player:set_cart`.
+
+To change a core NPC, set its fields in a mod's `data/npcs.yml` with its full name, such as `core:kaf_prontera`.
 
 Core also has NPCs of its own, written for wAthena: the Job Master (see "Job changes and resets"), and the NPCs of procedural worlds (decision 0044), which stand at named places and so never appear in a classic world:
 

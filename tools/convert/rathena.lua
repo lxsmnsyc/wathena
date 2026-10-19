@@ -439,13 +439,27 @@ function R.guild_storage_log(conversation, player)
 	m.guild_storage_log(player)
 end
 
+-- quest_state is the player's state of a quest. A computed ID that
+-- data/quests.yml lacks is "none": rAthena's quest_check looks only in
+-- the player's log, where such a quest never is.
+local function quest_state(player, quest)
+	local ok, state = pcall(player.get_quest_state, player, quest)
+	if ok then
+		return state
+	end
+	if type(state) == "string" and state:find("there is no quest", 1, true) then
+		return "none"
+	end
+	error(state, 0)
+end
+
 -- checkquest is rAthena's quest_check for the attached player. kind is
 -- 0 (HAVEQUEST), 1 (PLAYTIME) or 2 (HUNTING). timed says whether the
 -- quest has a time limit, or is nil when the converter could not tell:
 -- rAthena counts a quest without one as timed out, as its end time is
 -- 0.
 function R.checkquest(player, quest, kind, timed)
-	local state = player:get_quest_state(quest)
+	local state = quest_state(player, quest)
 	if state == "none" then
 		return -1
 	end
@@ -479,11 +493,66 @@ end
 -- isbegin_quest is 0 without the quest, 1 for an active or inactive
 -- quest, and 2 for a complete one.
 function R.isbegin_quest(player, quest)
-	local state = player:get_quest_state(quest)
+	local state = quest_state(player, quest)
 	if state == "none" then
 		return 0
 	end
 	return state == "complete" and 2 or 1
+end
+
+-- hiding_statuses are the statuses that set OPTION_HIDE, OPTION_CLOAK
+-- or OPTION_CHASEWALK, which pc_ishiding reads: SC_HIDING,
+-- SC_CLOAKING, SC_CHASEWALK, SC_CLOAKINGEXCEED, SC__INVISIBILITY and
+-- SC_NEWMOON.
+local hiding_statuses = { 24, 25, 124, 364, 450, 713 }
+
+-- hiding is rAthena's pc_ishiding.
+function R.hiding(player)
+	for _, status in ipairs(hiding_statuses) do
+		if player:has_status(status) then
+			return true
+		end
+	end
+	return false
+end
+
+-- touch_one runs fn as rAthena's OnTouch_: for one player in the NPC's
+-- area at a time (nd->touching_id). A player who is hiding or dead does
+-- not start it. When the player it ran for leaves the area, it runs for
+-- the next player in the area who can start it, as
+-- npc_touchnext_areanpc does. rAthena picks that player by its place in
+-- the map's blocks; touch_one picks the one that came in first.
+function R.touch_one(fn)
+	local inside, touching = {}, nil
+	local function can(player)
+		return player.hp > 0 and not R.hiding(player)
+	end
+	events.on("touch", function(player)
+		inside[#inside + 1] = player
+		if touching == nil and can(player) then
+			touching = player
+			fn(player)
+		end
+	end)
+	events.on("untouch", function(player)
+		for i, p in ipairs(inside) do
+			if p == player then
+				table.remove(inside, i)
+				break
+			end
+		end
+		if touching ~= player then
+			return
+		end
+		touching = nil
+		for _, p in ipairs(inside) do
+			if can(p) then
+				touching = p
+				fn(p)
+				return
+			end
+		end
+	end)
 end
 
 return R

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"strings"
 	"testing/fstest"
@@ -71,7 +72,11 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 	if err != nil {
 		return nil, err
 	}
-	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in[4]), Constants: bytes.NewReader(in[1]), ClientTables: bytes.NewReader(in[3]), Shops: bytes.NewReader(in[8]), Quests: quests})
+	parts, err := npcParts(in[4], read)
+	if err != nil {
+		return nil, err
+	}
+	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in[4]), Parts: parts, Constants: bytes.NewReader(in[1]), ClientTables: bytes.NewReader(in[3]), Shops: bytes.NewReader(in[8]), Quests: quests})
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +116,31 @@ func LoadCore(mode reference.Mode) (*Core, error) {
 		}
 	}
 	return &Core{Result: res, NPCs: npcs, Files: files, Constants: consts, Groups: &groups, Monsters: monsters, MonsterSkills: mobs, RandomOptions: opts, Quests: quests}, nil
+}
+
+// npcParts reads the part files that npcs.json lists: the script NPCs of
+// the quests, warps and events folders, which the extract keeps apart so
+// that each file stays small.
+func npcParts(npcs []byte, read func(string) ([]byte, error)) ([]io.Reader, error) {
+	var head struct {
+		Parts []string `json:"parts"`
+	}
+	if err := json.Unmarshal(npcs, &head); err != nil {
+		return nil, fmt.Errorf("npcs.json: %w", err)
+	}
+	out := make([]io.Reader, 0, len(head.Parts))
+	for _, name := range head.Parts {
+		base, ok := strings.CutSuffix(name, ".json")
+		if !ok || !strings.HasPrefix(base, "npcs-") || strings.ContainsAny(base, "/\\") {
+			return nil, fmt.Errorf("npcs.json: %q is not a part file", name)
+		}
+		data, err := read(base)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, bytes.NewReader(data))
+	}
+	return out, nil
 }
 
 // FS returns the generated files as a read-only file system.

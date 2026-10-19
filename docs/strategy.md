@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19.
 
 Done:
 
@@ -180,6 +180,14 @@ Done:
   - New since the fix commits: connection limits per address with a `Hello` rate, a guarded debug address, a WebSocket `Origin` check with the scheme, hidden monsters sent only to who may see them, friend request limits, a circle for players' attack range, a common password list of about 65,000, a read-only backup role, non-root Caddy and capability-free PostgreSQL in Compose, and migration 00039.
   - Tools: `govulncheck`, `gosec`, the fuzz tests, `pnpm audit` and `trivy`. See the review's "Tools". The fuzz tests ran 10 seconds each. The hour-long runs are left for before the release.
   - SECURITY.md has the supported versions of the first release.
+
+- Phase 8 step 6 part A, classic mode ([decision 0051](decisions/0051-classic-mode-npcs.md), review decision 55):
+  - The extract keeps rAthena's `quests`, `warps` and `events` NPC folders, in part files of `npcs.json` below 2 MB each. renewal places 4,587 NPCs of 15,337 lines, up from 2,367, and pre-renewal 2,805 of 8,390, up from 1,216.
+  - Touch areas: the record field `touch`, and the events `touch` and `untouch`, checked per step and on arrival as rAthena does. `OnTouch` and `OnTouch_` convert, but a touch label with a dialog does not, since a touch has no conversation.
+  - Bosses keep rAthena's boss flag, variance and fixed cell. The MVP player gets its prize line, as `clif_mvp_item`.
+  - Kafra pushcart rental converts. Niflheim's negative `percentheal` still needs an API call.
+  - A pre-renewal classic world warns at start that it is experimental.
+  - Part B, the full kRO run, the browser check and the release notes, comes next.
 
 Open review items:
 
@@ -3454,6 +3462,11 @@ Progress:
   - Connection limits per address and a rate limit on `Hello` (section 7.4).
   - Known issues for the release notes are listed in the review's summary.
   - SECURITY.md supports the first tagged release, and `main` until then.
+- Step 6 part A is built (2026-10-19), [decision 0051](decisions/0051-classic-mode-npcs.md), review decision 55:
+  - More NPC folders: `quests`, `warps` and `events`, in part files of the extract. What converts loads, and the coverage reports list the rest by folder, command and file.
+  - Touch areas, boss spawns as rAthena's, the MVP prize line, and Kafra pushcart rental.
+  - Pre-renewal classic is marked experimental, with a warning at start and a note in the deploy guide.
+  - Part B: the full kRO end-to-end run, the browser check and the release notes.
 
 ### Phase 9: Modding ecosystem
 

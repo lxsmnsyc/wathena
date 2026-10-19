@@ -145,3 +145,26 @@ func TestLoadSealer(t *testing.T) {
 		t.Errorf("a bad key: %v", err)
 	}
 }
+
+// TestPreRenewalClassicWarning checks that only a classic world in
+// pre-renewal mode warns at startup (review decision 55).
+func TestPreRenewalClassicWarning(t *testing.T) {
+	for _, c := range []struct {
+		mode    string
+		classic bool
+		warns   bool
+	}{
+		{"pre-renewal", true, true},
+		{"renewal", true, false},
+		{"none", true, false},
+		{"pre-renewal", false, false},
+	} {
+		got := preRenewalClassicWarning(c.mode, c.classic)
+		if (got != "") != c.warns {
+			t.Errorf("%s, classic %v: warning %q", c.mode, c.classic, got)
+		}
+		if c.warns && !strings.Contains(got, "experimental") {
+			t.Errorf("warning %q does not say experimental", got)
+		}
+	}
+}

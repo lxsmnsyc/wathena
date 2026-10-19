@@ -3,6 +3,7 @@ package modscript
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -12,7 +13,8 @@ import (
 // NPC contexts and conversations (proposal 0002, "NPC conversations"):
 //   - Each placed NPC with a script is an instance: the script's setup
 //     function runs once for it, in an NPC context. Its "click" handlers
-//     run when a player talks to it.
+//     run when a player talks to it, and its "touch" and "untouch"
+//     handlers when a player steps into or out of its touch area.
 //   - A click starts a conversation: a thread that runs the click
 //     handlers. Methods that wait for the player, such as choose, pause
 //     the thread. The zone resumes it with the player's answer.
@@ -246,6 +248,26 @@ func (r *Runtime) Click(n *NPC, player int64) (*Conversation, error) {
 	args := append([]script.Value{script.Int(player), script.Int(conv.ID)}, vals...)
 	r.resume(conv, args...)
 	return conv, nil
+}
+
+// Touch runs an NPC's touch or untouch handlers with a player (review
+// decision 55): event is "touch" when the player steps into the NPC's
+// touch area, and "untouch" when it leaves it. They run as a click does,
+// since a player triggers them: a mod over its CPU budget still runs
+// them.
+func (r *Runtime) Touch(n *NPC, event string, player int64) {
+	c := n.Context()
+	if c == nil {
+		return
+	}
+	for _, h := range slices.Clone(r.handlers[event]) {
+		if h.ctx != c || h.removed || c.ended {
+			continue
+		}
+		if err := r.run(c, r.fns.invoke.Value(), h.fn.Value(), script.String("player"), script.Int(player)); err != nil {
+			r.failed(c, "event "+event, err)
+		}
+	}
 }
 
 // ResumeConversation goes on with a paused conversation, with the answer

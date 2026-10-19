@@ -8,19 +8,22 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
 	"github.com/lxsmnsyc/wathena/server/character"
+	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/rules"
+	"github.com/lxsmnsyc/wathena/server/skill"
 	"github.com/lxsmnsyc/wathena/server/variables"
 	"github.com/lxsmnsyc/wathena/shared/rng"
 )
 
 // kafraItems are the items the Kafra tests use: the free tickets of
-// storage and teleport.
+// storage, teleport and cart rental.
 func kafraItems() *item.Table {
 	return item.New(&item.Data{Mode: "renewal", Items: []item.Def{
 		{ID: 501, AegisName: "Red_Potion", Type: "Healing", Weight: 70, Stackable: true, Script: "core:scripts/items/Red_Potion.lua"},
 		{ID: 7059, AegisName: "Cargo_Free_Ticket", Type: "Etc", Weight: 1, Stackable: true},
 		{ID: 7060, AegisName: "Warp_Free_Ticket", Type: "Etc", Weight: 1, Stackable: true},
+		{ID: 7061, AegisName: "Cart_Free_Ticket", Type: "Etc", Weight: 1, Stackable: true},
 	}})
 }
 
@@ -47,7 +50,7 @@ func kafraZoneWith(t *testing.T, rl *rules.Rules, setup ...func(*character.Chara
 	logs := &syncBuffer{}
 	z.Mods.Log = slog.New(slog.NewTextHandler(logs, nil))
 	z.Mods.Server = variables.NewServer(nil, nil)
-	z.Mods.ItemIDs = map[string]uint32{"Cargo_Free_Ticket": 7059, "Warp_Free_Ticket": 7060, "Red_Potion": 501}
+	z.Mods.ItemIDs = map[string]uint32{"Cargo_Free_Ticket": 7059, "Warp_Free_Ticket": 7060, "Cart_Free_Ticket": 7061, "Red_Potion": 501}
 	core, err := testCore()
 	if err != nil {
 		t.Fatal(err)
@@ -227,5 +230,86 @@ func TestKafraStorageTicket(t *testing.T) {
 	// The Free Ticket for Kafra Storage pays instead of zeny.
 	if p.record.Zeny != 5000 || p.inventory.Count(7059) != 1 {
 		t.Errorf("zeny %d, tickets %d, logs %s", p.record.Zeny, p.inventory.Count(7059), logs)
+	}
+}
+
+// kafraCart chooses Rent a Pushcart at the Kafra, and returns the events.
+func kafraCart(z *Zone, p *Player, n *entity) []*wathenav1.Event {
+	return choose(z, p, next(z, p, click(z, p, n)), "Rent a Pushcart")
+}
+
+// merchant makes the Kafra tests' character a Merchant with Pushcart.
+func merchant(c *character.Character) {
+	c.Job, c.Skills = jobMerchant, map[int]int{skill.IDPushcart: 1}
+}
+
+// jobMerchant is Job_Merchant.
+const jobMerchant = 5
+
+// TestKafraCartRental runs the converted F_KafCart (review decision 55):
+// the Pushcart rental of Prontera's Kafra costs 800 zeny, gives 48
+// Special Reserve Points, and gives the cart through player:set_cart.
+func TestKafraCartRental(t *testing.T) {
+	z, p, n, logs := kafraZone(t, merchant)
+	z.Status = jobTables(t)
+	ev := kafraCart(z, p, n)
+	if got := lines(ev); got != "[Kafra Employee]|The Pushcart rental|fee is 800 zeny. Would|you like to rent a Pushcart?" {
+		t.Fatalf("cart: %q, logs %s", got, logs)
+	}
+	ev = next(z, p, ev)
+	ev = choose(z, p, ev, "Rent a Pushcart.")
+	if p.record.Zeny != 4200 || companion.CartLook(p.record.Options) != 1 {
+		t.Fatalf("zeny %d, cart %d, logs %s", p.record.Zeny, companion.CartLook(p.record.Options), logs)
+	}
+	if v := p.vars[character.Variable{Mod: "core", Name: "resrvpts"}]; v != "48" {
+		t.Errorf("reserve points %q", v)
+	}
+	// F_KafCart returns 1, so F_Kafra waits for Next and shows its menu.
+	ev = next(z, p, ev)
+	if d := lastDialog(ev); d == nil || len(d.GetMenu().GetOptions()) == 0 {
+		t.Fatalf("no menu after the rental: %q, logs %s", lines(ev), logs)
+	}
+	// A second rental is refused: the player has a cart.
+	ev = choose(z, p, ev, "Rent a Pushcart")
+	if got := lines(ev); !strings.Contains(got, "You already have|a Pushcart equipped.") || p.record.Zeny != 4200 {
+		t.Fatalf("second rental: %q, zeny %d", got, p.record.Zeny)
+	}
+}
+
+// TestKafraCartTicket checks that a Free Ticket for the Cart Service pays
+// for the cart instead of zeny, without a question.
+func TestKafraCartTicket(t *testing.T) {
+	z, p, n, logs := kafraZone(t, merchant, func(c *character.Character) {
+		c.Items = []character.Item{{Slot: 0, ID: 7061, Amount: 1, Serial: item.NewSerial()}}
+	})
+	z.Status = jobTables(t)
+	kafraCart(z, p, n)
+	if p.record.Zeny != 5000 || p.inventory.Count(7061) != 0 || companion.CartLook(p.record.Options) != 1 {
+		t.Fatalf("zeny %d, tickets %d, cart %d, logs %s", p.record.Zeny, p.inventory.Count(7061), companion.CartLook(p.record.Options), logs)
+	}
+}
+
+// TestKafraCartRefusals checks who cannot rent a cart: a class other
+// than a Merchant's, and a Merchant without Pushcart.
+func TestKafraCartRefusals(t *testing.T) {
+	for _, c := range []struct {
+		name  string
+		setup func(*character.Character)
+		want  string
+	}{
+		{"novice", func(*character.Character) {}, "is only available to Merchant classes."},
+		{"no skill", func(c *character.Character) { c.Job = jobMerchant }, "You can only rent a cart after learning the \"Push Cart\" skill."},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			z, p, n, logs := kafraZone(t, c.setup)
+			z.Status = jobTables(t)
+			ev := kafraCart(z, p, n)
+			if got := lines(ev); !strings.Contains(got, c.want) {
+				t.Fatalf("lines %q, logs %s", got, logs)
+			}
+			if p.record.Zeny != 5000 || companion.CartLook(p.record.Options) != 0 {
+				t.Fatalf("zeny %d, cart %d", p.record.Zeny, companion.CartLook(p.record.Options))
+			}
+		})
 	}
 }

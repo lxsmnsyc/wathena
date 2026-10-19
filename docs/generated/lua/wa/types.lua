@@ -21,6 +21,7 @@
 ---| "job_change"
 ---| "click"
 ---| "touch"
+---| "untouch"
 ---| "use"
 ---| "damage"
 ---| "skill_used"

@@ -348,11 +348,13 @@ func SpawnsOf(mode reference.Mode, monsters map[uint32]Monster) (map[string][]zo
 		Maps []struct {
 			Map    string `json:"map"`
 			Spawns []struct {
-				Mob       uint32 `json:"mob"`
-				Name      string `json:"name"`
-				Amount    int    `json:"amount"`
-				Area      [4]int `json:"area"`
-				RespawnMs int    `json:"respawn_ms"`
+				Mob               uint32 `json:"mob"`
+				Name              string `json:"name"`
+				Amount            int    `json:"amount"`
+				Area              [4]int `json:"area"`
+				RespawnMs         int    `json:"respawn_ms"`
+				RespawnVarianceMs int    `json:"respawn_variance_ms"`
+				Boss              bool   `json:"boss"`
 			} `json:"spawns"`
 		} `json:"maps"`
 	}
@@ -366,13 +368,56 @@ func SpawnsOf(mode reference.Mode, monsters map[uint32]Monster) (map[string][]zo
 			if !ok {
 				continue
 			}
+			delay, variance, ok := spawnDelays(s.RespawnMs, s.RespawnVarianceMs, s.Boss)
+			if !ok {
+				continue
+			}
 			sp := mob.Spawn(s.Mob, s.Name, s.Area[0], s.Area[1])
 			// rAthena searches up to xs - 1 cells from the center.
-			sp.Amount, sp.W, sp.H, sp.RespawnMs = s.Amount, max(s.Area[2]-1, 0), max(s.Area[3]-1, 0), s.RespawnMs
+			sp.Amount, sp.W, sp.H = s.Amount, max(s.Area[2]-1, 0), max(s.Area[3]-1, 0)
+			sp.RespawnMs, sp.RespawnVarianceMs, sp.Boss = delay, variance, s.Boss
+			// mob_spawn places a boss of a fixed cell on that cell:
+			// npc_parse_mob makes a span of 0 a span of 1.
+			sp.FixedCell = s.Boss && s.Area[2] <= 1 && s.Area[3] <= 1
 			out[m.Map] = append(out[m.Map], sp)
 		}
 	}
 	return out, nil
+}
+
+// Spawn delays of rAthena's battle config (conf/battle/monster.conf).
+const (
+	// mobRespawnTime is mob_respawn_time: a spawn line's delay below it
+	// is 5 seconds instead.
+	mobRespawnTime = 1000
+	// defaultSpawnDelay is npc_parse_mob's delay for a line without one.
+	defaultSpawnDelay = 5000
+	// maxSpawnDelay is the largest delay npc_parse_mob takes, 0xfffffff.
+	maxSpawnDelay = 0xfffffff
+)
+
+// spawnDelays are a spawn line's respawn delay and variance, as
+// npc_parse_mob reads them:
+//   - A delay of 0, which the extract writes for a line without one, or
+//     one below mob_respawn_time is 5 seconds.
+//   - mob_spawn_variance is 1: only boss_monster lines keep their
+//     variance (delay2).
+//   - A delay or variance above 0xfffffff skips the line: ok is false.
+//
+// mob_setdelayspawn then adds a random part of the variance at each
+// death (zone.Spawn.respawnDelay). boss_spawn_delay, plant_spawn_delay
+// and mob_spawn_delay are 100, which changes nothing.
+func spawnDelays(delay, variance int, boss bool) (int, int, bool) {
+	if delay > maxSpawnDelay || variance > maxSpawnDelay || delay < 0 || variance < 0 {
+		return 0, 0, false
+	}
+	if delay < mobRespawnTime {
+		delay = defaultSpawnDelay
+	}
+	if !boss {
+		variance = 0
+	}
+	return delay, variance, true
 }
 
 // Builds are the raised stats of the recorder's PC_SAMPLE_BUILDS in the

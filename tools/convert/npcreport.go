@@ -105,7 +105,7 @@ func (r *NPCResult) NPCReport() string {
 	b.WriteString("- A pointshop's variable becomes a currency: #CASHPOINTS is `cash`, #KAFRAPOINTS is `kafra`, and other variables are new records of core's `data/currencies.yml`. Reads and changes of these variables use the currency calls.\n")
 	b.WriteString("- A barter item that is refined, that takes refined items or more than 5 kinds of items, or that the barter sells a second time, does not convert.\n")
 	fmt.Fprintf(&b, "- %d currencies were added for pointshop variables.\n", len(r.conv.newCurrencies))
-	b.WriteString("- Pushcart rental says it is not available yet.\n")
+	b.WriteString("- Pushcart rental converts: F_KafCart gives the cart with `player:set_cart`.\n")
 	fmt.Fprintf(&b, "- rAthena's getitem and delitem do nothing for an amount of 0 or less, and wAthena's calls raise an error. %d scripts and functions have a fixed amount of 0 or less, which converts to nothing. %d have a computed amount, which `R.give_item` and `R.take_item` check first.\n\n", len(r.conv.zeroAmounts), len(r.conv.checkedAmounts))
 	if len(r.LeftOut) > 0 {
 		b.WriteString("Script NPCs of these folders are not in the extract yet (reference/rathena/README.md, \"NPCs\"):\n\n| Folder | Script NPCs |\n|---|---:|\n")
@@ -119,6 +119,9 @@ func (r *NPCResult) NPCReport() string {
 		}
 		b.WriteString("\n")
 	}
+
+	r.folderTable(&b)
+	r.touchTable(&b)
 
 	b.WriteString("## Commands\n\n")
 	b.WriteString("Counts are of script NPCs that are not duplicates, and of the functions they call.\n\n")
@@ -162,6 +165,134 @@ func (r *NPCResult) NPCReport() string {
 		fmt.Fprintf(&b, "| %s | %d | %d | %d |\n", f, c.total, c.placed, c.none)
 	}
 	return b.String()
+}
+
+// npcFolder is the folder of an NPC file below npc/, npc/re/ or
+// npc/pre-re/, such as cities, as the extract reads it.
+func npcFolder(file string) string {
+	parts := strings.Split(file, "/")
+	if len(parts) > 2 && (parts[1] == "re" || parts[1] == "pre-re") {
+		return parts[2]
+	}
+	if len(parts) > 1 {
+		return parts[1]
+	}
+	return file
+}
+
+// folderTable writes the script NPC lines of each folder, by the folder
+// of the line's own file.
+func (r *NPCResult) folderTable(b *strings.Builder) {
+	type counts struct{ total, placed, full, partial, none int }
+	by := map[string]*counts{}
+	for _, n := range r.NPCs {
+		if n.Kind != "script" {
+			continue
+		}
+		f := npcFolder(n.File)
+		c := by[f]
+		if c == nil {
+			c = &counts{}
+			by[f] = c
+		}
+		c.total++
+		if n.Placed && n.Status != None {
+			c.placed++
+		}
+		switch n.Status {
+		case Full:
+			c.full++
+		case Partial:
+			c.partial++
+		default:
+			c.none++
+		}
+	}
+	b.WriteString("## Folders\n\n")
+	b.WriteString("Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc/re/` and `npc/pre-re/`. The `quests`, `warps` and `events` folders come from the extract's part files (review decision 55).\n\n")
+	b.WriteString("| Folder | Lines | Placed | Full | Partly | Not |\n|---|---:|---:|---:|---:|---:|\n")
+	for _, f := range sortedKeys(by) {
+		c := by[f]
+		fmt.Fprintf(b, "| %s | %d | %d | %d | %d | %d |\n", f, c.total, c.placed, c.full, c.partial, c.none)
+	}
+	b.WriteString("\n")
+}
+
+// warpSprites are the sprites of warp portals: JT_WARPNPC and
+// JT_HIDDEN_WARP_NPC.
+var warpSprites = map[string]bool{"45": true, "WARPNPC": true, "139": true, "HIDDEN_WARP_NPC": true}
+
+// touchTable writes the coverage of NPCs with an OnTouch or OnTouch_
+// label, and of script NPCs with a warp sprite.
+func (r *NPCResult) touchTable(b *strings.Builder) {
+	type counts struct{ total, placed, touch int }
+	var scripts, lines, warps counts
+	reasons := map[string]int{}
+	for _, n := range r.NPCs {
+		if n.Kind != "script" {
+			continue
+		}
+		placed := n.Placed && n.Status != None
+		if n.TouchLabel {
+			lines.total++
+			if placed {
+				lines.placed++
+			}
+			if n.Touch {
+				lines.touch++
+			}
+			if n.DuplicateOf == "" {
+				scripts.total++
+				if placed {
+					scripts.placed++
+				}
+				if n.Touch {
+					scripts.touch++
+				}
+				for _, u := range n.Unsupported {
+					if strings.HasPrefix(u, "event ontouch") {
+						reasons[u]++
+					}
+				}
+			}
+		}
+		if warpSprites[n.Sprite] {
+			warps.total++
+			if placed {
+				warps.placed++
+			}
+			if n.Touch {
+				warps.touch++
+			}
+		}
+	}
+	b.WriteString("## Touch areas\n\n")
+	b.WriteString("`OnTouch` and `OnTouch_` labels become the `touch` event, and the line's span the record's `touch` field (review decision 55). `OnTouch_` runs for one player at a time through `R.touch_one`. A touch handler has no conversation, so a label with a dialog does not convert.\n\n")
+	b.WriteString("| NPCs | Lines | Placed | With a touch area |\n|---|---:|---:|---:|\n")
+	fmt.Fprintf(b, "| Scripts with OnTouch or OnTouch_ | %d | %d | %d |\n", scripts.total, scripts.placed, scripts.touch)
+	fmt.Fprintf(b, "| Lines with OnTouch or OnTouch_, duplicates too | %d | %d | %d |\n", lines.total, lines.placed, lines.touch)
+	fmt.Fprintf(b, "| Script NPCs with a warp sprite, duplicates too | %d | %d | %d |\n\n", warps.total, warps.placed, warps.touch)
+	if len(reasons) > 0 {
+		b.WriteString("| Why a touch label does not convert | Scripts |\n|---|---:|\n")
+		type kv struct {
+			k string
+			v int
+		}
+		var list []kv
+		for k, v := range reasons {
+			list = append(list, kv{k, v})
+		}
+		sort.Slice(list, func(i, j int) bool {
+			if list[i].v != list[j].v {
+				return list[i].v > list[j].v
+			}
+			return list[i].k < list[j].k
+		})
+		for _, x := range list {
+			fmt.Fprintf(b, "| %s | %d |\n", escapeCell(x.k), x.v)
+		}
+		b.WriteString("\n")
+	}
 }
 
 func uniqueSorted(list []string) []string {

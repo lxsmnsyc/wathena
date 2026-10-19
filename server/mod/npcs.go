@@ -56,7 +56,20 @@ type NPC struct {
 	// a tag, in place of a map and a cell (review decision 42). Map, X
 	// and Y are then unset.
 	Place *NPCPlace
+	// Touch is the NPC's touch area, or nil (review decision 55).
+	Touch *NPCTouch
 }
+
+// NPCTouch is the touch field: the cells within XSpan and YSpan of the
+// NPC's cell, as rAthena's OnTouch area. A player who steps into it
+// fires the NPC's touch event, and untouch when it leaves.
+type NPCTouch struct {
+	XSpan, YSpan int
+}
+
+// MaxTouchSpan is the widest span of a touch area. rAthena's NPCs reach
+// at most 62 cells.
+const MaxTouchSpan = 100
 
 // NPCPlace is where an NPC record with place stands: every place of the
 // scope with the tag, such as {scope: town:any, tag: blacksmith}.
@@ -111,7 +124,7 @@ type ShopCostItem struct {
 }
 
 // npcFields are the fields of an NPC record.
-var npcFields = []string{"map", "x", "y", "place", "direction", "sprite", "script", "display_name", "shop", "discount"}
+var npcFields = []string{"map", "x", "y", "place", "direction", "sprite", "script", "display_name", "shop", "discount", "touch"}
 
 // shopFields are the fields of a shop table.
 var shopFields = []string{"items", "buys_from_players", "discount"}
@@ -178,7 +191,7 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 	_, hasPlace := r.Fields["place"]
 	if !hasMap && !hasPlace && n.Shop != nil {
 		// A shop that scripts open. It has no place.
-		for _, k := range []string{"x", "y", "direction", "sprite", "script", "display_name"} {
+		for _, k := range []string{"x", "y", "direction", "sprite", "script", "display_name", "touch"} {
 			if _, ok := r.Fields[k]; ok {
 				errs = append(errs, fmt.Sprintf("%s needs a map: a shop without a map is only opened by scripts", k))
 			}
@@ -273,10 +286,31 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 			}
 		}
 	}
+	if v, ok := r.Fields["touch"]; ok {
+		t, err := readTouch(v)
+		switch {
+		case err != nil:
+			errs = append(errs, err.Error())
+		case n.Script == "":
+			errs = append(errs, "touch needs a script, whose touch and untouch handlers run")
+		}
+		n.Touch = t
+	}
 	if len(errs) > 0 {
 		return NPC{}, errors.New(strings.Join(errs, "; "))
 	}
 	return n, nil
+}
+
+// readTouch reads a touch field: {x_span, y_span}.
+func readTouch(v any) (*NPCTouch, error) {
+	m, ok := v.(map[string]any)
+	x, okX := m["x_span"].(int)
+	y, okY := m["y_span"].(int)
+	if !ok || len(m) != 2 || !okX || !okY || x < 0 || y < 0 || x > MaxTouchSpan || y > MaxTouchSpan {
+		return nil, fmt.Errorf("touch is {x_span, y_span}, each 0 to %d cells, such as {x_span: 1, y_span: 1}", MaxTouchSpan)
+	}
+	return &NPCTouch{XSpan: x, YSpan: y}, nil
 }
 
 // readPlace reads a place field: {scope, tag}.

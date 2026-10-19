@@ -233,6 +233,10 @@ func (t *imperative) loop(cond string, body, post Stmt, do bool) {
 // switchStmt writes a switch as if and elseif, when every case ends with
 // a break.
 func (t *imperative) switchStmt(s *Switch) {
+	if len(s.Pre) > 0 {
+		t.fail("switch", unsupported("switch", "a statement before the first case"))
+		return
+	}
 	v, err := t.num(s.Value)
 	if err != nil {
 		t.fail("switch", err)

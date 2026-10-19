@@ -2,6 +2,7 @@ package convert
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -221,7 +222,8 @@ func checkGotos(b *body) error {
 //   - It makes a local function for each event label that a schedule
 //     or a monster's death runs. The function runs with the player that
 //     killed the monster, or with no player.
-//   - It adds the schedules of clock labels and the click handler.
+//   - It adds the schedules of clock labels, the touch handler of
+//     OnTouch or OnTouch_, and the click handler.
 //   - It runs OnInit last, so an end there does not skip the rest.
 func (n *npcConv) npcScript() (string, error) {
 	stmts, err := ParseNPC(n.line.Script)
@@ -235,8 +237,20 @@ func (n *npcConv) npcScript() (string, error) {
 	}
 	mobEvents := n.mobEvents(stmts.Stmts)
 	schedules := map[string]string{}
+	// OnTouch_ wins over OnTouch: rAthena runs OnTouch only for an NPC
+	// without OnTouch_ (npc_touch_areanpc).
+	touch := ""
+	for _, label := range []string{"ontouch_", "ontouch"} {
+		if _, ok := events[label]; ok && touch == "" {
+			touch = label
+		}
+	}
 	for _, e := range order {
-		if e == "oninit" {
+		if e == "oninit" || e == "ontouch" && touch == "ontouch_" {
+			continue
+		}
+		if e == touch {
+			n.eventFn(e)
 			continue
 		}
 		format, ok, err := clockSchedule(e)
@@ -268,11 +282,23 @@ func (n *npcConv) npcScript() (string, error) {
 	// A body may name more labels, with a monster command.
 	for i := 0; i < len(n.eventOrder); i++ {
 		e := n.eventOrder[i]
-		if bodies[e], err = n.writeBody(events[e], 3, true, false); err != nil {
+		if e == touch {
+			n.bodyCalls = map[string]bool{}
+		}
+		bodies[e], err = n.writeBody(events[e], 3, true, false)
+		if e == touch {
+			calls := n.bodyCalls
+			n.bodyCalls = nil
+			if err == nil {
+				err = n.checkTouchBody(e, bodies[e], calls)
+			}
+		}
+		if err != nil {
 			return "", err
 		}
 		n.ok("event " + e)
 	}
+	n.touch = touch != ""
 	if len(handler) == 0 && len(setup) == 0 && len(n.eventOrder) == 0 {
 		return "", nil
 	}
@@ -319,6 +345,13 @@ func (n *npcConv) npcScript() (string, error) {
 			f.line(format, n.eventFns[e])
 		}
 	}
+	switch touch {
+	case "ontouch_":
+		f.line("R.touch_one(%s)", n.eventFns[touch])
+	case "ontouch":
+		f.need("events")
+		f.line(`events.on("touch", %s)`, n.eventFns[touch])
+	}
 	if len(handler) > 0 {
 		f.need("events")
 		f.line(`events.on("click", function(player, conversation)`)
@@ -343,6 +376,36 @@ func (n *npcConv) npcScript() (string, error) {
 	f.indent = 0
 	f.line("end")
 	return n.finish(n.header()), nil
+}
+
+// dialogCode matches converted code that needs the conversation: a
+// dialog call, or a helper that shows lines. A call to a converted
+// function passes the conversation on after the player, which does not
+// match.
+var dialogCode = regexp.MustCompile(`conversation:|\(conversation[,)]`)
+
+// checkTouchBody checks that an OnTouch or OnTouch_ part converts to a
+// touch handler. The touch event has the player and no conversation
+// (review decision 55), so a part with a dialog, or that calls a
+// function with one, does not convert. calls are the functions the part
+// calls itself.
+func (n *npcConv) checkTouchBody(label string, lines []string, calls map[string]bool) error {
+	why := "a dialog, which a touch handler cannot show: the touch event has no conversation"
+	for _, l := range lines {
+		if dialogCode.MatchString(l) {
+			return unsupported("event "+label, "%s", why)
+		}
+	}
+	direct := make([]string, 0, len(calls))
+	for k := range calls {
+		direct = append(direct, k)
+	}
+	for _, name := range n.c.functionsOf(direct) {
+		if f := n.c.converted[name]; f != nil && dialogCode.MatchString(f.Lua) {
+			return unsupported("event "+label, "%s, in %s", why, f.Name)
+		}
+	}
+	return nil
 }
 
 // eventFn returns the local function of an event label, and adds it.

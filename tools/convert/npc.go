@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -38,6 +39,10 @@ const RathenaLib = "scripts/lib/rathena.lua"
 type NPCInput struct {
 	// NPCs is npcs.json.
 	NPCs io.Reader
+	// Parts are the part files that npcs.json lists in parts, such as
+	// npcs-quests-1.json, in that order. Their NPCs come after those of
+	// npcs.json.
+	Parts []io.Reader
 	// Constants is script_constants.json.
 	Constants io.Reader
 	// ClientTables is client_tables.json, for item names and NPC
@@ -117,7 +122,21 @@ type NPC struct {
 	// place it. Duplicates use their source's script, so a source that is
 	// not placed, such as one without a map, still serves them.
 	converted Status
+	// touch is set when the script has a touch handler, from OnTouch or
+	// OnTouch_. Duplicates take it from their source.
+	touch bool
+	// Touch is set for a placed NPC whose record has a touch area: a
+	// touch handler and a span of 0 or more on both axes.
+	Touch bool
+	// Sprite is the line's view, as npcs.json writes it.
+	Sprite string
+	// TouchLabel is set when the script, or its source's, has an
+	// OnTouch or OnTouch_ label, converted or not.
+	TouchLabel bool
 }
+
+// touchLabel finds an OnTouch or OnTouch_ label in a script.
+var touchLabel = regexp.MustCompile(`(?m)^[ \t]*OnTouch_?:`)
 
 // Function is one converted rAthena function.
 type Function struct {
@@ -196,9 +215,7 @@ type monsterInfo struct {
 
 // unavailableFunctions are rAthena functions for services wAthena does
 // not have yet. A call says so instead of running them.
-var unavailableFunctions = map[string]string{
-	"f_kafcart": "Pushcart rental",
-}
+var unavailableFunctions = map[string]string{}
 
 // ignoredFunctions are rAthena functions that do nothing in wAthena.
 // F_ClearGarbage clears variables of old rAthena versions.
@@ -209,12 +226,24 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 	var extract struct {
 		Mode          string         `json:"mode"`
 		ScriptFolders []string       `json:"script_folders"`
+		PartFolders   []string       `json:"part_folders"`
 		LeftOut       map[string]int `json:"left_out"`
 		NPCs          []npcLine      `json:"npcs"`
 	}
 	if err := json.NewDecoder(in.NPCs).Decode(&extract); err != nil {
 		return nil, fmt.Errorf("npcs.json: %w", err)
 	}
+	for i, part := range in.Parts {
+		var p struct {
+			NPCs []npcLine `json:"npcs"`
+		}
+		if err := json.NewDecoder(part).Decode(&p); err != nil {
+			return nil, fmt.Errorf("npcs.json part %d: %w", i+1, err)
+		}
+		extract.NPCs = append(extract.NPCs, p.NPCs...)
+	}
+	extract.ScriptFolders = append(extract.ScriptFolders, extract.PartFolders...)
+	slices.Sort(extract.ScriptFolders)
 	consts, err := constants.Read(in.Constants)
 	if err != nil {
 		return nil, err
@@ -380,7 +409,7 @@ func direction(dir int) string {
 }
 
 func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*NPC) *NPC {
-	n := &NPC{Name: name, Source: l.Name, Kind: l.Kind, File: l.File, Line: l.Line, Map: l.Map, DuplicateOf: l.DuplicateOf, Features: map[string]bool{}}
+	n := &NPC{Name: name, Source: l.Name, Kind: l.Kind, File: l.File, Line: l.Line, Map: l.Map, DuplicateOf: l.DuplicateOf, Sprite: l.Sprite, Features: map[string]bool{}}
 	fail := func(feature, why string) *NPC {
 		n.Status = None
 		n.Features[feature] = false
@@ -400,14 +429,15 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 		if src == nil {
 			return fail("duplicate", "the source "+l.DuplicateOf+" is not in the extract")
 		}
-		n.Features, n.Functions = src.Features, src.Functions
+		n.Features, n.Functions, n.TouchLabel = src.Features, src.Functions, src.TouchLabel
 		if src.converted == "" || src.converted == None {
 			n.Status = None
 			n.Unsupported = append(n.Unsupported, "duplicate: the source "+l.DuplicateOf+" did not convert")
 			return n
 		}
-		n.Status, n.Script = src.converted, src.Script
+		n.Status, n.Script, n.touch = src.converted, src.Script, src.touch
 	} else {
+		n.TouchLabel = touchLabel.MatchString(l.Script)
 		nc := c.newNPCConv(l)
 		lua, err := nc.npcScript()
 		n.Features = nc.features
@@ -421,6 +451,7 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 			return n
 		}
 		n.Status = Full
+		n.touch = nc.touch
 		for _, f := range n.Functions {
 			if fn := c.converted[f]; fn != nil && (len(fn.Stubs) > 0 || fn.Err != "") {
 				n.Status = Partial
@@ -449,7 +480,13 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 		n.Status = None
 		return n
 	}
+	touch := n.touch && l.XS >= 0 && l.YS >= 0
 	view, ok := c.sprite(l.Sprite)
+	if !ok && touch && l.Sprite == "-1" {
+		// An NPC without a sprite still has its touch area in rAthena.
+		// HIDDEN_NPC shows nothing in the client.
+		view, ok = "HIDDEN_NPC", true
+	}
 	if !ok {
 		n.Unsupported = append(n.Unsupported, "sprite: "+l.Sprite+" is not an NPC sprite")
 		n.Status = None
@@ -464,6 +501,11 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 	}
 	if n.Script != "" {
 		fields = append(fields, "script: "+yamlString(n.Script))
+	}
+	if touch {
+		// rAthena's OnTouch area: the cells within the spans of the NPC.
+		n.Touch = true
+		fields = append(fields, fmt.Sprintf("touch: {x_span: %d, y_span: %d}", l.XS, l.YS))
 	}
 	n.record = "- {" + strings.Join(fields, ", ") + "}"
 	return n

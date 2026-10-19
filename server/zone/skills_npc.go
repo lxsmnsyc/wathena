@@ -214,8 +214,8 @@ func (z *Zone) mobClassChange(e *entity, class uint32) {
 	}
 	sp := tmpl
 	old := m.spawn
-	sp.Amount, sp.RespawnMs, sp.noRespawn, sp.owner = 1, old.RespawnMs, old.noRespawn, old.owner
-	sp.X, sp.Y, sp.W, sp.H = old.X, old.Y, old.W, old.H
+	sp.Amount, sp.RespawnMs, sp.RespawnVarianceMs, sp.noRespawn, sp.owner = 1, old.RespawnMs, old.RespawnVarianceMs, old.noRespawn, old.owner
+	sp.X, sp.Y, sp.W, sp.H, sp.Boss, sp.FixedCell = old.X, old.Y, old.W, old.H, old.Boss, old.FixedCell
 	if m.respawnAs == nil {
 		m.respawnAs = old
 	}

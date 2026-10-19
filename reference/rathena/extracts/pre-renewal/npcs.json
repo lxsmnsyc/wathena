@@ -1,7 +1,7 @@
 {
-	"rathena_git_hash": "e92917ccc15c7e50e22ff502166371eb89c7f6e6",
+	"rathena_git_hash": "28488df0427f1522754decb136e036e87f05496d",
 	"mode": "pre-renewal",
-	"note": "Script NPCs, functions, shops and duplicates of them from npc/<mode>/scripts_main.conf, in the order rAthena loads them, with the unique names npc_parsename gives (as in warps.json). Lines on maps the map server does not load are left out. Script NPCs are kept from the folders in script_folders only, below npc/, npc/re/ and npc/pre-re/; left_out counts the others by folder. Shops and functions are kept from every folder. kind is script, function, or a shop type. display is the name players see, and sprite the view as the line writes it. xs and ys are the OnTouch span, -1 without one. state is enabled unless w2 sets (CLOAKED), (HIDDEN) or (DISABLED). script is the text from '{' to the matching '}'. A duplicate names its source in duplicate_of and has no script of its own; a duplicated shop repeats the source's items. shop.items have the item's AegisName and ID and the price, where a price below 0 in the line is the item's buy price (item_prices.json) in shop and marketshop lines. shop.discount says whether Discount and Compulsion Discount lower the prices (npc_shop_discount). shop.currency is the item of an itemshop or the variable of a pointshop. marketshop items have a stock, -1 for unlimited.",
+	"note": "Script NPCs, functions, shops and duplicates of them from npc/<mode>/scripts_main.conf, in the order rAthena loads them, with the unique names npc_parsename gives (as in warps.json). Lines on maps the map server does not load are left out. Script NPCs are kept from the folders in script_folders, below npc/, npc/re/ and npc/pre-re/. Those of part_folders are in the files that parts lists, which keeps each file small. left_out counts the others by folder. Shops and functions are kept from every folder. kind is script, function, or a shop type. display is the name players see, and sprite the view as the line writes it. xs and ys are the OnTouch span, -1 without one. state is enabled unless w2 sets (CLOAKED), (HIDDEN) or (DISABLED). script is the text from '{' to the matching '}'. A duplicate names its source in duplicate_of and has no script of its own; a duplicated shop repeats the source's items. shop.items have the item's AegisName and ID and the price, where a price below 0 in the line is the item's buy price (item_prices.json) in shop and marketshop lines. shop.discount says whether Discount and Compulsion Discount lower the prices (npc_shop_discount). shop.currency is the item of an itemshop or the variable of a pointshop. marketshop items have a stock, -1 for unlimited.",
 	"script_folders": [
 		"airports",
 		"cities",
@@ -11,21 +11,36 @@
 		"merchants",
 		"other"
 	],
+	"part_folders": [
+		"quests",
+		"warps",
+		"events"
+	],
+	"parts": [
+		"npcs-quests-1.json",
+		"npcs-quests-2.json",
+		"npcs-quests-3.json",
+		"npcs-quests-4.json",
+		"npcs-quests-5.json",
+		"npcs-warps-1.json",
+		"npcs-events-1.json"
+	],
 	"summary": {
 		"function": 96,
 		"script": 5032,
 		"shop": 185
 	},
+	"part_summary": {
+		"quests": 2942,
+		"warps": 81,
+		"events": 150
+	},
 	"left_out": {
 		"battleground": 294,
-		"cities": 3,
-		"events": 150,
 		"guild": 481,
 		"guild2": 478,
 		"instances": 296,
-		"mobs": 2,
-		"quests": 2939,
-		"warps": 81
+		"mobs": 2
 	},
 	"npcs": [
 		{"kind":"function","name":"F_ClearJobVar","file":"npc/other/Global_Functions.txt","line":56,"script":"{\n\t// Misc ---------------------------------\n\tset JBLVL,0;\n\tset FIRSTAID,0;\n\tset PLAYDEAD,0;\n\tset got_bandage,0;\n\tset got_novnametag,0;\n\t// First Class Jobs ---------------------\n\tset job_acolyte_q,0; set job_acolyte_q2,0;\n\tset job_archer_q,0;\n\tset job_magician_q,0;\n\tset job_merchant_q,0; set job_merchant_q2,0; set job_merchant_q3,0;\n\tset job_sword_q,0; set SWTEST, 0;\n\tset job_thief_q,0;\n\t// Super Novice\n\tset SUPNOV_Q,0;\n\t// 2-1 Jobs ------------------------------\n\tset ASSIN_Q,0; set ASSIN_Q2,0; set ASSIN_Q3,0;\n\tset BSMITH_Q,0; set BSMITH_Q2,0;\n\tset HNTR_Q,0; set HNTR_Q2,0;\n\tset KNIGHT_Q,0; set KNIGHT_Q2,0;\n\tset PRIEST_Q,0; set PRIEST_Q2,0; set PRIEST_Q3,0;\n\tset WIZ_Q,0; set WIZ_Q2,0;\n\t// 2-2 Jobs ------------------------------\n\tset ROGUE_Q,0; set ROGUE_Q2,0;\n\tset ALCH_Q,0; set ALCH_Q2,0;\n\tset CRUS_Q,0;\n\tset MONK_Q,0; set JOB_MONK_C,0;\n\tset SAGE_Q,0; set SAGE_Q2,0;\n\tset DANC_Q,0;\n\tset BARD_Q,0;\n\t// Extended Classes\n\tset TAEK_Q,0; set TK_Q,0;\n\tset STGL_Q,0;\n\tset SOUL_Q,0;\n\tset GUNS_Q,0;\n\tset NINJ_Q,0;\n\treturn;\n}"},

@@ -250,9 +250,20 @@ func (z *Zone) dropCopy(id uint32, group string, monster *entity) fallItem {
 // effectMVP is EF_MVP, the effect over the MVP player.
 const effectMVP = 68
 
+// mvpItemText starts the line the game client shows for
+// ZC_MVP_GETTING_ITEM, which ends with the item's name and "!!".
+const mvpItemText = "Congratulations! You are the MVP! Your reward item is "
+
 // mvpReward is the MVP part of mob_dead: the player with the most damage
 // dealt and taken (get_mvp_player) gets the MVP exp and, of the MVP
 // drops in order, the first that rolls, in its inventory or at its feet.
+// What rAthena announces of it:
+//   - clif_mvp_effect: the MVP effect over the player, which the players
+//     near it see.
+//   - clif_mvp_item: the prize, to the MVP player only.
+//   - clif_mvp_exp sends nothing: PACKETVER 20211103 has no packet for
+//     it, and mvp_exp_reward_message is off.
+//   - rare_drop_announce is 0, so no prize is announced to the world.
 func (z *Zone) mvpReward(e *entity, m *progression.Mob, kill progression.Kill) {
 	t := z.Progress
 	if m.Boss() != progression.BossMVP {
@@ -300,6 +311,10 @@ func (z *Zone) mvpReward(e *entity, m *progression.Mob, kill progression.Kill) {
 			}
 		}
 		fi := z.dropCopy(d.Item, d.RandomOptionGroup, e)
+		// clif_mvp_item: the MVP player is told its prize, before the
+		// item goes into its inventory.
+		name, _ := scriptHost{z}.ItemName(d.Item)
+		mvp.pending = append(mvp.pending, systemMessage(mvpItemText+name+"!!"))
 		if r := z.addCopy(mvp, d.Item, 1, 0, nil, fi.extra, origin{action: transfer.ActionLoot, from: fi.from}); r != item.AddSuccess {
 			pe := mvp.entity
 			z.falling = append(z.falling, fall{x: pe.x, y: pe.y, items: []fallItem{fi},

@@ -266,8 +266,9 @@ func (l *logRecorder) Handle(_ context.Context, r slog.Record) error {
 func (l *logRecorder) WithAttrs([]slog.Attr) slog.Handler { return l }
 func (l *logRecorder) WithGroup(string) slog.Handler      { return l }
 
-// TestRunConvertedNPCs starts every placed NPC of both modes and talks to
-// it four times: answering each menu with its first option, its second,
+// TestRunConvertedNPCs starts every placed NPC of both modes, in a
+// runtime for each map, steps into and out of its touch area, and talks
+// to it four times: answering each menu with its first option, its second,
 // its third, and its last one, each number with its minimum, and text
 // with "abc". Then every monster the NPCs spawned dies, killed by the
 // player, and every schedule runs once. A part of a function that did
@@ -281,76 +282,104 @@ func TestRunConvertedNPCs(t *testing.T) {
 			logs := &logRecorder{}
 			h := &npcHost{testHost: base, npcs: map[int64]*NPC{}, steps: map[int64]modscript.Step{}, ended: map[int64]bool{},
 				vars: map[modscript.VariableKey]string{}, zeny: 1_000_000, market: marketHost{shops: coreShops(core)}}
-			rt := npcRuntime(t, core, h, logs)
-			var started, clicks, steps int
+			// Each map runs its NPCs in a runtime of its own, as each
+			// zone does, so a mod's limits count per map.
+			var maps []string
+			byMap := map[string][]int{}
 			for i, n := range core.NPCs.NPCs {
 				if !n.Placed || n.Script == "" {
 					continue
 				}
-				id := int64(i + 1)
-				h.npcs[id] = n
-				npc, err := rt.StartNPC(id, "core:"+n.Script)
+				if byMap[n.Map] == nil {
+					maps = append(maps, n.Map)
+				}
+				byMap[n.Map] = append(byMap[n.Map], i)
+			}
+			sc := coreScripts(t, core)
+			quests := coreQuests(t, core)
+			var started, clicks, steps, deaths, touches int
+			for _, m := range maps {
+				rt, err := modscript.New(modscript.Options{Host: h, Mods: []string{"core"}, Constants: core.Constants, Jobs: h.jobs,
+					Log: slog.New(logs), Server: variables.NewServer(nil, nil), Quests: quests,
+					Clock: func() time.Time { return testClock }, Location: time.UTC}, sc)
 				if err != nil {
-					t.Errorf("%s: %v", n.Name, err)
-					continue
+					t.Fatal(err)
 				}
-				started++
-				if !npc.Clickable() {
-					continue
-				}
-				for _, pick := range []int{1, 2, 3, -1} {
-					clicks++
-					conv, err := rt.Click(npc, 1)
+				for _, i := range byMap[m] {
+					n := core.NPCs.NPCs[i]
+					id := int64(i + 1)
+					h.npcs[id] = n
+					npc, err := rt.StartNPC(id, "core:"+n.Script)
 					if err != nil {
-						t.Errorf("%s: click: %v", n.Name, err)
-						break
+						t.Errorf("%s: %v", n.Name, err)
+						continue
 					}
-					for range 300 {
-						if conv == nil || conv.Done {
+					started++
+					if n.Touch {
+						// The player steps into the touch area and out
+						// again.
+						touches++
+						rt.Touch(npc, "touch", 1)
+						rt.Touch(npc, "untouch", 1)
+					}
+					if !npc.Clickable() {
+						continue
+					}
+					for _, pick := range []int{1, 2, 3, -1} {
+						clicks++
+						conv, err := rt.Click(npc, 1)
+						if err != nil {
+							t.Errorf("%s: click: %v", n.Name, err)
 							break
 						}
-						steps++
-						s := h.steps[conv.ID]
-						var answer script.Value
-						switch s.Kind {
-						case modscript.StepMenu:
-							// Empty options are hidden, so the zone
-							// refuses them.
-							var shown []int
-							for i, o := range s.Options {
-								if o != "" {
-									shown = append(shown, i+1)
+						for range 300 {
+							if conv == nil || conv.Done {
+								break
+							}
+							steps++
+							s := h.steps[conv.ID]
+							var answer script.Value
+							switch s.Kind {
+							case modscript.StepMenu:
+								// Empty options are hidden, so the zone
+								// refuses them.
+								var shown []int
+								for i, o := range s.Options {
+									if o != "" {
+										shown = append(shown, i+1)
+									}
 								}
+								k := pick
+								if k < 0 || k > len(shown) {
+									k = len(shown)
+								}
+								answer = script.Int(int64(shown[k-1]))
+							case modscript.StepNumber:
+								answer = script.Int(s.Min)
+							case modscript.StepText:
+								answer = script.String("abc")
 							}
-							k := pick
-							if k < 0 || k > len(shown) {
-								k = len(shown)
-							}
-							answer = script.Int(int64(shown[k-1]))
-						case modscript.StepNumber:
-							answer = script.Int(s.Min)
-						case modscript.StepText:
-							answer = script.String("abc")
+							rt.ResumeConversation(conv, answer)
 						}
-						rt.ResumeConversation(conv, answer)
-					}
-					if conv != nil && !conv.Done {
-						rt.CloseConversation(conv)
+						if conv != nil && !conv.Done {
+							rt.CloseConversation(conv)
+						}
 					}
 				}
-			}
-			// Each spawned monster dies, killed by the player, and each
-			// schedule runs once.
-			deaths := 0
-			for len(h.spawned) > 0 && deaths < 10_000 {
-				for _, id := range sortedIDs(h.spawned) {
-					mob := h.spawned[id]
-					delete(h.spawned, id)
-					deaths++
-					rt.FireDeath(modscript.Death{Victim: id, VictimKind: "monster", Monster: int64(mob), Killer: 1, KillerKind: "player"})
+				// Each spawned monster dies, killed by the player, and each
+				// schedule runs once.
+				for mapDeaths := 0; len(h.spawned) > 0 && mapDeaths < 10_000; {
+					for _, id := range sortedIDs(h.spawned) {
+						mob := h.spawned[id]
+						delete(h.spawned, id)
+						deaths++
+						mapDeaths++
+						rt.FireDeath(modscript.Death{Victim: id, VictimKind: "monster", Monster: int64(mob), Killer: 1, KillerKind: "player"})
+					}
 				}
+				rt.RunSchedules(testClock.Add(8 * 24 * time.Hour))
+				rt.Close()
 			}
-			rt.RunSchedules(testClock.Add(8 * 24 * time.Hour))
 			bad := 0
 			for _, m := range logs.msgs {
 				if strings.Contains(m, "which wAthena does not have yet") {
@@ -361,23 +390,9 @@ func TestRunConvertedNPCs(t *testing.T) {
 					t.Error(m)
 				}
 			}
-			t.Logf("%d NPCs started, %d clicks, %d steps, %d monster deaths, %d errors", started, clicks, steps, deaths, bad)
+			t.Logf("%d NPCs started, %d touched, %d clicks, %d steps, %d monster deaths, %d errors", started, touches, clicks, steps, deaths, bad)
 		})
 	}
-}
-
-// npcRuntime makes a runtime with core's files and an NPC host.
-func npcRuntime(t *testing.T, core *Core, h *npcHost, logs *logRecorder) *modscript.Runtime {
-	t.Helper()
-	sc := coreScripts(t, core)
-	r, err := modscript.New(modscript.Options{Host: h, Mods: []string{"core"}, Constants: core.Constants, Jobs: h.jobs,
-		Log: slog.New(logs), Server: variables.NewServer(nil, nil), Quests: coreQuests(t, core),
-		Clock: func() time.Time { return testClock }, Location: time.UTC}, sc)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(r.Close)
-	return r
 }
 
 func sortedIDs(m map[int64]uint32) []int64 {

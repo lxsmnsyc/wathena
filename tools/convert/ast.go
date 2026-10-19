@@ -21,6 +21,9 @@ type If struct {
 // Switch is switch (Value) { case ...: ... default: ... }.
 type Switch struct {
 	Value Expr
+	// Pre are statements before the first case. rAthena runs them after
+	// it reads the value and before it compares the cases.
+	Pre   []Stmt
 	Cases []*Case
 }
 

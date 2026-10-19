@@ -294,6 +294,14 @@ A procedural world's fields and dungeon floors spawn the lists that `wactl world
 - Aggressive monsters never spawn within 15 cells of an arrival, and bosses never within 30 cells of a warp to a town, also when they come back.
 - Dev worlds without a database have no spawns.
 
+A classic world spawns rAthena's lines from `reference/rathena/extracts/<mode>/spawns.json`, as `npc_parse_mob` and `mob_setdelayspawn` read them (review decision 55):
+
+- A line's delay below 1 second, or no delay, is 5 seconds.
+- `boss_monster` lines keep their variance: each death adds a random part of it to the delay. Other lines lose it, as `mob_spawn_variance: 1`.
+- A respawn takes at least 1 second.
+- A `boss_monster` line with a span of 0 or 1 places its monster on its cell, without looking for a free one. A cell that cannot be walked on places it anywhere on the map.
+- The MVP player gets the MVP effect, which the players near it see, and a line with its prize, as `clif_mvp_effect` and `clif_mvp_item`. rAthena announces nothing to the world for an MVP by default: `rare_drop_announce` is 0, and the MVP exp line is off.
+
 The settings, in `waserver.yml`, which `wactl world new` reads and `waserver` checks:
 
 ```yaml
@@ -1199,12 +1207,13 @@ Quests follow rAthena's `quest.cpp` (proposal 0002, review decision 45, [decisio
 
 ## NPCs
 
-`waserver` also converts rAthena's NPC scripts and shops when it starts, in the same step ([decision 0008](../docs/decisions/0008-converted-npcs.md), mods/README.md, "Core's NPCs"). It takes about 0.17 s for renewal.
+`waserver` also converts rAthena's NPC scripts and shops when it starts, in the same step ([decision 0008](../docs/decisions/0008-converted-npcs.md), mods/README.md, "Core's NPCs"). With the `quests`, `warps` and `events` folders, the whole conversion of core takes about 1.6 s in renewal and 0.6 s in pre-renewal, 0.6 s and 0.4 s more than before them (Apple M2).
 
 - Clicking an NPC within 15 cells starts its `click` handler, or opens its shop. A player has one conversation at a time, and cannot act while it lasts.
 - A conversation ends when its script ends, when the player cancels it, leaves, dies, or changes map, and after rAthena's timeouts: 60 seconds for next, menus and close, and 180 seconds for text and number input.
 - Shops follow rAthena's buy and sell rules: Discount and Overcharge, weight, and zeny up to 2,147,483,647. A shop's costs may also take items and currencies, and an item may have a stock.
-- Kafras save, teleport, heal, and open the account's storage and the guild storage, with rAthena's fee, the free ticket and the Basic Skill check. Pushcart rental says it is not available yet.
+- Kafras save, teleport, heal, rent pushcarts, and open the account's storage and the guild storage, with rAthena's fees, the free tickets and the Basic Skill check.
+- An NPC with a touch area runs its `touch` handler when a player steps into the area, and `untouch` when it leaves, as rAthena's `OnTouch` (review decision 55, mods/README.md, "Touch areas"). The zone checks the player's cell after each step and on the cell it arrives on, after the warps. Converted warp portals with an `OnTouch_` script use it.
 - The save point is kept in the `characters` table. A dead character is saved at its save point, and a player who dies goes back there.
 - Character and account variables of `wa.variables` save with the character. Server variables save right after they change, and again when the server stops. Without a database they live in memory.
 

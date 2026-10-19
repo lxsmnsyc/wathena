@@ -136,6 +136,8 @@ type NPC struct {
 	// Service is a service the server runs for the NPC, such as
 	// ServiceTeleport, or "". Mods' records cannot set it.
 	Service string
+	// Touch is the NPC's touch area, or nil (touch.go).
+	Touch *TouchArea
 }
 
 type npc struct {
@@ -157,10 +159,14 @@ func (z *Zone) SetNPCs(npcs []NPC) {
 		}
 	}
 	z.npcHandles = map[int64]*entity{}
+	z.touchNPCs = nil
 	for i, n := range npcs {
 		e := &entity{npc: &npc{NPC: n, handle: int64(i + 1)}, x: n.X, y: n.Y, dir: n.Direction}
 		z.entities.add(e)
 		z.npcHandles[e.npc.handle] = e
+		if n.Touch != nil && n.Script != "" {
+			z.touchNPCs = append(z.touchNPCs, e)
+		}
 	}
 }
 
@@ -202,6 +208,9 @@ type scriptEvent struct {
 	sale *modscript.SaleEvent
 	// quest is set for the quest events, which run with FireQuest.
 	quest *modscript.QuestEvent
+	// touch is set for an NPC's touch and untouch events, which run
+	// with Touch.
+	touch *touchEvent
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -311,6 +320,8 @@ func (z *Zone) runScripts() {
 			z.scripts.FireGuild(*ev.guild)
 		case ev.quest != nil:
 			z.scripts.FireQuest(*ev.quest)
+		case ev.touch != nil:
+			z.runTouch(ev.touch)
 		default:
 			z.scripts.Fire(ev.name, ev.args...)
 		}

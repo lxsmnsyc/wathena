@@ -431,7 +431,9 @@ func yamlString(s string) string {
 		if _, err := strconv.ParseFloat(s, 64); err == nil {
 			plain = false
 		}
-		if strings.HasPrefix(s, "-") || strings.HasPrefix(s, "?") {
+		// A ? after a space starts a mapping key in a flow mapping,
+		// such as display_name: Adventurer ?.
+		if strings.HasPrefix(s, "-") || strings.HasPrefix(s, "?") || strings.Contains(s, " ?") {
 			plain = false
 		}
 	}

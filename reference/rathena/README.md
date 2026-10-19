@@ -77,7 +77,9 @@ They were first extracted at rAthena fork commit `f4641e37b`, from the same rAth
 The converter also reads two extracts per mode for NPCs ([decision 0008](../../docs/decisions/0008-converted-npcs.md)):
 
 - `npcs.json`: script NPCs, functions, shops and their duplicates, in the order `npc/<mode>/scripts_main.conf` loads them, with the names, map checks and duplicate rules of `warps.json`. Each NPC is one line of the file.
-- Script NPCs are kept from the folders the first release needs: `kafras`, `merchants`, `cities`, `airports`, `guides`, `jobs` and `other`, below `npc/`, `npc/re/` and `npc/pre-re/`. `left_out` counts the others by folder, such as `quests` and `instances`. Shops and functions are kept from every folder.
+- Script NPCs are kept from the folders the first release needs: `kafras`, `merchants`, `cities`, `airports`, `guides`, `jobs` and `other`, below `npc/`, `npc/re/` and `npc/pre-re/`. Shops and functions are kept from every folder.
+- The script NPCs of the `quests`, `warps` and `events` folders are kept too, in part files: `npcs-<folder>-<n>.json`, each below 1.9 MB of rows (review decision 55). `npcs.json` lists them in `parts`, in the order to read them after it, and counts their NPCs in `part_summary`. A duplicate goes in the file of its source, so each file holds the sources of its duplicates. The rows of `npcs.json` did not change.
+- `left_out` counts the script NPCs of the other folders, such as `instances` and `guild`.
 - Shops have their items, with a price below 0 in the line replaced by the item's buy price, as `npc_parse_shop`. `discount` says whether Discount lowers the prices (`npc_shop_discount`). Item and point shops name their currency, and market shops give a stock.
 - `item_prices.json`: the buy and sell price of every item, with `ItemDatabase::loadingFinished`'s rules: a missing Buy is Sell * 2, a missing Sell is Buy / 2, and a Sell above what Discount and Overcharge allow becomes 1. `no_sell` is `Trade.NoSell`.
 
@@ -85,6 +87,23 @@ The converter also reads two extracts per mode for NPCs ([decision 0008](../../d
 |---|---:|---:|---:|---:|
 | renewal | 6,870 | 358 | 5.3 MB | 2.0 MB |
 | pre-renewal | 4,190 | 185 | 3.2 MB | 0.4 MB |
+
+The part files, from rAthena fork commit `28488df04` with a change to `extract.py` that the fork does not have yet (below):
+
+| Mode | `quests` | `warps` | `events` | Files | Size |
+|---|---:|---:|---:|---:|---:|
+| renewal | 6,162 | 250 | 150 | 11 | 16.3 MB |
+| pre-renewal | 2,942 | 81 | 150 | 7 | 8.6 MB |
+
+Each count is of script NPC lines, duplicates too. The largest file is 1.9 MB. `npcs.json` itself was already above 2 MB, at 8.3 MB and 4.8 MB, and only its header changed.
+
+The change to `tools/wathena/extract.py` adds `PART_FOLDERS` and the part files to `build_npcs`, and `extract.py npcs`, which writes `warps.json`, `npcs.json`, its part files and `item_prices.json` alone:
+
+```text
+python3 tools/wathena/extract.py npcs
+```
+
+Two runs give the same files. `warps.json` and `item_prices.json` come out the same but for `rathena_git_hash`, so they were not copied again.
 
 They were first extracted at rAthena fork commit `003599e1c`. The `jobs` folder came at commit `e92917ccc`, with a change to `extract.py` that the fork does not have yet: `0002-extract-job-change-npcs.patch` (see "Second class recordings").
 
@@ -297,7 +316,7 @@ python3 tools/wathena/extract.py quests
 
 ## Spawns
 
-`extracts/<mode>/spawns.json` holds every map's spawn lines from `npc/<mode>/mobs`, with each map's walkable cells. Classic worlds spawn from it. `tools/spawntags` reads the renewal file to derive core's spawn tags for procedural worlds: each monster's biome weights by map family, its role, and the densities per walkable cell ([decision 0042](../../docs/decisions/0042-spawns.md)). The map families and their biomes are wAthena's, in `tools/spawntags/families.go`, so the extract's own `biome` and `monster_tags` fields are not read.
+`extracts/<mode>/spawns.json` holds every map's spawn lines from `npc/<mode>/mobs`, with each map's walkable cells. Classic worlds spawn from it, with each line's `boss` flag and `respawn_variance_ms` (review decision 55). `tools/spawntags` reads the renewal file to derive core's spawn tags for procedural worlds: each monster's biome weights by map family, its role, and the densities per walkable cell ([decision 0042](../../docs/decisions/0042-spawns.md)). The map families and their biomes are wAthena's, in `tools/spawntags/families.go`, so the extract's own `biome` and `monster_tags` fields are not read.
 
 ## How random rolls are recorded
 

@@ -62,6 +62,16 @@ func lex(src string) ([]token, error) {
 					j++
 				}
 			}
+			if j < len(src) && (src[j] == '_' || src[j] >= 'a' && src[j] <= 'z' || src[j] >= 'A' && src[j] <= 'Z') {
+				// is_number: digits before a letter or _ start a word,
+				// such as the sprite constant 4_M_CACTUSMAN20.
+				for j < len(src) && (isNameStart(src[j]) || src[j] >= '0' && src[j] <= '9') {
+					j++
+				}
+				out = append(out, token{kind: tokName, text: src[i:j], pos: i})
+				i = j
+				continue
+			}
 			n, err := strconv.ParseInt(src[i:j], 0, 64)
 			if err != nil {
 				return nil, fmt.Errorf("bad number %q", src[i:j])
@@ -599,15 +609,14 @@ func (p *parser) args(end string) ([]Expr, error) {
 	}
 }
 
+// rAthena reads the condition of if, while and switch with parse_expr
+// from its "(", so operators after the ")" belong to it too, as in
+// if (a) || (b).
 func (p *parser) parenExpr() (Expr, error) {
-	if err := p.expect("("); err != nil {
-		return nil, err
+	if !p.isOp("(") {
+		return nil, p.errorf("want (")
 	}
-	e, err := p.expr()
-	if err != nil {
-		return nil, err
-	}
-	return e, p.expect(")")
+	return p.expr()
 }
 
 // body reads the statement of an if, a loop or an else. An empty body
@@ -669,14 +678,18 @@ func (p *parser) switchStmt() (Stmt, error) {
 			s.Cases = append(s.Cases, cur)
 			continue
 		}
-		if cur == nil {
-			return nil, p.errorf("statement before the first case")
-		}
 		st, err := p.stmt()
 		if err != nil {
 			return nil, err
 		}
-		if st != nil {
+		switch {
+		case st == nil:
+		case cur == nil:
+			// rAthena compiles a switch as the value, the statements in
+			// order, and a test before each case, so statements before
+			// the first case run before the tests.
+			s.Pre = append(s.Pre, st)
+		default:
 			cur.Body = append(cur.Body, st)
 		}
 	}

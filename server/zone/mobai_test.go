@@ -2,6 +2,7 @@ package zone
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
@@ -249,6 +250,50 @@ func TestMVPReward(t *testing.T) {
 	}
 	if len(z.effects) == 0 || z.effects[len(z.effects)-1].id != effectMVP {
 		t.Error("no MVP effect")
+	}
+	// clif_mvp_item tells the MVP player its prize.
+	found := false
+	for _, e := range p.pending {
+		if c := e.GetChat(); c != nil && c.GetChannel() == wathenav1.ChatChannel_CHAT_CHANNEL_SYSTEM && strings.HasPrefix(c.GetText(), mvpItemText) && strings.HasSuffix(c.GetText(), "!!") {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("no MVP prize message")
+	}
+}
+
+// TestBossRespawn checks mob_setdelayspawn for a boss_monster spawn: the
+// delay plus a random part of the variance, and mob_spawn's fixed cell.
+func TestBossRespawn(t *testing.T) {
+	z, p := aiZone(t)
+	m := aiMob(t, z, 1002, 22, 20, mob.AITypes[1], nil)
+	s := m.monster.spawn
+	s.Boss, s.FixedCell, s.X, s.Y, s.W, s.H = true, true, 30, 30, 0, 0
+	s.RespawnMs, s.RespawnVarianceMs = 60_000, 10_000
+	lo, hi := int64(1<<62), int64(0)
+	for range 200 {
+		d := z.respawnDelay(s)
+		lo, hi = min(lo, d), max(hi, d)
+	}
+	if lo < 60_000 || hi >= 70_000 || hi-lo < 5_000 {
+		t.Errorf("delays from %d to %d, want 60000 to 69999", lo, hi)
+	}
+	for range 20 {
+		if x, y, ok := z.spawnCell(s); !ok || x != 30 || y != 30 {
+			t.Fatalf("boss at %d,%d", x, y)
+		}
+	}
+	m.hp = 0
+	z.die(m, p.entity)
+	last := z.respawns[len(z.respawns)-1]
+	if last.spawn != s || last.at < z.now+60_000 || last.at >= z.now+70_000 {
+		t.Errorf("respawn at %d, now %d", last.at, z.now)
+	}
+	// A spawn without variance, and a delay below a second.
+	s.RespawnVarianceMs, s.RespawnMs = 0, 10
+	if d := z.respawnDelay(s); d != 1000 {
+		t.Errorf("delay %d, want 1000", d)
 	}
 }
 

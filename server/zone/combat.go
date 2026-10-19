@@ -473,7 +473,7 @@ func (z *Zone) die(e, killer *entity) {
 		s = e.monster.respawnAs
 	}
 	if !s.noRespawn {
-		z.respawns = append(z.respawns, respawn{spawn: s, at: z.now + int64(max(s.RespawnMs, 1000))})
+		z.respawns = append(z.respawns, respawn{spawn: s, at: z.now + z.respawnDelay(s)})
 	}
 }
 

@@ -227,7 +227,7 @@ return function(player, conversation, npc, ...)
       end
       conversation:wait_for_next()
     elseif ((k_menu0[j] or "") == "Rent a Pushcart") then
-      if (R.not_available(conversation, "Pushcart rental") == 1) then
+      if (require("core.functions.F_KafCart")(player, conversation, npc, welcome, R.arg(args, 4)) == 1) then
         conversation:wait_for_next()
       end
     elseif ((k_menu0[j] or "") == "Check Other Information") then
