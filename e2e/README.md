@@ -221,10 +221,10 @@ go run ./tools/wactl assets build --source placeholder --source grf:data/kro/cli
 WATHENA_KRO_ASSETS=/tmp/kro-build WATHENA_TEST_DATABASE_URL=... go test -run TestClassicKRO -v -timeout 30m ./e2e/
 ```
 
-- The build needs about 2.4 GB of disk. Without that much, a smaller build is enough for the bot: the placeholder pack and the `.rsw`, `.gnd` and `.gat` files of `prontera`, `prt_fild08`, `payon` and `payon_in01`, copied from the client into a `map` folder and built with `--source ro:<folder>`. Decision 0052 ran it this way.
+- The build needs about 2.4 GB of disk, or 2.8 GB with `--fast`, which decision 0053 used: it took 57 minutes on an Apple M2. Without that much, a smaller build is enough for the bot: the placeholder pack and the `.rsw`, `.gnd` and `.gat` files of `prontera`, `prt_fild08`, `payon` and `payon_in01`, copied from the client into a `map` folder and built with `--source ro:<folder>`. Decision 0052 ran it this way.
 - The world is classic, from `wactl world new --mode classic`, and the server runs `classic: {start_map: prontera, maps: all}` with `mode: renewal`.
 - A new Novice of base level 20 and job level 10 starts in Prontera and learns Basic Skill. At a Kafra it saves and stores 2 Jellopies. It buys 3 Apples from the Fruit Gardener, a converted shop. It walks into the south warp to `prt_fild08`, kills a Poring, Lunatic or Fabre there, and walks back. It takes the Kafra's teleport to Payon and becomes a Taekwon at the Phoenix, a converted job change NPC, in three talks.
-- The renewal job changers of the first jobs in Prontera, Izlude and the other towns do not convert: they need the `skill` command. The Taekwon job change does, so the check uses it.
+- A second Novice then walks from Prontera to the Swordman Guild in `izlude_in` and becomes a Swordman there. The renewal first job changers convert since the `skill` command (review decision 57, decision 0053).
 - The bot walks along routes over the build's cells, through rAthena's warps of `warps.json`, and keeps off warp areas until it means to take one.
 - The fixture's treasure hunt hides its chests on the start map, since such a build has no `e2e_field`.
 - With `-v`, the log has one line per step with its result.

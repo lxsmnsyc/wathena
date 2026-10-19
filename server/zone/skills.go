@@ -39,12 +39,13 @@ type unitSkill struct {
 }
 
 // skillLevel is pc_checkskill: the level of a skill the player learned,
-// or the level an item grants when it is higher.
+// or the level an item or player:give_skill grants for a time when it is
+// higher.
 func (p *Player) skillLevel(id int) int {
 	if social.IsGuildSkill(id) {
 		return p.guildSkillLevel(id)
 	}
-	lv := p.char.Skills[id]
+	lv := max(p.char.Skills[id], p.tempSkills[id])
 	if st := p.entity.status; st != nil && st.Player != nil {
 		lv = max(lv, st.Player.Skills[id])
 	}

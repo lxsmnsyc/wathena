@@ -828,6 +828,7 @@ Players change jobs through scripts, with the calls of proposal 0002, review dec
 - `player:change_job` ports `pc_jobchange`: job level 1 and job exp 0, the transcendent status points, a base level cap with a stat reset, equipment the new job cannot wear comes off, and a companion, mount or cart goes when the new job does not meet its `requires`. A male Dancer becomes a Bard. Without `force`, only the next jobs of `jobs.next_jobs` are allowed, with the levels of the job's `changes_from`, and a transcendent player stays in its line. The `job_change` event follows.
 - `player:rebirth` makes a second class at 99/50 a High Novice at 1/1 with 100 status points and the platinum skills, as the rebirth NPC (`npc/jobs/valkyrie.txt`).
 - `player:reset_skills`, `player:reset_stats`, `player:reset_skill` and `player:reset_stat` refund skill and status points as `pc_resetskill` and `pc_resetstate`, and by rAthena's stat cost table. Quest skills stay.
+- `player:give_skill` ports `pc_skill` for rAthena's `skill` command (review decision 57, `giveskill.go`). It needs the flagged permission `player.skills`. A permanent level is learned and saved, sends the skill list, and computes the stats again for a passive skill. A temporary level is kept in `tempSkills`, which `recalc` clears as `pc_calc_skilltree` does, unless only a status's own `status_calc_bl` asked for it. It sends nothing to the client and does not change the stats.
 - Migration 00012 saves the job level of the change to a second class (rAthena's `change_level_2nd`), which the skill tree reads, the second class before a rebirth, which picks the transcendent line, and the saved option bits of a cart, a falcon and a Peco Peco. A rider shows its mounted class, as `status_set_viewdata`.
 - The progress stats carry `STAT_ID_JOB`, and `JobName` carries the job's `display_name` after login and after each change. The client shows the name with the levels.
 
@@ -841,7 +842,7 @@ Jobs are records ([decision 0015](../docs/decisions/0015-job-definitions.md), an
 - The body of a player's look is the look job's, and the client names the job from `JobName`.
 - `TestCoreJobRecordsMatchRAthena` checks that the tables built from core's records match rAthena's for every job: 3,150 stat calculations of 175 jobs in renewal and 1,368 of 76 jobs in pre-renewal, with the maximum stats, exp tables and next jobs.
 
-Core places a Job Master in Prontera, since rAthena's job change quests mostly do not convert. It follows rAthena's level rules: job level 10 with Basic Skill 9 for a first class (base level 45 too for a Super Novice), job level 40 for a second class, and 99/50 for a rebirth.
+Core places a Job Master in Prontera, since many of rAthena's job change quests do not convert. The renewal first job changers of Swordman, Mage, Archer, Acolyte and Merchant convert since `player:give_skill`. It follows rAthena's level rules: job level 10 with Basic Skill 9 for a first class (base level 45 too for a Super Novice), job level 40 for a second class, and 99/50 for a rebirth.
 
 To try it, start a Swordman at job level 40 and talk to the Job Master at Prontera 151,191:
 

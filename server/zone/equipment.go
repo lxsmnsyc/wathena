@@ -399,7 +399,7 @@ func (z *Zone) equipment(p *Player) *status.Equipment {
 
 // markStats marks a player's stats for flushStats.
 func (z *Zone) markStats(p *Player) {
-	p.keepAspd = false
+	p.keepAspd, p.keepTempSkills = false, false
 	if !p.statsDirty {
 		p.statsDirty = true
 		z.dirtyStats = append(z.dirtyStats, p)

@@ -6,10 +6,10 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 4957 of 15337 NPC lines are placed, duplicates too: 282 shops and 4675 of 14865 script NPCs.
-- 131 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
+- 4982 of 15337 NPC lines are placed, duplicates too: 282 shops and 4700 of 14865 script NPCs.
+- 136 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
 - 54 of 55 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
-- 259 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
+- 264 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
 - Pre-renewal classic is experimental until `core.ruleset.pre_renewal` matches rAthena's pre-renewal (phase 10 item 1). `waserver` warns at start.
 
 ## Folders
@@ -19,16 +19,16 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | Folder | Lines | Placed | Not placed |
 |---|---:|---:|---:|
 | airports | 63 | 55 | 8 |
-| cities | 947 | 698 | 249 |
+| cities | 947 | 699 | 248 |
 | events | 150 | 110 | 40 |
 | guides | 95 | 11 | 84 |
 | guild3 | 10 | 0 | 10 |
 | instances | 671 | 4 | 667 |
-| jobs | 1804 | 506 | 1298 |
+| jobs | 1804 | 511 | 1293 |
 | kafras | 97 | 87 | 10 |
 | merchants | 690 | 223 | 467 |
 | other | 3466 | 579 | 2887 |
-| quests | 6622 | 2285 | 4337 |
+| quests | 6622 | 2304 | 4318 |
 | warps | 250 | 117 | 133 |
 
 The extract leaves out the script NPCs of these folders, so none of them load:
@@ -45,13 +45,13 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 
 ## What blocks the rest
 
-4152 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+4129 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|
 | event onenable | 469 | event onenable |
 | questinfo | 395 | questinfo |
-| parameter MaxWeight | 220 | parameter MaxWeight |
+| parameter MaxWeight | 221 | parameter MaxWeight |
 | npctalk | 207 | npctalk: as another NPC |
 | isequipped | 171 | isequipped |
 | emotion | 158 | emotion: on a player or another NPC |
@@ -60,12 +60,12 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 | event ondisable | 118 | event ondisable |
 | getexp | 114 | getexp |
 | callfunc F_time_limit_recorder | 113 | callfunc F_time_limit_recorder: it does not parse: at 323 near ",": set needs a variable |
-| specialeffect | 110 | specialeffect |
+| specialeffect | 111 | specialeffect |
 | cloakonnpc | 100 | cloakonnpc |
 | disablenpc | 96 | disablenpc |
 | variables | 89 | variables: $@god_check1 is a temporary server variable |
+| floating | 83 | floating: a script NPC without a map runs only through events |
 | disable_items | 82 | disable_items |
-| floating | 81 | floating: a script NPC without a map runs only through events |
 | cloakoffnpcself | 76 | cloakoffnpcself |
 | sprite | 62 | sprite: -1 is not an NPC sprite |
 | event oncommandon | 60 | event oncommandon |
@@ -73,7 +73,7 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 | setunittitle | 51 | setunittitle |
 | event onreset | 50 | event onreset |
 | getarg | 41 | getarg: outside a function |
-| parameter SkillPoint | 38 | parameter SkillPoint |
+| parameter SkillPoint | 39 | parameter SkillPoint |
 | enablenpc | 36 | enablenpc |
 | f_infoboard | 36 | f_infoboard |
 | setpcblock | 36 | setpcblock |

@@ -46,13 +46,18 @@ var (
 	// The Phoenix, the Taekwon job changer, stands at payon_in01,62,10
 	// (npc/re/jobs/1-1e/taekwon.txt).
 	phoenix = kroPlace{"map/payon_in01", 62, 10}
+	// The Swordman job changer stands at izlude_in,74,172
+	// (npc/re/jobs/1-1/swordman.txt). It converts since the skill
+	// command (review decision 57).
+	swordmanGuild = kroPlace{"map/izlude_in", 74, 172}
 )
 
 // Skills, jobs and items of the kRO check.
 const (
-	skillBasic uint32 = 1 // NV_BASIC
-	jobTaekwon        = 4046
-	itemApple  uint32 = 512
+	skillBasic  uint32 = 1 // NV_BASIC
+	jobTaekwon         = 4046
+	jobSwordman        = 1
+	itemApple   uint32 = 512
 )
 
 // fieldMonsters are the monsters of prt_fild08.
@@ -69,6 +74,9 @@ var fieldMonsters = []string{"Poring", "Lunatic", "Fabre"}
 //     field's spawns there, and walks back through the warp;
 //   - takes the Kafra's teleport to Payon, and becomes a Taekwon at the
 //     Phoenix, a converted job change NPC.
+//
+// A second Novice walks from Prontera to the Swordman Guild in Izlude
+// and becomes a Swordman there (review decision 57).
 //
 // The bot walks along routes over the build's cells, in legs short
 // enough for one walk command each, through rAthena's warps of
@@ -188,6 +196,20 @@ func TestClassicKRO(t *testing.T) {
 		k.talkThrough("Phoenix", "Yes.")
 		p.Until("a Taekwon", func(_ View, g Game) bool { return g.Stats[wathenav1.StatId_STAT_ID_JOB] == jobTaekwon })
 		return fmt.Sprintf("%s, job %d at job level %d", strings.Join(hops, ", "), p.Stat(wathenav1.StatId_STAT_ID_JOB), p.Stat(wathenav1.StatId_STAT_ID_JOB_LEVEL))
+	})
+
+	k.step("change job at the Swordman Guild", func() string {
+		s := srv.Join(t, "Swordsman")
+		k.p = s
+		s.Until("in Prontera", func(v View, _ Game) bool { return v.Map == "map/prontera" })
+		for range 9 {
+			s.Learn(skillBasic)
+		}
+		s.Until("Basic Skill 9", func(_ View, g Game) bool { return g.Skills[skillBasic].GetLevel() == 9 })
+		hops := k.travel(swordmanGuild, 2)
+		k.talkThrough("Swordman", "I want to be a Swordman.", "Yes, I do.")
+		s.Until("a Swordman", func(_ View, g Game) bool { return g.Stats[wathenav1.StatId_STAT_ID_JOB] == jobSwordman })
+		return fmt.Sprintf("%s, job %d at job level %d", strings.Join(hops, ", "), s.Stat(wathenav1.StatId_STAT_ID_JOB), s.Stat(wathenav1.StatId_STAT_ID_JOB_LEVEL))
 	})
 	srv.CheckLogs()
 }

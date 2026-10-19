@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred.
 
 Done:
 
@@ -188,6 +188,7 @@ Done:
   - Kafra pushcart rental converts. Niflheim's negative `percentheal` still needs an API call.
   - A pre-renewal classic world warns at start that it is experimental.
   - Part B followed the same day ([decision 0052](decisions/0052-classic-mode-part-b.md), review decision 56): touch handlers with a conversation, negative `player:heal_percent`, gzipped extracts in the release binaries, the kRO end-to-end run and browser check, and the release notes list in docs/generated/classic-coverage.md.
+  - The `skill` command followed ([decision 0053](decisions/0053-skill-command.md), review decision 57): `player:give_skill` with the flagged permission `player.skills`, and the converter's `skill` and `addtoskill`. renewal places 264 of 710 job change NPCs, up from 259, with the first job changers of Swordman, Mage, Archer, Acolyte and Merchant. The record also has the checks that commit aee8533 deferred.
 
 Open review items:
 
@@ -209,6 +210,7 @@ Known issues:
 - The kRO client is extracted at `data/kro/client` (gitignored), and the original zip is deleted. It is the only copy. Build assets with `wactl assets build` and the source `grf:data/kro/client`.
 - `scripts/check.sh` removes its PostgreSQL container with `docker rm -f`, without `-v`, so each run that starts one leaves an unnamed volume.
 - A pause of `waserver` over one second while a zone makes its Lua state ends the prelude at the wall-clock limit, and the zone's scripts stay off until a restart (decision 0037, "Left").
+- On 2026-10-19, one run of `TestDuplicationRestoresWithDatabase` under heavy load counted one Jellopy more than at the start, in a full audit during the moves ([decision 0053](decisions/0053-skill-command.md)). Two more runs passed. It needs a look before the release.
 - The repository has no CI ([decision 0026](decisions/0026-local-checks.md)). Run `scripts/check.sh quick` before each commit and `scripts/check.sh` before a push.
 
 Next:

@@ -364,6 +364,9 @@ new_player, player_ids = handle_type("player", {
 		options = options or {}
 		return (call(H.player_reset_skill, player_ids[self], skill, options.to_level, options.with_dependents or false))
 	end,
+	give_skill = function(self, skill, level, kind)
+		return (call(H.player_give_skill, player_ids[self], skill, level, kind))
+	end,
 	reset_stat = function(self, stat, options)
 		if options ~= nil and type(options) ~= "table" then
 			error("player:reset_stat: the options must be a table", 2)

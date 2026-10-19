@@ -253,6 +253,7 @@ Each limit has a range:
 | `spawns.modify` | Needs the owner's approval. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
 | `world.generate` | Needs the owner's approval. It adds generation layers and quest templates with `wa.generation`, which add places, objects, bosses and quests to a new procedural world (review decision 46). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. `rules.override` also lets the `chat` event hear whispers, party and guild lines ("Chat" below). |
+| `player.skills` | Needs approval, and is logged as a warning at each start. It gives players skills and skill levels outside their skill tree, without skill points, with `player:give_skill` (review decision 57). |
 | `data.core_override` | Needs approval, and is logged as a warning at each start. It changes the prices, drops and exp of records that other mods added, core's too, and the chat filter's words ("Data overlays" below, review decision 52). |
 
 - A permission that needs approval must be in `permissions`, and the owner approves it in the server config under `mods.approve`.
@@ -2335,14 +2336,21 @@ end
 | `player:reset_stats()` | Every stat goes back to 1, and the status points become those of the base level, 52 more for a transcendent job, as `resetstatus`. |
 | `player:reset_skill(skill, { to_level, with_dependents })` | Lowers one skill, to 0 by default, and refunds its points. Returns false, and changes nothing, when a learned skill needs a higher level of it, unless `with_dependents = true`, which lowers those skills to 0 too and refunds them. |
 | `player:reset_stat(stat, { to })` | Lowers one stat (`"str"` to `"luk"`), to 1 by default, and refunds what raising it cost, by rAthena's cost table: `2 + (value - 1) / 10` points per step below 100 in renewal, and `1 + (value + 9) / 10` in pre-renewal. Returns false when the stat is not above the value. |
+| `player:give_skill(skill, level, kind)` | Gives a skill, as rAthena's `skill` command. It needs `player.skills`, which is flagged. It skips the skill tree and the skill points. Returns false for a skill the skill data does not have, a guild skill, or a level above 13. The kinds are below. |
 
 - Quest skills, which cost no skill points, are never lowered or refunded. Basic Skill stays for every job but the Novice and the High Novice, as in `resetskill`.
 - The changes follow `pc_jobchange`: a base level above the new job's maximum comes down and the stats reset; a change into a transcendent job adds 52 status points, and a change out of one takes them back or resets the stats; equipment the new job cannot wear comes off; and a companion, a mount or a cart goes when the new job does not meet its `requires` (see "Companions, mounts and carts").
 - The job level at the change from a first class to a second class is saved (rAthena's `change_level_2nd`). The skill tree reads it: a second class sees its own skills once it spent the points of that many first class job levels.
 - Every call computes the player's stats before it returns, and sends the new skill list.
+- `player:give_skill`'s `kind` is one of these, as rAthena's `ADDSKILL_PERMANENT`, `ADDSKILL_TEMP` and `ADDSKILL_TEMP_ADDLEVEL` (review decision 57):
+  - `"permanent"` sets the learned level, which is saved. Level 0 removes the skill. The client gets the skill list again, and a passive skill computes the stats again. Job NPCs give quest skills this way.
+  - `"temporary"` raises the skill's level to the given level, when it is higher.
+  - `"temporary_add"` adds the given level to the skill's level, up to 13.
+  - A temporary level is not saved. It goes when the player's skills are recalculated, as rAthena's `status_calc_pc` does: on a change of equipment, a level up, a map change, a job change or a passive skill. A status's own recalculation keeps it, as rAthena's `status_calc_bl`.
+  - A temporary level counts when the player casts the skill. The client's skill list does not show it, and it does not change the stats, as in rAthena.
 - The job tests of `wa.jobs` (`is_transcendent`, `base_job`, `first_job` and the others) work with mod jobs. `first_job` of a mod job is the first job of its class's line.
 
-Core places a Job Master in Prontera (`core:Job Master#prontera`). It changes a Novice or a High Novice at job level 10 with Basic Skill 9 into a first class (a Super Novice needs base level 45 too), a first class at job level 40 into a second class, and gives a rebirth to a second class at base level 99 and job level 50. rAthena's job change quests mostly do not convert yet: the coverage reports in [docs/generated](../docs/generated) count them as "Job change NPCs".
+Core places a Job Master in Prontera (`core:Job Master#prontera`). It changes a Novice or a High Novice at job level 10 with Basic Skill 9 into a first class (a Super Novice needs base level 45 too), a first class at job level 40 into a second class, and gives a rebirth to a second class at base level 99 and job level 50. rAthena's job change quests partly convert: the coverage reports in [docs/generated](../docs/generated) count them as "Job change NPCs". The renewal first job changers of Swordman, Mage, Archer, Acolyte and Merchant convert since `player:give_skill`.
 
 The sample mod in [examples/job-trainer](examples/job-trainer) adds a trainer that lowers one skill or one stat for a fee, and its tests walk the Job Master's paths.
 

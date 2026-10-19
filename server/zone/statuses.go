@@ -194,6 +194,11 @@ func (v scEnv) Recalc(u sc.Unit, def *sc.Def) {
 			// and Plagiarism only while a status is active.
 			p.keepAspd = true
 		}
+		if !pending && def != nil && !def.Calcs("base") {
+			// Only SCB_BASE's status_calc_pc recalculates skills, which
+			// ends player:give_skill's temporary levels.
+			p.keepTempSkills = true
+		}
 		z.flushStats()
 	case e.monster != nil && e.monster.spawn.Status != nil:
 		z.recalcMonster(e)

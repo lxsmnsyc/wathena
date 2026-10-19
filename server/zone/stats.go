@@ -59,6 +59,12 @@ func (z *Zone) recalc(p *Player) {
 		}
 		return
 	}
+	// status_calc_pc starts with pc_calc_skilltree, which ends the
+	// temporary levels of player:give_skill.
+	if !p.keepTempSkills {
+		p.tempSkills = nil
+	}
+	p.keepTempSkills = false
 	c := p.char
 	c.BaseLevel, c.JobLevel = 1, 1
 	if z.Progress != nil {

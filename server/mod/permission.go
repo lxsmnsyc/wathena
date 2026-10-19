@@ -61,6 +61,9 @@ var Permissions = []Permission{
 	// change the prices, drops, exp or reserved chat words of records
 	// other mods added, core's too.
 	{Name: "data.core_override", Approval: true, Flagged: true, Allows: "change the prices, drops and exp of items, monsters and quests, and the chat filter's words, that other mods added, core's too"},
+	// player.skills is review decision 57's: player:give_skill, which
+	// gives skills outside the skill tree and skill points.
+	{Name: "player.skills", Approval: true, Flagged: true, Allows: "give players skills and skill levels outside their skill tree, without skill points"},
 }
 
 // LookupPermission returns a permission by name.

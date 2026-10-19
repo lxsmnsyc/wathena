@@ -1566,8 +1566,15 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - The release binaries embed gzipped extracts, made by `go generate` with the `gzextracts` tag. waserver went from 131.4 MB to 49.3 MB for darwin/arm64.
    - The kRO run and the browser check passed on a build of four of the client's maps. The full kRO build stopped twice at the 3 GB floor of free disk.
    - Review items:
-     - The kRO run and the browser check on the full kRO build.
+     - The kRO run and the browser check on the full kRO build. Both passed on 2026-10-19 with a `--fast` build of 2.8 GB ([decision 0053](../decisions/0053-skill-command.md)).
      - `R.touch_one` with a dialog and a player already in the area when the first one leaves. Matching rAthena needs a way to start a conversation with another player, a Lua API addition.
      - Clicking an NPC that has a touch area and no touch label when a player steps into it, as rAthena does.
-     - The `skill` command, which the renewal first job changers need. It is a Lua API addition.
+     - The `skill` command, which the renewal first job changers need. Settled by review decision 57 and built the same day ([decision 0053](../decisions/0053-skill-command.md)), as below.
      - `percentheal -100` and the Poison Bottle: rAthena kills, and wAthena leaves 1 HP, as decision 56 says.
+   - Review decision 57, built on 2026-10-19 ([decision 0053](../decisions/0053-skill-command.md)):
+     - `player:give_skill(skill, level, kind)` with the kinds `permanent`, `temporary` and `temporary_add`, as `pc_skill`. The kind is required. A temporary level goes at the next full recalculation (`status_calc_pc`), and a status's own recalculation keeps it.
+     - The permission is new: `player.skills`, which needs approval and is flagged. No existing permission fit.
+     - It returns false for an unknown skill, a guild skill, or a level above 13. A negative level or another kind raises an error.
+     - The converter maps `skill` and `addtoskill`. `SKILL_PERM_GRANT` does not convert. renewal places 264 of 710 job change NPCs, up from 259, and the first job changers of Swordman, Mage, Archer, Acolyte and Merchant.
+     - No other Lua API change was made.
+     - Review items: `SKILL_PERM_GRANT`, `jobname` for the Thief Guide, temporary and item skills in the client's skill list, and `player:get_skill_level` with temporary and item levels.

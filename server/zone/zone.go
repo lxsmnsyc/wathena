@@ -274,6 +274,13 @@ type Player struct {
 	// keepAspd is set while the stats wait for a status's own
 	// status_calc_bl, which does not compute ASPD.
 	keepAspd bool
+	// tempSkills are the levels player:give_skill gave for a time, by
+	// skill ID, as pc_skill's ADDSKILL_TEMP and ADDSKILL_TEMP_ADDLEVEL.
+	// They go at the next recalc, as pc_calc_skilltree clears them in
+	// status_calc_pc, unless keepTempSkills is set: a status's own
+	// status_calc_bl does not recalculate skills.
+	tempSkills     map[int]int
+	keepTempSkills bool
 	// rogue is the state of the Rogue's skills: the skill Plagiarism
 	// copied, and Gangster's Paradise.
 	rogue rogueState

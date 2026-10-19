@@ -1038,6 +1038,8 @@ func (b *body) commandErr(name string, args []Expr) error {
 		return b.jobchange(args)
 	case "resetlvl":
 		return b.resetlvl(args)
+	case "skill", "addtoskill":
+		return b.skill(name, args)
 	case "resetskill":
 		b.line("player:reset_skills()")
 	case "resetstatus":
@@ -1587,6 +1589,64 @@ func (b *body) jobchange(args []Expr) error {
 		b.line("end")
 	}
 	b.line("player:change_job(%s, { force = true })", job.asInt())
+	return nil
+}
+
+// skillKinds are the kinds of player:give_skill by rAthena's
+// e_addskill_type: SKILL_PERM, SKILL_TEMP and SKILL_TEMPLEVEL.
+var skillKinds = []string{0: "permanent", 1: "temporary", 2: "temporary_add"}
+
+// skill converts rAthena's skill and addtoskill to player:give_skill
+// (review decision 57). The flag is SKILL_TEMP by default, and
+// SKILL_TEMPLEVEL for addtoskill. A computed skill or flag does not
+// convert, and neither does SKILL_PERM_GRANT, which the API does not
+// have.
+func (b *body) skill(name string, args []Expr) error {
+	if len(args) < 2 || len(args) > 3 {
+		return unsupported(name, "arguments")
+	}
+	v, err := b.expr(args[0])
+	if err != nil {
+		return err
+	}
+	skill := ""
+	switch {
+	case v.str != nil:
+		skill = *v.str
+	case v.static != nil:
+		if s, ok := b.n.c.consts.SkillName(*v.static); ok {
+			skill = s
+		}
+	}
+	if skill == "" {
+		return unsupported(name, "a computed skill")
+	}
+	level, err := b.expr(args[1])
+	if err != nil {
+		return err
+	}
+	kind := 1
+	if name == "addtoskill" {
+		kind = 2
+	}
+	if len(args) == 3 {
+		flag, err := b.expr(args[2])
+		if err != nil {
+			return err
+		}
+		if flag.static == nil {
+			return unsupported(name, "a computed flag")
+		}
+		if *flag.static == 3 {
+			return unsupported(name, "SKILL_PERM_GRANT")
+		}
+		if *flag.static < 0 || *flag.static >= int64(len(skillKinds)) {
+			return unsupported(name, "a flag other than 0 to 3")
+		}
+		kind = int(*flag.static)
+	}
+	id := b.n.file.record("skills.id", skill)
+	b.line("player:give_skill(%s, %s, %s)", id, level.asInt(), luaString(skillKinds[kind]))
 	return nil
 }
 

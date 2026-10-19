@@ -158,9 +158,9 @@ deploy/README.md has a "Classic mode" section that links it.
 
 ## Review items
 
-- The kRO run and the browser check on the full kRO build, on a machine with the disk for it. Both passed on the smaller build of four maps, which has no textures, models or sprites of the client.
+- The kRO run and the browser check on the full kRO build, on a machine with the disk for it. Both passed on the smaller build of four maps, which has no textures, models or sprites of the client. [Decision 0053](0053-skill-command.md) ran both on the full build with `--fast`, and both passed.
 - `R.touch_one` with a dialog and the next player already in the area. A way to start a conversation with another player, or a touch event the zone fires again, would match rAthena. Either is a Lua API addition.
 - rAthena clicks an NPC that has a touch area and no touch label when a player steps into it (`npc_touch_areanpc`'s fallback to `npc_click`). Now that touch has a conversation, the converter could do the same. Decision 56 did not ask for it, so it is not made.
-- The renewal first job changers (Swordman, Mage, Archer, Acolyte, Merchant and Thief) do not convert: they need the `skill` command, which grants quest skills. It is a Lua API addition.
+- The renewal first job changers (Swordman, Mage, Archer, Acolyte, Merchant and Thief) do not convert: they need the `skill` command, which grants quest skills. It is a Lua API addition. Review decision 57 approved `player:give_skill`, and [decision 0053](0053-skill-command.md) built it: all but the Thief convert now.
 - `percentheal -100` kills in rAthena and leaves 1 HP in wAthena, which changes the Poison Bottle.
 - A converted NPC without a sprite (-1) gets `HIDDEN_NPC`, a sprite of class 111. rAthena lets a player answer such an NPC from anywhere (`npc_checknear`). wAthena checks 15 cells, so a touch area wider than that with a dialog may refuse answers from its edge.

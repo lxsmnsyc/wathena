@@ -9,7 +9,8 @@ import (
 
 // Job changes and resets (proposal 0002, review decision 21):
 // player:change_job, player:rebirth, jobs.next_jobs, player:reset_skills,
-// player:reset_stats, player:reset_skill and player:reset_stat.
+// player:reset_stats, player:reset_skill and player:reset_stat, and
+// player:give_skill (review decision 57).
 
 // JobHost is what the job calls need of the zone.
 type JobHost interface {
@@ -28,7 +29,35 @@ type JobHost interface {
 	ResetSkill(player int64, skill, toLevel int, withDependents bool) (bool, error)
 	// ResetStat lowers one stat (0 STR to 5 LUK) and refunds its points.
 	ResetStat(player int64, stat, to int) (bool, error)
+	// GiveSkill is pc_skill: it gives a skill at a level, of a kind. It
+	// returns false when the skill does not exist. The level is 0 to
+	// MaxGivenSkillLevel.
+	GiveSkill(player int64, skill, level int, kind SkillKind) (bool, error)
 }
+
+// SkillKind is the kind of player:give_skill, as rAthena's
+// e_addskill_type.
+type SkillKind int
+
+const (
+	// SkillPermanent is ADDSKILL_PERMANENT: the level is learned and
+	// saved. Level 0 removes the skill.
+	SkillPermanent SkillKind = iota
+	// SkillTemporary is ADDSKILL_TEMP: the skill's level is the higher of
+	// its level and the given one, until the player's skills are
+	// recalculated.
+	SkillTemporary
+	// SkillTemporaryAdd is ADDSKILL_TEMP_ADDLEVEL: the given level adds
+	// to the skill's level, until the player's skills are recalculated.
+	SkillTemporaryAdd
+)
+
+// skillKinds are the kinds of player:give_skill by name.
+var skillKinds = map[string]SkillKind{"permanent": SkillPermanent, "temporary": SkillTemporary, "temporary_add": SkillTemporaryAdd}
+
+// MaxGivenSkillLevel is rAthena's MAX_SKILL_LEVEL: the highest level
+// player:give_skill gives.
+const MaxGivenSkillLevel = 13
 
 // jobHost is the zone's JobHost.
 func (r *Runtime) jobHost() (JobHost, error) {
@@ -200,5 +229,48 @@ func (r *Runtime) playerResetStat(c *script.Call) error {
 		return err
 	}
 	c.Return(script.Bool(done))
+	return nil
+}
+
+// playerGiveSkill is player:give_skill(skill, level, kind), as rAthena's
+// skill command (review decision 57).
+func (r *Runtime) playerGiveSkill(c *script.Call) error {
+	id, err := playerID(c)
+	if err != nil {
+		return err
+	}
+	if err := r.mutating("player:give_skill"); err != nil {
+		return err
+	}
+	if err := r.need("player:give_skill", "player.skills"); err != nil {
+		return err
+	}
+	skill, ok := c.Arg(1).AsInt()
+	if !ok || skill <= 0 || skill > maxJobID {
+		return errors.New("player:give_skill: want a skill from skills.id")
+	}
+	level, ok := c.Arg(2).AsInt()
+	if !ok || level < 0 {
+		return errors.New("player:give_skill: want a level from 0")
+	}
+	name, _ := c.Arg(3).AsString()
+	kind, ok := skillKinds[name]
+	if !ok {
+		return errors.New(`player:give_skill: want the kind "permanent", "temporary" or "temporary_add"`)
+	}
+	h, err := r.jobHost()
+	if err != nil {
+		return err
+	}
+	if level > MaxGivenSkillLevel {
+		// pc_skill refuses it with an error.
+		c.Return(script.Bool(false))
+		return nil
+	}
+	given, err := h.GiveSkill(id, int(skill), int(level), kind)
+	if err != nil {
+		return err
+	}
+	c.Return(script.Bool(given))
 	return nil
 }

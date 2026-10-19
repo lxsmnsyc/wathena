@@ -470,6 +470,7 @@ func (r *Runtime) init() error {
 		{"player_reset", r.playerReset},
 		{"player_reset_skill", r.playerResetSkill},
 		{"player_reset_stat", r.playerResetStat},
+		{"player_give_skill", r.playerGiveSkill},
 		{"constants", r.constantsTable},
 		{"npc_field", r.npcField},
 		{"npc_emotion", r.npcEmotion},

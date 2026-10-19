@@ -669,6 +669,15 @@ function wa_Player:expand(limit, amount) end
 ---@return boolean
 function wa_Player:reset_stat(stat, options) end
 
+---Gives the player a skill, as rAthena's skill command. It skips the skill tree and the skill points. permanent sets the learned level, which is saved, and 0 removes the skill; the client gets the skill list again, and a passive skill changes the stats at once. temporary raises the skill's level to the given level, and temporary_add adds the given level to it, up to 13. A temporary level goes when the player's skills are recalculated, as on a change of equipment, a level up or a map change, as in rAthena. The client does not list it, and it does not change the stats. Returns false for a skill the skill data does not have, a guild skill, or a level above 13.
+---
+---Needs the permission `player.skills`.
+---@param skill integer A skill from skills.id.
+---@param level integer 0 to 13, rAthena's MAX_SKILL_LEVEL.
+---@param kind "permanent"|"temporary"|"temporary_add" rAthena's ADDSKILL_PERMANENT, ADDSKILL_TEMP and ADDSKILL_TEMP_ADDLEVEL.
+---@return boolean
+function wa_Player:give_skill(skill, level, kind) end
+
 ---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
