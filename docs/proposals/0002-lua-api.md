@@ -1111,6 +1111,15 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Owners by account ID.** `wactl world new` records the first admin account's ID as the owner. `staff.owners` by name still works for existing worlds, with a startup warning.
     - **Passkeys for staff** count as a second factor only when the passkey verified its user (PIN or biometric).
 
+55. Classic mode for the first release (phase 8 step 6). The user approved these on 2026-10-19:
+    - **More NPC folders.** The extract adds rAthena's `quests`, `warps` and `events` folders. What converts loads, and what does not is refused and listed. Instances, guild castles and battlegrounds stay in phase 10.
+    - **OnTouch.** An NPC record may set `touch: { x_span, y_span }`, the area around the NPC, as rAthena's `OnTouch` and `OnTouch_` areas. A player who steps into it fires the NPC's `touch` event with the player; a player who leaves it fires `untouch`. The converter maps `OnTouch` and `OnTouch_` labels to them. This adds to API 1.0.
+    - **Bosses.** Spawns keep rAthena's boss flag and respawn variance, and MVPs are announced as rAthena does.
+    - **Kafras** convert fully, including cart rental through the existing cart API.
+    - **End-to-end check.** A full kRO asset build with `maps: all` and `mode: renewal`. A bot warps from Prontera to a field, fights spawns, uses a Kafra, buys from a shop and changes job at a converted NPC. A Chromium browser check covers the same world.
+    - **Release notes** list what does not convert, generated from the converter's reports.
+    - **Renewal only.** Classic ships with `mode: renewal`. Pre-renewal classic is marked experimental until `core.ruleset.pre_renewal` (phase 10 item 1).
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
