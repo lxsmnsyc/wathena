@@ -171,7 +171,7 @@ type Gateway struct {
 	// Conns are the connection limits per client address
 	// (connlimit.go). DefaultConnLimits when zero.
 	Conns ConnLimits
-	Log     *slog.Logger
+	Log   *slog.Logger
 	// Metrics counts each connection's bytes and messages. It may be
 	// nil.
 	Metrics *metrics.Conns
