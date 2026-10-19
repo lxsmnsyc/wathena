@@ -1126,6 +1126,11 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Extract size.** Extracts stay JSON in git. The binaries embed gzipped copies made at build time.
     - **NPC-to-NPC commands** (`donpcevent`, enable and disable, cloaking, `getvariableofnpc`) stay in phase 10 with the converter review of review decision 32.
 
+57. The `skill` command (phase 8 step 6). The user approved this on 2026-10-19:
+    - **`player:give_skill(skill, level, kind)`**, as rAthena's `skill` script command. `kind` is `permanent`, `temporary` or `temporary_add`, matching rAthena's `ADDSKILL_PERMANENT`, `ADDSKILL_TEMP` and `ADDSKILL_TEMP_ADDLEVEL`. A temporary skill goes when the player's skills are recalculated, as in rAthena. It needs the `player.skills` permission, or a new flagged one if none fits.
+    - The converter maps `skill` to it, so the renewal first-job changers in towns convert.
+    - This adds to API 1.0.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
