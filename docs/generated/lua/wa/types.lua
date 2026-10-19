@@ -1019,7 +1019,7 @@ function wa_GenerationNode:child(label) end
 ---@return wa.GenerationStream
 function wa_GenerationNode:stream() end
 
----A number for a cell, the same for the same node and cell, from all 64 bits.
+---A number for a cell, the same for the same node and cell, from all 64 bits. It is the first 8 bytes of HMAC-SHA256 of the cell, keyed by the node, so players cannot recover the node from it (review decision 54).
 ---@param x integer
 ---@param y integer
 ---@return integer

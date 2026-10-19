@@ -91,6 +91,9 @@ type Config struct {
 	// Roles are the configured roles, and Owners the config's owners.
 	Roles  *staff.Roles
 	Owners []string
+	// OwnerAccount is the world's owner by account ID, from the world
+	// row, or 0 (review decision 54).
+	OwnerAccount int64
 	// Retention is the retention job, for GET /retention. It may be nil.
 	Retention Retention
 	// LoginIPDays is retention.login_ip_days: how far back an IP search
@@ -113,12 +116,9 @@ func New(cfg Config) (*Handler, error) {
 	if cfg.Pool == nil || cfg.Auth == nil || cfg.Roles == nil {
 		return nil, errors.New("admin: Pool, Auth and Roles are required")
 	}
-	h := &Handler{cfg: cfg, q: db.New(cfg.Pool), owners: map[string]bool{}, log: cfg.Log}
+	h := &Handler{cfg: cfg, q: db.New(cfg.Pool), owners: staff.OwnerNames(cfg.Owners), log: cfg.Log}
 	if h.log == nil {
 		h.log = slog.Default()
-	}
-	for _, o := range cfg.Owners {
-		h.owners[strings.ToLower(o)] = true
 	}
 	m := http.NewServeMux()
 	m.HandleFunc("GET "+Prefix+"me", h.call("", read, h.me))
@@ -314,12 +314,18 @@ func (h *Handler) need(w http.ResponseWriter, c caller, permission string, recen
 	return true
 }
 
-// caller finds a session's role: owner for the config's owners, else
-// the role the database keeps while the config has it. It counts only
-// with a second factor.
+// isOwner reports whether an account is an owner: the world's owner
+// account, or a name of staff.owners.
+func (h *Handler) isOwner(account int64, name string) bool {
+	return staff.IsOwner(h.cfg.OwnerAccount, h.owners, account, name)
+}
+
+// caller finds a session's role: owner for the world's owner account
+// and the config's owners, else the role the database keeps while the
+// config has it. It counts only with a second factor.
 func (h *Handler) caller(ctx context.Context, sess account.Session) (caller, error) {
 	c := caller{sess: sess}
-	if h.owners[strings.ToLower(sess.AccountName)] {
+	if h.isOwner(sess.AccountID, sess.AccountName) {
 		c.assigned = staff.Owner
 	} else {
 		role, err := h.q.StaffRoleOf(ctx, sess.AccountID)
@@ -361,8 +367,29 @@ func (h *Handler) listStaff(ctx context.Context, w http.ResponseWriter, r *http.
 	out := &adminv1.StaffList{}
 	var members []*adminv1.StaffMember
 	listed := map[int64]bool{}
-	// The owners first, in the config's order. An owner name without an
-	// account yet is listed with account ID 0.
+	// The world's owner account first, then the config's owners in its
+	// order. An owner name without an account yet is listed with account
+	// ID 0.
+	if id := h.cfg.OwnerAccount; id != 0 {
+		accounts, err := h.q.AccountsByIDs(ctx, []int64{id})
+		if err != nil {
+			h.unavailable(w, r, err)
+			return
+		}
+		tf, err := h.q.AccountsTwoFactor(ctx, []int64{id})
+		if err != nil {
+			h.unavailable(w, r, err)
+			return
+		}
+		if len(accounts) == 1 {
+			m := adminv1.StaffMember_builder{AccountId: id, Account: accounts[0].Name, Role: staff.Owner, FromConfig: true}
+			for _, t := range tf {
+				m.TwoFactor = t.TwoFactor
+			}
+			members = append(members, m.Build())
+			listed[id] = true
+		}
+	}
 	if len(h.cfg.Owners) > 0 {
 		names := make([]string, len(h.cfg.Owners))
 		for i, o := range h.cfg.Owners {
@@ -388,13 +415,17 @@ func (h *Handler) listStaff(ctx context.Context, w http.ResponseWriter, r *http.
 		}
 		for _, o := range h.cfg.Owners {
 			m := adminv1.StaffMember_builder{Account: o, Role: staff.Owner, FromConfig: true}
+			skip := false
 			for _, a := range accounts {
 				if strings.EqualFold(a.Name, o) {
 					m.AccountId, m.Account, m.TwoFactor = a.ID, a.Name, twoFactor[a.ID]
+					skip = listed[a.ID]
 					listed[a.ID] = true
 				}
 			}
-			members = append(members, m.Build())
+			if !skip {
+				members = append(members, m.Build())
+			}
 		}
 	}
 	for _, row := range rows {
@@ -445,8 +476,8 @@ func (h *Handler) findTarget(ctx context.Context, w http.ResponseWriter, r *http
 	case a.ID == c.sess.AccountID:
 		h.fail(w, http.StatusConflict, "conflict", "You cannot change your own role.")
 		return t, false
-	case h.owners[strings.ToLower(a.Name)]:
-		h.fail(w, http.StatusConflict, "conflict", "That account is an owner. Owners come from the config's staff.owners.")
+	case h.isOwner(a.ID, a.Name):
+		h.fail(w, http.StatusConflict, "conflict", "That account is an owner. Owners come from the world and the config's staff.owners.")
 		return t, false
 	}
 	role, err := h.q.StaffRoleOf(ctx, a.ID)
@@ -475,7 +506,7 @@ func (h *Handler) giveRole(ctx context.Context, w http.ResponseWriter, r *http.R
 	role, reason := req.GetRole(), strings.TrimSpace(req.GetReason())
 	switch {
 	case role == staff.Owner:
-		h.fail(w, http.StatusBadRequest, "bad_request", "The owner role comes only from the config's staff.owners.")
+		h.fail(w, http.StatusBadRequest, "bad_request", "The owner role comes only from the world and the config's staff.owners.")
 		return
 	case !h.cfg.Roles.Exists(role):
 		h.fail(w, http.StatusBadRequest, "bad_request", "There is no such role. The roles are "+strings.Join(h.cfg.Roles.Names(), ", ")+".")

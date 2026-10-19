@@ -28,12 +28,14 @@ type Session struct {
 }
 
 // SecondFactor reports whether the session logged in with a second
-// factor: a TOTP code, a recovery code or a passkey.
+// factor: a TOTP code, a recovery code or a passkey that verified its
+// user. A passkey without user verification proves possession only, so
+// it does not count (review decision 54).
 func (s Session) SecondFactor() bool { return secondFactor(s.Factors) }
 
 func secondFactor(factors []string) bool {
 	return slices.ContainsFunc(factors, func(f string) bool {
-		return f == factorTOTP || f == factorRecovery || f == factorPasskey
+		return f == factorTOTP || f == factorRecovery || f == factorPasskeyVerified
 	})
 }
 

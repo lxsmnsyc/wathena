@@ -179,7 +179,7 @@ read -rs PASSWORD
 printf '%s\n' "$PASSWORD" | go run ./tools/wactl world new --admin Admin --admin-password-file -
 ```
 
-`--ruleset` is `renewal` by default, and must match `waserver`'s `--mode`. `--mode` sets the world mode, `classic` or `procedural` (see "World modes"). The account has no staff role. The command prints the `staff.owners` lines that make it the owner (see "Staff and admin tools").
+`--ruleset` is `renewal` by default, and must match `waserver`'s `--mode`. `--mode` sets the world mode, `classic` or `procedural` (see "World modes"). The command records the account's ID as the world's owner (review decision 54), so it needs no `staff.owners` line (see "Staff and admin tools").
 
 ### World modes
 
@@ -404,7 +404,7 @@ Every account page of a logged in player has a menu: Characters, Account setting
 
 - `/account/safety` lists each character's block list with an Unblock button, which works whether the character plays or not. It lists the reports the characters filed, with Open, Action taken or No action, and the sanctions on the account and its characters, active and past.
 - `/account/data` downloads the data export, a JSON file in the format of decision 0032, with the mods' saved variables of the account and its characters (decision 0036) and each character's quest log (decision 0043). It needs a login from the last 10 minutes, works once a day, and is refused while a character of the account is in the game or on autotrade. It holds no password, codes, keys or tokens.
-- `/account/data` also deletes the account. The player confirms the password if the last login is older than 10 minutes, and types the account name. A request is refused while a character leads a guild with other members, and for an account that `staff.owners` names. A banned account may ask.
+- `/account/data` also deletes the account. The player confirms the password if the last login is older than 10 minutes, and types the account name. A request is refused while a character leads a guild with other members, for the world's owner account, and for an account that `staff.owners` names. A banned account may ask.
 - For 14 days the characters cannot play: their connections close with `DISCONNECT_REASON_ACCOUNT_DELETION`, game tickets and Play answer with the date, and the gateway refuses their logins. A login shows the date and a Cancel button on the characters page.
 - The account service asks for the deletion through `request_account_deletion`, which sets the request's time and the time of the deletion from the database clock, at least 14 days apart (migration 00038).
 - The deletion job runs in `waserver` every hour, on the game role. It takes the characters out of parties, guilds and friend lists in memory, then calls `delete_account`, which checks the time on the database clock, not the server's, and deletes the account's personal data, its characters and their chat lines in one transaction. The logs, reports and mails that other players need keep the character IDs, without a link to the account. Decision 0032 lists what each table keeps.
@@ -493,7 +493,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `chat.log_days` | none | none | Deprecated: use `retention.chat_days`. It still works, with a warning. Set with a different `retention.chat_days`, it is an error. |
 | `retention.login_ip_days`, `retention.chat_days`, `retention.item_log_days`, `retention.audit_days` | none | `90`, `30`, `180`, `730` | Days the server keeps login records with IP addresses, chat lines, the item and zeny logs, and the GM audit log. `login_ip_days` and `chat_days` are 1 to 3650. `item_log_days` and `audit_days` are 30 to 3650. A period longer than its default logs a warning at start and shows one on the admin World screen. See "Retention". |
 | `jail.map`, `jail.cells` | none | `sec_pri`, `[[49, 75], [24, 75]]` | Where jailed players go, as rAthena's `MAP_JAIL` and `pc_jail`. A jail map that does not run logs a warning. |
-| `staff.owners` | none | none | Account names with the `owner` role. See "Staff and admin tools". |
+| `staff.owners` | none | none | Account names with the `owner` role, for worlds made before the owner ID. `waserver` warns at start when it is set. See "Staff and admin tools". |
 | `staff.roles` | none | `admin`, `game_master`, `moderator` | Role names and their permissions. A list replaces the defaults. |
 | `privacy.contact` | none | none | How players reach the owner about their data, such as an email address, on `/account/privacy`. At most 1,000 bytes. |
 | `privacy.text` | none | none | The owner's privacy notice, as plain text with paragraphs at blank lines. At most 20,000 bytes. See "The account page". |
@@ -968,12 +968,17 @@ WHERE r.status = 'open' ORDER BY r.id, c.at;
 
 Staff roles, the admin API, the GM audit log, moderation, GM commands, the world, events and mods tools and the admin screens follow strategy sections 7.8 and 10.6, and proposal 0002, review decisions 33 to 36 ([decision 0028](../docs/decisions/0028-staff-roles-and-audit.md), [decision 0029](../docs/decisions/0029-player-search-and-item-history.md), [decision 0030](../docs/decisions/0030-moderation-and-gm-commands.md), [decision 0031](../docs/decisions/0031-world-events-and-mods-tools.md)).
 
-Roles come from the config:
+The owner role has every permission. It comes from two places:
+
+- The world's owner account, which `wactl world new` records by ID in `world.owner_account_id` (migration 00040, review decision 54). The role follows the ID, so a rename or a new account with the same name changes nothing.
+- `staff.owners`, a list of account names. It still works, for worlds made before migration 00040. `waserver` logs a warning at start whenever it is set, and another for each name with no account.
+
+The other roles come from the config:
 
 ```yaml
 staff:
-  # Accounts with the owner role, which has every permission. It comes
-  # only from here.
+  # Optional. Accounts with the owner role, by name, for worlds made
+  # before the owner ID. waserver warns at start when it is set.
   owners: [Alice]
   # Optional. A list replaces the defaults below.
   roles:
@@ -992,12 +997,12 @@ staff:
 | `game_master` | `moderation.reports`, `.mute`, `.kick`, `.jail` and `.ban`, and `commands.warp`, `.recall` and `.hide`. | `world.read`, `world.announce` and `events.control`. |
 | `moderator` | `moderation.reports`, `.mute`, `.kick` and `.jail`. | None. |
 - Owners and holders of `staff.assign` give the other roles on the admin screens. The database keeps them in `staff_roles`. No one changes their own role or an owner's, and a caller gives or takes only roles whose permissions it holds all of.
-- A role counts only for a login with TOTP, a recovery code or a passkey, on an account that still has TOTP or a passkey on. Giving and removing roles also needs a login, or a proof on `/account/reauth`, from the last 10 minutes.
+- A role counts only for a login with TOTP, a recovery code or a passkey that verified its user, on an account that still has TOTP or a passkey on. A passkey verifies its user with a PIN or a fingerprint, and its assertion then carries the UV flag. The session records the factor `passkey_verified` for it (migration 00041, review decision 54). A passkey without the flag logs in, but its session has no staff role. Giving and removing roles also needs a login, or a proof on `/account/reauth`, from the last 10 minutes.
 
 The admin screens are at `/admin` of the server's public URL. The page asks the admin API who you are, and loads the admin bundle only for a role that counts. A player who opens `/admin` sees "This page is for staff." and downloads nothing more. To try it:
 
-1. Put your account's name in `staff.owners` and start `waserver` with accounts (see "Running with accounts") and a client build.
-2. Turn TOTP on in `/account/settings`, log out, and log in again with the code.
+1. Use the account that `wactl world new` made, or put your account's name in `staff.owners`. Start `waserver` with accounts (see "Running with accounts") and a client build.
+2. Turn TOTP on in `/account/settings`, log out, and log in again with the code. A passkey that checks a PIN or a fingerprint works too.
 3. Open `/admin`. The tabs are the ones your role allows:
    - Staff: gives and removes roles.
    - Audit log: filters rows by staff account, action, target, dates and review.

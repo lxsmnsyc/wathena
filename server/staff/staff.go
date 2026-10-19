@@ -2,15 +2,17 @@
 // section 7.8, proposal 0002 review decision 33, decision 0028):
 //   - Permission names come from a fixed list, Catalog. The config is
 //     checked against it.
-//   - The config's staff.owners lists the accounts with the owner role,
-//     which has every permission and comes only from the config.
+//   - The owner role has every permission. The world's owner account,
+//     which `wactl world new` records by ID, has it (review decision
+//     54). So do the accounts that the config's staff.owners names, for
+//     worlds made before the owner ID.
 //   - The config's staff.roles maps role names to permission lists. A
 //     name such as moderation.* matches every permission of a group.
 //   - Owners and admins give the other roles from the admin screens, and
 //     the database keeps them. Registry holds them for the game.
 //   - A role counts only for a login with a second factor: a TOTP code,
-//     a recovery code or a passkey, on an account that still has TOTP or
-//     a passkey on.
+//     a recovery code or a passkey that verified its user, on an account
+//     that still has TOTP or a passkey on.
 package staff
 
 import (
@@ -25,8 +27,9 @@ import (
 	"time"
 )
 
-// Owner is the role of the config's staff.owners. It has every
-// permission and cannot be given from the admin screens.
+// Owner is the role of the world's owner account and the config's
+// staff.owners. It has every permission and cannot be given from the
+// admin screens.
 const Owner = "owner"
 
 // Permission is one name of the fixed list.
@@ -257,13 +260,16 @@ var accountName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{3,23}$`)
 // validAccountName is the account service's rule for account names.
 func validAccountName(s string) bool { return accountName.MatchString(s) }
 
-// Registry holds the staff roles for the game: the owners of the config
-// and the roles the admin screens gave, by account ID. It is safe for
-// use by many goroutines. In the all-in-one build the admin API tells it
-// of each change through StaffChanged.
+// Registry holds the staff roles for the game: the world's owner, the
+// owners of the config and the roles the admin screens gave, by account
+// ID. It is safe for use by many goroutines. In the all-in-one build the
+// admin API tells it of each change through StaffChanged.
 type Registry struct {
 	roles  *Roles
 	owners map[string]bool
+	// ownerAccount is the world's owner by account ID, or 0. It is set
+	// before the registry is shared.
+	ownerAccount int64
 
 	mu       sync.RWMutex
 	assigned map[int64]string
@@ -271,18 +277,46 @@ type Registry struct {
 
 // NewRegistry makes a registry. owners are account names.
 func NewRegistry(roles *Roles, owners []string) *Registry {
-	r := &Registry{roles: roles, owners: map[string]bool{}, assigned: map[int64]string{}}
-	for _, o := range owners {
-		r.owners[strings.ToLower(o)] = true
-	}
-	return r
+	return &Registry{roles: roles, owners: OwnerNames(owners), assigned: map[int64]string{}}
 }
+
+// SetOwnerAccount records the world's owner by account ID, from the
+// world row (review decision 54). 0 is none. Call it before the
+// registry is shared.
+func (r *Registry) SetOwnerAccount(account int64) { r.ownerAccount = account }
 
 // Roles are the configured roles.
 func (r *Registry) Roles() *Roles { return r.roles }
 
-// IsOwner reports whether an account name is one of the owners.
-func (r *Registry) IsOwner(name string) bool { return r.owners[strings.ToLower(name)] }
+// IsOwner reports whether an account is an owner: the world's owner
+// account, or an account that staff.owners names.
+func (r *Registry) IsOwner(account int64, name string) bool {
+	return IsOwner(r.ownerAccount, r.owners, account, name)
+}
+
+// IsOwner reports whether an account is an owner, given the world's
+// owner account (0 for none) and the lowercase names of staff.owners.
+// The account service and the admin API use it too.
+func IsOwner(ownerAccount int64, ownerNames map[string]bool, account int64, name string) bool {
+	if ownerAccount != 0 && account == ownerAccount {
+		return true
+	}
+	return ownerNames[strings.ToLower(name)]
+}
+
+// OwnerNames returns the lowercase names of staff.owners as a set.
+func OwnerNames(owners []string) map[string]bool {
+	out := make(map[string]bool, len(owners))
+	for _, o := range owners {
+		out[strings.ToLower(o)] = true
+	}
+	return out
+}
+
+// OwnersByNameWarning is the warning at start when staff.owners is set
+// (review decision 54). Owners by name still work for worlds made before
+// the owner ID, but a name with no account can be taken at signup.
+const OwnersByNameWarning = "staff.owners names owners by account name. New worlds record their owner by account ID; keep staff.owners only for owners that already have an account"
 
 // Load replaces the given roles, such as with the database's at start.
 func (r *Registry) Load(assigned map[int64]string) {
@@ -294,14 +328,15 @@ func (r *Registry) Load(assigned map[int64]string) {
 	}
 }
 
-// RoleOf returns an account's role: owner for an owner's name, else the
-// given role while the config still has it, else "". It does not check
-// the login's second factor; the caller does.
+// RoleOf returns an account's role: owner for the world's owner account
+// or an owner's name, else the given role while the config still has
+// it, else "". It does not check the login's second factor; the caller
+// does.
 func (r *Registry) RoleOf(account int64, name string) string {
 	if r == nil {
 		return ""
 	}
-	if r.IsOwner(name) {
+	if r.IsOwner(account, name) {
 		return Owner
 	}
 	r.mu.RLock()
@@ -330,7 +365,8 @@ func (r *Registry) StaffChanged(_ context.Context, account int64, role string) e
 type Login struct {
 	// AccountName is the account's name, for staff.owners.
 	AccountName string
-	// TwoFactor is set when the login's session used a second factor
+	// TwoFactor is set when the login's session used a second factor (a
+	// TOTP code, a recovery code, or a passkey that verified its user)
 	// and the account had TOTP or a passkey on.
 	TwoFactor bool
 	// Recent is set when the login's session proved who its player is

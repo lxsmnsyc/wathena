@@ -65,9 +65,11 @@ Run these in `deploy/compose`.
 
    `--ruleset` must match `mode` in `waserver.yml`. The command applies the migrations first, and makes the world's secret seed.
 
-   To give the account the owner role, put its name in `staff.owners` in `waserver.yml`, as the command prints. The role counts once the account turns on TOTP or a passkey and logs in with it. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
+   The command records the account's ID as the world's owner, so the account has the owner role with no change to `waserver.yml` (review decision 54). The role counts once the account turns on TOTP or a passkey and logs in with a TOTP code, a recovery code, or a passkey that checks a PIN or a fingerprint. A passkey that skips that check logs in without the role. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
 
-   List only names that already have an account in `staff.owners`. Whoever signs up first with a listed name becomes an owner. At startup the server logs a warning for each listed name that has no account.
+   `staff.owners` in `waserver.yml` still gives the owner role by account name, for worlds made before this change. The server logs a warning at start whenever it is set. If you use it:
+   - List only names that already have an account. Whoever signs up first with a listed name becomes an owner.
+   - At startup the server logs a warning for each listed name that has no account.
 6. Backup key. On your own machine, run `wactl world backup-key new --out backup-identity.txt`, or `age-keygen -o backup-identity.txt`. Keep the identity file offline. Put the recipient it prints, `age1...`, on a line of its own in `secrets/backup_recipients` on the server. See "Backups".
 7. Start: `docker compose up -d --wait`. It waits until every service is healthy. Open `https://WATHENA_DOMAIN/`, sign up, make a character and press Play.
 

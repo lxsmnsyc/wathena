@@ -89,6 +89,12 @@ type vectors struct {
 		Key     string   `json:"key"`
 		Outputs []string `json:"outputs"`
 	} `json:"chacha8"`
+	SecretHash []struct {
+		Key   string `json:"key"`
+		X     int64  `json:"x"`
+		Y     int64  `json:"y"`
+		Value string `json:"value"`
+	} `json:"secret_hash"`
 }
 
 // counter counts reads from a source.

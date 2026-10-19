@@ -28,8 +28,9 @@ import (
 //     and procedural.layout of --config, and each field's and dungeon
 //     floor's spawns from the seed's secret branch, with the mods'
 //     spawn_table hooks (decision 0042).
-//  3. It makes the first account with a password.
-//  4. It prints the staff.owners line that makes the account an owner.
+//  3. It makes the first account with a password, and records its ID
+//     as the world's owner (review decision 54).
+//  4. It prints how the owner role starts to count.
 //
 // Steps 2 and 3 run in one transaction, so a failure leaves no world.
 func worldNew(args []string) error {
@@ -38,7 +39,7 @@ func worldNew(args []string) error {
 	name := fs.String("name", "wAthena", "the world's name, 1 to 64 characters")
 	ruleset := fs.String("ruleset", "renewal", "the base ruleset: renewal or pre-renewal. waserver's mode must match it")
 	mode := fs.String("mode", gen.DefaultMode(), "the world mode: "+strings.Join(gen.Modes(), " or ")+". It cannot change later")
-	admin := fs.String("admin", "", "name of the first account, for the config's staff.owners: 4 to 24 ASCII letters, digits and underscores, starting with a letter")
+	admin := fs.String("admin", "", "name of the first account, the world's owner: 4 to 24 ASCII letters, digits and underscores, starting with a letter")
 	passwordFile := fs.String("admin-password-file", "", "file with the account's password on its first line, or - for standard input")
 	config := fs.String("config", "", "waserver.yml, for a procedural world's layout and spawns: its mods section, procedural.layout and spawns")
 	if err := fs.Parse(args); err != nil {
@@ -118,7 +119,7 @@ func worldNew(args []string) error {
 		fmt.Print(contentText(w.Content))
 		fmt.Print(rotationText(w.Layout, w.Rotations))
 	}
-	fmt.Print(ownersHint(*admin))
+	fmt.Print(ownersHint(*admin, id))
 	return nil
 }
 
@@ -160,13 +161,12 @@ func worldModeText(w store.World) string {
 	return w.Mode
 }
 
-// ownersHint tells the operator how to make the account an owner. Roles
-// come only from the config and the admin screens (decision 0028), so
-// the account has none until waserver.yml names it.
-func ownersHint(admin string) string {
-	return "The account has no staff role yet. To make it the owner, add staff.owners to waserver.yml and restart waserver:\n" +
-		"staff:\n" +
-		"  owners: [" + admin + "]\n"
+// ownersHint tells the operator that the account is the world's owner
+// by its ID (review decision 54), and when the role counts. staff.owners
+// is not needed for it.
+func ownersHint(admin string, id int64) string {
+	return fmt.Sprintf("The account %s (id %d) is the world's owner. It needs no staff.owners line in waserver.yml.\n"+
+		"The owner role counts once the account turns on TOTP or a passkey, and logs in with a TOTP code, a recovery code, or a passkey that checks a PIN or fingerprint.\n", admin, id)
 }
 
 // readPassword reads the first line of a file, or of standard input for

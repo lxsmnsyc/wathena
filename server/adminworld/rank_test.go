@@ -55,6 +55,13 @@ func TestSanctionRank(t *testing.T) {
 	if err := ban(adm, ownerAcc); code(err) != "forbidden" {
 		t.Errorf("an admin banned an owner: %v", err)
 	}
+	// The world's owner by account ID is an owner too, though
+	// staff.owners does not name it (review decision 54).
+	founderAcc := e.accountOf(e.character("Founder"))
+	cfg.Staff.SetOwnerAccount(founderAcc)
+	if err := ban(adm, founderAcc); code(err) != "forbidden" {
+		t.Errorf("an admin banned the owner account: %v", err)
+	}
 	// A moderator cannot mute, jail or kick a game master or an admin.
 	for _, kind := range []string{"mute", "jail", "kick"} {
 		for _, target := range []int64{gmChar, adminChar} {

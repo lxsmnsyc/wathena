@@ -161,6 +161,10 @@ type Config struct {
 	// cannot ask for deletion while the config names it: a new account
 	// that took the name would become an owner.
 	Owners []string
+	// OwnerAccount is the world's owner by account ID, or 0 (review
+	// decision 54). It cannot ask for deletion either: the world row
+	// names it.
+	OwnerAccount int64
 }
 
 // SessionEnder closes what a login session opened when the session

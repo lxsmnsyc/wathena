@@ -2226,7 +2226,7 @@ A stream of numbers from the node. Two streams of one node give the same numbers
 
 #### `generationNode:hash(x, y) → integer`
 
-A number for a cell, the same for the same node and cell, from all 64 bits.
+A number for a cell, the same for the same node and cell, from all 64 bits. It is the first 8 bytes of HMAC-SHA256 of the cell, keyed by the node, so players cannot recover the node from it (review decision 54).
 
 | Parameter | Type | Meaning |
 |---|---|---|

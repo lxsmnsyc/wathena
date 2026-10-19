@@ -113,6 +113,10 @@ func (s *Service) requestDeletion(w http.ResponseWriter, r *http.Request) {
 		refuse(http.StatusBadRequest, "Type your account name, "+sess.AccountName+", to confirm.")
 		return
 	}
+	if s.cfg.OwnerAccount != 0 && sess.AccountID == s.cfg.OwnerAccount {
+		refuse(http.StatusConflict, "This account is the owner of the world. It cannot be deleted.")
+		return
+	}
 	for _, o := range s.cfg.Owners {
 		if strings.EqualFold(o, sess.AccountName) {
 			refuse(http.StatusConflict, "This account is an owner of the server in its config. Take it out of staff.owners first.")

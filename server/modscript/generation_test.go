@@ -1,6 +1,7 @@
 package modscript
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -111,5 +112,42 @@ end`))
 	tps := r.GenerationTemplates()
 	if len(tps) != 1 || tps[0].Name != "example.a:pilgrimage" || tps[0].Kind != content.KindDelivery || tps[0].Reward != 40 {
 		t.Errorf("templates %+v", tps)
+	}
+}
+
+// TestGenerationHashIsSecret: node:hash on a layer's secret node is
+// HMAC-SHA256 keyed by the node, not rng-v1's invertible hash, so the
+// value cannot be recomputed without the node's key (review decision 54).
+func TestGenerationHashIsSecret(t *testing.T) {
+	m := content.LayerMap{ID: "gen:field:1:2", Kind: gen.KindField, Biome: "forest", Tileset: "forest", Band: [2]int{9, 18},
+		Width: 64, Height: 48}
+	secret, _ := rng.NewRoot([]byte("generation-hash-test"))
+	node := content.LayerNode(secret, "example.h", m.ID)
+	want := int64(node.SecretHash(3, 4))              // #nosec G115 -- the hash's bits as a Lua integer.
+	old := int64(node.Hash(3, 4, 0))                  // #nosec G115 -- the hash's bits as a Lua integer.
+	child := int64(node.Child("a").SecretHash(-5, 9)) // #nosec G115 -- the hash's bits as a Lua integer.
+	if want == old {
+		t.Fatal("the secret hash equals the public hash")
+	}
+	h := newHost()
+	r, logs := newRuntime(t, h, modScripts("example.h", []string{"world.generate"}, nil, "scripts/main.lua", fmt.Sprintf(`
+local generation = require "wa.generation"
+return function()
+  generation.on("map", function(map, node)
+    local got = node:hash(3, 4)
+    if got == %d then error("node:hash is the invertible hash") end
+    if got ~= %d then error("node:hash is " .. got) end
+    if node:child("a"):hash(-5, 9) ~= %d then error("a child's node:hash differs") end
+    return { places = { { tags = { "ok" }, x = 1, y = 1 } } }
+  end)
+end`, old, want, child)))
+	out, notes := r.RunGeneration(m, secret, func(int64) (string, bool) { return "", false })
+	if len(out) != 1 || len(out[0].Places) != 1 {
+		t.Fatalf("results %+v, notes %v, logs %s", out, notes, logs)
+	}
+	// Another world's node gives another value for the same cell.
+	other, _ := rng.NewRoot([]byte("generation-hash-test-2"))
+	if content.LayerNode(other, "example.h", m.ID).SecretHash(3, 4) == node.SecretHash(3, 4) {
+		t.Error("two worlds gave the same hash")
 	}
 }

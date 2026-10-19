@@ -188,6 +188,46 @@ func TestRegistry(t *testing.T) {
 	}
 }
 
+// TestRegistryOwnerAccount: the world's owner account is an owner by
+// ID, whatever its name, and staff.owners by name still works (review
+// decision 54).
+func TestRegistryOwnerAccount(t *testing.T) {
+	reg := NewRegistry(MustDefaultRoles(), []string{"Legacy"})
+	reg.Load(map[int64]string{7: "moderator"})
+	if reg.RoleOf(7, "Founder") != "moderator" {
+		t.Fatal("before SetOwnerAccount, account 7 is a moderator")
+	}
+	reg.SetOwnerAccount(7)
+	two := func(name string) Login { return Login{AccountName: name, TwoFactor: true} }
+	for _, c := range []struct {
+		account int64
+		login   Login
+		want    string
+	}{
+		{7, two("Founder"), Owner},
+		// A name change does not matter: the ID decides.
+		{7, two("Renamed"), Owner},
+		// The owner role counts only with a second factor.
+		{7, Login{AccountName: "Founder"}, ""},
+		// Another account with the owner's old name is no owner.
+		{8, two("Founder"), ""},
+		// staff.owners by name still works.
+		{9, two("legacy"), Owner},
+	} {
+		if got := reg.RoleOfLogin(c.account, c.login); got != c.want {
+			t.Errorf("account %d %+v: %q, want %q", c.account, c.login, got, c.want)
+		}
+	}
+	if !reg.IsOwner(7, "") || reg.IsOwner(0, "") || reg.IsOwner(8, "Founder") {
+		t.Error("IsOwner by ID")
+	}
+	// 0 is no owner account, so account 0 never matches it.
+	reg.SetOwnerAccount(0)
+	if reg.IsOwner(0, "Founder") || reg.RoleOf(7, "Founder") != "moderator" {
+		t.Error("SetOwnerAccount(0) left an owner")
+	}
+}
+
 // TestRecentLogin: GM commands that make items or sanction players need
 // a login whose ticket was made soon after a login or a reauth. Other
 // commands do not (review decision 51).

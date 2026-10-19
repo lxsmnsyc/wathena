@@ -119,6 +119,21 @@ return h
 
 Each coordinate is mixed in turn, so nearby coordinates give unrelated values.
 
+This hash is for public nodes. The key fold and `mix64` can be inverted, so a value reveals bits of the key. Secret nodes use the secret hash.
+
+### Secret hash
+
+`secret_hash(node, x, y)` is the stateless hash of a secret node (proposal 0002, review decision 54). Generation layers' `node:hash(x, y)` uses it.
+
+```text
+secret_hash(node, x, y) = BE64(HMAC(node, "wa-secret-hash-v1" || BE64(x) || BE64(y))[0..8])
+```
+
+- The output is the first 8 bytes of the HMAC, read as a big-endian `u64`.
+- The message starts with another string than a child's message, so a hash message is never a child message.
+- A value does not reveal the node's key. It cannot be computed without the key.
+- Secret hashes run on the server only.
+
 ## Helpers
 
 All helpers read from any stream. Each read is one `u64` output.
@@ -196,6 +211,6 @@ The vector file has one list for each part of this spec. Each case holds its inp
 - 64-bit values are 16-digit lowercase hex strings.
 - Keys and messages are lowercase hex.
 - `uint64n` cases include `reads`, the number of stream outputs used by 8 calls. Cases with `n = 2^63 + 1` reject about half of all values, so they test the rejection rule.
-- `chacha8` cases are checked on the server build only.
+- `chacha8` and `secret_hash` cases are checked on the server build only.
 
 The expected values were checked against a second implementation written apart from the Go code. The xoshiro256** and SplitMix64 outputs also match the values published by their authors.

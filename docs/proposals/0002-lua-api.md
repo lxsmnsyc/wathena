@@ -1527,3 +1527,10 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
      - Whether `/gen/maps` should list places and names only for maps a player visited, which changes the protocol and the bots.
      - Owners by account ID or a claim code instead of by name.
      - A session factor for a passkey that verified its user, which needs a migration.
+   - Review decision 54 settled these review items on 2026-10-19, and they are built:
+     - `node:hash` on a generation layer's node is rng-v1's new secret hash, HMAC-SHA256 keyed by the node (`Node.SecretHash`). Public nodes keep their hash. TinyGo builds leave the secret hash out, so `gen.wasm` is byte-identical and no client golden changed. No other Lua API change was made.
+     - `/gen/maps` stays public, as an accepted risk by design.
+     - Migration 00040 adds `world.owner_account_id`, which `wactl world new` fills with the first account's ID. The owner role follows it. `staff.owners` by name still works, with a warning at start.
+     - Migration 00041 adds the session factor `passkey_verified`. A staff role counts only for a session with `totp`, `recovery_code` or `passkey_verified`.
+     - Three known issues are gone from the release notes: the passkey without user verification, `/gen/maps`, which is now an accepted risk, and `node:hash` on a secret node.
+     - Review items: a reauth with a passkey without user verification still refreshes the 10-minute window on an account without TOTP, as a password does. `staff.owners` by name is not yet removed.

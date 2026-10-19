@@ -511,9 +511,14 @@ func runAll(name string, args []string) error {
 	if loaded.zone.Shops != nil {
 		loaded.zone.Shops.Location = cfg.Location
 	}
-	// The staff roles: the config's owners, and the roles the admin
-	// screens gave, which the database keeps (decision 0028).
+	// The staff roles: the world's owner account, the config's owners,
+	// and the roles the admin screens gave, which the database keeps
+	// (decision 0028, review decision 54).
 	staffRoles := staff.NewRegistry(cfg.Roles, cfg.Staff.Owners)
+	staffRoles.SetOwnerAccount(worldRow.OwnerAccount)
+	if len(cfg.Staff.Owners) > 0 {
+		log.Warn(staff.OwnersByNameWarning, "owners", cfg.Staff.Owners)
+	}
 	if pool != nil {
 		given, err := store.LoadStaffRoles(ctx, pool)
 		if err != nil {
@@ -810,7 +815,7 @@ func runAll(name string, args []string) error {
 			Game: staffWorld.AccountPage(),
 			Privacy: account.Privacy{Contact: cfg.Privacy.Contact, Text: cfg.Privacy.Text, LoginIPDays: cfg.Retention.LoginIPDays,
 				ChatLogDays: cfg.Retention.ChatDays, ItemLogDays: cfg.Retention.ItemLogDays, AuditDays: cfg.Retention.AuditDays},
-			Owners: cfg.Staff.Owners,
+			Owners: cfg.Staff.Owners, OwnerAccount: worldRow.OwnerAccount,
 			NewCharacter: func(name string, look account.Look) character.Character {
 				sex := uint32(0)
 				if look.Male {
@@ -841,7 +846,7 @@ func runAll(name string, args []string) error {
 		// The admin API runs on the account service's origin and pool. It
 		// reaches the world in this process through staffWorld.
 		adminAPI, err = admin.New(admin.Config{Pool: pool, Auth: accounts, World: staffWorld, Roles: cfg.Roles,
-			Owners: cfg.Staff.Owners, Retention: retentionStatus, LoginIPDays: cfg.Retention.LoginIPDays, Log: log})
+			Owners: cfg.Staff.Owners, OwnerAccount: worldRow.OwnerAccount, Retention: retentionStatus, LoginIPDays: cfg.Retention.LoginIPDays, Log: log})
 		if err != nil {
 			return err
 		}

@@ -19,6 +19,7 @@ import (
 //     nil or { places, objects, bosses }.
 //   - The node is the layer's own node of the seed tree's secret branch,
 //     for that map: node:child(label), node:stream() and node:hash(x, y).
+//     node:hash is HMAC-SHA256 keyed by the node (review decision 54).
 //     A layer has no other source of randomness (strategy section 8.7),
 //     so wa.random raises an error while it runs.
 //   - generation.quest_template(record) adds a quest template.
@@ -301,7 +302,9 @@ func (r *Runtime) genNodeHash(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	c.Return(script.Int(int64(n.Hash(c.Int(1), c.Int(2), 0)))) // #nosec G115 -- the hash's bits as a Lua integer.
+	// A layer's node is secret, so its hash is HMAC-SHA256 keyed by the
+	// node and cannot be inverted (review decision 54).
+	c.Return(script.Int(int64(n.SecretHash(c.Int(1), c.Int(2))))) // #nosec G115 -- the hash's bits as a Lua integer.
 	return nil
 }
 

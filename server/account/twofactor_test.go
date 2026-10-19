@@ -27,6 +27,7 @@ import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/account"
 	"github.com/lxsmnsyc/wathena/server/gateway"
+	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/zone"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
@@ -478,7 +479,7 @@ func TestPasskeys(t *testing.T) {
 	if !strings.Contains(body, "Logged in as <strong>Passer</strong>") {
 		t.Fatalf("characters after passkey login: %s", body)
 	}
-	if f := e.liveFactors(); !slices.Equal(f[0], []string{"passkey"}) {
+	if f := e.liveFactors(); !slices.Equal(f[0], []string{"passkey", "passkey_verified"}) {
 		t.Errorf("factors: %v", f)
 	}
 	var count int64
@@ -554,6 +555,81 @@ func TestPasskeys(t *testing.T) {
 	}
 	if _, status, _ := e.passkeyLogin(key, ""); status != http.StatusBadRequest {
 		t.Errorf("removed passkey: %d", status)
+	}
+}
+
+// TestStaffNeedsVerifiedPasskey: a passkey login counts for a staff
+// role only when the passkey verified its user (the UV flag). Its
+// session records passkey_verified. A passkey without it records
+// passkey alone, and its game tickets carry no second factor (review
+// decision 54).
+func TestStaffNeedsVerifiedPasskey(t *testing.T) {
+	e := setup(t, func(c *account.Config) { c.PublicURL = passkeyOrigin })
+	c := e.c
+	e.signup(c, "Staffer", password)
+	csrf := e.pageCSRF(c, "/account/settings")
+	status, options := e.postJSON(c, "/account/passkeys/register/begin", csrf, []byte(`{"name":"Key"}`))
+	if status != http.StatusOK {
+		t.Fatalf("register begin: %d %s", status, options)
+	}
+	key := newSoftKey(t, passkeyOrigin)
+	if status, b := e.postJSON(c, "/account/passkeys/register/finish", csrf, key.create(options)); status != http.StatusOK {
+		t.Fatalf("register finish: %d %s", status, b)
+	}
+	e.makeCharacter(c, "Staff Hero", "0")
+	e.logout(c)
+
+	reg := staff.NewRegistry(staff.MustDefaultRoles(), nil)
+	var accountID int64
+	if err := e.admin.QueryRow(context.Background(), "SELECT id FROM accounts WHERE name = 'Staffer'").Scan(&accountID); err != nil {
+		t.Fatal(err)
+	}
+	reg.SetOwnerAccount(accountID)
+	for _, uv := range []bool{true, false} {
+		key.uv = uv
+		c, status, out := e.passkeyLogin(key, "")
+		if status != http.StatusOK {
+			t.Fatalf("uv %v: login %d %v", uv, status, out)
+		}
+		want := []string{"passkey"}
+		if uv {
+			want = append(want, "passkey_verified")
+		}
+		if f := e.liveFactors(); !slices.Equal(f[0], want) {
+			t.Errorf("uv %v: factors %v, want %v", uv, f[0], want)
+		}
+		e.play(c, "0")
+		_, ticket := e.ticket(c, clientOrigin)
+		l, err := e.redeem(ticket)
+		if err != nil || l.Staff.TwoFactor != uv {
+			t.Errorf("uv %v: ticket %+v %v", uv, l.Staff, err)
+		}
+		role := reg.RoleOfLogin(accountID, l.Staff)
+		if wantRole := map[bool]string{true: staff.Owner, false: ""}[uv]; role != wantRole {
+			t.Errorf("uv %v: role %q, want %q", uv, role, wantRole)
+		}
+		e.logout(c)
+	}
+
+	// A session of before migration 00041, with passkey alone, does not
+	// count either.
+	for _, c := range []struct {
+		factors []string
+		want    bool
+	}{
+		{[]string{"passkey"}, false},
+		{[]string{"password"}, false},
+		{[]string{"passkey", "passkey_verified"}, true},
+		{[]string{"passkey", "totp"}, true},
+		{[]string{"password", "recovery_code"}, true},
+	} {
+		if got := (account.Session{Factors: c.factors}).SecondFactor(); got != c.want {
+			t.Errorf("factors %v: second factor %v, want %v", c.factors, got, c.want)
+		}
+	}
+	// The table refuses an unknown factor.
+	if _, err := e.admin.Exec(context.Background(), "UPDATE account_sessions SET factors = '{passkey, other}'"); err == nil {
+		t.Error("an unknown factor was stored")
 	}
 }
 

@@ -692,7 +692,7 @@ var Classes = []Class{
 		Methods: []Func{
 			{Name: "child", Params: []Param{{"label", "string", "1 to 64 bytes, such as \"shrines\"."}}, Returns: "wa.GenerationNode", Doc: "A child node. Each label gives its own values, and the order of calls does not matter."},
 			{Name: "stream", Returns: "wa.GenerationStream", Doc: "A stream of numbers from the node. Two streams of one node give the same numbers."},
-			{Name: "hash", Params: []Param{{"x", "integer", ""}, {"y", "integer", ""}}, Returns: "integer", Doc: "A number for a cell, the same for the same node and cell, from all 64 bits."},
+			{Name: "hash", Params: []Param{{"x", "integer", ""}, {"y", "integer", ""}}, Returns: "integer", Doc: "A number for a cell, the same for the same node and cell, from all 64 bits. It is the first 8 bytes of HMAC-SHA256 of the cell, keyed by the node, so players cannot recover the node from it (review decision 54)."},
 		},
 	},
 	{

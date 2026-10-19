@@ -31,6 +31,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/staff"
 	"github.com/lxsmnsyc/wathena/server/status"
 	"github.com/lxsmnsyc/wathena/server/store"
+	"github.com/lxsmnsyc/wathena/server/store/db"
 	"github.com/lxsmnsyc/wathena/server/store/storetest"
 )
 
@@ -121,6 +122,9 @@ type options struct {
 	retention admin.Retention
 	// loginIPDays is retention.login_ip_days, or 0 for the default.
 	loginIPDays int
+	// founder makes the account Founder before the handler, with the
+	// password, as the world's owner by account ID (review decision 54).
+	founder bool
 }
 
 func setup(t *testing.T, o options) *env {
@@ -139,8 +143,19 @@ func setup(t *testing.T, o options) *env {
 	if o.limits != nil {
 		o.limits(&limits)
 	}
+	hasher := account.NewHasher(account.Params{Memory: 64, Time: 1, Threads: 1, SaltLen: 16, KeyLen: 32}, 2)
+	var ownerAccount int64
+	if o.founder {
+		hash, err := hasher.Hash(context.Background(), password)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ownerAccount, err = db.New(e.admin).CreateAdminAccount(context.Background(), db.CreateAdminAccountParams{Name: "Founder", Hash: hash}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	svc, err := account.New(account.Config{
-		Pool: acct, ClientOrigins: []string{"http://client.test"}, Hasher: account.NewHasher(account.Params{Memory: 64, Time: 1, Threads: 1, SaltLen: 16, KeyLen: 32}, 2),
+		Pool: acct, ClientOrigins: []string{"http://client.test"}, Hasher: hasher, OwnerAccount: ownerAccount,
 		NewCharacter: func(name string, look account.Look) character.Character {
 			return character.Character{Info: character.Info{Name: name, Male: look.Male, Hair: look.Hair, HairColor: look.HairColor,
 				BaseLevel: 1, JobLevel: 1, Stats: status.Stats{Str: 1, Agi: 1, Vit: 1, Int: 1, Dex: 1, Luk: 1},
@@ -159,7 +174,7 @@ func setup(t *testing.T, o options) *env {
 	if owners == nil {
 		owners = []string{"Owner"}
 	}
-	h, err := admin.New(admin.Config{Pool: acct, Auth: svc, World: e.world, Roles: roles, Owners: owners, Retention: o.retention,
+	h, err := admin.New(admin.Config{Pool: acct, Auth: svc, World: e.world, Roles: roles, Owners: owners, OwnerAccount: ownerAccount, Retention: o.retention,
 		LoginIPDays: o.loginIPDays, Log: slog.New(slog.DiscardHandler)})
 	if err != nil {
 		t.Fatal(err)
@@ -376,6 +391,44 @@ func TestMissingOwners(t *testing.T) {
 	missing, err = e.handler.MissingOwners(ctx)
 	if err != nil || !slices.Equal(missing, []string{"Second"}) {
 		t.Fatalf("after signup: %v %v", missing, err)
+	}
+}
+
+// TestOwnerAccount: the world's owner by account ID has the owner role,
+// with a second factor, though staff.owners does not name it. Its role
+// cannot change, and it is listed first (review decision 54).
+func TestOwnerAccount(t *testing.T) {
+	e := setup(t, options{founder: true})
+	c := e.browser()
+	if status, body := e.submit(c, "/account/login", "/account/login", url.Values{"name": {"Founder"}, "password": {password}}); status != http.StatusSeeOther {
+		t.Fatalf("login: %d %s", status, body)
+	}
+	if m := e.me(c); m.GetRole() != "" || m.GetAssignedRole() != staff.Owner {
+		t.Errorf("owner account without TOTP: %v", m)
+	}
+	e.enableTOTP(c, "Founder")
+	founder := e.loginTOTP("Founder")
+	if m := e.me(founder); m.GetRole() != staff.Owner || !m.GetTwoFactor() {
+		t.Fatalf("owner account with TOTP: %v", m)
+	}
+	status, b := e.call(founder, "GET", "staff", "", nil)
+	list := &adminv1.StaffList{}
+	_ = protojson.Unmarshal(b, list)
+	if status != http.StatusOK || len(list.GetMembers()) != 2 || list.GetMembers()[0].GetAccount() != "Founder" ||
+		list.GetMembers()[0].GetRole() != staff.Owner || !list.GetMembers()[0].GetTwoFactor() {
+		t.Fatalf("list: %d %s", status, b)
+	}
+	// Another admin cannot change the owner's role.
+	adm := e.staffer("Admin1")
+	csrf := e.me(founder).GetCsrfToken()
+	if status, b := e.call(founder, "POST", "staff", csrf, give("Admin1", "admin", "")); status != http.StatusOK {
+		t.Fatalf("give admin: %d %s", status, b)
+	}
+	e.errorCode(adm, "POST", "staff", e.me(adm).GetCsrfToken(), give("Founder", "moderator", ""), http.StatusConflict, "conflict")
+	// The account cannot ask for its own deletion.
+	status, body := e.submit(founder, "/account/data", "/account/data/delete", url.Values{"name": {"Founder"}})
+	if status != http.StatusConflict || !strings.Contains(body, "owner of the world") {
+		t.Errorf("owner's deletion: %d %s", status, body)
 	}
 }
 

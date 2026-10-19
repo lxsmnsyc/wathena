@@ -49,21 +49,14 @@ func TestReadPassword(t *testing.T) {
 	}
 }
 
-// TestOwnersHint: the lines that world new prints are YAML that names the
-// account in staff.owners (decision 0036).
+// TestOwnersHint: world new says the account is the owner by its ID,
+// and needs no staff.owners line (review decision 54).
 func TestOwnersHint(t *testing.T) {
-	hint := ownersHint("Admin")
-	_, block, ok := strings.Cut(hint, "\n")
-	if !ok {
-		t.Fatalf("no config lines: %q", hint)
-	}
-	var cfg struct {
-		Staff struct {
-			Owners []string `yaml:"owners"`
-		} `yaml:"staff"`
-	}
-	if err := yaml.Unmarshal([]byte(block), &cfg); err != nil || len(cfg.Staff.Owners) != 1 || cfg.Staff.Owners[0] != "Admin" {
-		t.Errorf("%q: %+v, %v", block, cfg, err)
+	hint := ownersHint("Admin", 42)
+	for _, want := range []string{"Admin (id 42) is the world's owner", "no staff.owners line", "PIN or fingerprint"} {
+		if !strings.Contains(hint, want) {
+			t.Errorf("%q lacks %q", hint, want)
+		}
 	}
 }
 

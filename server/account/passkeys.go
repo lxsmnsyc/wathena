@@ -28,8 +28,11 @@ import (
 //     another domain cannot ask for it.
 //   - Passkeys are discoverable, so login needs no account name.
 //   - User verification is preferred. A passkey login that verified the
-//     user (a PIN, a fingerprint) counts as both factors. One that did
-//     not asks for the TOTP code too, when TOTP is on.
+//     user (a PIN, a fingerprint) counts as both factors, and its session
+//     records passkey_verified. One that did not asks for the TOTP code
+//     too, when TOTP is on. Without TOTP it logs in with the factor
+//     passkey alone, which does not count for a staff role (review
+//     decision 54).
 //   - The signature counter must go up when it is used. A passkey whose
 //     counter does not is marked with a clone warning and refused.
 //   - A ceremony's challenge is kept in the database, under the hash of
@@ -571,7 +574,11 @@ func (s *Service) finishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.limit.succeed(user.name)
-	if err := s.startSession(ctx, w, r, user.account, []string{factorPasskey}); err != nil {
+	factors := []string{factorPasskey}
+	if verified {
+		factors = append(factors, factorPasskeyVerified)
+	}
+	if err := s.startSession(ctx, w, r, user.account, factors); err != nil {
 		s.passkeyUnavailable(w, err)
 		return
 	}

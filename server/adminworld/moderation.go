@@ -163,7 +163,7 @@ func (w *World) rankCheck(ctx context.Context, actor admin.Actor, account int64,
 			}
 			name = n
 		}
-		if reg.IsOwner(name) {
+		if reg.IsOwner(account, name) {
 			return werr("forbidden", "That account is an owner. Only an owner can sanction an owner.")
 		}
 		roles = reg.Roles()

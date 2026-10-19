@@ -34,6 +34,26 @@ func TestNewWorld(t *testing.T) {
 	if err := admin.QueryRow(ctx, "SELECT name FROM accounts WHERE id = $1", id).Scan(&name); err != nil || name != "Admin1" {
 		t.Errorf("account: %q, %v", name, err)
 	}
+	// The first account is the world's owner by ID, and the game role
+	// reads it with the world (review decision 54).
+	if got.OwnerAccount != id {
+		t.Errorf("owner account %d, want %d", got.OwnerAccount, id)
+	}
+	// Only the migrator changes the owner. The account role cannot even
+	// read it: waserver passes it on from the game role.
+	if _, err := game.Exec(ctx, "UPDATE world SET owner_account_id = NULL"); !isCode(err, "42501") {
+		t.Errorf("game changes the owner: %v", err)
+	}
+	if _, err := account.Exec(ctx, "UPDATE world SET owner_account_id = NULL"); !isCode(err, "42501") {
+		t.Errorf("account changes the owner: %v", err)
+	}
+	if _, err := account.Exec(ctx, "SELECT owner_account_id FROM world"); !isCode(err, "42501") {
+		t.Errorf("account reads the owner: %v", err)
+	}
+	// The owner's account cannot be deleted while the world names it.
+	if _, err := admin.Exec(ctx, "DELETE FROM accounts WHERE id = $1", id); !isCode(err, "23503") {
+		t.Errorf("deleting the owner's account: %v", err)
+	}
 	// accounts.staff is gone (decision 0036). Roles come from the config
 	// and staff_roles.
 	var cols int

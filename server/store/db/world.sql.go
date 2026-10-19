@@ -54,8 +54,8 @@ type CreateWorldParams struct {
 }
 
 // Queries for the world row and its first account. `wactl world new`
-// runs CreateWorld and CreateAdminAccount as the migrator role. waserver
-// runs World as wathena_game.
+// runs CreateWorld, CreateAdminAccount and SetWorldOwner as the migrator
+// role. waserver runs World as wathena_game.
 // CreateWorld makes the world row. It makes nothing when the world
 // exists.
 func (q *Queries) CreateWorld(ctx context.Context, arg CreateWorldParams) (int64, error) {
@@ -74,8 +74,19 @@ func (q *Queries) CreateWorld(ctx context.Context, arg CreateWorldParams) (int64
 	return result.RowsAffected(), nil
 }
 
+const setWorldOwner = `-- name: SetWorldOwner :exec
+UPDATE world SET owner_account_id = $1 WHERE id = 1
+`
+
+// SetWorldOwner records the first admin account as the world's owner
+// (review decision 54).
+func (q *Queries) SetWorldOwner(ctx context.Context, accountID pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, setWorldOwner, accountID)
+	return err
+}
+
 const world = `-- name: World :one
-SELECT name, ruleset, mode, generator_version, rng_version, public_node, created_at FROM world WHERE id = 1
+SELECT name, ruleset, mode, generator_version, rng_version, public_node, owner_account_id, created_at FROM world WHERE id = 1
 `
 
 type WorldRow struct {
@@ -85,6 +96,7 @@ type WorldRow struct {
 	GeneratorVersion int
 	RngVersion       string
 	PublicNode       []byte
+	OwnerAccountID   pgtype.Int8
 	CreatedAt        pgtype.Timestamptz
 }
 
@@ -99,6 +111,7 @@ func (q *Queries) World(ctx context.Context) (WorldRow, error) {
 		&i.GeneratorVersion,
 		&i.RngVersion,
 		&i.PublicNode,
+		&i.OwnerAccountID,
 		&i.CreatedAt,
 	)
 	return i, err

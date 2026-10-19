@@ -191,7 +191,7 @@ Open review items:
 - Next step 33's details to review, and the review items of decision 0045: the hooks and generation layers on rotating floors and changed fields, a Lua way to read a rotating dungeon's date or a region's season, forced changes across a restart and a cancel, new level bands with a world change, more than one rotating dungeon, and locale text and a banner for the warnings.
 - Decision 0046's review items: the model player and the targets, the economy checks and the `spawn_table` hooks, and a Lua way to read a field's simulated rates.
 - Decision 0050's review items: whether to document 500 players, the slowdown of 1,000 players in one town, and a way to place load test bots without a database URL.
-- The security review's items, in proposal 0002, next step 37: a Lua API change for `node:hash` on secret nodes, the public map info, owners by account ID, and a session factor for a verified passkey.
+- The security review's items, in proposal 0002, next step 37: review decision 54 settled and built the four first items. Left: a reauth with a passkey without user verification, and when to remove `staff.owners` by name.
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 
 Known issues:

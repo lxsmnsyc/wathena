@@ -21,6 +21,10 @@ const (
 	factorTOTP     = "totp"
 	factorRecovery = "recovery_code"
 	factorPasskey  = "passkey"
+	// factorPasskeyVerified joins factorPasskey when the passkey's
+	// assertion had the user verification flag: it checked a PIN or a
+	// fingerprint (review decision 54).
+	factorPasskeyVerified = "passkey_verified"
 )
 
 // errNoSealer is a TOTP secret that cannot be opened because the server
@@ -378,6 +382,7 @@ func factorNames(factors []string) string {
 	names := map[string]string{
 		factorPassword: "password", factorTOTP: "authenticator code",
 		factorRecovery: "recovery code", factorPasskey: "passkey",
+		factorPasskeyVerified: "its PIN or fingerprint",
 	}
 	var out []string
 	for _, f := range factors {

@@ -29,7 +29,7 @@ async function boot(): Promise<void> {
       return;
     case 'two_factor':
       say(
-        `Your account has the ${access.role} role, which needs two-factor login. Turn on an authenticator app or a passkey, then log in with it.`,
+        `Your account has the ${access.role} role, which needs two-factor login. Turn on an authenticator app or a passkey, then log in with its code, or with a passkey that checks your PIN or fingerprint.`,
         { url: access.url, label: 'Account settings' },
       );
       return;

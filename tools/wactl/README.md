@@ -55,7 +55,7 @@ Makes a world in a database that `deploy/postgres/roles.sql` prepared. It applie
 - A procedural world gets its world layout in the same transaction: the map graph of fields, towns and dungeons, the town names and the level bands (docs/decisions/0041-world-layout.md). `--config` names the server's `waserver.yml`, whose `mods` section (`dir`, `approve`, `disable`, `ruleset`) gives the town templates, dungeon styles, naming styles, chat filter and home maps, and whose `procedural.layout` and `procedural.field_size` shape the layout. Without it, the layout uses core's records and the defaults: 6 × 4 fields, 5 towns and 6 dungeons. The command prints the towns and the home area. The layout never changes afterwards, except for `@renametown`.
 - A procedural world's first dungeon whose style has a `rotation` rotates (docs/decisions/0045-rotation.md). The command prints it with its rule, and stores it with a derived key of its spawns and one of the seasons' spawns, which the game role reads instead of the seed. A world whose dungeons' styles have none has no rotating dungeon.
 - The account has the given name and password, with the account service's rules. The password is the first line of the file, or of standard input for `-`.
-- The account has no staff role. The command prints the `staff.owners` lines to add to `waserver.yml`, which make it the owner (decision 0036).
+- The world row records the account's ID as the world's owner, in the same transaction (review decision 54). The account needs no `staff.owners` line. Its owner role counts once it logs in with a second factor.
 
 It refuses a database that already has a world. It needs the migrator role, as `wactl migrate` does.
 

@@ -617,6 +617,7 @@ type World struct {
 	RngVersion       string
 	PublicNode       []byte
 	SeasonKey        []byte
+	OwnerAccountID   pgtype.Int8
 }
 
 type WorldEventProgress struct {
