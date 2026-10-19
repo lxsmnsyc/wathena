@@ -1120,6 +1120,12 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Release notes** list what does not convert, generated from the converter's reports.
     - **Renewal only.** Classic ships with `mode: renewal`. Pre-renewal classic is marked experimental until `core.ruleset.pre_renewal` (phase 10 item 1).
 
+56. Classic mode follow-ups (phase 8 step 6). The user approved these on 2026-10-19:
+    - **Touch with a conversation.** A `touch` handler may open a conversation with the player, as rAthena's `OnTouch` does. The converter then converts touch labels with dialogs. A touch while the player is already in a conversation waits until it ends, as rAthena queues it.
+    - **Taking HP and SP.** `player:heal_percent` accepts negative values, as rAthena's `percentheal` does. A negative value never takes HP below 1.
+    - **Extract size.** Extracts stay JSON in git. The binaries embed gzipped copies made at build time.
+    - **NPC-to-NPC commands** (`donpcevent`, enable and disable, cloaking, `getvariableofnpc`) stay in phase 10 with the converter review of review decision 32.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
