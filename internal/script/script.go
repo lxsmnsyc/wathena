@@ -11,11 +11,15 @@ import (
 	"time"
 )
 
-// Default limits, from decision 0002.
+// Default limits, from decisions 0002 and 0054. The CPU budget measures
+// a call's work. The time limit is only a backstop for a call that is
+// stuck, so it is long: a machine that stalls, such as one that swaps,
+// stretches the clock time of every call, and must not stop scripts
+// that do little work.
 const (
 	DefaultCPU     = 10_000_000
 	DefaultMemory  = 16 << 20
-	DefaultTimeout = time.Second
+	DefaultTimeout = 30 * time.Second
 )
 
 // Limits stop scripts that run too long or use too much memory. A zero
@@ -23,12 +27,16 @@ const (
 type Limits struct {
 	// CPU is the instruction budget of each call and each resume. Work that
 	// library functions do in C, and memory allocated, are charged too.
+	// It is what limits a script's work.
 	CPU int64
 	// Memory is the most memory the state may hold, in bytes.
 	Memory int64
 	// Timeout is the wall-clock limit of each call and each resume. It is a
-	// backstop for work the CPU budget does not see. The clock starts after
-	// the first 1,000 instructions, so short calls never read it.
+	// backstop for a call stuck in work the CPU budget does not see, such
+	// as comparing long strings over and over. The clock starts after the
+	// first 1,000 instructions, so short calls never read it. It counts
+	// the time the machine stalls too, so it must be far above the time
+	// any call takes.
 	Timeout time.Duration
 }
 

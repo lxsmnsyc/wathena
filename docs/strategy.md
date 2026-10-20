@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred. On 2026-10-20, decision 0054 explained and fixed the extra Jellopy of the restore duplication test, closed L34, and made the Lua wall-clock limit a 30-second backstop.
 
 Done:
 
@@ -189,6 +189,10 @@ Done:
   - A pre-renewal classic world warns at start that it is experimental.
   - Part B followed the same day ([decision 0052](decisions/0052-classic-mode-part-b.md), review decision 56): touch handlers with a conversation, negative `player:heal_percent`, gzipped extracts in the release binaries, the kRO end-to-end run and browser check, and the release notes list in docs/generated/classic-coverage.md.
   - The `skill` command followed ([decision 0053](decisions/0053-skill-command.md), review decision 57): `player:give_skill` with the flagged permission `player.skills`, and the converter's `skill` and `addtoskill`. renewal places 264 of 710 job change NPCs, up from 259, with the first job changers of Swordman, Mage, Archer, Acolyte and Merchant. The record also has the checks that commit aee8533 deferred.
+- Phase 8 follow-up, restores, logins and Lua time limits ([decision 0054](decisions/0054-restores-logins-and-lua-time-limits.md)):
+  - The extra Jellopy of 2026-10-19: a restore whose request ended while its zone worked on it let go of its offline holder, and the zone moved the items afterwards. Zone calls from other goroutines are now all or nothing. A stress test with stalls and requests that give up failed 3 of 6 runs before the fix.
+  - L34 is fixed: a login waits until the older session's last save is written, up to 30 seconds.
+  - The Lua wall-clock limit is a 30-second backstop. The CPU budgets measure the work, so a stalled machine no longer ends zones' Lua states.
 
 Open review items:
 
@@ -209,8 +213,6 @@ Known issues:
 - The disk was nearly full on 2026-10-05, and builds failed with "no space left on device". Keep at least 10 GB free. Test PostgreSQL containers that are killed leave unnamed Docker volumes behind. `docker volume prune` removes them.
 - The kRO client is extracted at `data/kro/client` (gitignored), and the original zip is deleted. It is the only copy. Build assets with `wactl assets build` and the source `grf:data/kro/client`.
 - `scripts/check.sh` removes its PostgreSQL container with `docker rm -f`, without `-v`, so each run that starts one leaves an unnamed volume.
-- A pause of `waserver` over one second while a zone makes its Lua state ends the prelude at the wall-clock limit, and the zone's scripts stay off until a restart (decision 0037, "Left").
-- On 2026-10-19, one run of `TestDuplicationRestoresWithDatabase` under heavy load counted one Jellopy more than at the start, in a full audit during the moves ([decision 0053](decisions/0053-skill-command.md)). Two more runs passed. It needs a look before the release.
 - The repository has no CI ([decision 0026](decisions/0026-local-checks.md)). Run `scripts/check.sh quick` before each commit and `scripts/check.sh` before a push.
 
 Next:
@@ -3476,6 +3478,10 @@ Progress:
   - The kRO run and the browser check, opt-in behind `WATHENA_KRO_ASSETS`. The full kRO build stopped twice at the 3 GB floor of free disk, so both ran on a build of four of the client's maps. The bot saved and stored at a Kafra, bought from a shop, warped to prt_fild08, killed a Poring, came back, took the Kafra's teleport to Payon and became a Taekwon. In Chromium, Prontera loaded, the player walked, and an NPC's dialog opened. A run on the full build is a review item.
   - `jobchange <job>,Upper`, rAthena's `Job_Change`, converts for normal players, so job change NPCs that call it change jobs.
   - The release notes list, docs/generated/classic-coverage.md, from the converter's reports, linked from deploy/README.md, "Classic mode".
+- Follow-up (2026-10-20), [decision 0054](decisions/0054-restores-logins-and-lua-time-limits.md):
+  - A restore whose request ended in its zone could leave its items in the holder and in the mail. That was the extra Jellopy of 2026-10-19. Zone calls are now all or nothing, with a stress test and an audit trace.
+  - A login waits until the older session ended, which closes L34 of the security review.
+  - The Lua wall-clock limit is a 30-second backstop, and the CPU budgets measure the work.
 
 ### Phase 9: Modding ecosystem
 

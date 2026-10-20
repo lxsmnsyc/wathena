@@ -339,21 +339,7 @@ func (z *Zone) runScripts() {
 // snapshot. The mod's old context ends first, which removes its handlers
 // and timers. It waits until the zone has done it.
 func (z *Zone) ReloadMod(ctx context.Context, sc *mod.Scripts) error {
-	done := make(chan error, 1)
-	f := func() { done <- z.reloadScripts(sc) }
-	select {
-	case z.control <- f:
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-z.stopped:
-		return ErrStopped
-	}
-	select {
-	case err := <-done:
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	return z.do(ctx, func() error { return z.reloadScripts(sc) })
 }
 
 // reloadScripts is ReloadMod on the zone's goroutine. A zone that has no

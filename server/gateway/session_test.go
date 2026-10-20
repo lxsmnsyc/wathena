@@ -223,3 +223,40 @@ func TestShutdownEndsEverySession(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 }
+
+// TestMemoryLoginWaitsForOlderSession checks that a memory character's
+// second load waits until the older session's final save (review
+// 2026-10, L34), and reads what that session saved.
+func TestMemoryLoginWaitsForOlderSession(t *testing.T) {
+	g := &Gateway{World: zone.New("map/test", &path.Grid{Width: 4, Height: 4, Cells: make([]uint8, 16)}, nil, nil)}
+	m := g.characters()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	id, err := m.Find(ctx, "Wait", zone.Look{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, old, err := m.Load(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	short, stop := context.WithTimeout(ctx, 50*time.Millisecond)
+	defer stop()
+	if _, _, err := m.Load(short, id); err == nil {
+		t.Fatal("a second load did not wait for the older session")
+	}
+	second := make(chan *character.Character, 1)
+	go func() {
+		c, _, err := m.Load(ctx, id)
+		if err != nil {
+			t.Error(err)
+		}
+		second <- c
+	}()
+	last := c.Clone()
+	last.Zeny = 77
+	old.Save(last, true)
+	if got := <-second; got == nil || got.Zeny != 77 {
+		t.Fatalf("the second load read %+v, want the older session's last save", got)
+	}
+}

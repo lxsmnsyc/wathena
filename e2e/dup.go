@@ -310,6 +310,9 @@ func (d DupTest) Run(t *testing.T) DupReport {
 		defer close(audits)
 		tick := time.NewTicker(d.AuditEvery)
 		defer tick.Stop()
+		// last is the last full audit that passed. A failed audit is
+		// traced against it.
+		var last []AuditZone
 		for {
 			select {
 			case <-moving.Done():
@@ -325,8 +328,12 @@ func (d DupTest) Run(t *testing.T) DupReport {
 			}
 			full, ok := d.check(t, start, zones, "during the moves")
 			if !ok {
+				d.trace(ctx, t, start, last, zones)
 				failed.Store(true)
 				return
+			}
+			if full {
+				last = zones
 			}
 			if full {
 				rep.Audits++
@@ -384,6 +391,7 @@ func (d DupTest) Run(t *testing.T) DupReport {
 		t.Fatal(err)
 	}
 	if full, ok := d.check(t, start, zones, "at the end"); !ok || !full {
+		d.trace(ctx, t, start, nil, zones)
 		t.FailNow()
 	}
 	rep.Audits++
@@ -429,6 +437,9 @@ func (rep *DupReport) count(b *botclient.Bot) {
 		// added as it was: a StorageRemove with an InventoryAdd, an
 		// InventoryRemove with a StorageAdd, or a StorageRemove with a
 		// StorageAdd.
+		case e.HasStorageRemove() && !paired(events, i):
+			// A restore took the stack from the cart (decision 0029): it
+			// left for a mail, not for the inventory or a storage.
 		case e.HasStorageRemove():
 			added--
 		case e.HasStorageAdd():
@@ -443,6 +454,18 @@ func (rep *DupReport) count(b *botclient.Bot) {
 	rep.Added += added
 	rep.Taken += taken
 	rep.Unmatched += max(taken-added, added-taken)
+}
+
+// paired reports whether the event at i, a storage removal, is half of
+// a move between the inventory, storages and the cart: the event just
+// before or after it adds the items.
+func paired(events []*wathenav1.Event, i int) bool {
+	for _, j := range []int{i - 1, i + 1} {
+		if j >= 0 && j < len(events) && (events[j].HasInventoryAdd() || events[j].HasStorageAdd()) {
+			return true
+		}
+	}
+	return false
 }
 
 // marketEvents marks the events of market transfers: the inventory,
@@ -586,6 +609,10 @@ func (d DupTest) check(t *testing.T, start Totals, zones []AuditZone, when strin
 	full = playersIn(zones) >= d.Bots
 	now, twice := TotalsOf(zones)
 	problems := slices.Clone(twice)
+	// One character plays in at most one session (review 2026-10, L34).
+	// Two players of one name would also make an audit look full while
+	// a bot is away.
+	problems = append(problems, playersTwice(zones)...)
 	if full {
 		problems = append(problems, compare(start, now)...)
 	} else {
@@ -603,6 +630,136 @@ func (d DupTest) check(t *testing.T, start Totals, zones []AuditZone, when strin
 		t.Errorf("%s: %s", when, p)
 	}
 	return full, len(problems) == 0
+}
+
+// playersTwice lists the characters that are in the world twice.
+func playersTwice(zones []AuditZone) []string {
+	seen := map[string]string{}
+	var out []string
+	for _, z := range zones {
+		if z.Map == GuildStorageMap {
+			continue
+		}
+		for _, p := range z.Players {
+			if m, ok := seen[p.Name]; ok {
+				out = append(out, fmt.Sprintf("player %s is in the world twice, on %s and %s", p.Name, m, z.Map))
+			}
+			seen[p.Name] = z.Map
+		}
+	}
+	return out
+}
+
+// auditStack is one stack of an item in an audit.
+type auditStack struct {
+	holder string
+	amount int
+}
+
+// stacksOf lists the stacks of an item in an audit by serial, and the
+// ground amounts by map.
+func stacksOf(zones []AuditZone, id uint32) (map[string]auditStack, map[string]int) {
+	stacks, ground := map[string]auditStack{}, map[string]int{}
+	for _, z := range zones {
+		for _, p := range z.Players {
+			for _, it := range p.Items {
+				if it.Item == id {
+					s := stacks[it.Serial]
+					if s.holder != "" {
+						s.holder += "+"
+					}
+					stacks[it.Serial] = auditStack{s.holder + p.Name, s.amount + it.Amount}
+				}
+			}
+		}
+		for _, g := range z.Ground {
+			if g.Item == id {
+				ground[z.Map] += g.Amount
+			}
+		}
+	}
+	return stacks, ground
+}
+
+// trace logs where each item whose total differs from the start is:
+// the stacks that came and went since the last full audit that passed,
+// with their serials and holders, the ground amounts, and, with a
+// database, the item log lines that name the serials that came. last
+// may be nil.
+func (d DupTest) trace(ctx context.Context, t *testing.T, start Totals, last, now []AuditZone) {
+	t.Helper()
+	nowT, _ := TotalsOf(now)
+	var came []string
+	for _, id := range slices.Sorted(maps.Keys(mergeKeys(start.Items, nowT.Items))) {
+		if start.Items[id] == nowT.Items[id] {
+			continue
+		}
+		lastT, _ := TotalsOf(last)
+		t.Logf("trace: item %d: %d now, %d at the start, %d at the last full audit that passed (%d players now)",
+			id, nowT.Items[id], start.Items[id], lastT.Items[id], playersIn(now))
+		cur, curGround := stacksOf(now, id)
+		prev, prevGround := stacksOf(last, id)
+		for _, serial := range slices.Sorted(maps.Keys(cur)) {
+			c, p := cur[serial], prev[serial]
+			switch {
+			case p.holder == "":
+				t.Logf("trace:   came: serial %s, %d with %s", serial, c.amount, c.holder)
+				came = append(came, serial)
+			case p != c:
+				t.Logf("trace:   changed: serial %s, %d with %s, was %d with %s", serial, c.amount, c.holder, p.amount, p.holder)
+			}
+		}
+		for _, serial := range slices.Sorted(maps.Keys(prev)) {
+			if _, ok := cur[serial]; !ok {
+				t.Logf("trace:   went: serial %s, %d with %s", serial, prev[serial].amount, prev[serial].holder)
+			}
+		}
+		for _, m := range slices.Sorted(maps.Keys(mergeGround(curGround, prevGround))) {
+			if curGround[m] != prevGround[m] {
+				t.Logf("trace:   ground of %s: %d, was %d", m, curGround[m], prevGround[m])
+			}
+		}
+	}
+	// The server's warnings and errors say which sessions went stale and
+	// which commits left a character out.
+	for _, l := range d.Server.logs.lines() {
+		if strings.Contains(l, "level=WARN") || strings.Contains(l, "level=ERROR") {
+			t.Logf("trace: server: %s", l)
+		}
+	}
+	db := d.Server.DB
+	if db == nil || len(came) == 0 {
+		return
+	}
+	// The commits of the moves may still be on their way.
+	time.Sleep(time.Second)
+	rows, err := db.Query(ctx, `SELECT at, action, from_kind, from_id, to_kind, to_id, serial::text, coalesce(source::text, ''), amount
+		FROM item_log WHERE serial::text = ANY($1) OR source::text = ANY($1) ORDER BY at, id`, came)
+	if err != nil {
+		t.Logf("trace: item log: %v", err)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var at time.Time
+		var action, fromKind, toKind, serial, source string
+		var fromID, toID int64
+		var amount int
+		if err := rows.Scan(&at, &action, &fromKind, &fromID, &toKind, &toID, &serial, &source, &amount); err != nil {
+			t.Logf("trace: item log: %v", err)
+			return
+		}
+		t.Logf("trace:   log %s: %s of %d, serial %s from %s %d to %s %d, source %q", at.Format("15:04:05.000"), action, amount,
+			serial, fromKind, fromID, toKind, toID, source)
+	}
+}
+
+func mergeGround(a, b map[string]int) map[string]int {
+	m := maps.Clone(a)
+	for k := range b {
+		m[k] = 0
+	}
+	return m
 }
 
 // aboveStart lists the currencies of now above the start, for an audit

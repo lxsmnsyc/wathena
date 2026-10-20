@@ -1,6 +1,8 @@
 package store_test
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"testing"
@@ -241,4 +243,99 @@ func TestLogPartitions(t *testing.T) {
 	if _, err := game.Exec(ctx, `SELECT ensure_log_partitions(now() + interval '40 days')`); err != nil {
 		t.Errorf("the game role cannot make partitions: %v", err)
 	}
+}
+
+// TestLoginWaitsForOlderSession is review 2026-10's L34: a second login
+// of a character whose older session is still in its zone. The older
+// session then gives zeny away in a commit, and logs out. With Load, the
+// second login read the character before the commit, the commit skipped
+// the stale giver, and both the giver and the taker held the zeny. Login
+// waits until the older session ended, so it reads the giver after the
+// commit.
+func TestLoginWaitsForOlderSession(t *testing.T) {
+	admin, game := migrated(t)
+	ctx := timeout(t)
+	s := newStore(t, game, store.Options{})
+	rich := newCharacter("Gina")
+	rich.Zeny = 1000
+	giver, err := s.DevCharacter(ctx, rich)
+	if err != nil {
+		t.Fatal(err)
+	}
+	taker, err := s.DevCharacter(ctx, newCharacter("Tom"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cg, old, err := s.Login(ctx, giver)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ct, st, err := s.Login(ctx, taker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	type loaded struct {
+		c   *character.Character
+		err error
+	}
+	second := make(chan loaded, 1)
+	go func() {
+		c, x, err := s.Login(ctx, giver)
+		if err == nil {
+			defer x.Save(c, true)
+		}
+		second <- loaded{c, err}
+	}()
+	select {
+	case l := <-second:
+		t.Fatalf("the second login did not wait for the older session: %+v", l)
+	case <-time.After(200 * time.Millisecond):
+	}
+	// The older session, still in its zone, gives 100 zeny away, then
+	// logs out.
+	ng, nt := copyOf(cg), copyOf(ct)
+	ng.Zeny, nt.Zeny = cg.Zeny-100, ct.Zeny+100
+	s.Commit([]store.Entry{{Session: old, Char: ng}, {Session: st, Char: nt}}, transfer.Logs{Zeny: []transfer.ZenyLog{{
+		At: time.Now(), Action: transfer.ActionTrade, From: transfer.Inventory(giver), To: transfer.Inventory(taker), Amount: 100,
+	}}})
+	old.Save(ng, true)
+	st.Save(nt, true)
+	l := <-second
+	if l.err != nil {
+		t.Fatal(l.err)
+	}
+	if l.c.Zeny != cg.Zeny-100 {
+		t.Errorf("the second login read %d zeny, want %d after the commit", l.c.Zeny, cg.Zeny-100)
+	}
+	if err := s.Drain(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var total int64
+	if err := admin.QueryRow(ctx, `SELECT sum(zeny) FROM characters WHERE id = ANY($1)`, []int64{giver, taker}).Scan(&total); err != nil {
+		t.Fatal(err)
+	}
+	if total != cg.Zeny+ct.Zeny {
+		t.Errorf("zeny %d in all, was %d", total, cg.Zeny+ct.Zeny)
+	}
+
+	// A login that cannot wait longer gives up, and does not count as a
+	// session: the character can be held afterwards.
+	ca, again, err := s.Login(ctx, giver)
+	if err != nil {
+		t.Fatal(err)
+	}
+	short, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	if _, _, err := s.Login(short, giver); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("a login while a session lives: %v", err)
+	}
+	again.Save(ca, true)
+	if err := again.Flush(ctx); err != nil {
+		t.Fatal(err)
+	}
+	h, err := s.Hold(giver)
+	if err != nil {
+		t.Fatalf("hold after the sessions ended: %v", err)
+	}
+	h.Release()
 }

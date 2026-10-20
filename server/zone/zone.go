@@ -682,8 +682,11 @@ type Zone struct {
 	modsOff   map[string]bool
 	modErrors *modscript.ErrorLog
 	// control gets work that must run on the zone's goroutine, such as a
-	// mod reload.
-	control chan func()
+	// mod reload. stallNext is a stall, in nanoseconds, between taking
+	// the next control call and running it, for the duplication tests
+	// (StallNextCall).
+	control   chan func()
+	stallNext atomic.Int64
 	// announces get announcements from other zones and the world.
 	announces chan announcement
 	// npcHandles are the NPCs by script handle. npcsStarted is set once
@@ -904,6 +907,9 @@ func (z *Zone) Run(ctx context.Context) {
 		case p := <-z.stale:
 			z.safely("stale", func() { z.loggedInElsewhere(p) })
 		case f := <-z.control:
+			if d := z.stallNext.Swap(0); d > 0 {
+				time.Sleep(time.Duration(d))
+			}
 			z.safely("control", f)
 		case a := <-z.announces:
 			z.safely("announce", func() { z.announce(a) })

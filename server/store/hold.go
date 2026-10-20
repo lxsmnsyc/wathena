@@ -60,7 +60,7 @@ func (h *Hold) Load(ctx context.Context, id int64) (*character.Character, *Sessi
 	if !slices.Contains(h.ids, id) {
 		return nil, nil, errors.New("store: the hold does not keep that character")
 	}
-	return h.s.load(ctx, id, true)
+	return h.s.load(ctx, id, loadHeld)
 }
 
 // Release lets the held characters load again.

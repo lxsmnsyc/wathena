@@ -117,8 +117,14 @@ func ValidName(name string) bool {
 }
 
 // KickWait is how long a login waits for the session it replaces to end
-// and hand over its last save.
+// and hand over its last save, before it loads the character.
 const KickWait = 10 * time.Second
+
+// LoadWait bounds a login's load. With a database, the load waits until
+// the older session's last save is written (review 2026-10, L34), so an
+// older session stuck in a stalled zone makes the login wait here, and
+// then fail with stillLeavingText.
+const LoadWait = 30 * time.Second
 
 // Characters finds and loads the character a session plays.
 type Characters interface {
@@ -151,7 +157,9 @@ type World interface {
 // One character has at most one session. A login for a character that
 // is already playing kicks the older session, as rAthena does, and waits
 // until the older session's last save is queued before loading the
-// character. The older connection gets DISCONNECT_REASON_LOGGED_IN_ELSEWHERE.
+// character. With a database, the load also waits until that save is
+// written (store.Login), up to LoadWait. The older connection gets
+// DISCONNECT_REASON_LOGGED_IN_ELSEWHERE.
 type Gateway struct {
 	World    World
 	Sessions Sessions
@@ -230,6 +238,8 @@ const (
 	elsewhereText = "Your character logged in somewhere else."
 	loggedOutText = "You logged out. Log in again to play."
 	shutdownText  = "The server is restarting. Try again in a minute."
+	// stillLeavingText is a login whose older session did not end.
+	stillLeavingText = "Your character is still leaving the game. Try again in a moment."
 )
 
 func (o *online) end(reason wathenav1.DisconnectReason, text string) {
@@ -462,7 +472,17 @@ func (g *Gateway) session(ctx context.Context, c *conn) error {
 	}); ok {
 		a.EndAutotrade(ctx, id)
 	}
-	char, saver, err := chars.Load(ctx, id)
+	// The load waits until the older session ended (store.Login), even
+	// when it outlasted KickWait. LoadWait bounds that wait.
+	lctx, cancelLoad := context.WithTimeout(ctx, LoadWait)
+	char, saver, err := chars.Load(lctx, id)
+	cancelLoad()
+	if err != nil && ctx.Err() == nil && errors.Is(err, context.DeadlineExceeded) {
+		if g.Log != nil {
+			g.Log.Warn("a login gave up waiting for the older session", "character", id)
+		}
+		return disconnect(ctx, c, wathenav1.DisconnectReason_DISCONNECT_REASON_UNSPECIFIED, stillLeavingText)
+	}
 	if err != nil {
 		return g.loadFailed(ctx, c, err)
 	}
@@ -847,8 +867,7 @@ func (g *Gateway) claim(id int64) *online {
 	case <-me.kick:
 		// A newer login replaced this one while it waited.
 	case <-t.C:
-		// The older session's saves fail from here on, since this one
-		// raises the save version when it loads.
+		// The load waits for the older session to end (store.Login).
 		if g.Log != nil {
 			g.Log.Warn("an older session did not end in time", "character", id)
 		}
@@ -915,6 +934,8 @@ type memoryCharacters struct {
 	mu    sync.Mutex
 	ids   map[string]int64
 	looks map[int64]memoryCharacter
+	// changed closes, and is replaced, when a session ends.
+	changed chan struct{}
 }
 
 type memoryCharacter struct {
@@ -923,8 +944,10 @@ type memoryCharacter struct {
 	// saved is the last save, or nil before the first.
 	saved *character.Character
 	// session counts the loads. Only the latest session's saves count,
-	// as a database's save version does.
+	// as a database's save version does. open is set until the latest
+	// session's final save.
 	session int
+	open    bool
 }
 
 func (m *memoryCharacters) Find(_ context.Context, name string, look zone.Look) (int64, error) {
@@ -940,10 +963,26 @@ func (m *memoryCharacters) Find(_ context.Context, name string, look zone.Look) 
 	return id, nil
 }
 
-func (m *memoryCharacters) Load(_ context.Context, id int64) (*character.Character, zone.Saver, error) {
+// Load waits until the character's older session ended, as store.Login
+// does, so no older session changes what this one read.
+func (m *memoryCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {
 	m.mu.Lock()
+	for m.looks[id].open {
+		if m.changed == nil {
+			m.changed = make(chan struct{})
+		}
+		ch := m.changed
+		m.mu.Unlock()
+		select {
+		case <-ch:
+		case <-ctx.Done():
+			return nil, nil, ctx.Err()
+		}
+		m.mu.Lock()
+	}
 	mc := m.looks[id]
 	mc.session++
+	mc.open = true
 	m.looks[id] = mc
 	m.mu.Unlock()
 	if mc.saved != nil {
@@ -962,14 +1001,21 @@ type memorySaver struct {
 
 // Save keeps c, unless a newer session loaded the character. The zone
 // hands over a copy it no longer changes.
-func (s memorySaver) Save(c *character.Character, _ bool) {
+func (s memorySaver) Save(c *character.Character, final bool) {
 	s.m.mu.Lock()
 	defer s.m.mu.Unlock()
 	mc := s.m.looks[s.id]
-	if mc.session != s.session {
+	if mc.session != s.session || !mc.open {
 		return
 	}
 	mc.saved = c
+	if final {
+		mc.open = false
+		if s.m.changed != nil {
+			close(s.m.changed)
+			s.m.changed = nil
+		}
+	}
 	s.m.looks[s.id] = mc
 }
 

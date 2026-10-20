@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync/atomic"
 	"time"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -232,25 +233,80 @@ func (z *Zone) EventCondition(ctx context.Context, mod, module, fn string) (bool
 	return held, err
 }
 
-// do runs f on the zone's goroutine and waits for it.
+// do runs f on the zone's goroutine and waits for it. It is all or
+// nothing for the caller (review 2026-10):
+//   - When ctx ends or the zone stops before f starts, f never runs, and
+//     do returns the error.
+//   - Once f starts, do waits for it and returns its result, even when
+//     ctx ends meanwhile. f may change the zone, such as a restore that
+//     moves items, and the caller must not act as if it did not.
+//
+// Before, do returned ctx's error while f still ran later. A restore
+// whose request timed out then let go of its offline characters and
+// storages, and the zone moved their items afterwards: the moved items
+// were in two places.
 func (z *Zone) do(ctx context.Context, f func() error) error {
-	done := make(chan error, 1)
+	var err error
+	if cerr := z.call(ctx, func() { err = f() }); cerr != nil {
+		return cerr
+	}
+	return err
+}
+
+// call runs f on the zone's goroutine and waits for it, as do does. It
+// returns ctx's error or ErrStopped when f did not run.
+func (z *Zone) call(ctx context.Context, f func()) error {
+	// state is callWaiting until the zone starts f (callStarted) or the
+	// caller gives up first (callAbandoned).
+	var state atomic.Int32
+	done := make(chan struct{})
+	run := func() {
+		if !state.CompareAndSwap(callWaiting, callStarted) {
+			return
+		}
+		f()
+		// Not deferred: after a panic in f, done stays open.
+		close(done)
+	}
 	select {
-	case z.control <- func() { done <- f() }:
+	case z.control <- run:
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-z.stopped:
 		return ErrStopped
 	}
 	select {
-	case err := <-done:
-		return err
+	case <-done:
+		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		if state.CompareAndSwap(callWaiting, callAbandoned) {
+			return ctx.Err()
+		}
 	case <-z.stopped:
-		return ErrStopped
+		if state.CompareAndSwap(callWaiting, callAbandoned) {
+			return ErrStopped
+		}
+	}
+	// f started. A panic in it stops the zone, which closes stopped.
+	select {
+	case <-done:
+		return nil
+	case <-z.stopped:
+		select {
+		case <-done:
+			return nil
+		default:
+			return ErrStopped
+		}
 	}
 }
+
+// The states of a call.
+const (
+	callWaiting int32 = iota
+	callStarted
+	callAbandoned
+)
 
 func (z *Zone) startEvent(run EventRun) error {
 	r := z.itemScripts()
@@ -292,4 +348,23 @@ func (z *Zone) eventCondition(mod, module, fn string) (bool, error) {
 		return false, errors.New("mod scripts do not run in this zone")
 	}
 	return r.CheckCondition(mod, module, fn)
+}
+
+// StallNextCall makes the zone stall for d after it takes its next call
+// from another goroutine, and before it runs it, as a machine that
+// pauses the zone in the middle of serving a call. The caller may give
+// up meanwhile. It is for the duplication tests of waserver --dev only
+// (POST /debug/wathena/stall?next=1).
+func (z *Zone) StallNextCall(d time.Duration) {
+	z.stallNext.Store(int64(d))
+}
+
+// Stall holds the zone's goroutine for d, as a machine that stalls
+// does: the zone takes no command, tick or call meanwhile. It is for the
+// duplication tests of waserver --dev only (POST /debug/wathena/stall).
+func (z *Zone) Stall(ctx context.Context, d time.Duration) error {
+	return z.do(ctx, func() error {
+		time.Sleep(d)
+		return nil
+	})
 }

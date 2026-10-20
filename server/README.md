@@ -133,7 +133,7 @@ Players gain exp and levels from kills, with the exp tables, drops and level pen
 
 `--start-items` gives every new character items, for development only, such as `--start-items 501:5,512:10` for 5 Red Potions and 10 Apples. Without it, characters start with nothing and get items from drops. With a database, a character only gets them when it is made.
 
-One character has one session. A second login with the same name, in any case, kicks the first, as rAthena does. The first page shows "Your character logged in somewhere else." The second continues once the first has saved.
+One character has one session. A second login with the same name, in any case, kicks the first, as rAthena does. The first page shows "Your character logged in somewhere else." The second continues once the first has saved. With a database, it waits until the first session's last save is written, so the first can no longer commit a trade or a restore after the second read the character (decision 0054). After 30 seconds (`gateway.LoadWait`) it gives up, and the player is told to try again.
 
 ## Running with PostgreSQL
 
@@ -615,6 +615,7 @@ What it does:
 - Skills and skill trees come from the extracts `skills.json` and `skill_trees.json` of the mode, with each mod's `data/skills.yml` and `data/skill_trees.yml` over them. Every zone shares the result.
 - Each zone runs the mods' scripts in its own Lua state. A mod whose scripts fail is logged and left off in that zone. A mod whose handlers fail 10 times in a minute is turned off in that zone.
 - A zone makes its Lua state at start when a mod has entry scripts, and otherwise when a player first uses an item there.
+- Each Lua call and resume, the prelude and setup functions too, has a CPU budget of 10,000,000 units, and each mod a budget per tick. These measure the work. The wall-clock limit of a call is a 30-second backstop for a stuck call, so a machine that stalls does not end a zone's Lua state (decision 0054).
 
 ### Mod art
 
@@ -1125,7 +1126,8 @@ Restores (decision 0029):
 
 - A restore moves each serial from wherever it is now: an inventory, a cart, a vending shop's cart stack, an account or extra storage, a guild storage or a mail, of a character online or not. A serial that is gone is made again from its last item log line, with the restore's serial as its source.
 - The items arrive in one mail from "Staff", one slot per serial, so each keeps its serial. The mail, the holders, the item log lines and the audit row are written in one transaction.
-- An online holder's items move in its zone, on the zone's goroutine. An offline holder's characters cannot log in while the restore runs. A storage someone has open, or items that keep moving, make the restore try again a few times, then answer `conflict`.
+- An online holder's items move in its zone, on the zone's goroutine. An offline holder's characters cannot log in while the restore runs.
+- A restore whose request ends while its zone works on it still finishes and answers with its mail. One whose request ends before the zone starts it changes nothing (decision 0054). A storage someone has open, or items that keep moving, make the restore try again a few times, then answer `conflict`.
 - The holder loses an open trade, and a vending shop loses the lines of the stack.
 - The world side is `server/adminworld`. The admin API reaches it through `admin.World`.
 
@@ -1322,6 +1324,7 @@ curl 'http://127.0.0.1:8301/debug/wathena/metrics?format=text'
 | `GET /debug/wathena/items` | With `--dev` only: every item, with its serial, and all zeny that the players and the ground of each zone hold, as JSON, for the duplication tests. |
 | `POST /debug/wathena/announce?text=&map=` | With `--dev` only: an announcement, as the admin API's `POST /announce`. |
 | `POST /debug/wathena/restart?in=2m&reason=&message=` | With `--dev` only: plans a restart that long from the server clock. `DELETE` cancels it. |
+| `POST /debug/wathena/stall?ms=&map=&next=1` | With `--dev` only: stalls a zone, the start zone without `map`, for up to 5 seconds, as a machine that swaps. With `next=1`, the zone stalls after it takes its next call from another goroutine, before it runs it. For the duplication tests (decision 0054). |
 | `/debug/pprof/` | Go's CPU, heap, goroutine and trace profiles. |
 
 `waserver` also prints the tables when it stops.

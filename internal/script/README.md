@@ -61,7 +61,7 @@ The environment of each mod, and read-only shared tables (strategy section 6.6),
 | CPU | 10,000,000 | each call and each resume | A count hook every 1,000 instructions. Allocations cost 1 per 64 bytes. Pattern matching, plain `find`, `table.sort`, `table.insert`, and other work in C is charged too. |
 | Memory | 16 MB | the state | The allocator refuses to grow past it. |
 | Owner memory | none | each owner of memory | `SetOwnerLimit`. The allocator refuses to grow an owner past it while a call runs. |
-| Time | 1 second | each call and each resume | A backstop for work the CPU budget does not see, such as comparing long strings. The hook reads the clock from the first 1,000 instructions on. |
+| Time | 30 seconds | each call and each resume | A wall-clock backstop for a call stuck in work the CPU budget does not see, such as comparing long strings over and over. The hook reads the clock from the first 1,000 instructions on. It is long because a machine that stalls stretches every call's clock time (decision 0054). The CPU budget is what limits a script's work. |
 
 ## Owners of memory
 

@@ -367,9 +367,9 @@ func (z *Zone) auditCurrencies(p *Player) map[string]int64 {
 // Audit lists what the zone's players and ground hold. It runs on the
 // zone's goroutine.
 func (z *Zone) Audit(ctx context.Context) (Audit, error) {
-	done := make(chan Audit, 1)
-	f := func() {
-		a := Audit{Map: z.Map}
+	var a Audit
+	err := z.call(ctx, func() {
+		a = Audit{Map: z.Map}
 		for _, p := range z.players {
 			if p.inventory == nil {
 				continue
@@ -393,19 +393,9 @@ func (z *Zone) Audit(ctx context.Context) (Audit, error) {
 		}
 		a.Sent = z.sentMails(a.Mails)
 		a.Mails = append(a.Mails, a.Sent...)
-		done <- a
+	})
+	if err != nil {
+		return Audit{}, err
 	}
-	select {
-	case z.control <- f:
-	case <-ctx.Done():
-		return Audit{}, ctx.Err()
-	case <-z.stopped:
-		return Audit{}, ErrStopped
-	}
-	select {
-	case a := <-done:
-		return a, nil
-	case <-ctx.Done():
-		return Audit{}, ctx.Err()
-	}
+	return a, nil
 }

@@ -765,27 +765,14 @@ func (z *Zone) OpenGuildStorageFor(ctx context.Context, name string) (social.Sto
 		o     social.StorageOutcome
 		found bool
 	}
-	done := make(chan result, 1)
-	f := func() {
+	var r result
+	err := z.call(ctx, func() {
 		for _, p := range z.players {
 			if chat.Key(p.Name) == chat.Key(name) && !p.gone() {
-				done <- result{z.openGuildStorage(p), true}
+				r = result{z.openGuildStorage(p), true}
 				return
 			}
 		}
-		done <- result{}
-	}
-	select {
-	case z.control <- f:
-	case <-ctx.Done():
-		return 0, false, ctx.Err()
-	case <-z.stopped:
-		return 0, false, ErrStopped
-	}
-	select {
-	case r := <-done:
-		return r.o, r.found, nil
-	case <-ctx.Done():
-		return 0, false, ctx.Err()
-	}
+	})
+	return r.o, r.found, err
 }

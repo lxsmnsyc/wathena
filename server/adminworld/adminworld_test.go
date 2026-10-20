@@ -374,6 +374,63 @@ func TestRestoreWhileLoggingInAndOut(t *testing.T) {
 	}
 }
 
+// TestRestoreThatTimesOutInItsZone gives up on a restore while its zone
+// works on it. The zone waits on the lock of the fence's storage, which
+// the test holds, past the restore's deadline. The restore must then
+// either move every serial once, or nothing. Before the fix, the call
+// returned the deadline, ended the fence's offline session with its
+// stack, and the zone moved part of the stack into a mail afterwards.
+// That part was then in the fence's inventory and in the mail.
+func TestRestoreThatTimesOutInItsZone(t *testing.T) {
+	e := setup(t)
+	away := stack(0, 909, 4)
+	fence := e.character("Fence", away)
+	victim := e.character("Victim")
+	stored := item.NewSerial()
+	var account int64
+	if err := e.admin.QueryRow(e.ctx, "SELECT account_id FROM characters WHERE id = $1", fence).Scan(&account); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.admin.Exec(e.ctx, "INSERT INTO storage_items (serial, holder, account_id, slot, item_id, amount) VALUES ($1, 'account', $2, 0, 909, 6)",
+		pgtype.UUID{Bytes: stored, Valid: true}, account); err != nil {
+		t.Fatal(err)
+	}
+	before := e.total(909)
+	sts, err := e.cfg.Storages.Acquire(e.ctx, []storage.Key{{Holder: storage.HolderAccount, ID: account}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e.cfg.Storages.Release(sts[0])
+	sts[0].Lock()
+	unlocked := make(chan struct{})
+	go func() {
+		defer close(unlocked)
+		time.Sleep(time.Second)
+		sts[0].Unlock()
+	}()
+	ctx, cancel := context.WithTimeout(e.ctx, 300*time.Millisecond)
+	defer cancel()
+	res, rerr := e.aw.Restore(ctx, restore(victim, false, admin.RestoreItem{Serial: stored}, admin.RestoreItem{Serial: away.Serial, Amount: 1}))
+	<-unlocked
+	// The zone is done with the restore once it answers another call.
+	if _, err := e.aw.Character(e.ctx, fence); err != nil {
+		t.Fatal(err)
+	}
+	if after := e.total(909); after != before {
+		t.Errorf("jellopy %d, was %d (the restore answered %v, %v)", after, before, res, rerr)
+	}
+	h := e.holders(away.Serial)
+	switch {
+	case rerr == nil && (len(h) != 1 || h[0].Holder != "inventory" || h[0].Amount != 3):
+		t.Errorf("the restore answered %v, and the fence's stack is %+v", res, h)
+	case rerr != nil && (len(h) != 1 || h[0].Holder != "inventory" || h[0].Amount != 4):
+		t.Errorf("the restore failed with %v, and the fence's stack is %+v", rerr, h)
+	}
+	// The fence logs in with what the restore left.
+	s := e.login(fence)
+	defer s.Leave()
+}
+
 // TestSearchStates checks Characters and FindSerial.
 func TestSearchStates(t *testing.T) {
 	e := setup(t)

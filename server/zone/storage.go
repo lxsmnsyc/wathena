@@ -638,29 +638,16 @@ func (z *Zone) forPlayer(ctx context.Context, name string, f func(p *Player) int
 		n     int
 		found bool
 	}
-	done := make(chan result, 1)
-	run := func() {
+	var r result
+	err = z.call(ctx, func() {
 		for _, p := range z.players {
 			if chat.Key(p.Name) == chat.Key(name) && !p.gone() {
-				done <- result{f(p), true}
+				r = result{f(p), true}
 				return
 			}
 		}
-		done <- result{}
-	}
-	select {
-	case z.control <- run:
-	case <-ctx.Done():
-		return 0, false, ctx.Err()
-	case <-z.stopped:
-		return 0, false, ErrStopped
-	}
-	select {
-	case r := <-done:
-		return r.n, r.found, nil
-	case <-ctx.Done():
-		return 0, false, ctx.Err()
-	}
+	})
+	return r.n, r.found, err
 }
 
 // OpenStorageFor opens the account's storage of a player of this zone by

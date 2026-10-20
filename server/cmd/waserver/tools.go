@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/server/admin"
 	"github.com/lxsmnsyc/wathena/server/adminworld"
+	"github.com/lxsmnsyc/wathena/server/world"
 )
 
 // devAnnounceHandler shows a line as the admin API's POST /announce
@@ -72,5 +74,46 @@ func devRestartHandler(aw *adminworld.World) http.HandlerFunc {
 		}
 		b, _ := protojson.Marshal(m)
 		_, _ = rw.Write(b)
+	}
+}
+
+// maxStall is the longest stall devStallHandler makes.
+const maxStall = 5 * time.Second
+
+// devStallHandler holds a zone's goroutine for a while, as a machine
+// that stalls does, for the duplication tests (review 2026-10): POST
+// /debug/wathena/stall?map=<map>&ms=<n>. Without map it stalls the start
+// zone. It answers once the stall ends. With next=1, it answers at once,
+// and the zone stalls after it takes its next call from another
+// goroutine, before it runs it. It needs --dev.
+func devStallHandler(w *world.World) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		ms, err := strconv.Atoi(q.Get("ms"))
+		if err != nil || ms < 0 || time.Duration(ms)*time.Millisecond > maxStall {
+			http.Error(rw, "ms is 0 to 5000", http.StatusBadRequest)
+			return
+		}
+		z := w.Start()
+		if m := q.Get("map"); m != "" {
+			if z = w.Zone(m); z == nil {
+				http.Error(rw, "no such map", http.StatusNotFound)
+				return
+			}
+		}
+		if q.Get("next") == "1" {
+			z.StallNextCall(time.Duration(ms) * time.Millisecond)
+			rw.Header().Set("Content-Type", "application/json")
+			_, _ = rw.Write([]byte("{}\n"))
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), maxStall+10*time.Second)
+		defer cancel()
+		if err := z.Stall(ctx, time.Duration(ms)*time.Millisecond); err != nil {
+			http.Error(rw, err.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		rw.Header().Set("Content-Type", "application/json")
+		_, _ = rw.Write([]byte("{}\n"))
 	}
 }

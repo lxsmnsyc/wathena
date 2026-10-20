@@ -136,6 +136,8 @@ p.Talk("Quartermaster").Choose("Give")
 | `TestDuplicationMarketWithDatabase` | The same, with PostgreSQL, then the saved inventories, carts, mails and zeny. |
 | `TestDuplicationBuyingStores` | 8 bots open buying stores and sell to each other's, with connections closed in the middle of sales and with stores open. |
 | `TestDuplicationBuyingStoresWithDatabase` | The same, with PostgreSQL, then the saved inventories and zeny. |
+| `TestDuplicationRestoresWithDatabase` | The trade test with PostgreSQL, while restores move random serials of the bots, storages, carts and mails into mails to random bots (decision 0029). |
+| `TestDuplicationCutRestoresWithDatabase` | The same on a machine that stalls: bots leave for up to a second, restores take serials of bots that are away, stall the start zone with `POST /debug/wathena/stall`, and give up on their requests after 100 to 200 ms. Each restore must happen whole or not at all (decision 0054). |
 | `TestWorldEventBoss` | `!event start Boss` starts the fixture's boss event with `world_events.start`. Alice gets `WorldEventNotice` and the announcement, a second start is refused, and Bob, who logs in during the run, gets `WorldEventList`. Alice kills the boss: the announcement names her, the end notice says won, and she gets the 100 zeny of a participant while Bob gets none. A stop ends a second run with "stopped". |
 | `TestWorldEventInvasion` | The Raid's two waves of Raiders enter at the map's edges and come to the players. Alice kills them, the second wave comes once the first died, and the raid is won: Bob, who did not fight, gets the 2 Apples of everyone on the map. |
 | `TestWorldEventTreasureHunt` | The Hunt hides 2 chests on `e2e_field`. The Treasure Hunter on the start map tells their map and cells. Alice warps there and opens both: each gives 50 zeny and drops its Jellopy, and the hunt is won. |
@@ -190,6 +192,8 @@ Mail, vending, the Exchange and buying stores are part of the test too (phase 5 
 The audit also lists each player's own currencies, such as the fixture's tokens, by full name. The test counts them in the totals, and `SavedTotals` reads them from `character_currencies`.
 
 With a database, `CheckDatabase` stops the server and checks the saved inventories, guild storages, storages, carts and mails, and the zeny of characters and mails, against the start, one item log line for each drop and pick-up the bots saw (and at most one more for each login again), and a history for every serial.
+
+A failed audit logs a trace: for each item whose total differs, the stacks that came, went or changed since the last full audit that passed, with serial and holder, the ground amounts, the server's warnings and errors, and, with a database, the item log lines of the serials that came. An audit also fails when one character is in the world twice (decision 0054).
 
 A failure that shows a total below the start with a closed connection means a character left the world while the test still counted on it. See decision 0017, "A missing total in the duplication test". `botclient` writes with its own timeout for this reason: the WebSocket library closes the connection when a write's context ends during the write.
 

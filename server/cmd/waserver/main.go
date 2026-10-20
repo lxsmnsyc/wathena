@@ -944,6 +944,7 @@ func runAll(name string, args []string) error {
 			dbg.Handle("POST /debug/wathena/guild-storage", devGuildStorageHandler(w))
 			dbg.Handle("POST /debug/wathena/storage", devStorageHandler(w))
 			dbg.Handle("POST /debug/wathena/cart", devCartHandler(w))
+			dbg.Handle("POST /debug/wathena/stall", devStallHandler(w))
 			dbg.Handle("POST /debug/wathena/staff", devStaffHandler(hub, staffRoles))
 			dbg.Handle("POST /debug/wathena/announce", devAnnounceHandler(staffWorld))
 			dbg.Handle("POST /debug/wathena/restart", devRestartHandler(staffWorld))
@@ -1271,8 +1272,11 @@ func (c storeCommitter) CommitWrites(saves []zone.CommitSave, storages []zone.St
 	c.store.CommitAll(entries, writes, store.Writes{Mails: w.Mails, Stock: w.Stock, Stores: w.Stores, Events: units, Audit: w.Audit}, logs)
 }
 
+// Load waits until the character's earlier sessions ended, so an older
+// session still in its zone cannot commit after this one read the
+// character (store.Login).
 func (d dbCharacters) Load(ctx context.Context, id int64) (*character.Character, zone.Saver, error) {
-	c, s, err := d.store.Load(ctx, id)
+	c, s, err := d.store.Login(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}

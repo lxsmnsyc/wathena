@@ -1578,3 +1578,7 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
      - The converter maps `skill` and `addtoskill`. `SKILL_PERM_GRANT` does not convert. renewal places 264 of 710 job change NPCs, up from 259, and the first job changers of Swordman, Mage, Archer, Acolyte and Merchant.
      - No other Lua API change was made.
      - Review items: `SKILL_PERM_GRANT`, `jobname` for the Thief Guide, temporary and item skills in the client's skill list, and `player:get_skill_level` with temporary and item levels.
+39. Decision 0054, a phase 8 follow-up, done on 2026-10-20 ([decision 0054](../decisions/0054-restores-logins-and-lua-time-limits.md)). No Lua API change.
+   - The wall-clock limit of each Lua call and resume is a 30-second backstop, up from 1 second. The CPU budget per call and each mod's budget per tick measure a script's work, so a machine that stalls no longer ends a zone's prelude or a mod's setup.
+   - What a mod sees: a script stopped by the clock now ran for 30 seconds of clock time. A loop that never ends is stopped by the CPU budget, as before.
+   - Review items: a mod that compares long strings in a loop can hold its zone up to 30 seconds per call. A limit on the thread's CPU time needs a change to the C glue and a new `lua.wasm`.

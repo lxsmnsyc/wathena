@@ -194,7 +194,11 @@ func personalStep(ctx context.Context, b *botclient.Bot, id uint32, rnd *rand.Ra
 		case e.HasStorageResult():
 			switch o := e.GetStorageResult().GetOutcome(); o {
 			case wathenav1.StorageOutcome_STORAGE_OUTCOME_FULL, wathenav1.StorageOutcome_STORAGE_OUTCOME_CANNOT_CARRY,
-				wathenav1.StorageOutcome_STORAGE_OUTCOME_CART_OVERWEIGHT:
+				wathenav1.StorageOutcome_STORAGE_OUTCOME_CART_OVERWEIGHT,
+				// A trade that another bot opened, or one whose close a
+				// stalled zone has not sent yet, refuses the move and
+				// changes nothing.
+				wathenav1.StorageOutcome_STORAGE_OUTCOME_BUSY:
 				c.Refused.Add(1)
 				return nil
 			default:

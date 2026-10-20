@@ -212,19 +212,48 @@ type Session struct {
 
 // Load starts a session for a character and returns the character. It
 // first waits for saves that earlier sessions of the character still
-// have in the queue, and while a Hold keeps the character.
+// have in the queue, and while a Hold keeps the character. An earlier
+// session that has not ended goes stale: its saves and its part of
+// later commits are dropped.
 func (s *Store) Load(ctx context.Context, id int64) (*character.Character, *Session, error) {
-	return s.load(ctx, id, false)
+	return s.load(ctx, id, loadPlain)
 }
 
-// load starts a session. Unless held is set, it first waits while a
-// Hold keeps the character. The session counts as live from before the
-// claim, so a Hold that comes later sees it.
-func (s *Store) load(ctx context.Context, id int64, held bool) (*character.Character, *Session, error) {
+// Login is Load for a player's login. It first waits until every earlier
+// session of the character ended: its final save is written, or it went
+// stale (review 2026-10, L34). An earlier session that is still in a
+// zone can then never commit a trade, a sale, a drop or a mail after
+// the login read the character. With Load, such a commit wrote the other
+// party's side and dropped the stale side, and the login kept the items
+// the stale side gave away. ctx bounds the wait.
+func (s *Store) Login(ctx context.Context, id int64) (*character.Character, *Session, error) {
+	return s.load(ctx, id, loadAlone)
+}
+
+// How load waits before it claims the character.
+type loadMode uint8
+
+const (
+	// loadPlain waits while a Hold keeps the character.
+	loadPlain loadMode = iota
+	// loadHeld is a Hold's own load: the Hold keeps the character.
+	loadHeld
+	// loadAlone waits while a Hold keeps the character, and while an
+	// earlier session has not ended.
+	loadAlone
+)
+
+// load starts a session, after the wait of its mode. The session counts
+// as live from before the claim, so a Hold that comes later sees it.
+func (s *Store) load(ctx context.Context, id int64, mode loadMode) (*character.Character, *Session, error) {
 	x := &Session{s: s, id: id}
 	for {
 		s.mu.Lock()
-		if held || !s.held[id] {
+		free := mode == loadHeld || !s.held[id]
+		if mode == loadAlone && s.live[id] > 0 {
+			free = false
+		}
+		if free {
 			s.live[id]++
 			x.counted = true
 			s.mu.Unlock()

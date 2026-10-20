@@ -164,6 +164,36 @@ func TestTimeLimit(t *testing.T) {
 	}
 }
 
+// TestStallDoesNotStopCall checks decision 0054: with the default
+// limits, a call whose clock time a stalled machine stretches is not
+// stopped. A host function sleeps longer than the old 1-second limit
+// in the middle of the call, after the clock started, as a machine that
+// swaps would pause the thread. A loop that never ends is still stopped,
+// by the CPU budget, soon.
+func TestStallDoesNotStopCall(t *testing.T) {
+	s := newState(t, Options{})
+	must(t, s.Register("stall", func(*Call) error {
+		time.Sleep(1500 * time.Millisecond)
+		return nil
+	}))
+	n := runInt(t, s, `
+		local x = 0
+		for i = 1, 5000 do x = x + 1 end
+		stall()
+		for i = 1, 5000 do x = x + 1 end
+		return x`)
+	if n != 10000 {
+		t.Errorf("got %d", n)
+	}
+	start := time.Now()
+	if _, err := s.Load("loop", `while true do end`); !errors.Is(err, ErrCPULimit) {
+		t.Fatalf("an infinite loop: %v", err)
+	}
+	if took := time.Since(start); took > 10*time.Second {
+		t.Errorf("the CPU budget stopped the loop after %s", took)
+	}
+}
+
 // TestNoLimits checks that negative limits turn limits off.
 func TestNoLimits(t *testing.T) {
 	s := newState(t, Options{Limits: Limits{CPU: -1, Memory: -1, Timeout: -1}})

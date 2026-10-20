@@ -274,8 +274,16 @@ func (w *World) tryRestore(ctx context.Context, r admin.Restore, to mail.Recipie
 	case err != nil:
 		return nil, err
 	}
-	return w.restoreResult(ctx, res)
+	// The restore happened, even when ctx ended while the zone made it:
+	// the answer says so.
+	rctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), resultTimeout)
+	defer cancel()
+	return w.restoreResult(rctx, res)
 }
+
+// resultTimeout bounds the reads of a restore's answer, after the
+// restore happened.
+const resultTimeout = 10 * time.Second
 
 // load loads a held offline character for the restore.
 func (run *restoreRun) load(ctx context.Context, id int64) error {

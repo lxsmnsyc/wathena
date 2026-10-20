@@ -84,10 +84,11 @@ func coreMods(t *testing.T, z *Zone) {
 	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{sc}, IDs: []string{mod.Core}, Constants: core.Constants, Groups: groups, MonsterIDs: core.Monsters}
 }
 
-// testLimits are the Lua limits of the test zones: the defaults without
-// the wall-clock limit. A test must not fail because the machine paused
-// it, and the CPU budget still stops a script that runs too long.
-var testLimits = script.Limits{Timeout: -1}
+// testLimits are the Lua limits of the test zones: the server's
+// defaults. The CPU budget stops a script that runs too long, and the
+// wall-clock limit is a 30-second backstop, so a test does not fail
+// because the machine paused it (decision 0054).
+var testLimits = script.Limits{}
 
 // maxWeight is the test players' maximum weight: 100.0.
 const maxWeight = 1000
