@@ -6,10 +6,10 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 11268 of 15337 NPC lines are placed, duplicates too: 282 shops and 10986 of 14865 script NPCs.
-- 292 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
+- 12450 of 15337 NPC lines are placed, duplicates too: 282 shops and 12168 of 14865 script NPCs.
+- 63 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
 - 55 of 55 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
-- 439 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
+- 530 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
 - Pre-renewal classic is experimental until `core.ruleset.pre_renewal` matches rAthena's pre-renewal (phase 10 item 1). `waserver` warns at start.
 
 ## Folders
@@ -19,17 +19,17 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | Folder | Lines | Placed | Not placed |
 |---|---:|---:|---:|
 | airports | 63 | 62 | 1 |
-| cities | 947 | 910 | 37 |
-| events | 150 | 124 | 26 |
+| cities | 947 | 922 | 25 |
+| events | 150 | 142 | 8 |
 | guides | 95 | 92 | 3 |
 | guild3 | 10 | 0 | 10 |
 | instances | 671 | 4 | 667 |
-| jobs | 1804 | 1356 | 448 |
+| jobs | 1804 | 1545 | 259 |
 | kafras | 97 | 97 | 0 |
-| merchants | 690 | 356 | 334 |
-| other | 3466 | 2894 | 572 |
-| quests | 6622 | 4856 | 1766 |
-| warps | 250 | 235 | 15 |
+| merchants | 690 | 463 | 227 |
+| other | 3466 | 2917 | 549 |
+| quests | 6622 | 5686 | 936 |
+| warps | 250 | 238 | 12 |
 
 The extract leaves out the script NPCs of these folders, so none of them load:
 
@@ -45,45 +45,45 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 
 ## What blocks the rest
 
-1696 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+854 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|
-| getexp | 294 | getexp |
-| parameter MaxWeight | 278 | parameter MaxWeight |
-| killmonster | 152 | killmonster: the API cannot remove spawned monsters |
-| monster | 125 | monster: on another map |
-| disable_items | 96 | disable_items |
-| setpcblock | 82 | setpcblock |
-| navigateto | 67 | navigateto |
-| parameter SkillPoint | 42 | parameter SkillPoint |
-| mapwarp | 38 | mapwarp |
-| eaclass | 35 | eaclass |
-| gettime | 34 | gettime |
-| waitingroom | 32 | waitingroom |
+| killmonster | 154 | killmonster: the API cannot remove spawned monsters |
+| monster | 128 | monster: on another map |
+| navigateto | 73 | navigateto |
+| mapwarp | 41 | mapwarp |
+| waitingroom | 33 | waitingroom |
 | areamonster | 24 | areamonster |
+| getpartnerid | 22 | getpartnerid |
 | killmonsterall | 22 | killmonsterall |
-| makeitem | 22 | makeitem |
-| getpartnerid | 20 | getpartnerid |
-| variables | 18 | variables: $@3rdgc_room02 is not a valid name |
-| getbattleflag | 15 | getbattleflag |
+| variables | 20 | variables: $@3rdgc_room02 is not a valid name |
+| getmapusers | 17 | getmapusers |
+| questinfo | 15 | questinfo: a computed condition |
 | achievementinfo | 14 | achievementinfo |
+| getmonsterinfo | 14 | getmonsterinfo |
 | areawarp | 12 | areawarp |
-| getmonsterinfo | 11 | getmonsterinfo |
-| getmapusers | 10 | getmapusers |
+| callshop | 10 | callshop: a computed shop |
 | instance | 10 | instance: 1@mist is an instance map, which wAthena does not have yet |
+| add_reputation_points | 9 | add_reputation_points |
 | getcastledata | 9 | getcastledata: castles, sieges and guardians are not in the API yet |
+| getmercinfo | 9 | getmercinfo |
 | instance_create | 9 | instance_create |
-| gettimetick | 8 | gettimetick |
+| mesitemlink | 9 | mesitemlink: without brackets or with a name of its own |
+| refineui | 9 | refineui |
+| getarg | 8 | getarg: outside a function |
+| unittalk | 8 | unittalk: a game ID other than the attached player's or an NPC's of getnpcid |
+| assignment in an expression | 7 | assignment in an expression |
 | floating | 7 | floating: a script NPC without a map whose script does nothing |
-| getmercinfo | 7 | getmercinfo |
-| parameter Weight | 7 | parameter Weight |
-| callshop | 6 | callshop: a computed shop |
+| getd | 7 | getd: a computed name of a .@ or . variable, which are Lua locals |
+| openstylist | 7 | openstylist |
+| labels | 6 | labels: l_askquestions: a label inside a block, which a jump from outside the block reaches |
+| mobcount | 6 | mobcount: an event label of another NPC (Zeith#frozen02) |
 
 - `event <label>` is a label that rAthena runs on its own, such as `OnPCLogoutEvent` or `OnAgitStart`. Every other label converts to an `npc_event` handler (review decision 58).
 - `parameter <name>` reads or changes a player parameter that does not convert, such as `MaxWeight`.
 - `floating` is a script NPC without a map whose script does nothing. Other NPCs without a map are placed, and run in the start map's zone (review decision 58). `instance` is an NPC on an instance map. `sprite` is a view that is not an NPC sprite.
-- The NPC-to-NPC commands (`donpcevent`, `doevent`, enable and disable, cloaking and hiding, `getvariableofnpc`, `unloadnpc`) convert since review decision 58. The forms that do not, such as `doevent` to an NPC on another map, block 4 of these scripts.
+- The NPC-to-NPC commands (`donpcevent`, `doevent`, enable and disable, cloaking and hiding, `getvariableofnpc`, `unloadnpc`) convert since review decision 58. The forms that do not, such as `doevent` to an NPC on another map, block 7 of these scripts.
 
 ## Systems not built
 

@@ -4,9 +4,11 @@
 -- need: arrays that start at 0, menus written as "A:B", and the end of a
 -- script from inside a function.
 
+local clock = require "wa.clock"
 local events = require "wa.events"
 local items = require "wa.items"
 local maps = require "wa.maps"
+local mounts = require "wa.mounts"
 local spawning = require "wa.spawning"
 local timers = require "wa.timers"
 local variables = require "wa.variables"
@@ -347,85 +349,113 @@ function R.mobcount(npc, map, label)
 end
 
 -- NpcTimer is rAthena's NPC timer of one NPC, without an attached
--- player (npc.cpp 1431 to 1735). labels are its OnTimer<n> labels as
+-- player (npc.cpp 1470 to 1735). labels are its OnTimer<n> labels as
 -- { tick, function } by tick. elapsed is nd->u.scr.timer, the tick the
--- timer had at its last start, stop or label. running is
--- nd->u.scr.timertick ~= 0, and handle the next label's timer,
--- nd->u.scr.timerid. A stop while running would add the time since then,
--- which scripts cannot read, so elapsed becomes unknown (nil) until init
--- or set. The converter calls start only right after init or set.
+-- timer had at its last start, stop or label, and started is
+-- nd->u.scr.timertick: when it ran from elapsed, in milliseconds of the
+-- server clock (clock.milliseconds), or nil while the timer stands.
+-- handle is the next label's timer, nd->u.scr.timerid.
+--
+-- The tick follows the server clock, so it runs on while the map has no
+-- players, as rAthena's. The labels wait on timers.after, which follows
+-- the zone clock: a label that came due while the map slept runs when
+-- the map wakes, and the labels after it that came due run with it, in
+-- order, as the tick catches up.
 local NpcTimer = {}
 NpcTimer.__index = NpcTimer
 
 function R.npc_timer(labels)
-	return setmetatable({ labels = labels, elapsed = 0, running = false }, NpcTimer)
+	return setmetatable({ labels = labels, elapsed = 0 }, NpcTimer)
 end
 
--- schedule arranges label i after delay milliseconds. When it runs,
--- elapsed is its tick and the next label is arranged before the label's
--- function runs, as npc_timerevent does, so a stop there cancels it.
--- The function runs without a player.
-function NpcTimer:schedule(i, delay)
-	self.handle = timers.after(delay, function()
+-- tick is npc_gettimerevent_tick: getnpctimer(0).
+function NpcTimer:tick()
+	if self.started == nil then
+		return self.elapsed
+	end
+	return self.elapsed + (clock.milliseconds() - self.started)
+end
+
+-- schedule arranges label i when the tick reaches it. When it runs, the
+-- tick is the label's, and the next label is arranged before the
+-- label's function runs, as npc_timerevent does, so a stop there
+-- cancels it. Labels that came due while the map slept run after it,
+-- each at its own tick. The functions run without a player.
+function NpcTimer:schedule(i)
+	local label = self.labels[i]
+	self.handle = timers.after(math.max(label[1] - self:tick(), 0), function()
 		self.handle = nil
-		local label = self.labels[i]
-		self.elapsed, self.running = label[1], true
-		local after = self.labels[i + 1]
-		if after ~= nil then
-			self:schedule(i + 1, after[1] - label[1])
+		local now = clock.milliseconds()
+		-- The tick at least reached the label, which the zone clock's
+		-- timer waited for.
+		local reached = math.max(self:tick(), label[1])
+		local j = i
+		while true do
+			local due = self.labels[j]
+			-- npc_timerevent: timertick is now and timer the label's tick,
+			-- less the time since the label came due.
+			self.elapsed, self.started = due[1], now - (reached - due[1])
+			local after = self.labels[j + 1]
+			if after ~= nil then
+				self:schedule(j + 1)
+			end
+			local handle = self.handle
+			due[2](nil, nil)
+			-- A stop, a set or an init in the label ends the catching up.
+			if after == nil or self.handle ~= handle or handle == nil or after[1] > reached then
+				return
+			end
+			handle:cancel()
+			self.handle = nil
+			j = j + 1
 		end
-		label[2](nil, nil)
 	end)
 end
 
 -- start is npc_timerevent_start: nothing when the timer runs, and else
--- the first label after elapsed.
+-- the first label after the tick, which resumes where a stop left it.
+-- Without a label left, the tick still runs.
 function NpcTimer:start()
-	if self.handle ~= nil or self.running then
+	if self.handle ~= nil or self.started ~= nil then
 		return
 	end
-	if self.elapsed == nil then
-		error("startnpctimer: resuming a stopped timer needs the server clock, which scripts cannot read yet", 2)
-	end
-	self.running = true
+	self.started = clock.milliseconds()
 	for i, label in ipairs(self.labels) do
 		if label[1] > self.elapsed then
-			self:schedule(i, label[1] - self.elapsed)
+			self:schedule(i)
 			return
 		end
 	end
 end
 
--- stop is npc_timerevent_stop.
+-- stop is npc_timerevent_stop: the tick keeps the time it ran.
 function NpcTimer:stop()
-	if self.handle == nil and not self.running then
-		return
-	end
 	if self.handle ~= nil then
 		self.handle:cancel()
 		self.handle = nil
 	end
-	if self.running then
-		self.elapsed, self.running = nil, false
+	if self.started ~= nil then
+		self.elapsed = self.elapsed + (clock.milliseconds() - self.started)
+		self.started = nil
 	end
 end
 
 -- set is npc_settimerevent_tick: a running timer stops, takes the tick,
 -- and starts again.
 function NpcTimer:set(tick)
-	local started = self.handle ~= nil or self.running
-	if started then
+	local running = self.handle ~= nil or self.started ~= nil
+	if running then
 		self:stop()
 	end
 	self.elapsed = tick
-	if started then
+	if running then
 		self:start()
 	end
 end
 
 -- init is initnpctimer: the timer starts again from 0.
 function NpcTimer:init()
-	self.running = false
+	self.started = nil
 	self:set(0)
 	self:start()
 end
@@ -870,6 +900,48 @@ local function npc_named(target)
 		return world.get_npc(target)
 	end
 	return target
+end
+
+-- forced_walks are the walks unitwalk forced, by NPC: rAthena's
+-- ud->state.force_walk and the cell it walks to (script.cpp 19996).
+local forced_walks = {}
+
+-- unitwalk is unitwalk on an NPC: refused while an earlier forced walk
+-- has not reached its cell, and else started after a 50 ms timer, as
+-- rAthena's unit_delay_walktoxy_timer. It gives 1, or 0 when refused.
+-- force_walk ends on arrival, and with unitstopwalk and npcstop.
+function R.unitwalk(target, x, y)
+	local n = npc_named(target)
+	if n == nil then
+		return 0
+	end
+	local key = tostring(n)
+	local f = forced_walks[key]
+	if f ~= nil then
+		if n.x ~= f[1] or n.y ~= f[2] then
+			-- "already been forced to walk".
+			return 0
+		end
+		forced_walks[key] = nil
+	end
+	forced_walks[key] = { x, y }
+	timers.after(50, function()
+		if not n:walk_to(x, y) then
+			forced_walks[key] = nil
+		end
+	end)
+	return 1
+end
+
+-- npc_stop is unitstopwalk and npcstop on an NPC: the walk stops, and so
+-- does a forced walk.
+function R.npc_stop(target)
+	local n = npc_named(target)
+	if n == nil then
+		return
+	end
+	forced_walks[tostring(n)] = nil
+	n:stop()
 end
 
 -- or_self is the NPC of npctalk's and classchange's name argument: the
@@ -1352,6 +1424,293 @@ function R.touch_one(fn, dialog)
 			end
 		end
 	end)
+end
+
+-- The player, item and clock helpers of review decision 58, areas B7,
+-- B9 and B10 (decision 0064).
+
+-- pcblock_names are player:set_blocked's actions by PCBLOCK_ bit.
+local pcblock_names = { "move", "attack", "skill", "use_item", "chat", "immune", "sit_stand", "commands", "npc_click", "emotion", "equip" }
+
+-- set_pc_block is setpcblock with a computed flag: each PCBLOCK_ bit.
+function R.set_pc_block(player, flag, on)
+	for i, name in ipairs(pcblock_names) do
+		if flag & (1 << (i - 1)) ~= 0 then
+			player:set_blocked(name, on)
+		end
+	end
+end
+
+-- pc_block is getpcblock: the PCBLOCK_ bits the player has.
+function R.pc_block(player)
+	local flag = 0
+	for i, name in ipairs(pcblock_names) do
+		if player:is_blocked(name) then
+			flag = flag | (1 << (i - 1))
+		end
+	end
+	return flag
+end
+
+-- lock_items is disable_items and enable_items. An event without a
+-- player has no conversation, and rAthena's flag then does nothing.
+function R.lock_items(conversation, locked)
+	if conversation == nil then
+		return
+	end
+	if locked then
+		conversation:lock_items()
+	else
+		conversation:unlock_items()
+	end
+end
+
+-- pushpc is pushpc: a direction past 7 wraps, as buildin_pushpc's
+-- dir %= DIR_MAX, and 0 cells does nothing.
+function R.pushpc(player, dir, cells)
+	if cells == 0 then
+		return
+	end
+	player:push(dir % 8, math.max(math.min(cells, 25), -25))
+end
+
+-- item_info is getiteminfo by its type (script.hpp 2238): -1 for an
+-- unknown item or type, and "" for the AegisName of an unknown item.
+local iteminfo_fields = {
+	[0] = "buy", "sell", "type", false, "gender", "locations", "weight", "attack", "defense", "range", "slots", "view",
+	"min_level", "weapon_level", false, "max_level", "magic_attack", "id", "aegis_name", "armor_level", "subtype",
+}
+local item_types = { healing = 0, usable = 2, etc = 3, armor = 4, weapon = 5, card = 6, petegg = 7, petarmor = 8, ammo = 10,
+	delayconsume = 11, shadowgear = 12, cash = 18 }
+function R.item_info(item, typ)
+	local info = items.get(item)
+	if typ == 18 and info == nil then
+		return ""
+	end
+	local field = iteminfo_fields[typ]
+	if info == nil or not field then
+		return -1
+	end
+	if field == "type" then
+		return item_types[info.type] or -1
+	end
+	if field == "gender" then
+		-- SEX_FEMALE 0, SEX_MALE 1, SEX_BOTH 2.
+		return ({ female = 0, male = 1 })[info.gender] or 2
+	end
+	if field == "view" and (info.type == "weapon" or info.type == "ammo") then
+		-- ITEMINFO_VIEW is the subtype of a weapon or ammunition.
+		return info.subtype
+	end
+	return info[field]
+end
+
+-- cards is getitem2's four card arguments as the list of filled slots.
+-- card[0] of a forged, named or pet item marks it, which the API does not
+-- take.
+function R.cards(...)
+	local out = {}
+	for i = 1, select("#", ...) do
+		local c = select(i, ...)
+		if i == 1 and (c == 0xFF or c == 0xFE or c == -0x100) then
+			R.unsupported("a forged, named or pet item's mark in card 1")
+		end
+		if c ~= 0 then
+			out[#out + 1] = c
+		end
+	end
+	return out
+end
+
+-- broken_id is getbrokenid: the nth broken item, from 1, or 0.
+function R.broken_id(player, n)
+	return player:get_broken_items()[n] or 0
+end
+
+-- equip_can_refine is getequipisenableref: 1 when the item in the slot
+-- may be refined, else 0.
+function R.equip_can_refine(player, slot)
+	local e = R.equipped(player, slot)
+	if e ~= nil and items.can_refine(e) then
+		return 1
+	end
+	return 0
+end
+
+-- equip_refine_chance is getequippercentrefinery: the chance in
+-- percent, 0 without an item.
+function R.equip_refine_chance(player, slot)
+	local e = R.equipped(player, slot)
+	if e == nil then
+		return 0
+	end
+	return items.refine_chance(e)
+end
+
+-- equip_refine_cost is getequiprefinecost with REFINE_COST_NORMAL: the
+-- material's item ID (info 0) or the zeny (info 1), and -1 without an
+-- item or a cost.
+function R.equip_refine_cost(player, slot, info)
+	local e = R.equipped(player, slot)
+	if e == nil then
+		return -1
+	end
+	local zeny, material = items.refine_cost(e)
+	if zeny == nil then
+		return -1
+	end
+	if info == 0 then
+		return material
+	end
+	return zeny
+end
+
+-- refitem is successrefitem and downrefitem: the new refine, or -1
+-- without an item.
+function R.refitem(player, slot, amount)
+	local e = R.equipped(player, slot)
+	if e == nil then
+		return -1
+	end
+	if amount == 0 then
+		return e.refine
+	end
+	return e:add_refine(math.max(math.min(amount, 20), -20))
+end
+
+-- failedrefitem destroys the item in the slot: 1, or 0 without one.
+function R.failedrefitem(player, slot)
+	local e = R.equipped(player, slot)
+	if e == nil then
+		return 0
+	end
+	e:destroy()
+	return 1
+end
+
+-- delequip deletes the item in the slot and gives 1. Without one,
+-- buildin_delequip ends the script with an error.
+function R.delequip(player, slot)
+	local e = R.equipped(player, slot)
+	if e == nil then
+		R.unsupported("delequip of an empty slot, which ends rAthena's script")
+	end
+	e:destroy()
+	return 1
+end
+
+-- named_item is getnameditem: the item named for a player of the map,
+-- by handle, name or character ID. 1, or 0 when the player is not here
+-- or the item does not fit.
+function R.named_item(player, item, who)
+	if type(who) == "string" then
+		who = maps.find_player(who)
+	elseif math.type(who) == "integer" then
+		who = maps.find_player_by_id(who)
+	end
+	if who == nil then
+		return 0
+	end
+	return player:give_item(item, 1, { signed_by = who }) and 1 or 0
+end
+
+-- rentitem gives one rental. A time of 0 or less gives a rental that
+-- ends at once, as rAthena deletes it as soon as pc_additem gave it.
+function R.rentitem(player, item, seconds, options)
+	if seconds <= 0 then
+		return
+	end
+	options = options or {}
+	options.rent_seconds = seconds
+	player:give_item(item, 1, options)
+end
+
+-- makeitem drops items as makeitem: nothing for an amount below 1.
+function R.makeitem(map, x, y, item, amount, options)
+	if amount < 1 then
+		return
+	end
+	maps.drop_item(map, x, y, item, math.min(amount, 30000), options)
+end
+
+-- setdragon is setdragon (script.cpp 22824): a Rune Knight's dragon on or
+-- off. 1 when it changed, else 0.
+function R.setdragon(player)
+	if player:has_option("dragon") then
+		return player:set_mount(nil) and 1 or 0
+	end
+	return player:set_mount(mounts.id("dragon")) and 1 or 0
+end
+
+-- setmadogear is setmadogear's MADO_ROBOT.
+function R.setmadogear(player, on)
+	if on then
+		player:set_mount(mounts.id("madogear"))
+	elseif player:has_option("madogear") then
+		player:set_mount(nil)
+	end
+end
+
+-- gettimetick is gettimetick: 2 is Unix seconds, 1 the seconds since
+-- midnight, and the rest milliseconds.
+function R.gettimetick(typ)
+	if typ == 2 then
+		return clock.now()
+	elseif typ == 1 then
+		return clock.get("hour") * 3600 + clock.get("minute") * 60 + clock.get("second")
+	end
+	return clock.milliseconds()
+end
+
+-- gettime is gettime with a computed type: -1 outside DT_.
+local gettime_fields = { "second", "minute", "hour", "day_of_week", "day_of_month", "month", "year", "day_of_year", "date" }
+function R.gettime(typ)
+	local field = gettime_fields[typ]
+	if field == nil then
+		return -1
+	end
+	return clock.get(field)
+end
+
+-- gettimestr is gettimestr: strftime gets maxlen as its size, so at most
+-- maxlen - 1 bytes of the text.
+function R.gettimestr(format, maxlen, at)
+	local text = clock.format(format, at)
+	if maxlen < 1 then
+		return ""
+	end
+	return text:sub(1, maxlen - 1)
+end
+
+-- inventory_list is getinventorylist: the @inventorylist_ arrays the
+-- script reads, from 0, and @inventorylist_count.
+local bound_values = { account = 1, guild = 2, party = 3, character = 4 }
+function R.inventory_list(player, vars)
+	local list = player:get_inventory()
+	local arrays = {}
+	for field in pairs(vars) do
+		arrays[field] = {}
+	end
+	for i, e in ipairs(list) do
+		local values = {
+			id = e.item, idx = e.slot, amount = e.amount, equip = e.equip, refine = e.refine,
+			identify = e.identified and 1 or 0, attribute = e.broken and 1 or 0, expire = e.expires,
+			bound = bound_values[e.bound] or 0, enchantgrade = 0, tradable = e.tradable and 1 or 0, favorite = 0,
+			card1 = e.cards[1] or 0, card2 = e.cards[2] or 0, card3 = e.cards[3] or 0, card4 = e.cards[4] or 0,
+		}
+		for field, t in pairs(arrays) do
+			if field ~= "count" then
+				t[i - 1] = values[field]
+			end
+		end
+	end
+	for field, var in pairs(vars) do
+		if field == "count" then
+			var:set(player, #list)
+		else
+			store(var, player, arrays[field])
+		end
+	end
 end
 
 return R

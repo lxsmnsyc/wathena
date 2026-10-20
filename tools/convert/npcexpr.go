@@ -120,6 +120,13 @@ func (b *body) param(name string) (val, error) {
 		return val{code: "player.sp", t: tInt}, nil
 	case "maxsp":
 		return val{code: "player.max_sp", t: tInt}, nil
+	case "weight":
+		// Weight, MaxWeight and SkillPoint (review decision 58, area B7).
+		return val{code: "player.weight", t: tInt}, nil
+	case "maxweight":
+		return val{code: "player.max_weight", t: tInt}, nil
+	case "skillpoint":
+		return val{code: "player.skill_points", t: tInt}, nil
 	}
 	return val{}, unsupported("parameter "+name, "")
 }
@@ -989,6 +996,9 @@ func (b *body) call(e *Call) (val, error) {
 		code, err := b.getmapxy(args)
 		return done(val{code: code, t: tInt}, err)
 	}
+	if v, ok, err := b.group3Read(name, args); ok {
+		return done(v, err)
+	}
 	if v, ok, err := b.equipCall(name, args); ok {
 		return done(v, err)
 	}
@@ -1419,6 +1429,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 	case "atcommand", "setbattleflag":
 		return unsupported(name, "%s", refusedCommands[name])
 	default:
+		if ok, err := b.group3Command(name, args); ok {
+			return err
+		}
 		if ok, err := b.guildCommand(name, args); ok {
 			return err
 		}
@@ -1917,7 +1930,7 @@ func (b *body) jobchange(args []Expr) error {
 	if len(args) < 1 || len(args) > 3 {
 		return unsupported("jobchange", "arguments")
 	}
-	upper := ""
+	keepLine := false
 	if len(args) >= 2 {
 		up, err := b.expr(args[1])
 		if err != nil {
@@ -1926,15 +1939,14 @@ func (b *body) jobchange(args []Expr) error {
 		id, isUpper := args[1].(*Ident)
 		isUpper = isUpper && strings.EqualFold(id.Name, "Upper")
 		switch {
-		case up.static != nil && *up.static == 0:
-		case isUpper && b.n.allowStubs:
+		case up.static != nil && (*up.static == 0 || *up.static == -1):
+		case isUpper:
 			// jobchange <job>,Upper keeps the player's own line, as
-			// Job_Change does. A normal player's change converts. A
-			// transcendent or baby player's fails when it is reached,
-			// and the function stays partly converted.
-			upper = up.code
+			// Job_Change does: player:change_job's keep_line (review
+			// decision 58).
+			keepLine = true
 		default:
-			return unsupported("jobchange", "a transcendent or baby flag")
+			return unsupported("jobchange", "a fixed transcendent or baby flag")
 		}
 	}
 	if len(args) == 3 {
@@ -1950,27 +1962,23 @@ func (b *body) jobchange(args []Expr) error {
 		return nil
 	}
 	b.n.file.need("jobs")
-	if upper != "" {
-		err := unsupported("jobchange", "a transcendent or baby flag")
-		b.n.fail(errFeature(err))
-		b.n.stubs = append(b.n.stubs, describeError(errFeature(err), err))
-		b.line("if %s ~= 0 then", upper)
-		b.line("  R.unsupported(%s)", luaString(errFeature(err)))
-		b.line("end")
+	if keepLine {
+		b.line("player:change_job(%s, { force = true, keep_line = true })", job.asInt())
+		return nil
 	}
 	b.line("player:change_job(%s, { force = true })", job.asInt())
 	return nil
 }
 
 // skillKinds are the kinds of player:give_skill by rAthena's
-// e_addskill_type: SKILL_PERM, SKILL_TEMP and SKILL_TEMPLEVEL.
-var skillKinds = []string{0: "permanent", 1: "temporary", 2: "temporary_add"}
+// e_addskill_type: SKILL_PERM, SKILL_TEMP, SKILL_TEMPLEVEL and
+// SKILL_PERM_GRANT.
+var skillKinds = []string{0: "permanent", 1: "temporary", 2: "temporary_add", 3: "permanent_grant"}
 
 // skill converts rAthena's skill and addtoskill to player:give_skill
 // (review decision 57). The flag is SKILL_TEMP by default, and
-// SKILL_TEMPLEVEL for addtoskill. A computed skill or flag does not
-// convert, and neither does SKILL_PERM_GRANT, which the API does not
-// have.
+// SKILL_TEMPLEVEL for addtoskill. SKILL_PERM_GRANT is permanent_grant
+// (review decision 58). A computed skill or flag does not convert.
 func (b *body) skill(name string, args []Expr) error {
 	if len(args) < 2 || len(args) > 3 {
 		return unsupported(name, "arguments")
@@ -2006,9 +2014,6 @@ func (b *body) skill(name string, args []Expr) error {
 		}
 		if flag.static == nil {
 			return unsupported(name, "a computed flag")
-		}
-		if *flag.static == 3 {
-			return unsupported(name, "SKILL_PERM_GRANT")
 		}
 		if *flag.static < 0 || *flag.static >= int64(len(skillKinds)) {
 			return unsupported(name, "a flag other than 0 to 3")

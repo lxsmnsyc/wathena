@@ -23,7 +23,7 @@ ORDER BY r.guild_id, r.other_id;
 SELECT guild_id, version, png FROM guild_emblems;
 
 -- name: GuildStorage :many
-SELECT guild_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound
+SELECT guild_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, signed_by, signed_name
 FROM guild_storage
 ORDER BY guild_id, slot;
 
@@ -97,12 +97,12 @@ WHERE guild_id = @guild_id AND slot = ANY(@slots::smallint[]);
 -- name: InsertGuildStorage :exec
 -- InsertGuildStorage writes items as InsertInventory does.
 INSERT INTO guild_storage (guild_id, slot, item_id, amount, serial, refine, cards,
-    rolls, card_rolls, random_options, identified, bound)
+    rolls, card_rolls, random_options, identified, bound, broken, signed_by, signed_name)
 SELECT @guild_id, unnest(@slots::smallint[]), unnest(@item_ids::integer[]),
     unnest(@amounts::integer[]), unnest(@serials::uuid[]),
     unnest(@refines::smallint[]), unnest(@cards::text[])::integer[],
     unnest(@rolls::text[])::jsonb, unnest(@card_rolls::text[])::jsonb,
-    unnest(@random_options::text[])::jsonb, unnest(@identified::boolean[]), unnest(@bounds::smallint[]);
+    unnest(@random_options::text[])::jsonb, unnest(@identified::boolean[]), unnest(@bounds::smallint[]), unnest(@brokens::boolean[]), unnest(@signed_bys::integer[]), unnest(@signed_names::text[]);
 
 -- name: GuildStorageLog :many
 -- GuildStorageLog is the last moves of each guild's storage in the item

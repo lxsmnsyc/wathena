@@ -566,6 +566,13 @@ func TestRunConvertedNPCs(t *testing.T) {
 				if strings.Contains(m, "which wAthena does not have yet") || strings.Contains(m, "parties do not exist here") {
 					continue
 				}
+				// A context that failed too often failed each time with a
+				// message of its own, which the test checks above. An NPC
+				// that events wake many times, such as one that waits in
+				// an event without a player, gets there.
+				if strings.HasPrefix(m, "mod failed too often") {
+					continue
+				}
 				bad++
 				if bad <= 400 {
 					t.Error(m)

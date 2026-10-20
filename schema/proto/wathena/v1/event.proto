@@ -122,6 +122,7 @@ message Event {
     MusicPlay music = 110;
     DigitsShow digits = 111;
     QuestLogOpen quest_log_open = 112;
+    BookOpen book_open = 113;
   }
 }
 
@@ -195,6 +196,14 @@ message QuestIcon {
 // quest is a quest of the log to show, or 0 for none.
 message QuestLogOpen {
   uint32 quest = 1;
+}
+
+// BookOpen opens a book at a page, as rAthena's readbook
+// (clif_readbook). book is the book's item ID, whose text the client
+// data holds.
+message BookOpen {
+  uint32 book = 1;
+  uint32 page = 2;
 }
 
 // WorldMap is the part of a procedural world's map graph that the
@@ -1114,6 +1123,15 @@ message InventoryItem {
   // restrictions are the item's restrictions, as the bits of
   // ItemRestriction, from rAthena's item_trade.
   uint32 restrictions = 13;
+  // broken is rAthena's attribute 1: the item cannot be worn until it is
+  // repaired.
+  bool broken = 14;
+  // expires_at is a rental's end in Unix seconds, or 0 for an item that
+  // is not rented. The item goes when it ends.
+  int64 expires_at = 15;
+  // signed_by is the name of the character a script named the item for,
+  // as getnameditem, or empty. The client shows it before the name.
+  string signed_by = 16;
 }
 
 // ItemBound is rAthena's bound_type.
@@ -1203,9 +1221,13 @@ message InventoryAdd {
   repeated ItemRoll rolls = 8;
   repeated CardRolls card_rolls = 9;
   repeated ItemOption options = 10;
-  // bound and restrictions are as in InventoryItem.
+  // bound, restrictions, broken, expires_at and signed_by are as in
+  // InventoryItem.
   ItemBound bound = 11;
   uint32 restrictions = 12;
+  bool broken = 13;
+  int64 expires_at = 14;
+  string signed_by = 15;
 }
 
 // InventoryRemove tells the player an amount left a slot. A slot left
@@ -1243,6 +1265,9 @@ enum InventoryRemoveReason {
   INVENTORY_REMOVE_REASON_SOLD_TO_STORE = 11;
   // A shop took the item as part of a purchase's cost.
   INVENTORY_REMOVE_REASON_PAID = 12;
+  // The item was a rental whose time ended, as rAthena's
+  // clif_rental_expired.
+  INVENTORY_REMOVE_REASON_EXPIRED = 13;
 }
 
 // ItemUsed shows an entity using an item, as rAthena's clif_useitemack

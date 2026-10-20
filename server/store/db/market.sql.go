@@ -269,11 +269,11 @@ func (q *Queries) ExpiredMails(ctx context.Context, arg ExpiredMailsParams) ([]M
 }
 
 const insertMailItems = `-- name: InsertMailItems :exec
-INSERT INTO mail_items (mail_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound)
+INSERT INTO mail_items (mail_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, signed_by, signed_name)
 SELECT $1, unnest($2::smallint[]), unnest($3::integer[]), unnest($4::integer[]),
     unnest($5::uuid[]), unnest($6::smallint[]), unnest($7::text[])::integer[],
     unnest($8::text[])::jsonb, unnest($9::text[])::jsonb,
-    unnest($10::text[])::jsonb, unnest($11::boolean[]), unnest($12::smallint[])
+    unnest($10::text[])::jsonb, unnest($11::boolean[]), unnest($12::smallint[]), unnest($13::boolean[]), unnest($14::integer[]), unnest($15::text[])
 `
 
 type InsertMailItemsParams struct {
@@ -289,6 +289,9 @@ type InsertMailItemsParams struct {
 	RandomOptions []string
 	Identified    []bool
 	Bounds        []int
+	Brokens       []bool
+	SignedBys     []int
+	SignedNames   []string
 }
 
 func (q *Queries) InsertMailItems(ctx context.Context, arg InsertMailItemsParams) error {
@@ -305,6 +308,9 @@ func (q *Queries) InsertMailItems(ctx context.Context, arg InsertMailItemsParams
 		arg.RandomOptions,
 		arg.Identified,
 		arg.Bounds,
+		arg.Brokens,
+		arg.SignedBys,
+		arg.SignedNames,
 	)
 	return err
 }
@@ -350,7 +356,7 @@ func (q *Queries) MailIDFloor(ctx context.Context) (int64, error) {
 }
 
 const mailItems = `-- name: MailItems :many
-SELECT mail_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound
+SELECT mail_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, signed_by, signed_name
 FROM mail_items WHERE mail_id = ANY($1::bigint[]) ORDER BY mail_id, slot
 `
 
@@ -367,6 +373,9 @@ type MailItemsRow struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	SignedBy      int
+	SignedName    string
 }
 
 func (q *Queries) MailItems(ctx context.Context, mailIds []int64) ([]MailItemsRow, error) {
@@ -391,6 +400,9 @@ func (q *Queries) MailItems(ctx context.Context, mailIds []int64) ([]MailItemsRo
 			&i.RandomOptions,
 			&i.Identified,
 			&i.Bound,
+			&i.Broken,
+			&i.SignedBy,
+			&i.SignedName,
 		); err != nil {
 			return nil, err
 		}

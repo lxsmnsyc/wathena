@@ -928,6 +928,31 @@ describe('skill numbers', () => {
     return o;
   }
 
+  it('passes a repeated sound on, and shows a transformed player as its monster', async () => {
+    const o = await loaded();
+    const sounds: string[] = [];
+    o.onSound = (name, _at, repeat) => {
+      sounds.push(`${name} ${String(repeat)}`);
+    };
+    o.handle([
+      create(EventSchema, { body: { case: 'sound', value: { name: 'sound/bell', repeat: true } } }),
+      create(EventSchema, { body: { case: 'sound', value: { name: 'sound/ding' } } }),
+    ]);
+    expect(sounds).toEqual(['sound/bell true', 'sound/ding false']);
+    const before = o.position(1);
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'lookChange',
+          value: { id: 1, look: { body: 1002, npcView: NpcView.MONSTER } },
+        },
+      }),
+    ]);
+    await settle();
+    // The player's unit now draws one sprite, the monster's, where it stood.
+    expect(o.position(1)?.equals(before!)).toBe(true);
+  });
+
   it('splits a multi-hit skill into its hits, then the total', async () => {
     const o = await loaded();
     vi.useFakeTimers();

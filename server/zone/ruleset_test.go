@@ -277,7 +277,10 @@ func TestBusyRestrictionsFlag(t *testing.T) {
 			p := goldenPlayerIn(t, z, knightPlayer, 0, 0)
 			zoneRules(t, z, with(mode == reference.Renewal, func(r *rules.Rules) { r.BusyRestrictions = flag }))
 			p.pending = nil
-			p.talk = &talk{}
+			// A conversation whose items are locked, as renewal's start
+			// and disable_items: pre-renewal's start unlocked
+			// (item_enabled_npc).
+			p.talk = &talk{items: itemsLocked}
 			slot := 0
 			z.handle(command{player: p, use: &slot})
 			if got := busy(p); got != flag {

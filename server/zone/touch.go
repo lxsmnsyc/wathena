@@ -68,6 +68,11 @@ func (z *Zone) touchAreas(p *Player) {
 	if len(p.touching) == 0 && len(z.touchNPCs) == 0 {
 		return
 	}
+	// npc_touch_area_allnpc and unit_walktoxy_ontouch skip a player with
+	// PCBLOCK_NPCCLICK (npc.cpp 1970, unit.cpp 511).
+	if p.isBlocked(blockNPCClick) {
+		return
+	}
 	e := p.entity
 	kept := p.touching[:0]
 	for _, n := range p.touching {

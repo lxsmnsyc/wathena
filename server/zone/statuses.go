@@ -398,6 +398,7 @@ func (v scEnv) Ended(u sc.Unit, e *sc.Entry, reason sc.Reason) {
 	v.z.refreshChanges(u.(scUnit).e)
 	v.z.monkStatusEnded(u.(scUnit).e, e)
 	v.z.keepingEnded(u.(scUnit).e, e)
+	v.z.transformEnded(u.(scUnit).e, e.Type)
 	if v.z.quietStatuses {
 		return
 	}

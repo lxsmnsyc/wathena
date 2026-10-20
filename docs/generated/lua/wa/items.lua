@@ -26,4 +26,36 @@ function items.group(name) end
 ---@return string
 function items.name(item) end
 
+---The item's record, as getiteminfo and getitemslots, or nil for an unknown item.
+---
+---Needs the permission `game.read`.
+---@param item integer An item from items.id.
+---@return wa.ItemInfo?
+function items.get(item) end
+
+---Whether the item can be refined, as getequipisenableref: a weapon, an armor or shadow gear that is not no_refine. A worn copy that is a rental cannot.
+---
+---Needs the permission `game.read`.
+---@param item integer|wa.EquippedItem An item from items.id, or a worn copy.
+---@return boolean
+function items.can_refine(item) end
+
+---The chance in percent to refine the item from refine to refine + 1, as getequippercentrefinery, from refine.yml. 0 at MAX_REFINE or for an item that is not refined. The data holds the Normal chances alone: enriched raises an error.
+---
+---Needs the permission `game.read`.
+---@param item integer|wa.EquippedItem An item from items.id, or a worn copy.
+---@param refine? integer The refine it has. A worn copy's own by default.
+---@param options? wa.RefineChanceOptions
+---@return integer
+function items.refine_chance(item, refine, options) end
+
+---The zeny and the material's item ID of refining the item from refine to refine + 1, as getequiprefinecost, from refine.yml. nil when the data has no cost. The data holds the Normal costs alone: hd and enriched raise an error.
+---
+---Needs the permission `game.read`.
+---@param item integer|wa.EquippedItem An item from items.id, or a worn copy.
+---@param refine? integer The refine it has. A worn copy's own by default.
+---@param kind? wa.RefineKind normal by default.
+---@return integer?, integer?
+function items.refine_cost(item, refine, kind) end
+
 return items

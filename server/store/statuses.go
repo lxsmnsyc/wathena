@@ -29,6 +29,9 @@ func loadStatuses(ctx context.Context, q *db.Queries, c *character.Character) er
 			c.Skills = map[int]int{}
 		}
 		c.Skills[r.SkillID] = r.Level
+		if r.Granted {
+			c.Granted = append(c.Granted, r.SkillID)
+		}
 	}
 	timed, err := q.TimedBonuses(ctx, c.ID)
 	if err != nil {
@@ -67,7 +70,7 @@ func writeStatuses(ctx context.Context, q *db.Queries, id int64, old, cur *chara
 			}
 		}
 	}
-	if !maps.Equal(old.Skills, cur.Skills) {
+	if !maps.Equal(old.Skills, cur.Skills) || !slices.Equal(old.Granted, cur.Granted) {
 		if err := q.DeleteSkills(ctx, id); err != nil {
 			return err
 		}
@@ -76,6 +79,7 @@ func writeStatuses(ctx context.Context, q *db.Queries, id int64, old, cur *chara
 			for _, sk := range slices.Sorted(maps.Keys(cur.Skills)) {
 				p.SkillIds = append(p.SkillIds, sk)
 				p.Levels = append(p.Levels, cur.Skills[sk])
+				p.Granted = append(p.Granted, slices.Contains(cur.Granted, sk))
 			}
 			if err := q.InsertSkills(ctx, p); err != nil {
 				return err

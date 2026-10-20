@@ -48,7 +48,7 @@ func (z *Zone) giveItem(p *Player, id uint32, amount int, stacked bool) bool {
 
 // GiveGroup is getgroupitem: one use of an item group, with
 // pc_get_itemgroup's rules. An item that does not fit is lost, and the
-// player sees why, as in rAthena. Rentals are given as normal items.
+// player sees why, as in rAthena. An entry with a duration is a rental.
 func (h scriptHost) GiveGroup(id int64, group int64) error {
 	p, err := h.player(id)
 	if err != nil {
@@ -70,7 +70,8 @@ func (h scriptHost) GiveGroup(id int64, group int64) error {
 		// entry is stacked, and one at a time otherwise, carrying on after
 		// a failure.
 		step := g.Amount
-		if !g.Stacked || !z.Items.Get(g.Item).Stackable {
+		if !g.Stacked || !z.Items.Get(g.Item).Stackable || g.Rental > 0 {
+			// A rental never stacks (pc.cpp 6019).
 			step = 1
 		}
 		d := z.Items.Get(g.Item)
@@ -82,6 +83,10 @@ func (h scriptHost) GiveGroup(id int64, group int64) error {
 		}
 		for given := 0; given < g.Amount; given += step {
 			x := z.newExtra(d, false, rollSource{kind: sourceScript}, group)
+			if g.Rental > 0 {
+				// The entry's Duration makes a rental (pc_get_itemgroup_sub).
+				x.Expires = z.wallSeconds() + int64(g.Rental)
+			}
 			if r := z.addCopy(p, g.Item, step, 0, nil, x, scriptOrigin); r != item.AddSuccess {
 				p.pending = append(p.pending, pickUpFailed(0, pickUpFailure(r)))
 			}

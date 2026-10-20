@@ -13,7 +13,7 @@ import (
 
 const accountStorage = `-- name: AccountStorage :many
 
-SELECT slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound
+SELECT slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, expires_at, signed_by, signed_name
 FROM storage_items
 WHERE holder = 'account' AND account_id = $1 AND storage = $2
 ORDER BY slot
@@ -36,6 +36,10 @@ type AccountStorageRow struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	ExpiresAt     int64
+	SignedBy      int
+	SignedName    string
 }
 
 // Queries for storages and carts (decision 0023).
@@ -62,6 +66,10 @@ func (q *Queries) AccountStorage(ctx context.Context, arg AccountStorageParams) 
 			&i.RandomOptions,
 			&i.Identified,
 			&i.Bound,
+			&i.Broken,
+			&i.ExpiresAt,
+			&i.SignedBy,
+			&i.SignedName,
 		); err != nil {
 			return nil, err
 		}
@@ -126,7 +134,7 @@ func (q *Queries) CartSize(ctx context.Context, characterID pgtype.Int8) ([]int,
 }
 
 const characterStorage = `-- name: CharacterStorage :many
-SELECT slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound
+SELECT slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, expires_at, signed_by, signed_name
 FROM storage_items
 WHERE holder = $1 AND character_id = $2 AND storage = $3
 ORDER BY slot
@@ -150,6 +158,10 @@ type CharacterStorageRow struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	ExpiresAt     int64
+	SignedBy      int
+	SignedName    string
 }
 
 // CharacterStorage is the stacks of a character's cart or of one of its
@@ -175,6 +187,10 @@ func (q *Queries) CharacterStorage(ctx context.Context, arg CharacterStoragePara
 			&i.RandomOptions,
 			&i.Identified,
 			&i.Bound,
+			&i.Broken,
+			&i.ExpiresAt,
+			&i.SignedBy,
+			&i.SignedName,
 		); err != nil {
 			return nil, err
 		}
@@ -244,12 +260,12 @@ func (q *Queries) DeleteCharacterStorageSlots(ctx context.Context, arg DeleteCha
 
 const insertStorageItems = `-- name: InsertStorageItems :exec
 INSERT INTO storage_items (holder, account_id, character_id, storage, slot, item_id, amount, serial, refine, cards,
-    rolls, card_rolls, random_options, identified, bound)
+    rolls, card_rolls, random_options, identified, bound, broken, expires_at, signed_by, signed_name)
 SELECT $1, $2::bigint, $3::bigint, $4, unnest($5::smallint[]),
     unnest($6::integer[]), unnest($7::integer[]), unnest($8::uuid[]),
     unnest($9::smallint[]), unnest($10::text[])::integer[],
     unnest($11::text[])::jsonb, unnest($12::text[])::jsonb,
-    unnest($13::text[])::jsonb, unnest($14::boolean[]), unnest($15::smallint[])
+    unnest($13::text[])::jsonb, unnest($14::boolean[]), unnest($15::smallint[]), unnest($16::boolean[]), unnest($17::bigint[]), unnest($18::integer[]), unnest($19::text[])
 `
 
 type InsertStorageItemsParams struct {
@@ -268,6 +284,10 @@ type InsertStorageItemsParams struct {
 	RandomOptions []string
 	Identified    []bool
 	Bounds        []int
+	Brokens       []bool
+	Expires       []int64
+	SignedBys     []int
+	SignedNames   []string
 }
 
 // InsertStorageItems writes items as InsertInventory does. account_id is
@@ -289,6 +309,10 @@ func (q *Queries) InsertStorageItems(ctx context.Context, arg InsertStorageItems
 		arg.RandomOptions,
 		arg.Identified,
 		arg.Bounds,
+		arg.Brokens,
+		arg.Expires,
+		arg.SignedBys,
+		arg.SignedNames,
 	)
 	return err
 }

@@ -603,6 +603,11 @@ func (n *npcConv) npcScript() (string, error) {
 	f.line("return function()")
 	f.indent++
 	f.line("local npc = context:get_instance()")
+	if n.sourceShared {
+		// The duplicates and the source share the source's .x variables.
+		f.need("world")
+		f.line("local %s = world.get_npc(%s) or npc", sourceVar, luaString(n.c.recordFor(n.line.Name)))
+	}
 	for _, k := range n.varOrder {
 		v := n.vars[k]
 		if v.scope != "npc" {

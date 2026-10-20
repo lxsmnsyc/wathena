@@ -3,6 +3,7 @@ package modscript
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
@@ -51,8 +52,21 @@ func (r *Runtime) rulesRead(c *script.Call) error {
 		c.Return(script.Bool(on))
 	case "get":
 		v, ok := rl.Rule(name)
+		if !ok && slices.Contains(SettingNames, name) {
+			// A server setting that getbattleflag reads (review decision
+			// 58).
+			if h, isSettings := r.host.(SettingsHost); isSettings {
+				if v, ok = h.Setting(name); ok {
+					c.Return(script.Int(int64(v)))
+					return nil
+				}
+			}
+			c.Return(script.Int(int64(DefaultSettings[name])))
+			return nil
+		}
 		if !ok {
-			return fmt.Errorf("rules.get: there is no rule %q; the rules are %s", name, strings.Join(rules.RuleNames(), ", "))
+			return fmt.Errorf("rules.get: there is no rule %q; the rules are %s, and the server settings %s", name,
+				strings.Join(rules.RuleNames(), ", "), strings.Join(SettingNames, ", "))
 		}
 		if b, _ := rules.FindBound(rules.RuleBounds, name); b.Bool {
 			c.Return(script.Bool(v == 1))

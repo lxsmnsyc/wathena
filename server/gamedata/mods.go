@@ -276,7 +276,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 			n.Sprite = artIDs[n.Art]
 		}
 		zn := zone.NPC{
-			Name: n.Name, DisplayName: n.DisplayName, X: n.X, Y: n.Y, Direction: n.Direction, Sprite: n.Sprite,
+			Name: n.Name, DisplayName: n.DisplayName, Hidden: n.Hidden, X: n.X, Y: n.Y, Direction: n.Direction, Sprite: n.Sprite,
 			Shop: shops.Get(n.Name), State: n.State, NoSprite: n.NoSprite, Floating: n.Floating,
 		}
 		if n.Script != "" {

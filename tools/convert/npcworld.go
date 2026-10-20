@@ -70,11 +70,12 @@ var fixedName = regexp.MustCompile(`^\s*"([^"]*)"\s*$`)
 // wa.variables in the NPC's own script, so every zone reads them.
 func (c *npcConverter) sharedVars(lines []npcLine) {
 	c.shared, c.sharedAny = map[string]bool{}, map[string]bool{}
-	c.dups = map[string][]string{}
+	c.dups, c.dupOf = map[string][]string{}, map[string]string{}
 	for i := range lines {
 		l := &lines[i]
 		if l.DuplicateOf != "" {
 			c.dups[l.DuplicateOf] = append(c.dups[l.DuplicateOf], l.Name)
+			c.dupOf[l.Name] = l.DuplicateOf
 		}
 		for _, m := range getvariableofnpcRef.FindAllStringSubmatch(l.Script, -1) {
 			v := strings.ToLower(m[1])
@@ -368,6 +369,10 @@ func (b *body) npcVariableRef(args []Expr) (*npcVar, *Var, string, error) {
 		// buildin_getvariableofnpc: "invalid scope (not npc variable)".
 		return nil, nil, "", unsupported(what, "%s is not an NPC variable", v.Name)
 	}
+	if s, ok := args[1].(*Str); ok && b.n.c.dupOf[s.Value] != "" {
+		// A duplicate's .x is its source's (script.cpp 20521).
+		args = []Expr{args[0], &Str{Value: b.n.c.dupOf[s.Value]}}
+	}
 	target, own, err := b.npcRef(what, args[1])
 	if err != nil {
 		return nil, nil, "", err
@@ -402,6 +407,10 @@ func (b *body) sharedVariable(name string) (*npcVar, error) {
 		declared += "_text"
 	}
 	v := &npcVar{scope: "npc_shared", name: declared, str: str, array: n.arrays[strings.ToLower(name)], local: "NPC_" + constName(bare)}
+	if n.c.duplicated[n.line.Name] && !n.isFunction {
+		v.of = sourceVar
+		n.sourceShared = true
+	}
 	if str {
 		v.local += "_TEXT"
 	}

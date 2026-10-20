@@ -201,7 +201,7 @@ func storageItem(s db.GuildStorageRow) (character.Item, error) {
 	}
 	it := character.Item{Slot: s.Slot, ID: id, Amount: s.Amount, Serial: s.Serial.Bytes, Refine: s.Refine}
 	row := db.InventoryRow{Slot: s.Slot, Rolls: s.Rolls, CardRolls: s.CardRolls, RandomOptions: s.RandomOptions, Identified: s.Identified,
-		Bound: s.Bound}
+		Bound: s.Bound, Broken: s.Broken, SignedBy: s.SignedBy, SignedName: s.SignedName}
 	if it.Extra, err = readExtra(&row); err != nil {
 		return character.Item{}, err
 	}
@@ -220,7 +220,7 @@ func storageParams(guild int64, items []character.Item) db.InsertGuildStoragePar
 	inv := insertParams(0, items)
 	return db.InsertGuildStorageParams{GuildID: guild, Slots: inv.Slots, ItemIds: inv.ItemIds, Amounts: inv.Amounts, Serials: inv.Serials,
 		Refines: inv.Refines, Cards: inv.Cards, Rolls: inv.Rolls, CardRolls: inv.CardRolls, RandomOptions: inv.RandomOptions,
-		Identified: inv.Identified, Bounds: inv.Bounds}
+		Identified: inv.Identified, Bounds: inv.Bounds, Brokens: inv.Brokens, SignedBys: inv.SignedBys, SignedNames: inv.SignedNames}
 }
 
 // StorageWrite is a storage that a commit saves: what the last commit

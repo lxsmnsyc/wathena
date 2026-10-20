@@ -62,4 +62,15 @@ function maps.mark_minimap(map, id, x, y, color) end
 ---@param id integer
 function maps.unmark_minimap(map, id) end
 
+---Drops items on a free cell next to the cell of a map, as makeitem and makeitem2: anyone may pick them up, and they vanish after flooritem_lifetime. The map's zone drops them after the current step.
+---
+---Needs the permission `player.give_items`.
+---@param map string A map name, such as prontera.
+---@param x integer
+---@param y integer
+---@param item integer An item from items.id.
+---@param amount integer 1 to 30000, in one pile.
+---@param options? wa.DropItemOptions
+function maps.drop_item(map, x, y, item, amount, options) end
+
 return maps

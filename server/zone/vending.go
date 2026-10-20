@@ -298,7 +298,7 @@ func (z *Zone) openVending(p *Player, o *wathenav1.VendingOpen) {
 		slot, amount := int(l.GetCartSlot()), int(l.GetAmount())
 		s := box.Slot(slot)
 		// vending_openvending's filter, which fails the whole shop.
-		if s == nil || s.ID == 0 || amount < 1 || amount > s.Amount || s.Unidentified || s.Broken ||
+		if s == nil || s.ID == 0 || amount < 1 || amount > s.Amount || s.Unidentified || s.Broken || s.Expires != 0 ||
 			!item.BoundAllows(s.Bound, item.PlaceTrade, false) || z.Items.Restricted(s, item.NoTrade) ||
 			slices.ContainsFunc(v.lines, func(o vendLine) bool { return o.cartSlot == slot }) {
 			cart.Unlock()
@@ -782,7 +782,7 @@ func (z *Zone) buyingStoreSell(p *Player, s *wathenav1.BuyingStoreSell) {
 		}
 		// Bound copies, untradeable items and items with cards are not
 		// sold, as buyingstore_trade.
-		if !item.BoundAllows(it.Bound, item.PlaceTrade, false) || z.Items.Restricted(it, item.NoTrade) || hasCard(it.Cards) {
+		if !item.BoundAllows(it.Bound, item.PlaceTrade, false) || z.Items.Restricted(it, item.NoTrade) || hasCard(it.Cards) || it.Expires != 0 {
 			fail(wathenav1.BuyingStoreOutcome_BUYING_STORE_OUTCOME_FAILED, id, "")
 			return
 		}

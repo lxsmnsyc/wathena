@@ -173,20 +173,18 @@ func TestShopsConvert(t *testing.T) {
 }
 
 // TestJobChangeUpper checks rAthena's Job_Change, jobchange <job>,Upper:
-// a normal player's change converts, and a transcendent or baby
-// player's fails when it is reached, so the function stays partly
-// converted.
+// player:change_job's keep_line changes into the job of the player's
+// line (review decision 58), so the function converts whole.
 func TestJobChangeUpper(t *testing.T) {
 	f := loadCore(t, reference.Renewal).NPCs.Functions["job_change"]
 	if f == nil {
 		t.Fatal("no Job_Change")
 	}
-	want := "  if (jobs.is_transcendent(player.job) and 1 or (jobs.is_baby(player.job) and 2 or 0)) ~= 0 then\n" +
-		"    R.unsupported(\"jobchange\")\n  end\n  player:change_job((R.arg(args, 0) or 0), { force = true })\n"
+	want := "  player:change_job((R.arg(args, 0) or 0), { force = true, keep_line = true })\n"
 	if !strings.Contains(f.Lua, want) {
 		t.Errorf("Job_Change:\n%s", f.Lua)
 	}
-	if strings.Join(f.Stubs, "; ") != "jobchange: a transcendent or baby flag" {
+	if len(f.Stubs) != 0 {
 		t.Errorf("stubs %q", f.Stubs)
 	}
 }

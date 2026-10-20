@@ -44,6 +44,9 @@ function plain(slot: number, itemId: number, amount: number): Stack {
     options: [],
     bound: 0,
     restrictions: 0,
+    broken: false,
+    expiresAt: 0,
+    signedBy: '',
   };
 }
 
@@ -102,6 +105,9 @@ describe('InventoryModel', () => {
       options: [],
       bound: 0,
       restrictions: 0,
+      broken: false,
+      expiresAt: 0,
+      signedBy: '',
     });
     m.add(3, 4001, 1, { location: 0x2, card: true });
     expect(m.get(3)?.card).toBe(true);
@@ -261,6 +267,24 @@ describe('itemRuleLines', () => {
       'Cannot be put in guild storage',
       'Cannot be mailed',
     ]);
+  });
+
+  it('says whether a copy is named, broken or rented', () => {
+    expect(
+      itemRuleLines({
+        bound: ItemBound.UNSPECIFIED,
+        restrictions: 0,
+        signedBy: 'Alice',
+        broken: true,
+      }),
+    ).toEqual(['Named for Alice', 'Broken: repair it to wear it']);
+    const lines = itemRuleLines({
+      bound: ItemBound.UNSPECIFIED,
+      restrictions: 0,
+      expiresAt: 1_893_456_000,
+    });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.startsWith('Rental until ')).toBe(true);
   });
 
   it('adds the lines to a tooltip', () => {

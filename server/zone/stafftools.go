@@ -511,7 +511,7 @@ func (b slotBox) Put(s *item.Slot, amount int) (int, item.AddResult) {
 		b.Slots = append(b.Slots, item.Slot{})
 		i = len(b.Slots) - 1
 	}
-	b.Slots[i] = item.Slot{ID: s.ID, Amount: amount, Refine: s.Refine, Cards: slices.Clone(s.Cards), Broken: s.Broken, Extra: s.Clone()}
+	b.Slots[i] = item.Slot{ID: s.ID, Amount: amount, Refine: s.Refine, Cards: slices.Clone(s.Cards), Extra: s.Clone()}
 	b.Weight += d.Weight * amount
 	return i, item.AddSuccess
 }

@@ -26,7 +26,7 @@ func TestSkillCommand(t *testing.T) {
 		{`skill "AL_HEAL",2,SKILL_TEMPLEVEL;`, `player:give_skill(AL_HEAL, 2, "temporary_add")`},
 		{`addtoskill "AL_HEAL",2;`, `player:give_skill(AL_HEAL, 2, "temporary_add")`},
 		{`skill "AL_HEAL",BaseLevel/10,SKILL_TEMP;`, `player:give_skill(AL_HEAL, integers.divide_truncated(player.base_level, 10), "temporary")`},
-		{`skill "AL_HEAL",1,SKILL_PERM_GRANT;`, "skill: SKILL_PERM_GRANT"},
+		{`skill "AL_HEAL",1,SKILL_PERM_GRANT;`, `player:give_skill(AL_HEAL, 1, "permanent_grant")`},
 		{`skill .@s,1;`, "skill: a computed skill"},
 		{`skill "AL_HEAL",1,.@f;`, "skill: a computed flag"},
 	}

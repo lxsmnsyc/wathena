@@ -457,6 +457,7 @@ func (z *Zone) updateLook(p *Player) {
 // (pc_set_costume_view).
 func (z *Zone) lookOf(p *Player) Look {
 	l := p.Look
+	l.Transform = p.transform
 	l.Weapon, l.Shield, l.HeadTop, l.HeadMid, l.HeadBottom, l.Robe, l.WeaponView = 0, 0, 0, 0, 0, 0, 0
 	l.Companion, l.Mount = companionLookIDs(p)
 	if z.Items == nil || p.inventory == nil {
@@ -495,6 +496,13 @@ func (z *Zone) lookOf(p *Player) Look {
 	}
 	if v := view(item.EqiCostumeGarment); v != 0 {
 		l.Robe = v
+	}
+	// setlook's headgear views go over the equipment's, as
+	// status_set_viewdata reads setlook_head_*.
+	for i, dst := range []*uint32{&l.HeadTop, &l.HeadMid, &l.HeadBottom} {
+		if v := p.setLook[i]; v != 0 {
+			*dst = v
+		}
 	}
 	return l
 }

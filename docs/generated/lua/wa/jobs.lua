@@ -236,6 +236,17 @@ function jobs.base_job(job) end
 ---@return integer
 function jobs.first_job(job) end
 
+---The job's class flags, as eaclass and pc_jobid2mapid, or -1 for a job that does not exist. player.job_class is the player's.
+---@param job integer
+---@return integer
+function jobs.class_flags(job) end
+
+---The job of class flags, as roclass and pc_mapid2jobid: a Bard or a Dancer by the sex. -1 for flags of no job.
+---@param flags integer Class flags, as class_flags gives them.
+---@param sex "male"|"female"|nil male by default.
+---@return integer
+function jobs.from_class(flags, sex) end
+
 ---The jobs a job can change into, in job ID order: the jobs whose record lists it in changes_from. In core's records a Novice changes into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other core jobs have none until third classes exist.
 ---@param job integer
 ---@return integer[]

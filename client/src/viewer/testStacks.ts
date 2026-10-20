@@ -17,5 +17,8 @@ export default function plainStack(slot: number, itemId: number, amount: number)
     options: [],
     bound: ItemBound.UNSPECIFIED,
     restrictions: 0,
+    broken: false,
+    expiresAt: 0,
+    signedBy: '',
   };
 }

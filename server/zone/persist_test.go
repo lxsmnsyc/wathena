@@ -68,7 +68,7 @@ func TestLoadedCharacterEntersAsSaved(t *testing.T) {
 	if p.progress.BaseLevel != 3 || p.progress.JobExp != 4 || p.progress.StatusPoints != 9 || p.char.Stats != c.Stats {
 		t.Errorf("progress %+v, stats %+v", p.progress, p.char.Stats)
 	}
-	if p.Look != (Look{Job: 0, Sex: 1, Hair: 4, HairColor: 2}) {
+	if p.Look != (Look{Job: 0, Sex: 1, Hair: 4, HairColor: 2, ClothColor: uint32(c.ClothColor)}) {
 		t.Errorf("look %+v", p.Look)
 	}
 	inv := p.inventory

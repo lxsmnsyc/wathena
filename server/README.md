@@ -1267,7 +1267,16 @@ NPC presentation and quest icons ([decision 0063](../docs/decisions/0063-npc-api
 - NPCs walk at 200 ms a cell until `npc:set_speed` changes it. A walking NPC with a touch area touches the players it walks into. `npc:stop` finishes a step past its half, as `npcstop`'s `USW_MOVE_FULL_CELL`. `npc:move_to` caps the cell to the map and shows the NPC again at the new cell. The world's directory follows the NPC's name and cell.
 - `npc:use_skill` gives the NPC the status of `status_calc_npc` and casts with no range check and no cast time of its own.
 - `npc:show_progress` keeps the bar's end, so a player who comes into view sees the time left.
-- Quest icons follow `pc_show_questinfo`: a player whose items, levels, job or quests changed, or who entered the map, gets each NPC's first icon whose condition holds at the end of the step. Only a change is sent.
+- Quest icons follow `pc_show_questinfo`: a player whose items, levels, job or quests changed, or who entered the map, gets each NPC's first icon whose condition holds at the end of the step. Only a change is sent. An NPC new to the map's list shows to no player already there until it enters again (decision 0064).
+
+Player calls, items and the clock ([decision 0064](../docs/decisions/0064-npc-api-group-3.md), review decision 58, mods/README.md, "Player calls", "Items and equipment" and "Clock and server settings"):
+
+- `player:give_exp` follows `pc_gainexp`: `quest_exp_rate` and the guild's tax, or with `raw` neither, and `pc_lostexp` for a negative raw amount.
+- The `PCBLOCK_` flags of `player:set_blocked` sit where rAthena checks them: walks, attacks, skills, item use, equips, chat and typed GM commands, NPC clicks, touch areas and events with the player, and enemy checks for `immune`. They last until the player leaves the map.
+- A conversation's items are locked in renewal and unlocked in pre-renewal, as `item_enabled_npc`, until `conversation:lock_items` or `unlock_items` changes them.
+- Rentals end by the server clock. The zone checks its players' inventories once a second and at login, and deletes the rentals that ended. A rental cannot be dropped, traded, mailed, vended, sold to a buying store, or put in the guild storage.
+- Migration 00042 saves broken items, rentals' ends, the character a copy is named for, and the skills of `SKILL_PERM_GRANT`.
+- `wa.clock` reads the server clock in the server's time zone, and `rules.get` the exp rates and the look limits.
 
 To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing. The sample mods need their permissions approved, in a config file such as:
 

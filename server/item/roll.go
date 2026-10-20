@@ -194,11 +194,24 @@ type Extra struct {
 	// Bound is who the copy is bound to, as rAthena's item.bound. Bound
 	// and unbound copies never stack.
 	Bound Bound
+	// Broken is rAthena's item.attribute of 1: skill_break_equip or a
+	// script broke the item, and it cannot be equipped until it is
+	// repaired.
+	Broken bool
+	// Expires is a rental's end, as rAthena's item.expire_time: Unix
+	// seconds, or 0 for an item that is not rented. Rentals never stack.
+	Expires int64
+	// SignedBy is the character a script named the copy for, as
+	// getnameditem's CARD0_CREATE, or 0. SignedName is that character's
+	// name, which players see before the item's name.
+	SignedBy   uint32
+	SignedName string
 }
 
 // Equal reports whether two extras are the same.
 func (e *Extra) Equal(o *Extra) bool {
 	return slices.Equal(e.Rolls, o.Rolls) && slices.Equal(e.Options, o.Options) && e.Unidentified == o.Unidentified && e.Bound == o.Bound &&
+		e.Broken == o.Broken && e.Expires == o.Expires && e.SignedBy == o.SignedBy && e.SignedName == o.SignedName &&
 		slices.EqualFunc(trimRolls(e.CardRolls), trimRolls(o.CardRolls), func(a, b Rolls) bool { return slices.Equal(a, b) })
 }
 
@@ -213,7 +226,8 @@ func trimRolls(r []Rolls) []Rolls {
 
 // Clone copies an extra.
 func (e Extra) Clone() Extra {
-	out := Extra{Rolls: slices.Clone(e.Rolls), Options: slices.Clone(e.Options), Unidentified: e.Unidentified, Bound: e.Bound}
+	out := Extra{Rolls: slices.Clone(e.Rolls), Options: slices.Clone(e.Options), Unidentified: e.Unidentified, Bound: e.Bound,
+		Broken: e.Broken, Expires: e.Expires, SignedBy: e.SignedBy, SignedName: e.SignedName}
 	for _, r := range e.CardRolls {
 		out.CardRolls = append(out.CardRolls, slices.Clone(r))
 	}

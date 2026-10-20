@@ -29,6 +29,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.channels`](#wachannels) | Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world. |
 | [`wa.parties`](#waparties) | Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do. |
 | [`wa.guilds`](#waguilds) | Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later. |
+| [`wa.clock`](#waclock) | The server clock (review decision 58), as rAthena's gettimetick, gettime and gettimestr. Fields and formats are in the server's time zone (time_zone in the config). Its calls need no permission. |
 | [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decisions 27 and 32). Read-only. Its calls need no permission. An unknown name raises an error that lists the valid names. |
 | [`wa.places`](#waplaces) | Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil. |
 | [`wa.towns`](#watowns) | The towns of the world layout (review decision 43): each with an ID such as t7, a display name, a map and a level band. A classic world has no towns: list returns an empty list, and nearest and get nil. |
@@ -252,6 +253,50 @@ Permission: `game.read`.
 |---|---|---|
 | `item` | `integer` | An item from items.id. |
 
+#### `items.get(item) → wa.ItemInfo?`
+
+The item's record, as getiteminfo and getitemslots, or nil for an unknown item.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
+
+#### `items.can_refine(item) → boolean`
+
+Whether the item can be refined, as getequipisenableref: a weapon, an armor or shadow gear that is not no_refine. A worn copy that is a rental cannot.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer\|wa.EquippedItem` | An item from items.id, or a worn copy. |
+
+#### `items.refine_chance(item, refine?, options?) → integer`
+
+The chance in percent to refine the item from refine to refine + 1, as getequippercentrefinery, from refine.yml. 0 at MAX_REFINE or for an item that is not refined. The data holds the Normal chances alone: enriched raises an error.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer\|wa.EquippedItem` | An item from items.id, or a worn copy. |
+| `refine` | `integer?` | The refine it has. A worn copy's own by default. |
+| `options` | `wa.RefineChanceOptions?` |  |
+
+#### `items.refine_cost(item, refine?, kind?) → integer?, integer?`
+
+The zeny and the material's item ID of refining the item from refine to refine + 1, as getequiprefinecost, from refine.yml. nil when the data has no cost. The data holds the Normal costs alone: hd and enriched raise an error.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer\|wa.EquippedItem` | An item from items.id, or a worn copy. |
+| `refine` | `integer?` | The refine it has. A worn copy's own by default. |
+| `kind` | `wa.RefineKind?` | normal by default. |
+
 ### wa.skills
 
 ```lua
@@ -441,6 +486,21 @@ Removes a minimap mark from every player of a map, as viewpointmap with type 2.
 | `map` | `string` | A map name, such as prontera. |
 | `id` | `integer` |  |
 
+#### `maps.drop_item(map, x, y, item, amount, options?)`
+
+Drops items on a free cell next to the cell of a map, as makeitem and makeitem2: anyone may pick them up, and they vanish after flooritem_lifetime. The map's zone drops them after the current step.
+
+Permission: `player.give_items`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+| `item` | `integer` | An item from items.id. |
+| `amount` | `integer` | 1 to 30000, in one pile. |
+| `options` | `wa.DropItemOptions?` |  |
+
 ### wa.world
 
 ```lua
@@ -619,6 +679,39 @@ Permission: `game.read`.
 |---|---|---|
 | `name` | `string` | A guild's name, without regard to case. |
 
+### wa.clock
+
+```lua
+local clock = require "wa.clock"
+```
+
+The server clock (review decision 58), as rAthena's gettimetick, gettime and gettimestr. Fields and formats are in the server's time zone (time_zone in the config). Its calls need no permission.
+
+#### `clock.now() → integer`
+
+Unix seconds, as gettimetick(2).
+
+#### `clock.milliseconds() → integer`
+
+Unix milliseconds, for measuring time, as gettimetick(0).
+
+#### `clock.get(field) → integer`
+
+A part of the date or time, as gettime: second, minute, hour, day_of_week (0 is Sunday), day_of_month, month (1 to 12), year, day_of_year (0 is January 1st) and date (YYYYMMDD).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `field` | `wa.ClockField` |  |
+
+#### `clock.format(format, seconds?) → string`
+
+The time as text, as gettimestr's strftime in the C locale. A conversion that strftime does not have raises an error.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `format` | `string` | At most 255 bytes, with the conversions of C's strftime, such as %Y-%m-%d %H:%M:%S. |
+| `seconds` | `integer?` | A time in Unix seconds. Now by default. |
+
 ### wa.rules
 
 ```lua
@@ -641,11 +734,11 @@ Whether a ruleset flag is on: true at its renewal value or at on. A skill_rebala
 
 #### `rules.get(name) → integer|boolean`
 
-The value of a ruleset rule: a boolean for a rule that is yes or no, else an integer.
+The value of a ruleset rule: a boolean for a rule that is yes or no, else an integer. A server setting is the number getbattleflag reads (review decision 58): the exp rates in percent, and the highest look values of player:set_look.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | A ruleset rule, such as "basic_skill_check" or "party_share_level". |
+| `name` | `string` | A ruleset rule, such as "basic_skill_check" or "party_share_level", or a server setting: base_exp_rate, job_exp_rate, quest_exp_rate, max_hair_style, max_hair_color or max_cloth_color. |
 
 #### `rules.get_limit(name) → integer, integer`
 
@@ -1285,6 +1378,23 @@ rAthena's BaseClass: a Knight is a Swordman.
 |---|---|---|
 | `job` | `integer` |  |
 
+#### `jobs.class_flags(job) → integer`
+
+The job's class flags, as eaclass and pc_jobid2mapid, or -1 for a job that does not exist. player.job_class is the player's.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `job` | `integer` |  |
+
+#### `jobs.from_class(flags, sex) → integer`
+
+The job of class flags, as roclass and pc_mapid2jobid: a Bard or a Dancer by the sex. -1 for flags of no job.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `flags` | `integer` | Class flags, as class_flags gives them. |
+| `sex` | `"male"\|"female"\|nil` | male by default. |
+
 #### `jobs.next_jobs(job) → integer[]`
 
 The jobs a job can change into, in job ID order: the jobs whose record lists it in changes_from. In core's records a Novice changes into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other core jobs have none until third classes exist.
@@ -1352,6 +1462,11 @@ A player. Each access looks the player up again. A handle to a player who left t
 | `companion` | `integer?` | The player's companion, from companions.id, or nil. |
 | `mount` | `integer?` | The player's mount, from mounts.id, or nil. |
 | `cart` | `integer?` | The look of the player's cart, from 1, or nil. |
+| `weight` | `integer` | The weight the player carries, in tenths, as rAthena's Weight (review decision 58). |
+| `max_weight` | `integer` | The weight the player may carry, in tenths, as rAthena's MaxWeight. |
+| `skill_points` | `integer` | The player's unused skill points, as rAthena's SkillPoint. |
+| `look` | `wa.PlayerLook` | The player's look, as getlook reads it. Read-only. |
+| `staff_level` | `integer` | The player's staff level, as getgmlevel: 99 for the owner and the admin role, 10 for another staff role, 0 for a player. A role counts as get_staff_role says. |
 | `base_str` | `integer` | Allocated points. |
 | `base_agi` | `integer` | Allocated points. |
 | `base_vit` | `integer` | Allocated points. |
@@ -1647,6 +1762,145 @@ Opens the player's quest log window, as open_quest_ui.
 #### `player:refresh_quest_icons()`
 
 Checks the conditions of the quest icons of the NPCs of the player's map again, as questinfo_refresh. The icons change at the end of the current step.
+
+#### `player:give_exp(base, job, options?)`
+
+Gives exp, as getexp (script.cpp 11142): each amount times quest_exp_rate, and the guild's tax of the base exp, then the level ups. Both 0, or a negative amount, raise an error. A dead player gets nothing. With raw it is getexp2 (24713): no rate and no tax, and a negative amount takes exp, down to 0, as pc_lostexp.
+
+Permission: `player.give_exp`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `base` | `integer` | Base exp. |
+| `job` | `integer` | Job exp. |
+| `options` | `wa.GiveExpOptions?` |  |
+
+#### `player:heal(hp, sp)`
+
+Heals fixed amounts, as heal (status_heal with flag 1): no item bonuses, and Frenzy does not stop it. A negative amount takes HP or SP, and may kill. A dead player gets nothing.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `hp` | `integer` |  |
+| `sp` | `integer` |  |
+
+#### `player:set_hp(amount)`
+
+Sets the player's HP, as Hp = n (pc_setparam). It never kills. A dead player stays dead.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `amount` | `integer` | Capped to 1 and the maximum HP. |
+
+#### `player:set_blocked(action, blocked)`
+
+Blocks or unblocks an action of the player, as setpcblock: move, attack, skill, use_item, chat (and GM commands), immune (monsters do not target the player), sit_stand, commands (GM commands typed), npc_click (clicks, touch areas and events with the player), emotion, equip (equip and unequip). npc and all are rAthena's PCBLOCK_NPC and PCBLOCK_ALL. The blocks last until the player leaves the map.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `action` | `wa.BlockAction` |  |
+| `blocked` | `boolean` |  |
+
+#### `player:is_blocked(action) → boolean`
+
+Whether every flag of an action is blocked, as getpcblock.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `action` | `wa.BlockAction` |  |
+
+#### `player:unequip_all()`
+
+Takes off every equipped item, as nude. Statuses that keep equipment on do not stop it.
+
+#### `player:push(direction, cells)`
+
+Pushes the player cells in a direction, as pushpc's unit_blown, up to the first cell it cannot enter. Knockback immunity does not stop it. The player touches the NPC areas it ends in.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `direction` | `integer` | 0 north to 7 north-east, counterclockwise, as rAthena's DIR_. |
+| `cells` | `integer` | -25 to 25. A negative count pushes the other way. |
+
+#### `player:transform(monster, milliseconds) → boolean`
+
+The player looks like the monster for the time, as transform's SC_MONSTER_TRANSFORM. Returns false when the status does not start.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `monster` | `integer` | From monsters.id. Not the Emperium. |
+| `milliseconds` | `integer` | 0 does nothing. |
+
+#### `player:open_book(book, page)`
+
+Opens a book at a page, as readbook. The client shows the book's text from its data.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `book` | `integer` | The book's item ID. |
+| `page` | `integer` | From 0. |
+
+#### `player:get_save_point() → string, integer, integer`
+
+The player's save point: the map's name and the cell, as getsavepoint.
+
+Permission: `game.read`.
+
+#### `player:get_inventory() → wa.InventoryEntry[]`
+
+The player's items, as getinventorylist, in slot order.
+
+Permission: `game.read`.
+
+#### `player:set_look(look)`
+
+Changes the player's look, as setlook: hair style, hair color and cloth color are capped to max_hair_style, max_hair_color and max_cloth_color of rules.get and saved. The headgear views show over the equipment's until the player leaves the map.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `look` | `wa.PlayerLookChange` |  |
+
+#### `player:has_option(option) → boolean`
+
+Whether the player has an option, as checkoption: a status's, a cart, a companion or a mount's.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `option` | `wa.PlayerOption` |  |
+
+#### `player:get_broken_items() → integer[]`
+
+The item IDs of the player's broken items, in inventory order, as getbrokenid.
+
+Permission: `game.read`.
+
+#### `player:repair_item(n) → boolean`
+
+Repairs the n-th broken item, as repair. It costs nothing. Returns false when there is none.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `n` | `integer` | From 1, as get_broken_items lists them. |
+
+#### `player:repair_all() → integer`
+
+Repairs every broken item, as repairall. It costs nothing. Returns how many.
+
+#### `player:run_item_script(item)`
+
+Runs the item's use script for the player, as consumeitem: no item is spent, and no use check runs.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
+
+#### `player:merge_items() → integer`
+
+Joins the stacks of one item that may stack and hold the same copy, as mergeitem2, up to the stack limits. Rentals and worn items stay apart. Returns how many stacks it joined.
 
 #### `player:show_skill_effect(skill, level)`
 
@@ -1974,7 +2228,7 @@ Permission: `player.skills`.
 |---|---|---|
 | `skill` | `integer` | A skill from skills.id. |
 | `level` | `integer` | 0 to 13, rAthena's MAX_SKILL_LEVEL. |
-| `kind` | `"permanent"\|"temporary"\|"temporary_add"` | rAthena's ADDSKILL_PERMANENT, ADDSKILL_TEMP and ADDSKILL_TEMP_ADDLEVEL. |
+| `kind` | `"permanent"\|"permanent_grant"\|"temporary"\|"temporary_add"` | rAthena's ADDSKILL_PERMANENT, SKILL_PERM_GRANT, ADDSKILL_TEMP and ADDSKILL_TEMP_ADDLEVEL. permanent_grant is permanent, and a skill reset keeps the skill (review decision 58). |
 
 #### `player:start_status(status, options?) → boolean`
 
@@ -2164,8 +2418,8 @@ An NPC: the instance of an NPC context, or what world.get_npc returns. A handle 
 |---|---|---|
 | `kind` | `"npc"` | The entity's kind. |
 | `name` | `string` | The name players see, as strnpcinfo(1). |
-| `full_name` | `string` | The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the record's name has a # part (review decision 58). |
-| `hidden_name` | `string` | The part after # of the record's name, or "", as strnpcinfo(2). |
+| `full_name` | `string` | The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the NPC's name has a # part (review decision 58). |
+| `hidden_name` | `string` | The part after # of the NPC's name, as strnpcinfo(2): the display_name field's, else the record's, or "". npc:set_display_name("A#b") changes it. |
 | `unique_name` | `string` | The record's name without the mod's ID, as strnpcinfo(3). world.get_npc finds the NPC by it in the same mod. |
 | `map` | `string` | The map's name, as strnpcinfo(4). "" for an NPC without a map, which runs in the start map's zone. |
 | `x` | `integer` |  |
@@ -2357,7 +2611,7 @@ Plays a sound to the players who see the NPC, from the NPC, or to every player o
 
 #### `npc:add_quest_icon(icon, options?)`
 
-Adds a quest icon to the NPC, as questinfo (script.cpp 20949). Each player of the map sees the first icon of the NPC whose condition holds, and none when none holds. The icons show again for a player at map entry, on an item gained or lost, a level or job change, a quest added, completed, removed or changed, a kill counted, and player:refresh_quest_icons, as pc_show_questinfo, at the end of that step. The NPC must be on the context's map. Another mod's NPC needs npcs.control.
+Adds a quest icon to the NPC, as questinfo (script.cpp 20949). Each player of the map sees the first icon of the NPC whose condition holds, and none when none holds. The icons show again for a player at map entry, on an item gained or lost, a level or job change, a quest added, completed, removed or changed, a kill counted, and player:refresh_quest_icons, as pc_show_questinfo, at the end of that step. A player already on the map does not see the icons of an NPC that had none until it enters the map again (pc.cpp 15396). The NPC must be on the context's map. Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2467,6 +2721,22 @@ Permission: `items.modify_rolls`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string?` | One roll. Every roll without it. |
+
+#### `equippedItem:add_refine(amount) → integer`
+
+Raises the copy's refine, as successrefitem, or lowers it with a negative amount, as downrefitem, within 0 and MAX_REFINE. The copy comes off and goes back on, and the wearer shows the refine's effect. A copy at MAX_REFINE stays. Returns the new refine.
+
+Permission: `player.give_items`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `amount` | `integer` | -20 to 20, not 0. |
+
+#### `equippedItem:destroy()`
+
+Takes the copy off and deletes it, as delequip, and failedrefitem's deletion.
+
+Permission: `player.give_items`.
 
 ### wa.CardRolls
 
@@ -2582,6 +2852,14 @@ Shows a progress bar and waits until it is full. A walk cancels it and ends the 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `seconds` | `integer` | Up to 600. |
+
+#### `conversation:lock_items()`
+
+The player cannot use, equip or unequip items, or use skills, while the conversation lasts, as disable_items. Renewal conversations start locked and pre-renewal ones unlocked, as item_enabled_npc.
+
+#### `conversation:unlock_items()`
+
+The player may use, equip and unequip items, and use skills on itself, while the conversation lasts, as enable_items.
 
 ### wa.EventRun
 
@@ -3921,7 +4199,12 @@ Options of player:give_item.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `rent_seconds` | `integer?` | Gives rentals, as rentitem. Rentals do not expire yet. |
+| `rent_seconds` | `integer?` | Gives rentals, as rentitem: each copy goes when the time ends, by the server clock, even while the player is offline. Rentals never stack, cannot be dropped, traded, mailed or sold to a player, and go only into the player's storage or cart, where they do not expire. |
+| `refine` | `integer?` | The copies' refine, as getitem2, up to MAX_REFINE. Only for weapons, armor and shadow gear. |
+| `cards` | `integer[]?` | Up to 4 card item IDs in the copies' slots, as getitem2's cards. They are not checked against the slots. |
+| `broken` | `boolean?` | Gives broken copies, as getitem2's attribute 1. Only for weapons, armor and shadow gear. |
+| `identified` | `boolean?` | false gives unidentified copies, as getitem2's identify 0. Only for weapons, armor and shadow gear. |
+| `signed_by` | `wa.Player?` | Names the copies for a player, as getnameditem: players see the name before the item's. |
 | `roll` | `"random"\|"default"\|table<string, integer>\|nil` | How the copies' rolls are set: "random" rolls each value, "default" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code. |
 | `to` | `string?` | Where the copies go: "storage", "cart" or an extra storage's name, instead of the inventory. They follow the place's restrictions and bound rules. |
 | `bound` | `wa.Bound?` | Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares. |
@@ -3969,7 +4252,113 @@ Options of player:count_item and player:take_item.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `from` | `string` | "storage", "cart" or an extra storage's name of data/storages.yml. |
+| `from` | `string?` | "storage", "cart" or an extra storage's name of data/storages.yml. |
+| `refine` | `integer?` | Counts only identified copies that are not broken, with this refine and exactly cards, as countitem2. 0 with cards. |
+| `cards` | `integer[]?` | The cards of countitem2: exactly these, in slot order. None with refine. |
+| `rentals` | `boolean?` | Counts only rentals, as rentalcountitem. Without it, count_item counts only copies that are not rentals, as countitem. |
+
+### wa.GiveExpOptions
+
+Options of player:give_exp.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `raw` | `boolean?` | getexp2: no quest_exp_rate and no guild tax, and a negative amount takes exp. |
+
+### wa.PlayerLook
+
+A player's look, as getlook reads it (review decision 58).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `hair_style` | `integer` | LOOK_HAIR. |
+| `hair_color` | `integer` | LOOK_HAIR_COLOR. |
+| `cloth_color` | `integer` | LOOK_CLOTHES_COLOR. |
+| `head_top` | `integer` | The top headgear's view. |
+| `head_middle` | `integer` |  |
+| `head_bottom` | `integer` |  |
+| `weapon` | `integer` | The weapon's type. |
+| `shield` | `integer` | The shield's view. |
+
+### wa.PlayerLookChange
+
+The fields of player:set_look, as setlook's LOOK_ types. Each is optional.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `hair_style` | `integer?` |  |
+| `hair_color` | `integer?` |  |
+| `cloth_color` | `integer?` |  |
+| `head_top` | `integer?` | A headgear's view. |
+| `head_middle` | `integer?` |  |
+| `head_bottom` | `integer?` |  |
+
+### wa.InventoryEntry
+
+One item of player:get_inventory, as getinventorylist's arrays.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `slot` | `integer` | The inventory slot, from 0. |
+| `item` | `integer` |  |
+| `amount` | `integer` |  |
+| `equip` | `integer` | The EQP_ bits it is worn in, or 0. |
+| `refine` | `integer` |  |
+| `identified` | `boolean` |  |
+| `broken` | `boolean` |  |
+| `cards` | `integer[]` | The cards in its slots, in slot order. |
+| `expires` | `integer` | A rental's end in Unix seconds, or 0. |
+| `bound` | `wa.Bound?` |  |
+| `tradable` | `boolean` | Whether it may be traded, as pc_can_trade_item: not a rental, not bound, and not no_trade. |
+| `random_options` | `wa.RandomOption[]` |  |
+
+### wa.ItemInfo
+
+An item's record, as getiteminfo reads it (review decision 58).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | `integer` |  |
+| `name` | `string` |  |
+| `aegis_name` | `string` |  |
+| `type` | `string` | The item_db type in lower case, such as weapon. |
+| `buy` | `integer` |  |
+| `sell` | `integer` |  |
+| `weight` | `integer` | In tenths. |
+| `attack` | `integer` |  |
+| `magic_attack` | `integer` | 0 in pre-renewal. |
+| `defense` | `integer` |  |
+| `range` | `integer` |  |
+| `slots` | `integer` |  |
+| `view` | `integer` |  |
+| `min_level` | `integer` |  |
+| `max_level` | `integer` |  |
+| `subtype` | `integer` | The weapon or ammunition type. |
+| `weapon_level` | `integer` | 0 for an item that is not a weapon. |
+| `armor_level` | `integer` | 0 for an item that is not an armor. |
+| `locations` | `integer` | The EQP_ bits it is worn in. |
+| `refineable` | `boolean` |  |
+| `stackable` | `boolean` |  |
+| `gender` | `string?` | male or female for an item of one sex. |
+
+### wa.RefineChanceOptions
+
+Options of items.refine_chance.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `enriched` | `boolean?` | The Enriched chance, as getequippercentrefinery's second argument. |
+
+### wa.DropItemOptions
+
+Options of maps.drop_item, as makeitem2's.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `refine` | `integer?` |  |
+| `cards` | `integer[]?` |  |
+| `broken` | `boolean?` |  |
+| `identified` | `boolean?` |  |
 
 ### wa.WorldEvent
 
@@ -4375,6 +4764,7 @@ Options of player:change_job.
 | Field | Type | Meaning |
 |---|---|---|
 | `force` | `boolean?` | Skips the job change rules. It needs the permission player.change_job. |
+| `keep_line` | `boolean?` | Changes into the job of the player's line, transcendent or baby, as jobchange <job>,Upper (review decision 58). |
 
 ### wa.ResetSkillOptions
 
@@ -4820,6 +5210,30 @@ A kind of player:show_digits, showdigit's types 0 to 3.
 A monster's skill state, in the words of rAthena's mob_skill_db.
 
 `idle`, `walk`, `loot`, `dead`, `attack`, `angry`, `chase`, `follow`
+
+### wa.BlockAction
+
+An action of player:set_blocked, as rAthena's PCBLOCK_ flags.
+
+`all`, `attack`, `chat`, `commands`, `emotion`, `equip`, `immune`, `move`, `npc`, `npc_click`, `sit_stand`, `skill`, `use_item`
+
+### wa.PlayerOption
+
+An option of player:has_option, as rAthena's OPTION_ bits.
+
+`cart`, `chasewalk`, `cloak`, `dragon`, `falcon`, `flying`, `hanbok`, `hide`, `invisible`, `madogear`, `oktoberfest`, `orcish`, `riding`, `ruwach`, `sight`, `summer`, `summer2`, `transform`, `warg`, `warg_rider`, `wedding`, `xmas`
+
+### wa.ClockField
+
+A field of clock.get, as gettime's DT_ types.
+
+`second`, `minute`, `hour`, `day_of_week`, `day_of_month`, `month`, `year`, `day_of_year`, `date`
+
+### wa.RefineKind
+
+A cost kind of items.refine_cost, as REFINE_COST_NORMAL, REFINE_COST_HD and REFINE_COST_ENRICHED.
+
+`normal`, `hd`, `enriched`
 
 ### wa.Weekday
 

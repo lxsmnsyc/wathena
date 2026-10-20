@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred. On 2026-10-20, decision 0054 explained and fixed the extra Jellopy of the restore duplication test, closed L34, and made the Lua wall-clock limit a 30-second backstop. The same day, decision 0062 built group 1 of the NPC API of review decision 58: lookups, NPC visibility, events between NPCs across zones, NPCs without a map, and NPC and temporary server variables. Decision 0063 built group 2 on 2026-10-21: NPC presentation and quest icons.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred. On 2026-10-20, decision 0054 explained and fixed the extra Jellopy of the restore duplication test, closed L34, and made the Lua wall-clock limit a 30-second backstop. The same day, decision 0062 built group 1 of the NPC API of review decision 58: lookups, NPC visibility, events between NPCs across zones, NPCs without a map, and NPC and temporary server variables. Decision 0063 built group 2 on 2026-10-21: NPC presentation and quest icons. Decision 0064 built group 3 the same day: player calls, items and equipment, and the clock.
 
 Done:
 
@@ -211,6 +211,15 @@ Done:
   - renewal places 5,371 of 7,067 script NPCs, up from 4,557, and 10,986 of 14,865 lines with duplicates, up from 9,617.
   - pre-renewal places 3,032 of 3,754 script NPCs, up from 2,827, and 6,985 of 8,205 lines, up from 6,460.
   - Groups B7 to B10 come later.
+- NPC API group 3 (section 14.2a), on 2026-10-21: review decision 58's areas B7, B9 and B10, player calls, items and the clock ([decision 0064](decisions/0064-npc-api-group-3.md), proposal 0002, next step 43):
+  - Players gain exp by rAthena's rules, heal, take blocks of their actions, push, transform, and read their weight, look, save point and inventory. Conversations lock and unlock items, as `item_enabled_npc`.
+  - Scripts give items with refines, cards, a broken state, a name and rentals that expire, drop items, read item and refine data, refine, break and repair equipment, and run item scripts.
+  - `wa.clock` reads the server clock, and `rules.get` the exp rates and look limits. NPC timers read their tick and resume after a stop.
+  - Migration 00042 saves broken items, rentals and named items, and skills that a reset keeps. The protocol gains `BookOpen` and the items' broken state, rental end and name.
+  - Five differences from rAthena that decision 0063 left are fixed: quest icons of players already on the map, duplicates' NPC variables, `full_name` of `::` names, `unitwalk`'s delay and forced walk, and repeated sounds.
+  - renewal places 6,213 of 7,067 script NPCs, up from 5,371, and 12,168 of 14,865 lines with duplicates, up from 10,986.
+  - pre-renewal places 3,342 of 3,754 script NPCs, up from 3,032, and 7,327 of 8,205 lines, up from 6,985.
+  - Group B8 comes later.
 
 Open review items:
 
@@ -225,7 +234,8 @@ Open review items:
 - The security review's items, in proposal 0002, next step 37: review decision 54 settled and built the four first items. Left: a reauth with a passkey without user verification, and when to remove `staff.owners` by name.
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
 - Decision 0062's details to review: player events of NPCs on every map, which need player handles across zones, the return values of `fire_event` and `fire_npc_event` for zones that have not started, and broadcasts that start zones.
-- Decision 0063's details to review: `classchange` kept for later viewers, a walking NPC's touch area, waits in events without a player, and the protocol version for the next release.
+- Decision 0063's details to review: `classchange` kept for later viewers, waits in events without a player, and the protocol version for the next release.
+- Decision 0064's details to review: the API names it changed from the proposal, the refine costs the extract lacks, the group 2 differences that need new API (`classchange`, `unitstopwalk`'s `USW_NONE`, `soundeffectall` around a player), staff levels by role, and NPC timer labels while a map sleeps.
 
 Known issues:
 

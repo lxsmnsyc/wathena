@@ -29,10 +29,7 @@ func (s *Store) LoadStorage(ctx context.Context, k storage.Key) ([]character.Ite
 		return nil, err
 	}
 	var out []character.Item
-	add := func(slot, itemID, amount int, serial pgtype.UUID, refine int, cards []int, rolls, cardRolls, opts []byte, identified bool,
-		bound int) error {
-		row := db.InventoryRow{Slot: slot, ItemID: itemID, Amount: amount, Serial: serial, Refine: refine, Cards: cards, Rolls: rolls,
-			CardRolls: cardRolls, RandomOptions: opts, Identified: identified, Bound: bound}
+	add := func(row db.InventoryRow) error {
 		it, err := inventoryItem(&row)
 		if err != nil {
 			return err
@@ -46,7 +43,9 @@ func (s *Store) LoadStorage(ctx context.Context, k storage.Key) ([]character.Ite
 			return nil, err
 		}
 		for _, r := range rows {
-			if err := add(r.Slot, r.ItemID, r.Amount, r.Serial, r.Refine, r.Cards, r.Rolls, r.CardRolls, r.RandomOptions, r.Identified, r.Bound); err != nil {
+			if err := add(db.InventoryRow{Slot: r.Slot, ItemID: r.ItemID, Amount: r.Amount, Serial: r.Serial, Refine: r.Refine, Cards: r.Cards,
+				Rolls: r.Rolls, CardRolls: r.CardRolls, RandomOptions: r.RandomOptions, Identified: r.Identified, Bound: r.Bound,
+				Broken: r.Broken, ExpiresAt: r.ExpiresAt, SignedBy: r.SignedBy, SignedName: r.SignedName}); err != nil {
 				return nil, err
 			}
 		}
@@ -58,7 +57,9 @@ func (s *Store) LoadStorage(ctx context.Context, k storage.Key) ([]character.Ite
 		return nil, err
 	}
 	for _, r := range rows {
-		if err := add(r.Slot, r.ItemID, r.Amount, r.Serial, r.Refine, r.Cards, r.Rolls, r.CardRolls, r.RandomOptions, r.Identified, r.Bound); err != nil {
+		if err := add(db.InventoryRow{Slot: r.Slot, ItemID: r.ItemID, Amount: r.Amount, Serial: r.Serial, Refine: r.Refine, Cards: r.Cards,
+			Rolls: r.Rolls, CardRolls: r.CardRolls, RandomOptions: r.RandomOptions, Identified: r.Identified, Bound: r.Bound,
+			Broken: r.Broken, ExpiresAt: r.ExpiresAt, SignedBy: r.SignedBy, SignedName: r.SignedName}); err != nil {
 			return nil, err
 		}
 	}
@@ -170,7 +171,8 @@ func writePersonalStorages(ctx context.Context, q *db.Queries, ws []StorageWrite
 			inv := insertParams(0, ins)
 			p := db.InsertStorageItemsParams{Holder: k.Holder.String(), Storage: int(k.Storage), Slots: inv.Slots, ItemIds: inv.ItemIds,
 				Amounts: inv.Amounts, Serials: inv.Serials, Refines: inv.Refines, Cards: inv.Cards, Rolls: inv.Rolls, CardRolls: inv.CardRolls,
-				RandomOptions: inv.RandomOptions, Identified: inv.Identified, Bounds: inv.Bounds}
+				RandomOptions: inv.RandomOptions, Identified: inv.Identified, Bounds: inv.Bounds, Brokens: inv.Brokens, Expires: inv.Expires,
+				SignedBys: inv.SignedBys, SignedNames: inv.SignedNames}
 			if k.Holder == storage.HolderAccount {
 				p.AccountID = id
 			} else {

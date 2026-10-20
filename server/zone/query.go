@@ -184,6 +184,11 @@ func isEnemy(a, b *entity) bool {
 	if a == b {
 		return false
 	}
+	// battle_check_target: a player with PCBLOCK_IMMUNE is no one's enemy
+	// (battle.cpp 8010).
+	if p := b.player; p != nil && p.isBlocked(blockImmune) {
+		return false
+	}
 	// A player's summon, such as a flora (a special AI), is on its
 	// master's side. Players may hit floras and marine spheres as
 	// alchemist_summon_setting says, and other monsters treat them as

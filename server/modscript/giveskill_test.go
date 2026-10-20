@@ -72,7 +72,7 @@ end`
 	}
 	msgs := strings.Join(h.messages, "\n")
 	for _, w := range []string{"1:true\n1:true\n1:true\n1:true\n1:false\n1:false\n",
-		`want the kind "permanent", "temporary" or "temporary_add"`, "want a level from 0", "want a skill from skills.id"} {
+		`want the kind "permanent", "permanent_grant", "temporary" or "temporary_add"`, "want a level from 0", "want a skill from skills.id"} {
 		if !strings.Contains(msgs, w) {
 			t.Errorf("no %q in\n%s", w, msgs)
 		}

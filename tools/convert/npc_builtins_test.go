@@ -110,8 +110,8 @@ func TestBuiltinsConvert(t *testing.T) {
 		{`{ mes "" + getnpctimer(1) + getnpctimer(2); end; OnTimer5: end; }`, `"" .. NpcTimer:due() .. 1`},
 		{`{ initnpctimer 1; end; }`, "!initnpctimer: a timer attached to the player"},
 		{`{ initnpctimer "Other#t"; end; }`, "!initnpctimer: the timer of another NPC (Other#t)"},
-		{`{ startnpctimer; end; }`, "!startnpctimer: resuming a stopped timer needs the tick"},
-		{`{ mes "" + getnpctimer(0); end; }`, "!getnpctimer: the timer's tick (type 0)"},
+		{`{ startnpctimer; end; }`, "NpcTimer:start()"},
+		{`{ mes "" + getnpctimer(0); end; }`, "NpcTimer:tick()"},
 		// Equipment reads.
 		{`{ if (isequipped(2234,5016)) mes "a"; end; }`, "R.isequipped(player, TIARA, BOY_S_CAP)"},
 		{`{ mes "" + isequipped(0,2234); end; }`, `"" .. -1`},
@@ -234,7 +234,10 @@ func builtinRuntime(t *testing.T, res *NPCResult, h modscript.Host, logs *logRec
 		}
 	}
 	rt, err := modscript.New(modscript.Options{Host: h, Mods: []string{mod.Core}, Constants: core.Constants, Jobs: base.jobs,
-		Log: slog.New(logs), Server: variables.NewServer(nil, nil), Clock: func() time.Time { return testClock }, Location: time.UTC},
+		Log: slog.New(logs), Server: variables.NewServer(nil, nil), Location: time.UTC,
+		// The server clock runs with the zone clock, as a zone that has
+		// players.
+		Clock: func() time.Time { return testClock.Add(time.Duration(h.Now()) * time.Millisecond) }},
 		[]*mod.Scripts{sc})
 	if err != nil {
 		t.Fatal(err)

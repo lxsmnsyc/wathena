@@ -788,10 +788,11 @@ func (b *body) unitwalk(args []Expr) (val, error) {
 	if err != nil {
 		return val{}, err
 	}
-	return val{code: "(" + call + " == true)", t: tBool}, nil
+	return val{code: call, t: tInt}, nil
 }
 
-// unitwalkCall is unitwalk's call of walk_to.
+// unitwalkCall is unitwalk's R.unitwalk: the 50 ms timer and the check
+// of a forced walk (script.cpp 20015, 20032).
 func (b *body) unitwalkCall(args []Expr) (string, error) {
 	const what = "unitwalk"
 	if len(args) == 4 {
@@ -812,7 +813,7 @@ func (b *body) unitwalkCall(args []Expr) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return b.onNPC(target, "walk_to", x.asInt(), y.asInt()), nil
+	return fmt.Sprintf("R.unitwalk(%s, %s, %s)", target, x.asInt(), y.asInt()), nil
 }
 
 // unitwarp converts unitwarp <game ID>,"<map>",<x>,<y> (script.cpp 20075)
@@ -864,7 +865,9 @@ func (b *body) unitstopwalk(args []Expr) error {
 	if err != nil {
 		return err
 	}
-	b.line("%s", b.onNPC(target, "stop"))
+	// rAthena's default USW_NONE sends no fixpos (unit.cpp 1733); the
+	// API's stop sends the cell.
+	b.line("R.npc_stop(%s)", target)
 	return nil
 }
 
@@ -920,7 +923,8 @@ func (b *body) npcMove(what string, args []Expr) error {
 				return unsupported(what, "a flag other than the default USW_FIXPOS|USW_MOVE_FULL_CELL|USW_FORCE_STOP")
 			}
 		}
-		b.line("%s", b.onNPC(target, "stop"))
+		// USW_FORCE_STOP ends a forced walk too.
+		b.line("R.npc_stop(%s)", target)
 	case "movenpc":
 		if len(args) == 4 {
 			return unsupported(what, "a direction, which npc:move_to does not take")

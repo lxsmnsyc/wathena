@@ -128,7 +128,10 @@ type NPC struct {
 	Name string
 	// DisplayName is the name players see.
 	DisplayName string
-	X, Y        int
+	// Hidden is the part after "#" of the NPC's name, as rAthena's
+	// strnpcinfo(2): the record's, or the display_name field's (mod.NPC).
+	Hidden string
+	X, Y   int
 	// Direction is 0 to 7, starting south and turning clockwise.
 	Direction int
 	// Sprite is the NPC sprite ID.
@@ -194,6 +197,10 @@ func (z *Zone) SetNPCs(npcs []NPC) {
 	z.npcHandles = map[int64]*entity{}
 	z.touchNPCs = nil
 	for i, n := range npcs {
+		if n.Hidden == "" {
+			// A record without display_name's # part keeps its name's.
+			_, n.Hidden, _ = strings.Cut(mod.Local(n.Name), "#")
+		}
 		e := &entity{npc: &npc{NPC: n, handle: int64(i + 1), floating: n.Floating, skillLevel: 1, skillStat: 1}, x: n.X, y: n.Y, dir: n.Direction,
 			speed: defaultNPCSpeed}
 		switch n.State {
@@ -547,6 +554,20 @@ var playerFields = map[string]func(h scriptHost, p *Player) script.Value{
 	"companion": func(_ scriptHost, p *Player) script.Value { return companionField(p.companion) },
 	"mount":     func(_ scriptHost, p *Player) script.Value { return companionField(p.mount) },
 	"cart":      func(_ scriptHost, p *Player) script.Value { return cartField(p) },
+	// Area B7 of review decision 58: Weight, MaxWeight and SkillPoint,
+	// getlook and getgmlevel.
+	"weight":       func(_ scriptHost, p *Player) script.Value { return intValue(p.inventory.Weight) },
+	"max_weight":   func(_ scriptHost, p *Player) script.Value { return intValue(p.maxWeight) },
+	"skill_points": func(_ scriptHost, p *Player) script.Value { return intValue(p.progress.SkillPoints) },
+	"staff_level":  func(h scriptHost, p *Player) script.Value { return intValue(h.z.staffLevel(p)) },
+	"look": func(_ scriptHost, p *Player) script.Value {
+		l := p.Look
+		return script.NewTable(
+			script.KV("hair_style", intValue(l.Hair)), script.KV("hair_color", intValue(l.HairColor)),
+			script.KV("cloth_color", intValue(l.ClothColor)), script.KV("head_top", intValue(l.HeadTop)),
+			script.KV("head_middle", intValue(l.HeadMid)), script.KV("head_bottom", intValue(l.HeadBottom)),
+			script.KV("weapon", intValue(l.Weapon)), script.KV("shield", intValue(l.Shield)))
+	},
 	"job_class": func(h scriptHost, p *Player) script.Value {
 		if h.z.Status == nil {
 			return script.Int(0)
@@ -619,8 +640,8 @@ func (h scriptHost) SendMessage(id int64, text string) error {
 
 // GiveItem gives a player items, as getitem: a stackable item in one
 // add, anything else one at a time. It stops at the first that does not
-// fit, as getitem does, and the player sees why. Rentals are given as
-// normal items: items have no expiry yet.
+// fit, as getitem does, and the player sees why. The runtime gives
+// rentals through GiveItemSpec.
 func (h scriptHost) GiveItem(id int64, itemID uint32, amount int, rentSeconds int64) (bool, error) {
 	p, err := h.player(id)
 	if err != nil {
@@ -629,13 +650,20 @@ func (h scriptHost) GiveItem(id int64, itemID uint32, amount int, rentSeconds in
 	return h.z.giveItem(p, itemID, amount, h.z.Items.Get(itemID).Stackable), nil
 }
 
-// CountItem is countitem.
+// CountItem is countitem: rentals do not count, as script_countitem_sub
+// counts copies whose expire_time is 0 (script.cpp 7152).
 func (h scriptHost) CountItem(id int64, itemID uint32) (int, error) {
 	p, err := h.player(id)
 	if err != nil {
 		return 0, err
 	}
-	return p.inventory.Count(itemID), nil
+	n := 0
+	for i := range p.inventory.Slots {
+		if s := &p.inventory.Slots[i]; s.ID == itemID && s.Amount > 0 && s.Expires == 0 {
+			n += s.Amount
+		}
+	}
+	return n, nil
 }
 
 // Now is the zone clock.

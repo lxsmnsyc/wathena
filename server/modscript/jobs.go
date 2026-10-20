@@ -50,10 +50,15 @@ const (
 	// SkillTemporaryAdd is ADDSKILL_TEMP_ADDLEVEL: the given level adds
 	// to the skill's level, until the player's skills are recalculated.
 	SkillTemporaryAdd
+	// SkillPermanentGrant is SKILL_PERM_GRANT: SkillPermanent, and a
+	// skill reset keeps the skill, as SKILL_FLAG_PERM_GRANTED (review
+	// decision 58).
+	SkillPermanentGrant
 )
 
 // skillKinds are the kinds of player:give_skill by name.
-var skillKinds = map[string]SkillKind{"permanent": SkillPermanent, "temporary": SkillTemporary, "temporary_add": SkillTemporaryAdd}
+var skillKinds = map[string]SkillKind{"permanent": SkillPermanent, "temporary": SkillTemporary, "temporary_add": SkillTemporaryAdd,
+	"permanent_grant": SkillPermanentGrant}
 
 // MaxGivenSkillLevel is rAthena's MAX_SKILL_LEVEL: the highest level
 // player:give_skill gives.
@@ -112,7 +117,14 @@ func (r *Runtime) playerChangeJob(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	changed, err := h.ChangeJob(id, int(job), force)
+	target := int(job)
+	if c.Arg(3).Truthy() {
+		// keep_line is jobchange <job>,Upper (review decision 58).
+		if target, err = r.keepLine(id, target); err != nil {
+			return fmt.Errorf("player:change_job: %w", err)
+		}
+	}
+	changed, err := h.ChangeJob(id, target, force)
 	if err != nil {
 		return err
 	}
@@ -256,7 +268,7 @@ func (r *Runtime) playerGiveSkill(c *script.Call) error {
 	name, _ := c.Arg(3).AsString()
 	kind, ok := skillKinds[name]
 	if !ok {
-		return errors.New(`player:give_skill: want the kind "permanent", "temporary" or "temporary_add"`)
+		return errors.New(`player:give_skill: want the kind "permanent", "permanent_grant", "temporary" or "temporary_add"`)
 	}
 	h, err := r.jobHost()
 	if err != nil {

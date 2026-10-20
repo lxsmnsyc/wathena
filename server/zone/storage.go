@@ -455,9 +455,10 @@ func (z *Zone) moveBetween(p *Player, from, to end, slot, amount int, action tra
 		return
 	}
 	if !to.inventory() {
-		if z.Items.Restricted(s, to.limit) {
+		if z.Items.Restricted(s, to.limit) || s.Expires != 0 && to.place == item.PlaceGuildStorage {
 			// itemdb_canstore, itemdb_canguildstore and
-			// itemdb_cancartstore: msg 264.
+			// itemdb_cancartstore: msg 264. The guild storage refuses a
+			// rental too (storage.cpp 744).
 			p.pending = append(p.pending, storageResult(wathenav1.StorageOutcome_STORAGE_OUTCOME_RESTRICTED))
 			return
 		}

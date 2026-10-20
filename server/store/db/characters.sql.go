@@ -241,12 +241,12 @@ func (q *Queries) DeleteTimedBonuses(ctx context.Context, characterID int64) err
 
 const insertInventory = `-- name: InsertInventory :exec
 INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards,
-    rolls, card_rolls, random_options, identified, bound)
+    rolls, card_rolls, random_options, identified, bound, broken, expires_at, signed_by, signed_name)
 SELECT $1, unnest($2::smallint[]), unnest($3::integer[]),
     unnest($4::integer[]), unnest($5::uuid[]), unnest($6::integer[]),
     unnest($7::smallint[]), unnest($8::text[])::integer[],
     unnest($9::text[])::jsonb, unnest($10::text[])::jsonb,
-    unnest($11::text[])::jsonb, unnest($12::boolean[]), unnest($13::smallint[])
+    unnest($11::text[])::jsonb, unnest($12::boolean[]), unnest($13::smallint[]), unnest($14::boolean[]), unnest($15::bigint[]), unnest($16::integer[]), unnest($17::text[])
 `
 
 type InsertInventoryParams struct {
@@ -263,6 +263,10 @@ type InsertInventoryParams struct {
 	RandomOptions []string
 	Identified    []bool
 	Bounds        []int
+	Brokens       []bool
+	Expires       []int64
+	SignedBys     []int
+	SignedNames   []string
 }
 
 // InsertInventory writes items in one statement. Each item's cards come
@@ -284,23 +288,33 @@ func (q *Queries) InsertInventory(ctx context.Context, arg InsertInventoryParams
 		arg.RandomOptions,
 		arg.Identified,
 		arg.Bounds,
+		arg.Brokens,
+		arg.Expires,
+		arg.SignedBys,
+		arg.SignedNames,
 	)
 	return err
 }
 
 const insertSkills = `-- name: InsertSkills :exec
-INSERT INTO character_skills (character_id, skill_id, level)
-SELECT $1, unnest($2::integer[]), unnest($3::smallint[])
+INSERT INTO character_skills (character_id, skill_id, level, granted)
+SELECT $1, unnest($2::integer[]), unnest($3::smallint[]), unnest($4::boolean[])
 `
 
 type InsertSkillsParams struct {
 	CharacterID int64
 	SkillIds    []int
 	Levels      []int
+	Granted     []bool
 }
 
 func (q *Queries) InsertSkills(ctx context.Context, arg InsertSkillsParams) error {
-	_, err := q.db.Exec(ctx, insertSkills, arg.CharacterID, arg.SkillIds, arg.Levels)
+	_, err := q.db.Exec(ctx, insertSkills,
+		arg.CharacterID,
+		arg.SkillIds,
+		arg.Levels,
+		arg.Granted,
+	)
 	return err
 }
 
@@ -367,7 +381,7 @@ func (q *Queries) InsertTimedBonus(ctx context.Context, arg InsertTimedBonusPara
 }
 
 const inventory = `-- name: Inventory :many
-SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified, bound FROM inventory
+SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, expires_at, signed_by, signed_name FROM inventory
 WHERE character_id = $1
 ORDER BY slot
 `
@@ -385,6 +399,10 @@ type InventoryRow struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	ExpiresAt     int64
+	SignedBy      int
+	SignedName    string
 }
 
 func (q *Queries) Inventory(ctx context.Context, characterID int64) ([]InventoryRow, error) {
@@ -409,6 +427,10 @@ func (q *Queries) Inventory(ctx context.Context, characterID int64) ([]Inventory
 			&i.RandomOptions,
 			&i.Identified,
 			&i.Bound,
+			&i.Broken,
+			&i.ExpiresAt,
+			&i.SignedBy,
+			&i.SignedName,
 		); err != nil {
 			return nil, err
 		}
@@ -524,7 +546,7 @@ func (q *Queries) SaveCharacter(ctx context.Context, arg SaveCharacterParams) (i
 }
 
 const skills = `-- name: Skills :many
-SELECT skill_id, level FROM character_skills
+SELECT skill_id, level, granted FROM character_skills
 WHERE character_id = $1
 ORDER BY skill_id
 `
@@ -532,6 +554,7 @@ ORDER BY skill_id
 type SkillsRow struct {
 	SkillID int
 	Level   int
+	Granted bool
 }
 
 func (q *Queries) Skills(ctx context.Context, characterID int64) ([]SkillsRow, error) {
@@ -543,7 +566,7 @@ func (q *Queries) Skills(ctx context.Context, characterID int64) ([]SkillsRow, e
 	var items []SkillsRow
 	for rows.Next() {
 		var i SkillsRow
-		if err := rows.Scan(&i.SkillID, &i.Level); err != nil {
+		if err := rows.Scan(&i.SkillID, &i.Level, &i.Granted); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

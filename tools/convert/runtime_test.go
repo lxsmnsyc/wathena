@@ -159,6 +159,14 @@ func (h *testHost) PlayerField(id int64, field string) (script.Value, error) {
 		return script.Int(1), nil
 	case "party", "guild":
 		return script.Nil, nil
+	case "weight", "skill_points", "staff_level":
+		return script.Int(0), nil
+	case "max_weight":
+		return script.Int(80000), nil
+	case "look":
+		return script.NewTable(script.KV("hair_style", script.Int(1)), script.KV("hair_color", script.Int(0)),
+			script.KV("cloth_color", script.Int(0)), script.KV("head_top", script.Int(0)), script.KV("head_middle", script.Int(0)),
+			script.KV("head_bottom", script.Int(0)), script.KV("weapon", script.Int(0)), script.KV("shield", script.Int(0))), nil
 	}
 	return script.Nil, fmt.Errorf("player has no field %q", field)
 }

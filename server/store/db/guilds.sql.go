@@ -218,7 +218,7 @@ func (q *Queries) GuildRelations(ctx context.Context) ([]GuildRelationsRow, erro
 }
 
 const guildStorage = `-- name: GuildStorage :many
-SELECT guild_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound
+SELECT guild_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, signed_by, signed_name
 FROM guild_storage
 ORDER BY guild_id, slot
 `
@@ -236,6 +236,9 @@ type GuildStorageRow struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	SignedBy      int
+	SignedName    string
 }
 
 func (q *Queries) GuildStorage(ctx context.Context) ([]GuildStorageRow, error) {
@@ -260,6 +263,9 @@ func (q *Queries) GuildStorage(ctx context.Context) ([]GuildStorageRow, error) {
 			&i.RandomOptions,
 			&i.Identified,
 			&i.Bound,
+			&i.Broken,
+			&i.SignedBy,
+			&i.SignedName,
 		); err != nil {
 			return nil, err
 		}
@@ -444,12 +450,12 @@ func (q *Queries) InsertGuildRelations(ctx context.Context, arg InsertGuildRelat
 
 const insertGuildStorage = `-- name: InsertGuildStorage :exec
 INSERT INTO guild_storage (guild_id, slot, item_id, amount, serial, refine, cards,
-    rolls, card_rolls, random_options, identified, bound)
+    rolls, card_rolls, random_options, identified, bound, broken, signed_by, signed_name)
 SELECT $1, unnest($2::smallint[]), unnest($3::integer[]),
     unnest($4::integer[]), unnest($5::uuid[]),
     unnest($6::smallint[]), unnest($7::text[])::integer[],
     unnest($8::text[])::jsonb, unnest($9::text[])::jsonb,
-    unnest($10::text[])::jsonb, unnest($11::boolean[]), unnest($12::smallint[])
+    unnest($10::text[])::jsonb, unnest($11::boolean[]), unnest($12::smallint[]), unnest($13::boolean[]), unnest($14::integer[]), unnest($15::text[])
 `
 
 type InsertGuildStorageParams struct {
@@ -465,6 +471,9 @@ type InsertGuildStorageParams struct {
 	RandomOptions []string
 	Identified    []bool
 	Bounds        []int
+	Brokens       []bool
+	SignedBys     []int
+	SignedNames   []string
 }
 
 // InsertGuildStorage writes items as InsertInventory does.
@@ -482,6 +491,9 @@ func (q *Queries) InsertGuildStorage(ctx context.Context, arg InsertGuildStorage
 		arg.RandomOptions,
 		arg.Identified,
 		arg.Bounds,
+		arg.Brokens,
+		arg.SignedBys,
+		arg.SignedNames,
 	)
 	return err
 }

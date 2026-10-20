@@ -52,7 +52,7 @@ UPDATE characters SET
 WHERE id = @id AND save_version = @save_version;
 
 -- name: Inventory :many
-SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified, bound FROM inventory
+SELECT slot, item_id, amount, serial, equip, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, expires_at, signed_by, signed_name FROM inventory
 WHERE character_id = @character_id
 ORDER BY slot;
 
@@ -66,12 +66,12 @@ WHERE character_id = @character_id AND slot = ANY(@slots::smallint[]);
 -- arrays must all have the same length. Rolls and random options come
 -- as JSON text.
 INSERT INTO inventory (character_id, slot, item_id, amount, serial, equip, refine, cards,
-    rolls, card_rolls, random_options, identified, bound)
+    rolls, card_rolls, random_options, identified, bound, broken, expires_at, signed_by, signed_name)
 SELECT @character_id, unnest(@slots::smallint[]), unnest(@item_ids::integer[]),
     unnest(@amounts::integer[]), unnest(@serials::uuid[]), unnest(@equips::integer[]),
     unnest(@refines::smallint[]), unnest(@cards::text[])::integer[],
     unnest(@rolls::text[])::jsonb, unnest(@card_rolls::text[])::jsonb,
-    unnest(@random_options::text[])::jsonb, unnest(@identified::boolean[]), unnest(@bounds::smallint[]);
+    unnest(@random_options::text[])::jsonb, unnest(@identified::boolean[]), unnest(@bounds::smallint[]), unnest(@brokens::boolean[]), unnest(@expires::bigint[]), unnest(@signed_bys::integer[]), unnest(@signed_names::text[]);
 
 -- name: Statuses :many
 SELECT name, val1, val2, val3, val4, tick, end_ms FROM character_statuses
@@ -100,7 +100,7 @@ INSERT INTO character_timed_bonuses (character_id, position, key, remaining_ms, 
 VALUES (@character_id, @position, @key, @remaining_ms, @bonuses, @ends_on, @icon, @kind);
 
 -- name: Skills :many
-SELECT skill_id, level FROM character_skills
+SELECT skill_id, level, granted FROM character_skills
 WHERE character_id = @character_id
 ORDER BY skill_id;
 
@@ -108,5 +108,5 @@ ORDER BY skill_id;
 DELETE FROM character_skills WHERE character_id = @character_id;
 
 -- name: InsertSkills :exec
-INSERT INTO character_skills (character_id, skill_id, level)
-SELECT @character_id, unnest(@skill_ids::integer[]), unnest(@levels::smallint[]);
+INSERT INTO character_skills (character_id, skill_id, level, granted)
+SELECT @character_id, unnest(@skill_ids::integer[]), unnest(@levels::smallint[]), unnest(@granted::boolean[]);

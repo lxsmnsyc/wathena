@@ -161,6 +161,9 @@ export function stackInput(i: InventoryItem): StackInput {
     ...stackRolls(i),
     bound: i.bound,
     restrictions: i.restrictions,
+    broken: i.broken,
+    expiresAt: Number(i.expiresAt),
+    signedBy: i.signedBy,
   };
 }
 
@@ -283,6 +286,11 @@ export function lookOf(m: LookMessage | undefined, option = 0): Look {
     head: `sprite/head/${race}/${sex}/${hair}`,
     hairPalette: `palette/hair/${race}/${sex}/${hair}/${m?.hairColor ?? 0}`,
   };
+  // The cloth color is the body's palette, as setlook's
+  // LOOK_CLOTHES_COLOR. 0 is the sprite's own colors.
+  if ((m?.clothColor ?? 0) > 0) {
+    look.bodyPalette = `palette/body/${name}/${sex}/${m?.clothColor ?? 0}`;
+  }
   const companion = companionLook(bits);
   const companionArt = companionSprite(m?.companion ?? 0);
   if (companionArt !== undefined) {
@@ -672,8 +680,12 @@ export default class Online {
   skillIcon: ((skillId: number) => number) | undefined;
   /** The clock for effects that two events ask for at once. Defaults to performance.now. */
   clock: (() => number) | undefined;
-  /** Called when an effect plays a sound, with where it plays. */
-  onSound: ((name: string, position: Vector3) => void) | undefined;
+  /**
+   * Called when an effect or a script plays a sound, with where it plays.
+   * repeat is set for a script's sound that plays again and again, until
+   * the map changes.
+   */
+  onSound: ((name: string, position: Vector3, repeat?: boolean) => void) | undefined;
   /**
    * Called when the server moves the player to another map, with the
    * map's asset name and the player's cell. Events wait until setMap.
@@ -852,10 +864,15 @@ export default class Online {
           this.pending.set(a.id, pending);
           // Monsters and NPCs are one sprite. Players are characters
           // built from their look, and so are NPCs with a job's view.
+          // A transformed player shows as its monster too (player:transform).
           const view =
-            a.kind === EntityKind.NPC ? (a.look?.npcView ?? NpcView.UNSPECIFIED) : undefined;
+            a.kind === EntityKind.NPC || a.kind === EntityKind.PLAYER
+              ? (a.look?.npcView ?? NpcView.UNSPECIFIED)
+              : undefined;
           const single =
-            a.kind === EntityKind.MONSTER || (a.kind === EntityKind.NPC && view !== NpcView.JOB);
+            a.kind === EntityKind.MONSTER ||
+            (a.kind === EntityKind.NPC && view !== NpcView.JOB) ||
+            (a.kind === EntityKind.PLAYER && view === NpcView.MONSTER);
           const sprite =
             view === NpcView.MONSTER
               ? monsterSprite(a.look?.body ?? 0)
@@ -1134,6 +1151,9 @@ export default class Online {
             ...stackRolls(a),
             bound: a.bound,
             restrictions: a.restrictions,
+            broken: a.broken,
+            expiresAt: Number(a.expiresAt),
+            signedBy: a.signedBy,
           });
           break;
         }
@@ -1215,7 +1235,7 @@ export default class Online {
           const s = e.body.value;
           const at = this.position(s.entity === 0 ? this.self : s.entity);
           if (at !== undefined) {
-            this.onSound?.(s.name, at.clone());
+            this.onSound?.(s.name, at.clone(), s.repeat);
           }
           break;
         }
@@ -1632,7 +1652,14 @@ export default class Online {
     const want = { look, option };
     this.looksShown.set(id, want);
     this.lookLoads.set(id, want);
-    Character.load(this.sprites, lookOf(look, option))
+    // A transformed player shows as its monster (player:transform).
+    const body: Promise<Body | undefined> =
+      look?.npcView === NpcView.MONSTER
+        ? this.sprites
+            .get(monsterSprite(look.body))
+            .then((s) => (s === undefined ? undefined : new SpriteView(s)))
+        : Character.load(this.sprites, lookOf(look, option));
+    body
       .then((c) => {
         // A later change, a vanish, or a death replaces this one.
         if (c === undefined || this.units.get(id) !== unit || this.lookLoads.get(id) !== want) {

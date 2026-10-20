@@ -261,13 +261,27 @@ new_player, player_ids = handle_type("player", {
 		return (call(H.player_present, player_ids[self], "send_message", text, options.color))
 	end,
 	give_item = function(self, item, amount, options)
-		local rent, roll, to, bound = 0, nil, nil, nil
+		local rent, roll, to, bound, extra = 0, nil, nil, nil, nil
 		if options ~= nil then
 			if type(options) ~= "table" then
 				error("player:give_item: the options must be a table, such as { rent_seconds = 3600 }", 2)
 			end
 			for k, v in pairs(options) do
-				if k == "rent_seconds" then
+				if k == "refine" or k == "cards" or k == "broken" or k == "identified" or k == "signed_by" then
+					-- The copy options of review decision 58, area B9:
+					-- getitem2 and getnameditem.
+					extra = extra or {}
+					if k == "signed_by" then
+						local id = player_ids[v]
+						if id == nil then
+							error("player:give_item: signed_by is a player handle", 2)
+						end
+						v = id
+					elseif k == "cards" and type(v) ~= "table" then
+						error("player:give_item: cards is a list of card item IDs", 2)
+					end
+					extra[k] = v
+				elseif k == "rent_seconds" then
 					if math_type(v) ~= "integer" then
 						error("player:give_item: rent_seconds is a whole number of seconds", 2)
 					end
@@ -288,29 +302,37 @@ new_player, player_ids = handle_type("player", {
 					end
 					bound = v
 				else
-					error("player:give_item: the options are rent_seconds, roll, to and bound", 2)
+					error("player:give_item: the options are rent_seconds, roll, to, bound, refine, cards, broken, identified and signed_by", 2)
 				end
 			end
 		end
-		return (call(H.player_give_item, player_ids[self], item, amount, rent, roll, to, bound))
+		return (call(H.player_give_item, player_ids[self], item, amount, rent, roll, to, bound, extra))
 	end,
 	count_item = function(self, item, options)
-		local from = nil
+		local from, match = nil, nil
 		if options ~= nil then
 			if type(options) ~= "table" then
 				error("player:count_item: the options must be a table, such as { from = \"storage\" }", 2)
 			end
 			for k, v in pairs(options) do
-				if k ~= "from" then
-					error("player:count_item: the option is from", 2)
+				if k == "refine" or k == "cards" or k == "rentals" then
+					-- countitem2 and rentalcountitem (review decision 58).
+					match = match or {}
+					if k == "cards" and type(v) ~= "table" then
+						error("player:count_item: cards is a list of card item IDs", 2)
+					end
+					match[k] = v
+				elseif k == "from" then
+					from = v
+					if from == nil then
+						error("player:count_item: from is \"storage\", \"cart\" or a storage's name", 2)
+					end
+				else
+					error("player:count_item: the options are from, refine, cards and rentals", 2)
 				end
-				from = v
-			end
-			if from == nil then
-				error("player:count_item: from is \"storage\", \"cart\" or a storage's name", 2)
 			end
 		end
-		return (call(H.player_count_item, player_ids[self], item, from))
+		return (call(H.player_count_item, player_ids[self], item, from, match))
 	end,
 	open_storage = function(self, name)
 		return (call(H.player_open_storage, player_ids[self], name))
@@ -378,8 +400,14 @@ new_player, player_ids = handle_type("player", {
 		if options ~= nil and type(options) ~= "table" then
 			error("player:change_job: the options must be a table", 2)
 		end
+		for k in pairs(options or {}) do
+			if k ~= "force" and k ~= "keep_line" then
+				error("player:change_job: the options are force and keep_line", 2)
+			end
+		end
 		local force = options ~= nil and options.force or false
-		return (call(H.player_change_job, player_ids[self], job, force))
+		local keep_line = options ~= nil and options.keep_line or false
+		return (call(H.player_change_job, player_ids[self], job, force, keep_line))
 	end,
 	rebirth = function(self)
 		return (call(H.player_rebirth, player_ids[self]))
@@ -638,6 +666,9 @@ new_player, player_ids = handle_type("player", {
 	if key == "guild" and value ~= nil then
 		return new_guild(value)
 	end
+	if key == "look" then
+		return readonly("look", value)
+	end
 	return value
 end, true, "player")
 
@@ -650,6 +681,15 @@ new_equipped, equipped_ids = handle_type("equipped item", {
 	end,
 	reroll = function(self, name)
 		call(H.equipped_reroll, equipped_ids[self], name)
+	end,
+	-- successrefitem, downrefitem, failedrefitem and delequip (review
+	-- decision 58, area B9).
+	-- add_refine, as the field refine holds the copy's refine.
+	add_refine = function(self, amount)
+		return (call(H.equipped_action, equipped_ids[self], "refine", amount))
+	end,
+	destroy = function(self)
+		return (call(H.equipped_action, equipped_ids[self], "destroy"))
 	end,
 }, function(id, key)
 	local ok, value = pcall(H.equipped_field, id, key)
@@ -675,6 +715,19 @@ new_equipped, equipped_ids = handle_type("equipped item", {
 	end
 	return value
 end)
+
+-- item_ref passes the item of the refine reads: an item ID, or an
+-- equipped copy as its negated handle ID.
+local function item_ref(what, item)
+	if math_type(item) == "integer" then
+		return item
+	end
+	local id = equipped_ids[item]
+	if id == nil then
+		error(what .. ": want an item from items.id or an equipped item", 3)
+	end
+	return -id
+end
 
 -- Monsters are handles too. A killed monster's handle stays readable
 -- while its death event runs, and fails after. target and master are
@@ -940,6 +993,13 @@ new_conversation, conversation_ids = handle_type("conversation", {
 	show_progress = function(self, seconds)
 		return (answer(call(H.conversation_progress, conversation_ids[self], seconds)))
 	end,
+	-- disable_items and enable_items (review decision 58, area B7).
+	lock_items = function(self)
+		return (call(H.conversation_items, conversation_ids[self], true))
+	end,
+	unlock_items = function(self)
+		return (call(H.conversation_items, conversation_ids[self], false))
+	end,
 })
 
 -- The presentation and quest icons of review decision 58, areas B5 and
@@ -1049,6 +1109,85 @@ player_methods.open_quest_log = function(self, quest)
 end
 player_methods.refresh_quest_icons = function(self)
 	return (call(H.player_present, player_ids[self], "refresh_quest_icons"))
+end
+
+-- The player calls of review decision 58, area B7: rAthena's getexp,
+-- getexp2, heal, Hp, setpcblock, getpcblock, nude, pushpc, transform,
+-- readbook, getsavepoint, getinventorylist, setlook and checkoption.
+player_methods.give_exp = function(self, base, job, options)
+	options = present_options("player:give_exp", options, { raw = true })
+	return (call(H.player_action, player_ids[self], "give_exp", base, job, options.raw))
+end
+player_methods.heal = function(self, hp, sp)
+	return (call(H.player_action, player_ids[self], "heal", hp, sp))
+end
+player_methods.set_hp = function(self, amount)
+	return (call(H.player_action, player_ids[self], "set_hp", amount))
+end
+player_methods.set_blocked = function(self, action, blocked)
+	return (call(H.player_action, player_ids[self], "set_blocked", action, blocked))
+end
+player_methods.is_blocked = function(self, action)
+	return (call(H.player_action, player_ids[self], "is_blocked", action))
+end
+player_methods.unequip_all = function(self)
+	return (call(H.player_action, player_ids[self], "unequip_all"))
+end
+player_methods.push = function(self, direction, cells)
+	return (call(H.player_action, player_ids[self], "push", direction, cells))
+end
+player_methods.transform = function(self, monster, milliseconds)
+	return (call(H.player_action, player_ids[self], "transform", monster, milliseconds))
+end
+player_methods.open_book = function(self, book, page)
+	return (call(H.player_action, player_ids[self], "open_book", book, page))
+end
+player_methods.get_save_point = function(self)
+	-- Three values: call keeps two.
+	local ok, map, x, y = pcall(H.player_action, player_ids[self], "get_save_point")
+	if not ok then
+		error(map, 2)
+	end
+	return map, x, y
+end
+player_methods.get_inventory = function(self)
+	local list = call(H.player_action, player_ids[self], "get_inventory")
+	for i, entry in ipairs(list) do
+		entry.cards = readonly("cards", entry.cards)
+		for j, o in ipairs(entry.random_options) do
+			entry.random_options[j] = readonly("random option", o)
+		end
+		entry.random_options = readonly("random_options", entry.random_options)
+		list[i] = readonly("inventory entry", entry)
+	end
+	return list
+end
+player_methods.set_look = function(self, look)
+	if type(look) ~= "table" then
+		error("player:set_look: want a table, such as { hair_style = 13 }", 2)
+	end
+	return (call(H.player_action, player_ids[self], "set_look", look))
+end
+player_methods.has_option = function(self, name)
+	return (call(H.player_action, player_ids[self], "has_option", name))
+end
+
+-- The item calls of area B9: getbrokenid, repair, repairall,
+-- consumeitem and mergeitem.
+player_methods.get_broken_items = function(self)
+	return call(H.player_item_action, player_ids[self], "get_broken_items")
+end
+player_methods.repair_item = function(self, n)
+	return (call(H.player_item_action, player_ids[self], "repair_item", n))
+end
+player_methods.repair_all = function(self)
+	return (call(H.player_item_action, player_ids[self], "repair_all"))
+end
+player_methods.run_item_script = function(self, item)
+	return (call(H.player_item_action, player_ids[self], "run_item_script", item))
+end
+player_methods.merge_items = function(self)
+	return (call(H.player_item_action, player_ids[self], "merge_items"))
 end
 
 for _, kind in ipairs({ "player", "monster", "npc" }) do
@@ -1348,6 +1487,28 @@ api["wa.items"] = readonly("wa.items", {
 		check(math_type(item) == "integer", "items.name: want an item from items.id")
 		return (call(H.items_name, item))
 	end,
+	-- getiteminfo and the refine reads of review decision 58, area B9.
+	get = function(item)
+		check(math_type(item) == "integer", "items.get: want an item from items.id")
+		local info = call(H.items_call, "get", item)
+		if info == nil then
+			return nil
+		end
+		return readonly("item", info)
+	end,
+	can_refine = function(item)
+		return (call(H.items_call, "can_refine", item_ref("items.can_refine", item)))
+	end,
+	refine_chance = function(item, refine, options)
+		check(options == nil or type(options) == "table", "items.refine_chance: the options must be a table, such as { enriched = true }")
+		for k in pairs(options or {}) do
+			check(k == "enriched", "items.refine_chance: there is no option " .. tostring(k) .. "; the option is enriched")
+		end
+		return (call(H.items_call, "refine_chance", item_ref("items.refine_chance", item), refine, options ~= nil and options.enriched or nil))
+	end,
+	refine_cost = function(item, refine, kind)
+		return call(H.items_call, "refine_cost", item_ref("items.refine_cost", item), refine, kind)
+	end,
 })
 
 -- Text for players (strategy section 6.13). text "key" reads the mod's
@@ -1410,6 +1571,15 @@ api["wa.maps"] = readonly("wa.maps", {
 	end,
 	unmark_minimap = function(map, id)
 		return (call(H.maps_present, "unmark_minimap", map, id))
+	end,
+	-- makeitem and makeitem2 (review decision 58, area B9).
+	drop_item = function(map, x, y, item, amount, options)
+		check(options == nil or type(options) == "table", "maps.drop_item: the options must be a table, such as { refine = 4 }")
+		for k in pairs(options or {}) do
+			check(k == "refine" or k == "cards" or k == "broken" or k == "identified",
+				"maps.drop_item: there is no option " .. tostring(k) .. "; the options are refine, cards, broken and identified")
+		end
+		return (call(H.maps_drop_item, map, x, y, item, amount, options))
 	end,
 })
 
@@ -1959,6 +2129,26 @@ end
 
 -- The world's ruleset (proposal 0002, review decisions 27 and 32): its
 -- limits, flags and rules, read-only.
+-- The server clock (review decision 58, area B10): gettimetick, gettime
+-- and gettimestr.
+api["wa.clock"] = readonly("wa.clock", {
+	now = function()
+		return (call(H.clock_call, "now"))
+	end,
+	milliseconds = function()
+		return (call(H.clock_call, "milliseconds"))
+	end,
+	get = function(field)
+		check(type(field) == "string", "clock.get: want a field, such as \"hour\"")
+		return (call(H.clock_call, "get", field))
+	end,
+	format = function(format, seconds)
+		check(type(format) == "string", "clock.format: want a format, such as \"%Y-%m-%d\"")
+		check(seconds == nil or math_type(seconds) == "integer", "clock.format: the time is Unix seconds")
+		return (call(H.clock_call, "format", format, seconds))
+	end,
+})
+
 api["wa.rules"] = readonly("wa.rules", {
 	limits = readonly("rules.limits", H.rules_limits()),
 	is = function(flag)
@@ -2174,6 +2364,15 @@ end
 job_tests.id = function(name)
 	check(type(name) == "string", "jobs.id: want a job's name, such as \"knight\" or \"example.jobs:Desperado\"")
 	return (call(H.jobs_id, name))
+end
+-- eaclass and roclass (review decision 58, area B7).
+job_tests.class_flags = function(job)
+	check(math_type(job) == "integer", "jobs.class_flags: want a job, such as player.job")
+	return (call(H.jobs_class, "class_flags", job))
+end
+job_tests.from_class = function(flags, sex)
+	check(math_type(flags) == "integer", "jobs.from_class: want class flags, such as jobs.class_flags(player.job)")
+	return (call(H.jobs_class, "from_class", flags, sex))
 end
 job_tests.next_jobs = function(job)
 	check(math_type(job) == "integer", "jobs.next_jobs: want a job, such as player.job")

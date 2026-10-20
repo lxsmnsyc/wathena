@@ -30,8 +30,13 @@ type NPC struct {
 	// Mod added the NPC.
 	Mod string
 	// DisplayName is what players see: the display_name field, or the
-	// name after the mod ID and before any "#".
+	// name after the mod ID, before any "#".
 	DisplayName string
+	// Hidden is the part after "#" of the display_name field, or of the
+	// record's name when the field has none, as rAthena's strnpcinfo(2)
+	// reads nd->name. A converted NPC whose rAthena name had a "::"
+	// unique name keeps its "#" part in display_name.
+	Hidden string
 	// Map is the map's asset name, such as map/prontera.
 	Map  string
 	X, Y int
@@ -310,8 +315,12 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 			errs = append(errs, "display_name is 0 to 64 characters")
 		}
 		n.DisplayName = name
+		_, n.Hidden, _ = strings.Cut(Local(r.Name), "#")
+		if before, after, ok := strings.Cut(name, "#"); ok {
+			n.DisplayName, n.Hidden = before, after
+		}
 	} else {
-		n.DisplayName, _, _ = strings.Cut(Local(r.Name), "#")
+		n.DisplayName, n.Hidden, _ = strings.Cut(Local(r.Name), "#")
 	}
 	if v, ok := r.Fields["script"]; ok {
 		p, isText := v.(string)

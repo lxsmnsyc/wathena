@@ -1,6 +1,8 @@
 package zone
 
 import (
+	"slices"
+
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 
 	"github.com/lxsmnsyc/wathena/server/character"
@@ -388,6 +390,10 @@ func (z *Zone) resettable(p *Player, id int) bool {
 		return false
 	}
 	if d.Has("IsWedding") || d.Has("IsSpirit") || d.Has("IsQuest") {
+		return false
+	}
+	// pc_resetskill keeps a skill of SKILL_PERM_GRANT (pc.cpp 9514).
+	if slices.Contains(p.granted, id) {
 		return false
 	}
 	if id == skill.IDBasic && !z.noviceLine(p) {

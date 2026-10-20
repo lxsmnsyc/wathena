@@ -94,7 +94,15 @@ type npcVar struct {
 	str   bool
 	array bool
 	local string
+	// of is the owner of an NPC variable when it is not the NPC itself:
+	// sourceVar, the source of an NPC with duplicates, which share its
+	// .x variables as rAthena's duplicates share script_code->local.
+	of string
 }
+
+// sourceVar is the Lua local of the source NPC of a script that
+// duplicates run.
+const sourceVar = "NpcSource"
 
 // localVar is a .@ variable.
 type localVar struct {
@@ -149,6 +157,9 @@ type npcConv struct {
 	// timerLabels are its OnTimer labels.
 	timer       bool
 	timerLabels []timerLabel
+	// sourceShared is set when the script reads .x variables that its
+	// duplicates share (sourceVar).
+	sourceShared bool
 	// npcIDs are the variables that only hold getnpcid's value, with the
 	// NPC's code, once npcIDVars read them (npcpresent.go).
 	npcIDs map[string]string
@@ -557,6 +568,12 @@ func (b *body) variable(name string) (*npcVar, error) {
 		if n.c.sharedVar(n.line.Name, key) {
 			scope = "npc_shared"
 		}
+		if n.c.duplicated[n.line.Name] {
+			// npc_parse_duplicate copies the script, whose .x variables
+			// every duplicate shares with the source (npc.cpp 4596).
+			scope = "npc_shared"
+			n.sourceShared = true
+		}
 	case "$@":
 		scope = "server_temporary"
 	case "'":
@@ -571,6 +588,9 @@ func (b *body) variable(name string) (*npcVar, error) {
 		declared += "_text"
 	}
 	v := &npcVar{scope: scope, name: declared, str: str, array: n.arrays[key]}
+	if scope == "npc_shared" && n.c.duplicated[n.line.Name] {
+		v.of = sourceVar
+	}
 	if scope == "npc" {
 		v.local = "npc_" + luaName(bare)
 	} else {
@@ -622,6 +642,9 @@ func (v *npcVar) declaration() string {
 // owner is the argument of a variable's methods: none for a server
 // variable, the NPC for an NPC variable, and the player otherwise.
 func (v *npcVar) owner() string {
+	if v.of != "" {
+		return v.of
+	}
 	switch v.scope {
 	case "server", "server_temporary":
 		return "nil"
@@ -1027,6 +1050,21 @@ func (b *body) assign(s *Assign) error {
 // pay_zeny and give_zeny: Zeny -= x, Zeny += x, and Zeny = Zeny - x.
 func (b *body) assignParam(s *Assign) error {
 	name := strings.ToLower(s.Target.Name)
+	if name == "hp" && s.Target.Index == nil {
+		// Hp = n is pc_setparam's SP_HP: player:set_hp (review decision
+		// 58, area B7).
+		value := Expr(s.Value)
+		if s.Op != "=" {
+			value = &Binary{Op: strings.TrimSuffix(s.Op, "="), X: &Ident{Name: s.Target.Name}, Y: s.Value}
+		}
+		v, err := b.expr(value)
+		if err != nil {
+			return b.unsupported(err)
+		}
+		b.line("player:set_hp(%s)", v.asInt())
+		b.n.ok("Hp")
+		return nil
+	}
 	if name != "zeny" {
 		return b.unsupported(unsupported("parameter "+s.Target.Name, "changed"))
 	}

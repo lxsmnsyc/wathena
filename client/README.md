@@ -98,6 +98,9 @@ The server places every character and item:
 - `DigitsShow` shows a clock at the top of the screen (`src/viewer/digits.ts`): a value for 5 seconds, or a counter that moves once a second.
 - A server line with a color, as `dispbottom`'s, shows in that color. `QuestLogOpen` opens the quest window.
 - The client has no minimap, so minimap marks and the marks of quest icons are not drawn.
+- A `SoundPlay` with `repeat` plays again and again until the map changes (decision 0064).
+- A player whose `Look.npc_view` is a monster, after `player:transform`, shows the monster's sprite. `Look.cloth_color` above 0 draws the body with `palette/body/<look>/<sex>/<color>`.
+- An item's tooltip says who it is named for, whether it is broken, and when a rental ends. A rental that ended leaves the inventory with a line in the chat log. `BookOpen` shows nothing yet: the asset build has no book texts.
 - Clicking a shop NPC, or a script's `open_shop`, opens the shop window. It shows:
   - The shop's name.
   - A Buy list. Each row shows the item's full cost: zeny, items with how many the player has, and currencies with the player's balance. A shop that limits an item shows how many are left, such as "12 left".

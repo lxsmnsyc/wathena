@@ -141,15 +141,15 @@ func TestPresentConvert(t *testing.T) {
 		{`{ .@npc_id = getnpcid(0); mes "" + .@npc_id; end; }`, []string{"!getnpcid: the game ID of an NPC"}},
 		{`{ setunitdata getnpcid(0), UNPC_LEVEL, 13; end; }`, []string{"!setunitdata: a type other than"}},
 		{`{ if (unitwalk(getnpcid(0), 10, 12)) end; unitwalk getnpcid(0,"Other#t"),1,2; end; }`, []string{
-			"if (npc:walk_to(10, 12) == true) then", "\n" + `      R.npc_view("Other#t", "walk_to", 1, 2)` + "\n",
+			"if (R.unitwalk(npc, 10, 12) ~= 0) then", "\n" + `      R.unitwalk("Other#t", 1, 2)` + "\n",
 		}},
 		{`{ unitwalk getnpcid(0),1,2,"X::OnDone"; end; }`, []string{"!unitwalk: an event label at the walk's end"}},
 		{`{ unitwarp getnpcid(0),"this",3,4; unitwarp 0,"prontera",5,6; unitstopwalk getnpcid(0); end; }`, []string{
-			"npc:move_to(3, 4)", `player:warp("prontera", 5, 6)`, "npc:stop()",
+			"npc:move_to(3, 4)", `player:warp("prontera", 5, 6)`, "R.npc_stop(npc)",
 		}},
 		{`{ unitwarp getnpcid(0),"geffen",3,4; end; }`, []string{"!unitwarp: an NPC to another map"}},
 		{`{ npcspeed 300; npcwalkto 5,6,"Other#t"; npcstop; movenpc "Other#t",7,8; end; }`, []string{
-			"npc:set_speed(300)", `R.npc_view("Other#t", "walk_to", 5, 6)`, "npc:stop()", `R.npc_view("Other#t", "move_to", 7, 8)`,
+			"npc:set_speed(300)", `R.npc_view("Other#t", "walk_to", 5, 6)`, "R.npc_stop(npc)", `R.npc_view("Other#t", "move_to", 7, 8)`,
 		}},
 		{`{ movenpc "Other#t",7,8,2; end; }`, []string{"!movenpc: a direction"}},
 		{`{ npcstop "",USW_NONE; end; }`, []string{"!npcstop: a flag other than the default"}},

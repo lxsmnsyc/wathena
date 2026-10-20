@@ -145,7 +145,9 @@ func (b *body) storageCommand(name string, args []Expr) (ok bool, err error) {
 		}
 		for i, want := range []int64{1, 0, 0, 0, 0, 0, 0} {
 			if n, ok := static(args[2+i]); !ok || n != want {
-				return true, unsupported(name, "an item that is not identified, or has a refine, an attribute or cards, which give_item does not set")
+				// A refine, an attribute or cards: give_item's options of
+				// review decision 58, area B9.
+				return true, b.getitem2(name, args)
 			}
 		}
 		return true, b.getitembound(name, args[0], args[1], args[9], args, 10)

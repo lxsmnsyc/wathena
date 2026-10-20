@@ -53,6 +53,12 @@ export interface Stack {
   bound: ItemBound;
   /** The item's restrictions, as the bits of ItemRestriction. */
   restrictions: number;
+  /** Whether the copy is broken: it cannot be worn until it is repaired. */
+  broken: boolean;
+  /** A rental's end in Unix seconds, or 0 for an item that is not rented. */
+  expiresAt: number;
+  /** The character a script named the copy for, or empty. */
+  signedBy: string;
 }
 
 /** The rolls of a slot, as ItemRollsChange. */
@@ -72,6 +78,9 @@ export type StackDetails = Partial<
     | 'options'
     | 'bound'
     | 'restrictions'
+    | 'broken'
+    | 'expiresAt'
+    | 'signedBy'
   >
 >;
 
@@ -94,6 +103,9 @@ export function stack(s: StackInput): Stack {
     options: [...(s.options ?? [])],
     bound: s.bound ?? ItemBound.UNSPECIFIED,
     restrictions: s.restrictions ?? 0,
+    broken: s.broken ?? false,
+    expiresAt: s.expiresAt ?? 0,
+    signedBy: s.signedBy ?? '',
   };
 }
 
@@ -124,12 +136,26 @@ export function boundText(bound: ItemBound): string | undefined {
   }
 }
 
+/** The parts of a stack that its rule lines read. */
+export type RuleFields = Pick<Stack, 'bound' | 'restrictions'> &
+  Partial<Pick<Stack, 'broken' | 'expiresAt' | 'signedBy'>>;
+
 /**
  * The lines that say who a copy is bound to and what its restrictions
- * forbid, such as "Bound to account" and "Cannot be traded".
+ * forbid, such as "Bound to account" and "Cannot be traded", and whether
+ * it is named for someone, broken or rented.
  */
-export function itemRuleLines(s: Pick<Stack, 'bound' | 'restrictions'>): string[] {
+export function itemRuleLines(s: RuleFields): string[] {
   const out: string[] = [];
+  if ((s.signedBy ?? '') !== '') {
+    out.push(`Named for ${s.signedBy ?? ''}`);
+  }
+  if (s.broken === true) {
+    out.push('Broken: repair it to wear it');
+  }
+  if ((s.expiresAt ?? 0) > 0) {
+    out.push(`Rental until ${new Date((s.expiresAt ?? 0) * 1000).toLocaleString()}`);
+  }
   const bound = boundText(s.bound);
   if (bound !== undefined) {
     out.push(bound);
@@ -143,7 +169,7 @@ export function itemRuleLines(s: Pick<Stack, 'bound' | 'restrictions'>): string[
 }
 
 /** An item's name for a tooltip, with its rule lines after it on their own lines. */
-export function itemTooltip(name: string, s: Pick<Stack, 'bound' | 'restrictions'>): string {
+export function itemTooltip(name: string, s: RuleFields): string {
   return [name, ...itemRuleLines(s)].join('\n');
 }
 
@@ -320,6 +346,12 @@ export class InventoryModel {
       }
       if (details.restrictions !== undefined) {
         s.restrictions = details.restrictions;
+      }
+      if (details.broken !== undefined) {
+        s.broken = details.broken;
+      }
+      if (details.signedBy !== undefined) {
+        s.signedBy = details.signedBy;
       }
     } else {
       this.slots.set(slot, stack({ ...details, slot, itemId, amount, equip: 0 }));

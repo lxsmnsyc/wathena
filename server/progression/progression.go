@@ -48,6 +48,8 @@ type Config struct {
 	// BaseExpRate, JobExpRate and MvpExpRate scale monster exp when
 	// loading, in percent (base_exp_rate, job_exp_rate, mvp_exp_rate).
 	BaseExpRate, JobExpRate, MvpExpRate int
+	// QuestExpRate scales the exp of getexp, in percent (quest_exp_rate).
+	QuestExpRate int
 	// MultiLevelUp lets one kill give more than one level
 	// (multi_level_up). MultiLevelUpBase and MultiLevelUpJob stop it from
 	// those levels on, when not 0.
@@ -98,6 +100,7 @@ var DefaultConfig = Config{
 	BaseExpRate:          100,
 	JobExpRate:           100,
 	MvpExpRate:           100,
+	QuestExpRate:         100,
 	ExpBonusAttacker:     25,
 	ExpBonusMaxAttacker:  12,
 	FirstAttackLootBonus: 30,

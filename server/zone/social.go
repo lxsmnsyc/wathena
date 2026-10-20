@@ -215,6 +215,15 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 		}.Build()}.Build())
 		return
 	}
+	// clif_process_message refuses PCBLOCK_CHAT (clif.cpp 10573), before
+	// is_atcommand, which refuses PCBLOCK_COMMANDS for a command the
+	// player typed (atcommand.cpp 12041).
+	if p.isBlocked(blockChat) {
+		return
+	}
+	if strings.HasPrefix(cmd.text, "@") && z.commandUser(p) && p.isBlocked(blockCommands) {
+		return
+	}
 	if strings.HasPrefix(cmd.text, "@") && z.commandUser(p) {
 		// A GM command of a staff member: never chat, never logged
 		// (gmcommands.go). For other players the line is chat.

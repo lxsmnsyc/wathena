@@ -281,6 +281,65 @@
 ---| "chase"
 ---| "follow"
 
+---An action of player:set_blocked, as rAthena's PCBLOCK_ flags.
+---@alias wa.BlockAction
+---| "all"
+---| "attack"
+---| "chat"
+---| "commands"
+---| "emotion"
+---| "equip"
+---| "immune"
+---| "move"
+---| "npc"
+---| "npc_click"
+---| "sit_stand"
+---| "skill"
+---| "use_item"
+
+---An option of player:has_option, as rAthena's OPTION_ bits.
+---@alias wa.PlayerOption
+---| "cart"
+---| "chasewalk"
+---| "cloak"
+---| "dragon"
+---| "falcon"
+---| "flying"
+---| "hanbok"
+---| "hide"
+---| "invisible"
+---| "madogear"
+---| "oktoberfest"
+---| "orcish"
+---| "riding"
+---| "ruwach"
+---| "sight"
+---| "summer"
+---| "summer2"
+---| "transform"
+---| "warg"
+---| "warg_rider"
+---| "wedding"
+---| "xmas"
+
+---A field of clock.get, as gettime's DT_ types.
+---@alias wa.ClockField
+---| "second"
+---| "minute"
+---| "hour"
+---| "day_of_week"
+---| "day_of_month"
+---| "month"
+---| "year"
+---| "day_of_year"
+---| "date"
+
+---A cost kind of items.refine_cost, as REFINE_COST_NORMAL, REFINE_COST_HD and REFINE_COST_ENRICHED.
+---@alias wa.RefineKind
+---| "normal"
+---| "hd"
+---| "enriched"
+
 ---A day of the week.
 ---@alias wa.Weekday
 ---| "sunday"
@@ -315,6 +374,11 @@
 ---@field companion integer? The player's companion, from companions.id, or nil.
 ---@field mount integer? The player's mount, from mounts.id, or nil.
 ---@field cart integer? The look of the player's cart, from 1, or nil.
+---@field weight integer The weight the player carries, in tenths, as rAthena's Weight (review decision 58).
+---@field max_weight integer The weight the player may carry, in tenths, as rAthena's MaxWeight.
+---@field skill_points integer The player's unused skill points, as rAthena's SkillPoint.
+---@field look wa.PlayerLook The player's look, as getlook reads it. Read-only.
+---@field staff_level integer The player's staff level, as getgmlevel: 99 for the owner and the admin role, 10 for another staff role, 0 for a player. A role counts as get_staff_role says.
 ---@field base_str integer Allocated points.
 ---@field base_agi integer Allocated points.
 ---@field base_vit integer Allocated points.
@@ -513,6 +577,100 @@ function wa_Player:open_quest_log(quest) end
 
 ---Checks the conditions of the quest icons of the NPCs of the player's map again, as questinfo_refresh. The icons change at the end of the current step.
 function wa_Player:refresh_quest_icons() end
+
+---Gives exp, as getexp (script.cpp 11142): each amount times quest_exp_rate, and the guild's tax of the base exp, then the level ups. Both 0, or a negative amount, raise an error. A dead player gets nothing. With raw it is getexp2 (24713): no rate and no tax, and a negative amount takes exp, down to 0, as pc_lostexp.
+---
+---Needs the permission `player.give_exp`.
+---@param base integer Base exp.
+---@param job integer Job exp.
+---@param options? wa.GiveExpOptions
+function wa_Player:give_exp(base, job, options) end
+
+---Heals fixed amounts, as heal (status_heal with flag 1): no item bonuses, and Frenzy does not stop it. A negative amount takes HP or SP, and may kill. A dead player gets nothing.
+---@param hp integer
+---@param sp integer
+function wa_Player:heal(hp, sp) end
+
+---Sets the player's HP, as Hp = n (pc_setparam). It never kills. A dead player stays dead.
+---@param amount integer Capped to 1 and the maximum HP.
+function wa_Player:set_hp(amount) end
+
+---Blocks or unblocks an action of the player, as setpcblock: move, attack, skill, use_item, chat (and GM commands), immune (monsters do not target the player), sit_stand, commands (GM commands typed), npc_click (clicks, touch areas and events with the player), emotion, equip (equip and unequip). npc and all are rAthena's PCBLOCK_NPC and PCBLOCK_ALL. The blocks last until the player leaves the map.
+---@param action wa.BlockAction
+---@param blocked boolean
+function wa_Player:set_blocked(action, blocked) end
+
+---Whether every flag of an action is blocked, as getpcblock.
+---
+---Needs the permission `game.read`.
+---@param action wa.BlockAction
+---@return boolean
+function wa_Player:is_blocked(action) end
+
+---Takes off every equipped item, as nude. Statuses that keep equipment on do not stop it.
+function wa_Player:unequip_all() end
+
+---Pushes the player cells in a direction, as pushpc's unit_blown, up to the first cell it cannot enter. Knockback immunity does not stop it. The player touches the NPC areas it ends in.
+---@param direction integer 0 north to 7 north-east, counterclockwise, as rAthena's DIR_.
+---@param cells integer -25 to 25. A negative count pushes the other way.
+function wa_Player:push(direction, cells) end
+
+---The player looks like the monster for the time, as transform's SC_MONSTER_TRANSFORM. Returns false when the status does not start.
+---@param monster integer From monsters.id. Not the Emperium.
+---@param milliseconds integer 0 does nothing.
+---@return boolean
+function wa_Player:transform(monster, milliseconds) end
+
+---Opens a book at a page, as readbook. The client shows the book's text from its data.
+---@param book integer The book's item ID.
+---@param page integer From 0.
+function wa_Player:open_book(book, page) end
+
+---The player's save point: the map's name and the cell, as getsavepoint.
+---
+---Needs the permission `game.read`.
+---@return string, integer, integer
+function wa_Player:get_save_point() end
+
+---The player's items, as getinventorylist, in slot order.
+---
+---Needs the permission `game.read`.
+---@return wa.InventoryEntry[]
+function wa_Player:get_inventory() end
+
+---Changes the player's look, as setlook: hair style, hair color and cloth color are capped to max_hair_style, max_hair_color and max_cloth_color of rules.get and saved. The headgear views show over the equipment's until the player leaves the map.
+---@param look wa.PlayerLookChange
+function wa_Player:set_look(look) end
+
+---Whether the player has an option, as checkoption: a status's, a cart, a companion or a mount's.
+---
+---Needs the permission `game.read`.
+---@param option wa.PlayerOption
+---@return boolean
+function wa_Player:has_option(option) end
+
+---The item IDs of the player's broken items, in inventory order, as getbrokenid.
+---
+---Needs the permission `game.read`.
+---@return integer[]
+function wa_Player:get_broken_items() end
+
+---Repairs the n-th broken item, as repair. It costs nothing. Returns false when there is none.
+---@param n integer From 1, as get_broken_items lists them.
+---@return boolean
+function wa_Player:repair_item(n) end
+
+---Repairs every broken item, as repairall. It costs nothing. Returns how many.
+---@return integer
+function wa_Player:repair_all() end
+
+---Runs the item's use script for the player, as consumeitem: no item is spent, and no use check runs.
+---@param item integer An item from items.id.
+function wa_Player:run_item_script(item) end
+
+---Joins the stacks of one item that may stack and hold the same copy, as mergeitem2, up to the stack limits. Rentals and worn items stay apart. Returns how many stacks it joined.
+---@return integer
+function wa_Player:merge_items() end
 
 ---Shows a skill's effect on the player to everyone who sees it, as skilleffect: a ground skill's on its cell, a support skill's as used on itself, and an attack's as a hit for 0. Nothing else happens.
 ---@param skill integer From skills.id.
@@ -735,7 +893,7 @@ function wa_Player:reset_stat(stat, options) end
 ---Needs the permission `player.skills`.
 ---@param skill integer A skill from skills.id.
 ---@param level integer 0 to 13, rAthena's MAX_SKILL_LEVEL.
----@param kind "permanent"|"temporary"|"temporary_add" rAthena's ADDSKILL_PERMANENT, ADDSKILL_TEMP and ADDSKILL_TEMP_ADDLEVEL.
+---@param kind "permanent"|"permanent_grant"|"temporary"|"temporary_add" rAthena's ADDSKILL_PERMANENT, SKILL_PERM_GRANT, ADDSKILL_TEMP and ADDSKILL_TEMP_ADDLEVEL. permanent_grant is permanent, and a skill reset keeps the skill (review decision 58).
 ---@return boolean
 function wa_Player:give_skill(skill, level, kind) end
 
@@ -870,8 +1028,8 @@ function wa_Monster:get_statuses() end
 ---@class wa.Npc
 ---@field kind "npc" The entity's kind.
 ---@field name string The name players see, as strnpcinfo(1).
----@field full_name string The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the record's name has a # part (review decision 58).
----@field hidden_name string The part after # of the record's name, or "", as strnpcinfo(2).
+---@field full_name string The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the NPC's name has a # part (review decision 58).
+---@field hidden_name string The part after # of the NPC's name, as strnpcinfo(2): the display_name field's, else the record's, or "". npc:set_display_name("A#b") changes it.
 ---@field unique_name string The record's name without the mod's ID, as strnpcinfo(3). world.get_npc finds the NPC by it in the same mod.
 ---@field map string The map's name, as strnpcinfo(4). "" for an NPC without a map, which runs in the start map's zone.
 ---@field x integer
@@ -986,7 +1144,7 @@ function wa_Npc:use_skill(skill, level, target, options) end
 ---@param options? wa.NpcSoundOptions
 function wa_Npc:play_sound(file, options) end
 
----Adds a quest icon to the NPC, as questinfo (script.cpp 20949). Each player of the map sees the first icon of the NPC whose condition holds, and none when none holds. The icons show again for a player at map entry, on an item gained or lost, a level or job change, a quest added, completed, removed or changed, a kill counted, and player:refresh_quest_icons, as pc_show_questinfo, at the end of that step. The NPC must be on the context's map. Another mod's NPC needs npcs.control.
+---Adds a quest icon to the NPC, as questinfo (script.cpp 20949). Each player of the map sees the first icon of the NPC whose condition holds, and none when none holds. The icons show again for a player at map entry, on an item gained or lost, a level or job change, a quest added, completed, removed or changed, a kill counted, and player:refresh_quest_icons, as pc_show_questinfo, at the end of that step. A player already on the map does not see the icons of an NPC that had none until it enters the map again (pc.cpp 15396). The NPC must be on the context's map. Another mod's NPC needs npcs.control.
 ---@param icon wa.QuestIcon
 ---@param options? wa.QuestIconOptions
 function wa_Npc:add_quest_icon(icon, options) end
@@ -1065,6 +1223,18 @@ function wa_EquippedItem:set_roll(name, value) end
 ---@param name? string One roll. Every roll without it.
 function wa_EquippedItem:reroll(name) end
 
+---Raises the copy's refine, as successrefitem, or lowers it with a negative amount, as downrefitem, within 0 and MAX_REFINE. The copy comes off and goes back on, and the wearer shows the refine's effect. A copy at MAX_REFINE stays. Returns the new refine.
+---
+---Needs the permission `player.give_items`.
+---@param amount integer -20 to 20, not 0.
+---@return integer
+function wa_EquippedItem:add_refine(amount) end
+
+---Takes the copy off and deletes it, as delequip, and failedrefitem's deletion.
+---
+---Needs the permission `player.give_items`.
+function wa_EquippedItem:destroy() end
+
 ---A card in an equipped copy's slots.
 ---@class wa.CardRolls
 ---@field item integer The card's item ID.
@@ -1139,6 +1309,12 @@ function wa_Conversation:hide_image() end
 ---Shows a progress bar and waits until it is full. A walk cancels it and ends the conversation.
 ---@param seconds integer Up to 600.
 function wa_Conversation:show_progress(seconds) end
+
+---The player cannot use, equip or unequip items, or use skills, while the conversation lasts, as disable_items. Renewal conversations start locked and pre-renewal ones unlocked, as item_enabled_npc.
+function wa_Conversation:lock_items() end
+
+---The player may use, equip and unequip items, and use skills on itself, while the conversation lasts, as enable_items.
+function wa_Conversation:unlock_items() end
 
 ---A run of a typed world event, from context:get_event() (review decision 31). Its monsters and participants are those on the context's map.
 ---@class wa.EventRun
@@ -2114,7 +2290,12 @@ local wa_HealSpec = {}
 
 ---Options of player:give_item.
 ---@class wa.GiveItemOptions
----@field rent_seconds integer? Gives rentals, as rentitem. Rentals do not expire yet.
+---@field rent_seconds integer? Gives rentals, as rentitem: each copy goes when the time ends, by the server clock, even while the player is offline. Rentals never stack, cannot be dropped, traded, mailed or sold to a player, and go only into the player's storage or cart, where they do not expire.
+---@field refine integer? The copies' refine, as getitem2, up to MAX_REFINE. Only for weapons, armor and shadow gear.
+---@field cards integer[]? Up to 4 card item IDs in the copies' slots, as getitem2's cards. They are not checked against the slots.
+---@field broken boolean? Gives broken copies, as getitem2's attribute 1. Only for weapons, armor and shadow gear.
+---@field identified boolean? false gives unidentified copies, as getitem2's identify 0. Only for weapons, armor and shadow gear.
+---@field signed_by wa.Player? Names the copies for a player, as getnameditem: players see the name before the item's.
 ---@field roll "random"|"default"|table<string, integer>|nil How the copies' rolls are set: "random" rolls each value, "default" (the default) uses the defaults, and a table sets values, each clamped to its range. A table needs items.modify_rolls, except in a test case's own code.
 ---@field to string? Where the copies go: "storage", "cart" or an extra storage's name, instead of the inventory. They follow the place's restrictions and bound rules.
 ---@field bound wa.Bound? Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares.
@@ -2150,8 +2331,93 @@ local wa_TradeOffer = {}
 
 ---Options of player:count_item and player:take_item.
 ---@class wa.FromOptions
----@field from string "storage", "cart" or an extra storage's name of data/storages.yml.
+---@field from string? "storage", "cart" or an extra storage's name of data/storages.yml.
+---@field refine integer? Counts only identified copies that are not broken, with this refine and exactly cards, as countitem2. 0 with cards.
+---@field cards integer[]? The cards of countitem2: exactly these, in slot order. None with refine.
+---@field rentals boolean? Counts only rentals, as rentalcountitem. Without it, count_item counts only copies that are not rentals, as countitem.
 local wa_FromOptions = {}
+
+---Options of player:give_exp.
+---@class wa.GiveExpOptions
+---@field raw boolean? getexp2: no quest_exp_rate and no guild tax, and a negative amount takes exp.
+local wa_GiveExpOptions = {}
+
+---A player's look, as getlook reads it (review decision 58).
+---@class wa.PlayerLook
+---@field hair_style integer LOOK_HAIR.
+---@field hair_color integer LOOK_HAIR_COLOR.
+---@field cloth_color integer LOOK_CLOTHES_COLOR.
+---@field head_top integer The top headgear's view.
+---@field head_middle integer
+---@field head_bottom integer
+---@field weapon integer The weapon's type.
+---@field shield integer The shield's view.
+local wa_PlayerLook = {}
+
+---The fields of player:set_look, as setlook's LOOK_ types. Each is optional.
+---@class wa.PlayerLookChange
+---@field hair_style integer?
+---@field hair_color integer?
+---@field cloth_color integer?
+---@field head_top integer? A headgear's view.
+---@field head_middle integer?
+---@field head_bottom integer?
+local wa_PlayerLookChange = {}
+
+---One item of player:get_inventory, as getinventorylist's arrays.
+---@class wa.InventoryEntry
+---@field slot integer The inventory slot, from 0.
+---@field item integer
+---@field amount integer
+---@field equip integer The EQP_ bits it is worn in, or 0.
+---@field refine integer
+---@field identified boolean
+---@field broken boolean
+---@field cards integer[] The cards in its slots, in slot order.
+---@field expires integer A rental's end in Unix seconds, or 0.
+---@field bound wa.Bound?
+---@field tradable boolean Whether it may be traded, as pc_can_trade_item: not a rental, not bound, and not no_trade.
+---@field random_options wa.RandomOption[]
+local wa_InventoryEntry = {}
+
+---An item's record, as getiteminfo reads it (review decision 58).
+---@class wa.ItemInfo
+---@field id integer
+---@field name string
+---@field aegis_name string
+---@field type string The item_db type in lower case, such as weapon.
+---@field buy integer
+---@field sell integer
+---@field weight integer In tenths.
+---@field attack integer
+---@field magic_attack integer 0 in pre-renewal.
+---@field defense integer
+---@field range integer
+---@field slots integer
+---@field view integer
+---@field min_level integer
+---@field max_level integer
+---@field subtype integer The weapon or ammunition type.
+---@field weapon_level integer 0 for an item that is not a weapon.
+---@field armor_level integer 0 for an item that is not an armor.
+---@field locations integer The EQP_ bits it is worn in.
+---@field refineable boolean
+---@field stackable boolean
+---@field gender string? male or female for an item of one sex.
+local wa_ItemInfo = {}
+
+---Options of items.refine_chance.
+---@class wa.RefineChanceOptions
+---@field enriched boolean? The Enriched chance, as getequippercentrefinery's second argument.
+local wa_RefineChanceOptions = {}
+
+---Options of maps.drop_item, as makeitem2's.
+---@class wa.DropItemOptions
+---@field refine integer?
+---@field cards integer[]?
+---@field broken boolean?
+---@field identified boolean?
+local wa_DropItemOptions = {}
 
 ---The object of world_event_start and world_event_end (review decision 31).
 ---@class wa.WorldEvent
@@ -2448,6 +2714,7 @@ local wa_StatusDefinition = {}
 ---Options of player:change_job.
 ---@class wa.ChangeJobOptions
 ---@field force boolean? Skips the job change rules. It needs the permission player.change_job.
+---@field keep_line boolean? Changes into the job of the player's line, transcendent or baby, as jobchange <job>,Upper (review decision 58).
 local wa_ChangeJobOptions = {}
 
 ---Options of player:reset_skill.

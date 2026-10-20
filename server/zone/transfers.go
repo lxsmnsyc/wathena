@@ -192,6 +192,9 @@ func (z *Zone) sendAdd(p *Player, slot, amount int) {
 		Bound:     wathenav1.ItemBound(s.Bound),
 		// #nosec G115 -- seven bits.
 		Restrictions: uint32(d.RestrictionMask()),
+		Broken:       s.Broken,
+		ExpiresAt:    s.Expires,
+		SignedBy:     s.SignedName,
 	}.Build()}.Build())
 	z.updateWeight(p)
 }

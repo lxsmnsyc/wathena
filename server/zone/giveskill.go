@@ -1,6 +1,8 @@
 package zone
 
 import (
+	"slices"
+
 	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/social"
 )
@@ -26,10 +28,15 @@ func (z *Zone) giveSkill(p *Player, id, level int, kind modscript.SkillKind) boo
 		return false
 	}
 	switch kind {
-	case modscript.SkillPermanent:
+	case modscript.SkillPermanent, modscript.SkillPermanentGrant:
 		// The level replaces a temporary one, as the flag goes back to
-		// SKILL_FLAG_PERMANENT.
+		// SKILL_FLAG_PERMANENT, or SKILL_FLAG_PERM_GRANTED for
+		// permanent_grant (pc.cpp 5435), which a skill reset keeps.
 		delete(p.tempSkills, id)
+		p.granted = slices.DeleteFunc(p.granted, func(g int) bool { return g == id })
+		if kind == modscript.SkillPermanentGrant && level > 0 {
+			p.granted = append(p.granted, id)
+		}
 		if level == 0 {
 			delete(p.char.Skills, id)
 		} else {

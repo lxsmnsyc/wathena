@@ -71,6 +71,7 @@ type npcEntry struct {
 	// Under the directory's lock. display, x and y change with
 	// npc:set_display_name and the NPC's moves (npcpresent.go).
 	display  string
+	hidden   string
 	x, y     int
 	state    string
 	cloaked  bool
@@ -103,7 +104,7 @@ func (d *NPCDirectory) AddZone(z *Zone) {
 			continue
 		}
 		m, _, _ := strings.Cut(n.Name, ":")
-		en := &npcEntry{zone: z, handle: h, name: n.Name, mod: m, display: n.DisplayName, x: e.x, y: e.y,
+		en := &npcEntry{zone: z, handle: h, name: n.Name, mod: m, display: n.DisplayName, hidden: n.Hidden, x: e.x, y: e.y,
 			scripted: n.Script != "", floating: n.floating, state: n.state(), cloaked: n.cloak}
 		n.entry = en
 		d.byZone[z] = append(d.byZone[z], en)
@@ -214,8 +215,15 @@ func (d *NPCDirectory) mirrorPlace(e *entity) {
 		return
 	}
 	d.mu.Lock()
-	en.display, en.x, en.y = e.npc.DisplayName, e.x, e.y
+	en.display, en.hidden, en.x, en.y = e.npc.DisplayName, e.npc.Hidden, e.x, e.y
 	d.mu.Unlock()
+}
+
+// hiddenOf returns an entry's # part.
+func (d *NPCDirectory) hiddenOf(en *npcEntry) string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return en.hidden
 }
 
 // place returns an entry's name and cell.
@@ -458,7 +466,8 @@ func (z *Zone) npcsInOrder() []*entity {
 // touch does (touch.go), and runs in a conversation with the player.
 func (z *Zone) runNPCEvent(t *touchEvent) {
 	p, n := t.player, t.npc.npc
-	if n.script == nil || z.scripts == nil || n.removed {
+	// npc_event_sub refuses PCBLOCK_NPCCLICK (npc.cpp 1782).
+	if n.script == nil || z.scripts == nil || n.removed || p.isBlocked(blockNPCClick) {
 		return
 	}
 	if p.talk != nil {
@@ -928,11 +937,10 @@ func (z *Zone) playersInOrder() []*Player {
 // npcNames are an NPC's names as strnpcinfo reads them: the record's
 // name without the mod (3), the part after # (2), and the name with its
 // # part (0).
-func npcNames(full, display string) (unique, hidden, withHidden string) {
+func npcNames(full, display, hidden string) (unique, hiddenName, withHidden string) {
 	unique = mod.Local(full)
-	_, hidden, has := strings.Cut(unique, "#")
 	withHidden = display
-	if has {
+	if hidden != "" {
 		withHidden = display + "#" + hidden
 	}
 	return unique, hidden, withHidden
@@ -941,7 +949,7 @@ func npcNames(full, display string) (unique, hidden, withHidden string) {
 // remoteField reads a field of an NPC of another zone.
 func (h scriptHost) remoteField(en *npcEntry, field string) (script.Value, error) {
 	display, x, y := h.z.npcDir().place(en)
-	unique, hidden, full := npcNames(en.name, display)
+	unique, hidden, full := npcNames(en.name, display, h.z.npcDir().hiddenOf(en))
 	switch field {
 	case "kind":
 		return script.String("npc"), nil

@@ -124,6 +124,9 @@ func (z *Zone) itemMessage(i int, s *item.Slot, amount int) *wathenav1.Inventory
 		Options:      opts,
 		Bound:        wathenav1.ItemBound(s.Bound),
 		Restrictions: uint32(d.RestrictionMask()),
+		Broken:       s.Broken,
+		ExpiresAt:    s.Expires,
+		SignedBy:     s.SignedName,
 	}.Build()
 }
 
@@ -441,8 +444,9 @@ func (z *Zone) dropItem(p *Player, slot, amount int) {
 	case p.trade != nil:
 		// pc_istrading: the client cannot drop while trading.
 		return
-	case z.Items.Restricted(&s, item.NoDrop):
-		// pc_candrop: the item's trade restriction, or a card's.
+	case z.Items.Restricted(&s, item.NoDrop) || s.Expires != 0:
+		// pc_candrop: the item's trade restriction, or a card's, and a
+		// rental (pc.cpp 11381).
 		fail(wathenav1.DropItemFailure_DROP_ITEM_FAILURE_CANNOT_DROP)
 		return
 	case !item.BoundAllows(s.Bound, item.PlaceDrop, false):

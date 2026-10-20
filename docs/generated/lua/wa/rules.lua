@@ -11,8 +11,8 @@ local rules = {}
 ---@return boolean
 function rules.is(flag) end
 
----The value of a ruleset rule: a boolean for a rule that is yes or no, else an integer.
----@param name string A ruleset rule, such as "basic_skill_check" or "party_share_level".
+---The value of a ruleset rule: a boolean for a rule that is yes or no, else an integer. A server setting is the number getbattleflag reads (review decision 58): the exp rates in percent, and the highest look values of player:set_look.
+---@param name string A ruleset rule, such as "basic_skill_check" or "party_share_level", or a server setting: base_exp_rate, job_exp_rate, quest_exp_rate, max_hair_style, max_hair_color or max_cloth_color.
 ---@return integer|boolean
 function rules.get(name) end
 

@@ -20,13 +20,11 @@ import (
 //   - A timer without a player: initnpctimer and startnpctimer with an
 //     attach flag of 0. The labels run without a player, as rAthena's
 //     npc_timerevent does when nd->u.scr.rid is 0.
-//   - getnpctimer(1), whether the next label is due, and getnpctimer(2),
-//     the number of labels. getnpctimer(0), the timer's tick, needs the
-//     server clock, which scripts cannot read yet.
-//   - startnpctimer right after setnpctimer or initnpctimer. rAthena's
-//     startnpctimer resumes from the tick where stopnpctimer stopped,
-//     which needs the clock too. After setnpctimer or initnpctimer the
-//     tick is known.
+//   - getnpctimer(0), the timer's tick, getnpctimer(1), whether the next
+//     label is due, and getnpctimer(2), the number of labels. The tick
+//     follows the server clock (wa.clock, review decision 58), so it runs
+//     while the map has no players, and startnpctimer resumes from the
+//     tick where stopnpctimer stopped.
 
 // timerLabel is an OnTimer<n> label: its tick in milliseconds, and its
 // name in lower case.
@@ -145,12 +143,6 @@ func (b *body) timerCommand(name string, args []Expr) error {
 		}
 	}
 	method := map[string]string{"initnpctimer": "init", "startnpctimer": "start", "stopnpctimer": "stop"}[name]
-	if name == "startnpctimer" {
-		prev, ok := b.prev.(*Command)
-		if !ok || !strings.EqualFold(prev.Name, "setnpctimer") && !strings.EqualFold(prev.Name, "initnpctimer") {
-			return unsupported(name, "resuming a stopped timer needs the tick it stopped at, which needs the server clock; it converts right after setnpctimer or initnpctimer")
-		}
-	}
 	b.n.timer = true
 	b.line("%s:%s()", timerVar, method)
 	return nil
@@ -179,7 +171,7 @@ func (b *body) getnpctimer(args []Expr) (val, error) {
 	b.n.timer = true
 	switch *t.static {
 	case 0:
-		return val{}, unsupported(what, "the timer's tick (type 0) needs the server clock, which scripts cannot read yet")
+		return val{code: timerVar + ":tick()", t: tInt}, nil
 	case 1:
 		return val{code: timerVar + ":due()", t: tInt}, nil
 	case 2:

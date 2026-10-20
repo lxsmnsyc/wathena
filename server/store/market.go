@@ -254,7 +254,8 @@ func mailRows(ctx context.Context, q *db.Queries, mails []db.Mail) ([]mail.Row, 
 	byMail := map[int64][]character.Item{}
 	for _, r := range items {
 		row := db.InventoryRow{Slot: r.Slot, ItemID: r.ItemID, Amount: r.Amount, Serial: r.Serial, Refine: r.Refine, Cards: r.Cards,
-			Rolls: r.Rolls, CardRolls: r.CardRolls, RandomOptions: r.RandomOptions, Identified: r.Identified, Bound: r.Bound}
+			Rolls: r.Rolls, CardRolls: r.CardRolls, RandomOptions: r.RandomOptions, Identified: r.Identified, Bound: r.Bound,
+			Broken: r.Broken, SignedBy: r.SignedBy, SignedName: r.SignedName}
 		it, err := inventoryItem(&row)
 		if err != nil {
 			return nil, err
@@ -366,7 +367,8 @@ func writeMails(ctx context.Context, q *db.Queries, ws []mail.Write) error {
 		inv := insertParams(0, r.Items)
 		if err := q.InsertMailItems(ctx, db.InsertMailItemsParams{MailID: r.ID, Slots: inv.Slots, ItemIds: inv.ItemIds,
 			Amounts: inv.Amounts, Serials: inv.Serials, Refines: inv.Refines, Cards: inv.Cards, Rolls: inv.Rolls,
-			CardRolls: inv.CardRolls, RandomOptions: inv.RandomOptions, Identified: inv.Identified, Bounds: inv.Bounds}); err != nil {
+			CardRolls: inv.CardRolls, RandomOptions: inv.RandomOptions, Identified: inv.Identified, Bounds: inv.Bounds, Brokens: inv.Brokens,
+			SignedBys: inv.SignedBys, SignedNames: inv.SignedNames}); err != nil {
 			return err
 		}
 	}

@@ -826,6 +826,10 @@ if (serverURL === null) {
     if (reason === InventoryRemoveReason.USED && id !== undefined) {
       logItem(() => usedItemMessage(itemTexts.label(id)));
     }
+    if (reason === InventoryRemoveReason.EXPIRED && id !== undefined) {
+      // clif_rental_expired: the rental's time ended.
+      logItem(() => `${itemTexts.label(id)}: the rental ended.`);
+    }
   };
   const inventoryRoot = document.querySelector<HTMLElement>('#inventory-window');
   const inventoryToggle = document.querySelector<HTMLButtonElement>('#inventory-toggle');
@@ -1221,10 +1225,10 @@ if (serverURL === null) {
   view.onStatusIcon = (icon, on, remainingMs) => {
     icons.set(icon, on, remainingMs);
   };
-  view.onSound = (sound, position) => {
+  view.onSound = (sound, position, repeat) => {
     const d = position.distanceTo(controls.target);
     if (d < SPRITE_SOUND_RANGE) {
-      audio.play(sound, 1 - d / SPRITE_SOUND_RANGE, pan(position));
+      audio.play(sound, 1 - d / SPRITE_SOUND_RANGE, pan(position), repeat === true);
     }
   };
   // The status window opens with its button or Alt+A, as in RO. Its "+"
@@ -2585,7 +2589,9 @@ if (serverURL === null) {
   // Service Worker caches.
   const loadingView = document.querySelector<HTMLDivElement>('#loading');
   view.onMapChange = (map, x, y) => {
-    // The new map's first frame shows the icons again.
+    // The new map's first frame shows the icons again. A script's
+    // repeated sounds belong to the map the player leaves.
+    audio.stopLoops();
     icons.clear();
     castBars.clear();
     targetMode.cancel();

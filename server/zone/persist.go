@@ -200,6 +200,7 @@ func (z *Zone) snapshot(p *Player) *character.Character {
 	c.Statuses = z.savedStatuses(p)
 	c.TimedBonuses = z.savedTimedBonuses(p)
 	c.Skills = learnedSkills(p)
+	c.Granted = grantedSkills(p)
 	c.Blocks = slices.Clone(p.blocks)
 	c.Sanctions = slices.Clone(p.sanctions)
 	c.Currencies = savedCurrencies(p)

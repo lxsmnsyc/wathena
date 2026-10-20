@@ -66,15 +66,26 @@ type Look struct {
 	// Companion and Mount are the record IDs of the player's companion
 	// and mount, or 0 (decision 0036).
 	Companion, Mount uint32
+	// ClothColor is the body's palette, as rAthena's LOOK_CLOTHES_COLOR.
+	ClothColor uint32
+	// Transform is the monster a transformed player looks like, or 0
+	// (player:transform).
+	Transform uint32
 }
 
 // message is the protocol's Look.
 func (l Look) message() *wathenav1.Look {
-	return wathenav1.Look_builder{
-		Body: l.Job, Sex: l.Sex, Hair: l.Hair, HairColor: l.HairColor,
+	b := wathenav1.Look_builder{
+		Body: l.Job, Sex: l.Sex, Hair: l.Hair, HairColor: l.HairColor, ClothColor: l.ClothColor,
 		Weapon: l.Weapon, Shield: l.Shield, HeadTop: l.HeadTop, HeadMid: l.HeadMid, HeadBottom: l.HeadBottom, Robe: l.Robe,
 		WeaponView: l.WeaponView, Companion: l.Companion, Mount: l.Mount,
-	}.Build()
+	}
+	if l.Transform != 0 {
+		// A transformed player shows as the monster, as
+		// SC_MONSTER_TRANSFORM's view (status.cpp 12494).
+		b.Body, b.NpcView = l.Transform, wathenav1.NpcView_NPC_VIEW_MONSTER
+	}
+	return b.Build()
 }
 
 // Player is one connected player in one zone. Its Out channel is its
@@ -176,6 +187,12 @@ type Player struct {
 	questIcons     map[*entity]questIconShown
 	questInfo      map[*entity]questIconShown
 	questInfoDirty bool
+	// questInfoSize is how many NPCs with quest icons the map had when
+	// the player's icons were set up, as the size of rAthena's
+	// qi_display, and questInfoReinit asks to set them up at the next
+	// check, as pc_show_questinfo_reinit at map entry (npcpresent.go).
+	questInfoSize   int
+	questInfoReinit bool
 	// prevend is the most lines of the vending setup the Vending skill
 	// opened, or 0; vend is the player's open shop. buySetup is the
 	// slots of the buying store setup, or 0; buying is the open store.
@@ -305,6 +322,19 @@ type Player struct {
 	sanctions   []character.Sanction
 	seen        []chat.Line
 	jailPending bool
+	// granted are the skills player:give_skill gave with
+	// permanent_grant, in ID order, as rAthena's SKILL_FLAG_PERM_GRANTED
+	// (playeractions.go).
+	granted []int
+	// blocked is the player's PCBLOCK_ flags of player:set_blocked
+	// (playeractions.go).
+	blocked uint32
+	// transform is the monster the player looks like while
+	// player:transform lasts, or 0 (playeractions.go).
+	transform uint32
+	// setLook are the headgear views setlook gave, top, middle and
+	// bottom, as rAthena's setlook_head_*, or 0.
+	setLook [3]uint32
 	// gmHidden is set while the player is hidden with @hide: other
 	// players do not see it and monsters ignore it, as rAthena's
 	// OPTION_INVISIBLE. It lasts across map changes, and across logins
@@ -747,6 +777,9 @@ type Zone struct {
 	warps []Warp
 	// asleep is set while the zone has no players and its ticker is off.
 	asleep bool
+	// nextRentalCheck is when the zone checks rentals next, in zone
+	// milliseconds (rentals.go).
+	nextRentalCheck int64
 
 	// players maps charID to the players in the zone.
 	players  map[uint32]*Player
@@ -1069,7 +1102,8 @@ func (z *Zone) join(p *Player) joinResult {
 	// (clif.cpp 11187).
 	p.questInfo, p.questInfoDirty = nil, true
 	z.restoreCompanions(p, c)
-	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), bodyOptions(p))), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
+	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), bodyOptions(p))), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor),
+		ClothColor: uint32(max(c.ClothColor, 0))} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
 	h := p.arrival
 	p.arrival = nil
@@ -1132,6 +1166,7 @@ func (z *Zone) join(p *Player) joinResult {
 	} else {
 		p.char.Skills = maps.Clone(z.Start.Skills)
 	}
+	p.granted = slices.Clone(c.Granted)
 	// Equipped items start their scripts before the first stat
 	// calculation, as status_calc_pc with SCO_FIRST. Changes to stats
 	// wait until the saved statuses and timed bonuses are back too.
@@ -1169,6 +1204,9 @@ func (z *Zone) join(p *Player) joinResult {
 		z.sendWorldEvents(p)
 	}
 	p.sendPages(z.inventoryPages(p))
+	// pc_scdata_received runs pc_inventory_rentals at login: rentals
+	// that ended while the player was away go (pc.cpp 14807).
+	z.expirePlayerRentals(p, z.wallSeconds())
 	z.sendCart(p)
 	z.sendPlayerLimits(p)
 	// The map joins the character's visited maps, and the world map
@@ -1179,6 +1217,9 @@ func (z *Zone) join(p *Player) joinResult {
 	z.sendCurrenciesHeld(p)
 	// The quest log comes at login and after each map change.
 	z.sendQuestList(p)
+	// clif_parse_LoadEndAck sets up the quest icons of the map's NPCs
+	// and shows them (clif.cpp 11187).
+	p.questInfoReinit, p.questInfoDirty = true, true
 	// Saved statuses and timed bonuses come back, as chrif_load_scdata
 	// and the bonus_script load. A login fires status_start; a map change
 	// does not, since they never ended.
@@ -1421,17 +1462,11 @@ func (z *Zone) handle(c command) {
 	}
 	if p.talk != nil {
 		// pc_cant_act: a player who talks to an NPC cannot walk,
-		// attack, pick up, use or drop items. A walk cancels a
-		// progress bar.
+		// attack, pick up or drop items. A walk cancels a progress bar.
 		if c.walkTo != nil {
 			z.walkDuringTalk(p)
 		}
-		// pc_useitem and clif_parse_skill_toid: with busy_restrictions
-		// on, an item or a skill refused for the conversation tells the
-		// player so (MSI_BUSY).
-		if c.use != nil || c.useSkill != nil {
-			z.busy(p)
-		}
+		z.duringTalk(p, c)
 		return
 	}
 	if (c.walkTo != nil || c.attack != nil) && (p.storage != nil || p.guild.storage != nil) {
@@ -1448,7 +1483,7 @@ func (z *Zone) handle(c command) {
 		// clif_parse_WalkToXY with state.vending or state.buyingstore.
 		c.walkTo = nil
 	}
-	if c.walkTo != nil && !me.cant().Move && (me.cast == nil || freeCast(me)) && z.now >= me.canMove {
+	if c.walkTo != nil && !me.cant().Move && (me.cast == nil || freeCast(me)) && z.now >= me.canMove && !p.isBlocked(blockMove) {
 		// unit_walktoxy: statuses that stop moving refuse the walk, and
 		// Confusion picks another cell.
 		me.target, me.pickItem, me.pending = nil, nil, nil
@@ -1462,16 +1497,19 @@ func (z *Zone) handle(c command) {
 	if c.use != nil && p.trade != nil {
 		// pc_useitem: MSI_BUSY while trading.
 		z.busy(p)
-	} else if c.use != nil {
+	} else if c.use != nil && !p.isBlocked(blockUseItem) {
+		// clif_parse_UseItem refuses PCBLOCK_USEITEM (clif.cpp 12103).
 		z.useItem(p, *c.use)
 	}
 	if c.drop != nil {
 		z.dropItem(p, c.drop.slot, c.drop.amount)
 	}
-	if c.equip != nil {
+	// clif_parse_EquipItem and clif_parse_UnequipItem refuse
+	// PCBLOCK_EQUIP (clif.cpp 12141, 12189).
+	if c.equip != nil && !p.isBlocked(blockEquip) {
 		z.equipItem(p, c.equip.slot, c.equip.position)
 	}
-	if c.unequip != nil {
+	if c.unequip != nil && !p.isBlocked(blockEquip) {
 		z.unequipItem(p, *c.unequip)
 	}
 	if c.insertCard != nil {
@@ -1480,13 +1518,15 @@ func (z *Zone) handle(c command) {
 	if c.learnSkill != nil {
 		z.learnSkill(p, *c.learnSkill)
 	}
-	if c.useSkill != nil {
+	if c.useSkill != nil && !p.isBlocked(blockSkill) {
+		// clif_parse_skill_toid and clif_parse_UseSkillToPosSub refuse
+		// PCBLOCK_SKILL (clif.cpp 12897, 13023).
 		z.useSkill(p, c.useSkill)
 	}
 	// The game client does not attack while SC_WEIGHT90 is on, which
 	// rAthena relies on. The zone checks it itself. A warg rider does
 	// not attack, as unit_attack.
-	if c.attack != nil && p.overweight != item.Weight90 && !me.cant().Attack && p.mountRule() != companion.RuleWugRider {
+	if c.attack != nil && p.overweight != item.Weight90 && !me.cant().Attack && p.mountRule() != companion.RuleWugRider && !p.isBlocked(blockAttack) {
 		for e, id := range p.netIDs.all() {
 			// unit_attack's battle_check_target: a player attacks only
 			// enemies. Other players are not enemies, since wAthena has
@@ -1609,6 +1649,7 @@ func (z *Zone) stepAt(now int64) {
 	z.naturalHeal()
 	z.advanceStatuses()
 	z.checkSanctions()
+	z.expireRentals()
 	z.partyUpdates()
 	z.guildUpdates()
 	z.autosave()

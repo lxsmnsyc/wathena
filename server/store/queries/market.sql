@@ -42,7 +42,7 @@ SELECT id, sender_id, sender_name, recipient_id, recipient_name, title, body, ze
 FROM mails WHERE recipient_id = @recipient_id ORDER BY id;
 
 -- name: MailItems :many
-SELECT mail_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound
+SELECT mail_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, signed_by, signed_name
 FROM mail_items WHERE mail_id = ANY(@mail_ids::bigint[]) ORDER BY mail_id, slot;
 
 -- name: UpsertMail :exec
@@ -58,11 +58,11 @@ DELETE FROM mails WHERE id = ANY(@ids::bigint[]);
 DELETE FROM mail_items WHERE mail_id = @mail_id;
 
 -- name: InsertMailItems :exec
-INSERT INTO mail_items (mail_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound)
+INSERT INTO mail_items (mail_id, slot, item_id, amount, serial, refine, cards, rolls, card_rolls, random_options, identified, bound, broken, signed_by, signed_name)
 SELECT @mail_id, unnest(@slots::smallint[]), unnest(@item_ids::integer[]), unnest(@amounts::integer[]),
     unnest(@serials::uuid[]), unnest(@refines::smallint[]), unnest(@cards::text[])::integer[],
     unnest(@rolls::text[])::jsonb, unnest(@card_rolls::text[])::jsonb,
-    unnest(@random_options::text[])::jsonb, unnest(@identified::boolean[]), unnest(@bounds::smallint[]);
+    unnest(@random_options::text[])::jsonb, unnest(@identified::boolean[]), unnest(@bounds::smallint[]), unnest(@brokens::boolean[]), unnest(@signed_bys::integer[]), unnest(@signed_names::text[]);
 
 -- name: RecipientByName :one
 -- RecipientByName finds a character by name, and counts its mails.

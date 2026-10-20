@@ -31,6 +31,10 @@ type Character struct {
 	// Skills are the skills the character learned with skill points, by
 	// skill ID, with their level.
 	Skills map[int]int
+	// Granted are the skills of Skills that a script gave with
+	// player:give_skill's permanent_grant, as rAthena's
+	// SKILL_FLAG_PERM_GRANTED, in ID order. A skill reset keeps them.
+	Granted []int
 	// Blocks are the character names the character blocks, in the order
 	// they were added (strategy section 7.10). rAthena keeps its ignore
 	// list for the session only; wAthena saves it.
@@ -270,7 +274,7 @@ func (c *Character) Equal(o *Character) bool {
 	return c.equal(&o.Info) && slices.EqualFunc(c.Items, o.Items, func(a, b Item) bool { return a.Equal(&b) }) &&
 		maps.Equal(c.Variables, o.Variables) && slices.Equal(c.Statuses, o.Statuses) &&
 		slices.EqualFunc(c.TimedBonuses, o.TimedBonuses, func(a, b TimedBonus) bool { return a.Equal(&b) }) &&
-		maps.Equal(c.Skills, o.Skills) && slices.Equal(c.Blocks, o.Blocks) &&
+		maps.Equal(c.Skills, o.Skills) && slices.Equal(c.Granted, o.Granted) && slices.Equal(c.Blocks, o.Blocks) &&
 		slices.EqualFunc(c.Sanctions, o.Sanctions, func(a, b Sanction) bool { return a.Equal(&b) }) &&
 		maps.Equal(c.Currencies, o.Currencies) && slices.Equal(c.Visited, o.Visited) && slices.Equal(c.Memos, o.Memos) &&
 		slices.EqualFunc(c.Quests, o.Quests, func(a, b Quest) bool { return a.Equal(&b) })
@@ -279,7 +283,7 @@ func (c *Character) Equal(o *Character) bool {
 // Clone returns a copy of c that shares no slices or maps with it.
 func (c *Character) Clone() *Character {
 	out := &Character{Info: c.Info, Variables: maps.Clone(c.Variables), Statuses: slices.Clone(c.Statuses),
-		Skills: maps.Clone(c.Skills), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions), Friends: slices.Clone(c.Friends),
+		Skills: maps.Clone(c.Skills), Granted: slices.Clone(c.Granted), Blocks: slices.Clone(c.Blocks), Sanctions: slices.Clone(c.Sanctions), Friends: slices.Clone(c.Friends),
 		Currencies: maps.Clone(c.Currencies), Visited: slices.Clone(c.Visited), Memos: slices.Clone(c.Memos), Quests: slices.Clone(c.Quests)}
 	for _, it := range c.Items {
 		it.Cards = slices.Clone(it.Cards)

@@ -378,6 +378,9 @@ func (r *Runtime) playerGiveItem(c *script.Call) error {
 	if err != nil {
 		return err
 	}
+	if rent > 0 || !c.Arg(7).IsNil() {
+		return r.playerGiveItemSpec(c, id, uint32(itemID), int(amount), rent, roll, where, bound) // #nosec G115 -- checked above.
+	}
 	var ok bool
 	if where != "" || bound != item.BoundNone {
 		h, err := r.storageHost("player:give_item")
@@ -756,6 +759,19 @@ func (r *Runtime) playerCountItem(c *script.Call) error {
 	id, err := playerID(c)
 	if err != nil {
 		return err
+	}
+	if !c.Arg(3).IsNil() {
+		if !c.Arg(2).IsNil() {
+			return errors.New("player:count_item: refine, cards and rentals count the inventory only, without from")
+		}
+		if err := r.need("player:count_item", "game.read"); err != nil {
+			return err
+		}
+		n := c.Int(1)
+		if n <= 0 || n > 1<<32-1 {
+			return errors.New("player:count_item: want an item ID from items.id")
+		}
+		return r.playerCountItemSpec(c, id, uint32(n)) // #nosec G115 -- checked above.
 	}
 	if !c.Arg(2).IsNil() {
 		return r.playerStorageCount(c)

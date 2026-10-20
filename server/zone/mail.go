@@ -420,7 +420,7 @@ func (z *Zone) checkAttachments(p *Player, moves []*wathenav1.StorageMove, pm *p
 		if s.ID == 0 || s.Amount < amount+taken {
 			return wathenav1.MailOutcome_MAIL_OUTCOME_FAILED
 		}
-		if s.Equip != 0 || z.Items.Restricted(s, item.NoMail) || !item.BoundAllows(s.Bound, item.PlaceMail, false) {
+		if s.Equip != 0 || z.Items.Restricted(s, item.NoMail) || !item.BoundAllows(s.Bound, item.PlaceMail, false) || s.Expires != 0 {
 			return wathenav1.MailOutcome_MAIL_OUTCOME_RESTRICTED
 		}
 		weight += amount * (z.Items.Get(s.ID).Weight / 10)

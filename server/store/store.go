@@ -714,6 +714,10 @@ func insertParams(id int64, items []character.Item) db.InsertInventoryParams {
 		p.RandomOptions = append(p.RandomOptions, mustJSON(opts))
 		p.Identified = append(p.Identified, !it.Unidentified)
 		p.Bounds = append(p.Bounds, int(it.Bound))
+		p.Brokens = append(p.Brokens, it.Broken)
+		p.Expires = append(p.Expires, it.Expires)
+		p.SignedBys = append(p.SignedBys, int(it.SignedBy))
+		p.SignedNames = append(p.SignedNames, it.SignedName)
 	}
 	return p
 }
@@ -740,7 +744,8 @@ func mustJSON(v any) string {
 // options. The server checks their values against the item data when the
 // character enters a zone.
 func readExtra(it *db.InventoryRow) (item.Extra, error) {
-	x := item.Extra{Unidentified: !it.Identified, Bound: item.Bound(min(max(it.Bound, 0), 4))} // #nosec G115 -- 0 to 4.
+	x := item.Extra{Unidentified: !it.Identified, Bound: item.Bound(min(max(it.Bound, 0), 4)), // #nosec G115 -- 0 to 4.
+		Broken: it.Broken, Expires: it.ExpiresAt, SignedBy: uint32(max(it.SignedBy, 0)), SignedName: it.SignedName} // #nosec G115 -- a character ID.
 	if err := json.Unmarshal(it.Rolls, &x.Rolls); err != nil {
 		return x, fmt.Errorf("store: rolls of slot %d: %w", it.Slot, err)
 	}

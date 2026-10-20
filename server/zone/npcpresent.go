@@ -3,6 +3,7 @@ package zone
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
@@ -348,7 +349,9 @@ func (h scriptHost) SetNPCTitle(id int64, title string) error {
 // SetNPCDisplayName is npc_setdisplayname.
 func (h scriptHost) SetNPCDisplayName(id int64, name string) error {
 	return h.onNPC(id, true, func(z *Zone, e *entity) {
-		e.npc.DisplayName = name
+		// npc_setdisplayname replaces nd->name, # part too: players see
+		// the part before #, and strnpcinfo reads the rest.
+		e.npc.DisplayName, e.npc.Hidden, _ = strings.Cut(name, "#")
 		z.refreshNPC(e)
 	})
 }
@@ -747,9 +750,11 @@ func (h scriptHost) QuestIconsChanged(id int64) error {
 	if !found {
 		z.questInfoNPCs = append(z.questInfoNPCs, e)
 	}
-	for _, p := range z.players {
-		p.questInfoDirty = true
-	}
+	// buildin_questinfo shows nothing to anyone. The players already on
+	// the map see the NPC's icons at their next check, and no more once
+	// the NPC is new to the map's list: pc_show_questinfo skips a player
+	// whose qi_display is not the size of the map's qi_npc until it
+	// enters the map again (pc.cpp 15396).
 	return nil
 }
 
@@ -782,6 +787,9 @@ func (z *Zone) showQuestIcon(p *Player, e *entity, icon, mark string) {
 func (z *Zone) refreshQuestInfo() {
 	if z.scripts == nil || len(z.questInfoNPCs) == 0 {
 		for _, p := range z.players {
+			if p.questInfoReinit {
+				p.questInfoReinit, p.questInfoSize = false, 0
+			}
 			p.questInfoDirty = false
 		}
 		return
@@ -791,6 +799,17 @@ func (z *Zone) refreshQuestInfo() {
 			continue
 		}
 		p.questInfoDirty = false
+		if p.questInfoReinit {
+			// pc_show_questinfo_reinit: what the player sees starts again
+			// with the map's NPCs of now. Scripts that started with the
+			// player's arrival added theirs first, as OnInit runs before
+			// any player in rAthena.
+			p.questInfoReinit, p.questInfoSize = false, len(z.questInfoNPCs)
+			p.questInfo = nil
+		}
+		if p.questInfoSize != len(z.questInfoNPCs) {
+			continue
+		}
 		for _, e := range z.questInfoNPCs {
 			if e.npc.removed {
 				continue

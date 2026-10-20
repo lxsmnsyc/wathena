@@ -31,6 +31,8 @@ func TestStorageCommandsConvert(t *testing.T) {
 		{`{ getitembound 501,.@n,Bound_Char,getcharid(3); end; }`, []string{`R.give_item(player, RED_POTION, n, { bound = "character" })`}},
 		{`{ getitembound 501,1,0; end; }`, []string{"player:give_item(RED_POTION, 1)"}},
 		{`{ getitembound2 501,1,1,0,0,0,0,0,0,Bound_Account; end; }`, []string{`player:give_item(RED_POTION, 1, { bound = "account" })`}},
+		{`{ getitembound2 1201,1,1,4,0,0,0,0,0,Bound_Account; end; }`,
+			[]string{`R.give_item(player, KNIFE, 1, { refine = 4, bound = "account" })`}},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		lua, err := n.npcScript()
@@ -57,7 +59,6 @@ func TestStorageCommandsConvert(t *testing.T) {
 		{`{ guildstoragedelitem 501,1; end; }`, "guildstoragedelitem: the guild API cannot take items out of the guild storage"},
 		{`{ getitembound 501,1,5; end; }`, "getitembound: bound type 5, which rAthena rejects"},
 		{`{ getitembound 501,1,.@b; end; }`, "getitembound: a computed bound type"},
-		{`{ getitembound2 501,1,1,4,0,0,0,0,0,Bound_Account; end; }`, "getitembound2: an item that is not identified, or has a refine"},
 		{`{ .@n = countbound(); end; }`, "countbound: the player API cannot list the bound items"},
 		{`{ countbound Bound_Account; end; }`, "countbound: the player API cannot list the bound items"},
 	} {

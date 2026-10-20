@@ -27,6 +27,9 @@ function item(slot: number, itemId: number, more: Partial<Stack> = {}): Stack {
     options: [],
     bound: 0,
     restrictions: 0,
+    broken: false,
+    expiresAt: 0,
+    signedBy: '',
     ...more,
   };
 }

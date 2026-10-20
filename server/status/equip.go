@@ -173,6 +173,35 @@ func (t *Tables) RefineCost(weapon bool, level, refine int) (RefineCost, bool) {
 	return *info.normal, true
 }
 
+// RefineCostOf is RefineCost for an item, as calculate_refine_info picks
+// its refine type and level (status.cpp 465): a weapon by its weapon
+// level, an armor by its armor level, and shadow gear at level 1. ok is
+// false for an item that is not refined, or a cost the table lacks.
+func (t *Tables) RefineCostOf(d *item.Def, refine int) (RefineCost, bool) {
+	if t.refine == nil || !d.Refineable || refine < 0 || refine >= t.refine.max {
+		return RefineCost{}, false
+	}
+	var k refineKey
+	switch {
+	case d.IsWeapon():
+		k = refineKey{"weapon", max(d.WeaponLevel, 1)}
+	case d.IsArmor():
+		k = refineKey{"armor", max(d.ArmorLevel, 1)}
+	case d.IsShadowGear():
+		k = refineKey{"shadow_armor", 1}
+		if uint32(d.Location) == item.EqpShadowWeapon {
+			k.group = "shadow_weapon"
+		}
+	default:
+		return RefineCost{}, false
+	}
+	info, ok := t.refine.levels[k][refine+1]
+	if !ok || info.normal == nil {
+		return RefineCost{}, false
+	}
+	return *info.normal, true
+}
+
 // currentRefine is RefineDatabase::findCurrentLevelInfo: the bonus of an
 // item at its refine level, or nil for refine 0, an item that cannot be
 // refined, or a level the table lacks.

@@ -18,11 +18,8 @@ type Slot struct {
 	// Cards are the card IDs in the item's slots, in slot order. Only
 	// filled slots are listed (strategy section 6.8: slots are a list).
 	Cards []uint32
-	// Broken is rAthena's item.attribute of 1: skill_break_equip broke
-	// the item, and it cannot be equipped until it is repaired.
-	Broken bool
-	// Extra holds the copy's rolls, its cards' rolls, its random options
-	// and whether it is identified.
+	// Extra holds the copy's rolls, its cards' rolls, its random options,
+	// whether it is identified, broken or rented, and who it is named for.
 	Extra
 }
 
@@ -124,7 +121,8 @@ func (inv *Inventory) AddExtra(d *Def, amount, maxWeight int, x Extra) (int, Add
 		return -1, AddOverweight
 	}
 	i := -1
-	if d.stacks() && (!x.Unidentified || !d.HasHidden()) {
+	// pc_additem (pc.cpp 6019): a rental never stacks.
+	if d.stacks() && (!x.Unidentified || !d.HasHidden()) && x.Expires == 0 {
 		for n := range inv.Slots {
 			s := &inv.Slots[n]
 			if s.ID != d.ID || !s.Extra.Equal(&x) {

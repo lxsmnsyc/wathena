@@ -165,14 +165,16 @@ func TestConstraints(t *testing.T) {
 			CharacterID: id, Slots: []int{slot}, ItemIds: []int{1101}, Amounts: []int{1}, Serials: []pgtype.UUID{s},
 			Equips: []int{0}, Refines: []int{0}, Cards: []string{cards},
 			Rolls: []string{rolls}, CardRolls: []string{cardRolls}, RandomOptions: []string{options}, Identified: []bool{true}, Bounds: []int{0},
+			Brokens: []bool{false}, Expires: []int64{0}, SignedBys: []int{0}, SignedNames: []string{""},
 		})
 	}
-	bound := 0
+	bound, expires := 0, int64(0)
 	insertItem := func(slot, itemID, amount int, s pgtype.UUID, equip, refine int, cards string) error {
 		return q.InsertInventory(ctx, db.InsertInventoryParams{
 			CharacterID: id, Slots: []int{slot}, ItemIds: []int{itemID}, Amounts: []int{amount}, Serials: []pgtype.UUID{s},
 			Equips: []int{equip}, Refines: []int{refine}, Cards: []string{cards},
 			Rolls: []string{"{}"}, CardRolls: []string{"[]"}, RandomOptions: []string{"[]"}, Identified: []bool{true}, Bounds: []int{bound},
+			Brokens: []bool{false}, Expires: []int64{expires}, SignedBys: []int{0}, SignedNames: []string{""},
 		})
 	}
 	insert := func(slot, itemID, amount int, s pgtype.UUID) error {
@@ -187,6 +189,7 @@ func TestConstraints(t *testing.T) {
 		"amount 30001": insert(1, 501, 30001, fresh()),
 		"slot 1000":    insert(1000, 501, 1, fresh()),
 		"bound 5":      func() error { bound = 5; defer func() { bound = 0 }(); return insert(1, 501, 1, fresh()) }(),
+		"expires -1":   func() error { expires = -1; defer func() { expires = 0 }(); return insert(1, 501, 1, fresh()) }(),
 		"item 0":       insert(1, 0, 1, fresh()),
 		"refine -1":    insertItem(1, 1101, 1, fresh(), 0, -1, "{}"),
 		"refine 256":   insertItem(1, 1101, 1, fresh(), 0, 256, "{}"),
@@ -303,6 +306,12 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 			{Slot: 8, ID: 4140, Amount: 2, Serial: item.NewSerial(), Extra: item.Extra{
 				Rolls: item.RollsOf(map[string]int{"boss_damage": 15}), Unidentified: true,
 			}},
+			// A broken copy named for a character, and a rental (review
+			// decision 58, migration 00042).
+			{Slot: 9, ID: 1202, Amount: 1, Serial: item.NewSerial(), Refine: 4, Extra: item.Extra{
+				Broken: true, SignedBy: 150000, SignedName: "Alice",
+			}},
+			{Slot: 10, ID: 2301, Amount: 1, Serial: item.NewSerial(), Extra: item.Extra{Expires: 1893456000}},
 			{Slot: 199, ID: 909, Amount: 3, Serial: item.NewSerial()},
 		},
 		// Statuses come back by name, and timed bonuses in their order,
@@ -319,6 +328,8 @@ func TestSaveAndLoadEveryField(t *testing.T) {
 		},
 		// Learned skills, with a mod skill's ID.
 		Skills: map[int]int{1: 9, 28: 10, 20000: 5},
+		// A skill of SKILL_PERM_GRANT, which a skill reset keeps.
+		Granted: []int{28},
 		// A block list in its order, and a mute and a jail (decision 0018).
 		Blocks: []string{"Zed", "bob", "Carol Ann"},
 		Sanctions: []character.Sanction{

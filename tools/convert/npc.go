@@ -224,6 +224,8 @@ type npcConverter struct {
 	// source, by unique name.
 	duplicated map[string]bool
 	dups       map[string][]string
+	// dupOf is the source of each duplicate, by name.
+	dupOf map[string]string
 	// recordOf is the record name of each NPC by its unique name, and
 	// npcMap its map, "" for an NPC without one (review decision 58).
 	recordOf, npcMap map[string]string
@@ -437,6 +439,18 @@ func displayName(display string) string {
 	return strings.TrimSpace(d)
 }
 
+// scriptDisplayName is a script NPC's display_name. A name with a "::"
+// unique name, such as "Guard#a::G1", keeps its "#" part, which the
+// record's name lacks: players see "Guard", and npc.full_name and
+// npc.hidden_name read the rest, as strnpcinfo(0) and (2) read nd->name.
+func scriptDisplayName(l *npcLine) string {
+	shown := displayName(l.Display)
+	if _, hidden, ok := strings.Cut(l.Display, "#"); ok && l.Name != l.Display && hidden != "" {
+		return shown + "#" + hidden
+	}
+	return shown
+}
+
 // sprite resolves a line's view to what npcs.yml takes: an NPC sprite
 // name or number, or the number of a monster or a job, as rAthena takes
 // any class (review decision 58). ok is false for views that show
@@ -531,7 +545,7 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 			return n
 		}
 		n.Placed = true
-		fields := []string{"name: " + yamlString(n.Name), "script: " + yamlString(n.Script), "display_name: " + yamlString(displayName(l.Display))}
+		fields := []string{"name: " + yamlString(n.Name), "script: " + yamlString(n.Script), "display_name: " + yamlString(scriptDisplayName(l))}
 		n.record = "- {" + strings.Join(fields, ", ") + "}"
 		return n
 	}
@@ -570,7 +584,7 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 		"name: " + yamlString(n.Name), "map: " + yamlString(l.Map),
 		fmt.Sprintf("x: %d", l.X), fmt.Sprintf("y: %d", l.Y),
 		"direction: " + direction(l.Dir), "sprite: " + yamlString(view),
-		"display_name: " + yamlString(displayName(l.Display)),
+		"display_name: " + yamlString(scriptDisplayName(l)),
 	}
 	if n.Script != "" {
 		fields = append(fields, "script: "+yamlString(n.Script))

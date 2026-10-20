@@ -538,7 +538,7 @@ func TestNPCs(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []NPC{
-		{Name: "example.a:Healer#1", Mod: "example.a", DisplayName: "Healer", Map: "map/prontera", X: 150, Y: 180, Direction: 2, Sprite: 112, Script: "scripts/npc.lua", ScriptMod: "example.a", Placed: true},
+		{Name: "example.a:Healer#1", Mod: "example.a", DisplayName: "Healer", Hidden: "1", Map: "map/prontera", X: 150, Y: 180, Direction: 2, Sprite: 112, Script: "scripts/npc.lua", ScriptMod: "example.a", Placed: true},
 		{Name: "example.a:Guide", Mod: "example.a", DisplayName: "Field Guide", Map: "map/prt_fild08", X: 12, Y: 11, Sprite: 112, Placed: true},
 	}
 	if !reflect.DeepEqual(npcs, want) {
@@ -702,5 +702,34 @@ func TestVersionBuildMetadata(t *testing.T) {
 		if _, err := ParseVersion(v); err == nil {
 			t.Errorf("%s is accepted", v)
 		}
+	}
+}
+
+// TestNPCHiddenName checks an NPC record's # part: its name's, or the
+// display_name field's, which a converted "::" name keeps.
+func TestNPCHiddenName(t *testing.T) {
+	dir := t.TempDir()
+	writeMod(t, dir, "a", map[string]string{
+		"mod.yaml": manifest("example.a"),
+		"data/npcs.yml": `
+- {name: G1, map: prontera, x: 1, y: 1, sprite: "112", display_name: "Guard#east"}
+- {name: Guard#west, map: prontera, x: 2, y: 2, sprite: "112"}
+- {name: Plain, map: prontera, x: 3, y: 3, sprite: "112", display_name: "Plain Name"}
+`,
+	})
+	s, err := resolve(t, dir, Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	npcs, _, err := s.NPCs(func(string) (uint32, bool) { return 0, false })
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, n := range npcs {
+		got = append(got, n.DisplayName+"|"+n.Hidden)
+	}
+	if want := []string{"Guard|east", "Guard|west", "Plain Name|"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }

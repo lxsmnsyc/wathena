@@ -63,6 +63,10 @@ type talk struct {
 	// teleport is set for a talk with the teleport service, which the
 	// server runs without a script, and conv is nil then (worldmap.go).
 	teleport *teleportTalk
+	// items is whether the player may use and equip items during the
+	// talk: itemsDefault, itemsLocked or itemsUnlocked, as disable_items
+	// and enable_items set (playeractions.go).
+	items int
 }
 
 type npcEmotion struct {
@@ -145,7 +149,8 @@ func (z *Zone) busy(p *Player) {
 
 // click is npc_click, after clif_parse_NpcClicked's checks.
 func (z *Zone) click(p *Player, netID uint32) {
-	if p.entity.dead {
+	// npc_click refuses PCBLOCK_NPCCLICK (npc.cpp 2232).
+	if p.entity.dead || p.isBlocked(blockNPCClick) {
 		return
 	}
 	if p.talk != nil {
@@ -516,15 +521,15 @@ var npcFields = map[string]func(h scriptHost, e *entity) script.Value{
 	"kind": func(scriptHost, *entity) script.Value { return script.String("npc") },
 	"name": func(_ scriptHost, e *entity) script.Value { return script.String(e.npc.DisplayName) },
 	"full_name": func(_ scriptHost, e *entity) script.Value {
-		_, _, full := npcNames(e.npc.Name, e.npc.DisplayName)
+		_, _, full := npcNames(e.npc.Name, e.npc.DisplayName, e.npc.Hidden)
 		return script.String(full)
 	},
 	"hidden_name": func(_ scriptHost, e *entity) script.Value {
-		_, hidden, _ := npcNames(e.npc.Name, e.npc.DisplayName)
+		_, hidden, _ := npcNames(e.npc.Name, e.npc.DisplayName, e.npc.Hidden)
 		return script.String(hidden)
 	},
 	"unique_name": func(_ scriptHost, e *entity) script.Value {
-		unique, _, _ := npcNames(e.npc.Name, e.npc.DisplayName)
+		unique, _, _ := npcNames(e.npc.Name, e.npc.DisplayName, e.npc.Hidden)
 		return script.String(unique)
 	},
 	"map": func(h scriptHost, e *entity) script.Value {

@@ -215,6 +215,7 @@ type CharacterSkill struct {
 	CharacterID int64
 	SkillID     int
 	Level       int
+	Granted     bool
 }
 
 type CharacterStatus struct {
@@ -321,6 +322,9 @@ type GuildStorage struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	SignedBy      int
+	SignedName    string
 }
 
 type Inventory struct {
@@ -337,6 +341,10 @@ type Inventory struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	ExpiresAt     int64
+	SignedBy      int
+	SignedName    string
 }
 
 type ItemLog struct {
@@ -409,6 +417,9 @@ type MailItem struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	SignedBy      int
+	SignedName    string
 }
 
 type ModAccountVariable struct {
@@ -575,6 +586,10 @@ type StorageItem struct {
 	RandomOptions []byte
 	Identified    bool
 	Bound         int
+	Broken        bool
+	ExpiresAt     int64
+	SignedBy      int
+	SignedName    string
 }
 
 type StorageSize struct {

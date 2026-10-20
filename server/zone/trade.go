@@ -261,8 +261,8 @@ func (z *Zone) tradeAddItem(p *Player, slot, amount int) {
 		// is told at once.
 		refuse(wathenav1.TradeOutcome_TRADE_OUTCOME_EQUIPPED)
 		return
-	case z.Items.Restricted(s, item.NoTrade):
-		// itemdb_cantrade: msg 260.
+	case z.Items.Restricted(s, item.NoTrade) || s.Expires != 0:
+		// itemdb_cantrade: msg 260, and a rental (trade.cpp 393).
 		refuse(wathenav1.TradeOutcome_TRADE_OUTCOME_RESTRICTED)
 		return
 	case !item.BoundAllows(s.Bound, item.PlaceTrade, sameGuild(p, t)):

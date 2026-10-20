@@ -355,7 +355,7 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 ```
 
 - A name without a prefix is the mod's own NPC: `Greeter#prontera` in `example.greeter` is `example.greeter:Greeter#prontera`. Core's NPCs are named `core:<rAthena's unique name>`, such as `core:kaf_prontera`.
-- Players see the name up to `#`, or `display_name` when it is set. An empty `display_name` shows no name.
+- Players see the name up to `#`, or `display_name` when it is set. An empty `display_name` shows no name. A `display_name` with a `#` part shows the part before it, and `npc.full_name` and `npc.hidden_name` read the rest, as rAthena's `strnpcinfo` reads a name such as `Guard#east::G1` (review decision 58).
 - `map`, `x`, `y` and `sprite` are required, or `place` in place of `map`, `x` and `y` (below). `sprite` is an NPC sprite name, such as `4_F_KAFRA1`, its number, or a sprite of art, such as `mod/example.lantern/sprite/npc/Lamplighter` ("Art" below).
 - `place: {scope, tag}` puts the NPC at every named place of a generated map that is in the scope and has the tag, such as `{scope: "town:any", tag: blacksmith}` (proposal 0002, review decision 42). The scopes are those of `places.find` ("Places" below). The NPC appears once the server has generated its maps, at each place's cell, with the record's other fields. A shop at several places is one shop, with one stock. A classic world has no places, so the NPC does not appear there, and neither does it in a world where no place matches.
 - `direction` is `south` (the default), `southwest`, `west`, `northwest`, `north`, `northeast`, `east` or `southeast`.
@@ -1405,7 +1405,7 @@ end
 - So do the presentation methods ("Presentation" below), such as `npc:say_aloud` and `npc:set_title`. `npc:walk_to` returns true there, and the NPC's zone checks the walk.
 - Its other methods, such as `npc:use_skill`, `npc:show_progress` and `npc:add_quest_icon`, raise "the NPC is on another map".
 - A message starts the NPC scripts of a zone that has not started them, so the NPCs of a map nobody visited still get their events.
-- `npc.full_name` is the name with its `#` part, as `strnpcinfo(0)`: `name`, then `#` and `hidden_name` when the record's name has a `#` part. `unique_name` is the record's name without the mod's ID, as `strnpcinfo(3)`. `map` is "" for an NPC without a map.
+- `npc.full_name` is the name with its `#` part, as `strnpcinfo(0)`: `name`, then `#` and `hidden_name` when the NPC's name has a `#` part: the `display_name` field's, else the record's. `npc:set_display_name("A#b")` sets both, as `setnpcdisplay` sets `nd->name`. `unique_name` is the record's name without the mod's ID, as `strnpcinfo(3)`. `map` is "" for an NPC without a map.
 - `maps.find_player(name)` and `maps.find_player_by_id(id)` find an online player of the context's map, by name, or by account ID and else character ID. A player on another map is nil: a player handle acts in its own zone.
 
 #### Visibility and state
@@ -1506,12 +1506,75 @@ return function()
 end
 ```
 
-- Each player of the map sees, for each NPC, the first icon whose condition holds, and no icon when none holds.
+- Each player of the map sees, for each NPC, the first icon whose condition holds, and no icon when none holds. A player already on the map does not see the icons of an NPC that had none until it enters the map again, as rAthena's `pc_show_questinfo` (decision 0064).
 - A condition only reads, as a hook: a call that changes the game raises an error, and a condition that fails counts as false.
 - The icons show again for a player at map entry, on an item gained or lost, a level or job change, a quest added, completed, removed or changed, a kill that counts for a quest, and `player:refresh_quest_icons()`, as rAthena's `pc_show_questinfo`. The check runs at the end of that step.
 - `mark` is the NPC's minimap mark: `"yellow"`, `"green"` or `"purple"`.
 - `wa.QuestIcon` has `daily_quest`, `job_quest`, `click_me`, `event3` and `jumping_poring` too. `npc:show_quest_icon(player, icon, { mark })` is `showevent`, which turns `daily_quest`, `job_quest` and `jumping_poring` into no icon.
 - `player:open_quest_log(quest?)` opens the quest window, as `open_quest_ui`.
+
+#### Player calls
+
+These calls are review decision 58's area B7, as rAthena's player commands:
+
+| Call | rAthena | Meaning |
+|---|---|---|
+| `player.weight`, `player.max_weight` | `Weight`, `MaxWeight` | In tenths, as rAthena's. |
+| `player.skill_points` | `SkillPoint` | The unused skill points. |
+| `player.look` | `getlook` | `hair_style`, `hair_color`, `cloth_color`, `head_top`, `head_middle`, `head_bottom`, `weapon` and `shield`. |
+| `player.staff_level` | `getgmlevel` | 99 for the owner and admin roles, 10 for another staff role, 0 for a player. |
+| `player:give_exp(base, job, { raw })` | `getexp`, `getexp2` | Needs `player.give_exp`. `getexp` multiplies by `quest_exp_rate` and pays the guild's tax. `raw` is `getexp2`: no rate and no tax, and a negative amount takes exp, down to 0. Both 0 raise an error. A dead player gets nothing. |
+| `player:heal(hp, sp)` | `heal` | Fixed amounts, without item bonuses. A negative amount takes HP or SP, and may kill. |
+| `player:set_hp(amount)` | `Hp = n` | From 1 to the maximum. It never kills. |
+| `player:set_blocked(action, blocked)`, `player:is_blocked(action)` | `setpcblock`, `getpcblock` | `move`, `attack`, `skill`, `use_item`, `chat`, `immune`, `sit_stand`, `commands`, `npc_click`, `emotion`, `equip`, and `npc` and `all`. Each block works where rAthena checks it. The blocks last until the player leaves the map. |
+| `conversation:lock_items()`, `conversation:unlock_items()` | `disable_items`, `enable_items` | Whether the player may use and equip items, and use skills on itself, while it talks. A renewal conversation starts locked and a pre-renewal one unlocked, as `item_enabled_npc`. |
+| `player:unequip_all()` | `nude` | Every worn item comes off. |
+| `player:push(direction, cells)` | `pushpc` | Up to the first cell the player cannot enter. Direction 0 is north, counterclockwise. |
+| `player:transform(monster, milliseconds)` | `transform` | The player shows as the monster until the status ends. |
+| `player:open_book(book, page)` | `readbook` | The client shows the book's text from its data. |
+| `player:get_save_point()` | `getsavepoint` | The map's name, x and y. |
+| `player:get_inventory()` | `getinventorylist` | Each item's `slot`, `item`, `amount`, `equip`, `refine`, `identified`, `broken`, `cards`, `expires`, `bound`, `tradable` and `random_options`. |
+| `player:set_look { hair_style, hair_color, cloth_color, head_top, head_middle, head_bottom }` | `setlook` | Hair and colors are capped to `rules.get`'s look limits and saved. The headgear views show until the player leaves the map. |
+| `player:has_option(option)` | `checkoption` | Such as `"cart"`, `"falcon"`, `"riding"`, `"dragon"`, `"warg"`, `"warg_rider"` or `"madogear"`. |
+| `player:change_job(job, { keep_line = true })` | `jobchange <job>,Upper` | The job of the player's line: transcendent or baby. |
+| `player:give_skill(skill, level, "permanent_grant")` | `SKILL_PERM_GRANT` | A permanent level that a skill reset keeps. |
+| `jobs.class_flags(job)`, `jobs.from_class(flags, sex?)` | `eaclass`, `roclass` | -1 for no job. |
+
+#### Items and equipment
+
+These calls are review decision 58's area B9, as rAthena's item commands:
+
+| Call | rAthena | Meaning |
+|---|---|---|
+| `player:give_item(item, amount, { refine, cards, broken, identified, signed_by })` | `getitem2`, `getnameditem` | Refine, broken and identified apply to weapons, armor and shadow gear alone, as `getitem2`. `signed_by` is a player, whose name players see with the item. |
+| `player:give_item(item, amount, { rent_seconds })` | `rentitem` | Rentals end by the server clock, even while the player is offline. They never stack, and cannot be dropped, traded, mailed, vended or put in the guild storage. In a storage or the cart they do not expire. |
+| `player:count_item(item, { refine, cards })`, `{ rentals = true }` | `countitem2`, `rentalcountitem` | Without `rentals`, `count_item` counts only copies that are not rentals, as `countitem`. `refine` and `cards` count identified copies that are not broken. |
+| `maps.drop_item(map, x, y, item, amount, options)` | `makeitem`, `makeitem2` | Needs `player.give_items`. A pile on a free cell next to the cell. |
+| `items.get(item)` | `getiteminfo` | The item's record, or nil. |
+| `items.can_refine(item)`, `items.refine_chance(item, refine?)`, `items.refine_cost(item, refine?, kind?)` | `getequipisenableref`, `getequippercentrefinery`, `getequiprefinecost` | From `refine.yml`. `item` is an item ID with its refine, or a worn copy. The data has the Normal costs alone. |
+| `equipped:add_refine(amount)` | `successrefitem`, `downrefitem` | Needs `player.give_items`. Returns the new refine. |
+| `equipped:destroy()` | `delequip`, `failedrefitem` | Needs `player.give_items`. |
+| `player:get_broken_items()`, `player:repair_item(n)`, `player:repair_all()` | `getbrokenid`, `repair`, `repairall` | Repairs cost nothing, as the commands. |
+| `player:run_item_script(item)` | `consumeitem` | The item's script runs, and nothing is spent. |
+| `player:merge_items()` | `mergeitem2` | Joins stacks of one item with the same copy data. |
+
+#### Clock and server settings
+
+These calls are review decision 58's area B10:
+
+```lua
+local clock = require "wa.clock"
+local rules = require "wa.rules"
+
+local today = clock.get("date")           -- 20261021
+local stamp = clock.format("%H:%M")       -- "21:05"
+local rate = rules.get("quest_exp_rate")  -- 100
+```
+
+- `clock.now()` is Unix seconds, and `clock.milliseconds()` Unix milliseconds, for measuring time.
+- `clock.get(field)` reads `second`, `minute`, `hour`, `day_of_week` (0 is Sunday), `day_of_month`, `month` (1 to 12), `year`, `day_of_year` (0 is January 1st) and `date` (YYYYMMDD), in the server's time zone.
+- `clock.format(format, seconds?)` is C's `strftime` in the C locale.
+- `rules.get` reads the server settings `base_exp_rate`, `job_exp_rate`, `quest_exp_rate`, `max_hair_style`, `max_hair_color` and `max_cloth_color`, as `getbattleflag`.
 
 ### Saved variables: wa.variables
 
@@ -2783,7 +2846,7 @@ The server checks every entry at start with the rules of `bonuses.add`. `when` i
 |---|---|---|
 | `player:item_heal { hp = n, sp = n }` | None | rAthena's `itemheal`, with its bonuses from VIT, INT and skills. An amount can be `{ min, max }`, drawn as `rand`, HP first. |
 | `player:heal_percent { hp = n, sp = n }` | None | rAthena's `percentheal`. A negative amount takes that percent of the maximum, and never takes HP below 1 (review decision 56). |
-| `player:give_item(item, amount, { rent_seconds = s, roll = r })` | `player.give_items` | rAthena's `getitem`, and `rentitem` with `rent_seconds`. Rentals do not expire yet. `roll` is `"random"`, `"default"` or a table of values ("Rolled item values" above); a table also needs `items.modify_rolls`. |
+| `player:give_item(item, amount, { rent_seconds = s, roll = r })` | `player.give_items` | rAthena's `getitem`, and `rentitem` with `rent_seconds`: rentals end by the server clock ("Items and equipment" above). `roll` is `"random"`, `"default"` or a table of values ("Rolled item values" above); a table also needs `items.modify_rolls`. |
 | `player:give_item_from_group(group)` | `player.give_items` | rAthena's `getgroupitem`: one use of an item group from `items.group "BLUEBOX"`, with rAthena's group rules. |
 | `player:warp(map, x, y)` | `player.warp` | Moves the player after the event. Returns false when the map does not run. |
 | `player:warp_to_random_cell()` | `player.warp` | A Fly Wing: a random walkable cell of the map, as `pc_randomwarp`. |
@@ -2858,6 +2921,7 @@ The extract keeps the script NPCs of the folders the first release needs, and of
 - The line's span becomes the record's `touch` field. A line without a span gets no touch area. A line without a sprite (-1) gets `sprite: none`: no view and no click, events and touch only (review decision 58).
 - The NPC-to-NPC commands convert onto review decision 58's API: every `On` label is an `npc_event` handler, `donpcevent` and `doevent` fire them, enable, disable, hide and cloak change the view, and `getvariableofnpc` reads NPC variables, which every zone shares. `$@` variables are temporary server variables. A script NPC without a map is placed without one and runs in the start map's zone, and a line that starts disabled, hidden or cloaked gets `state` (tools/convert/README.md).
 - `atcommand` and `setbattleflag` do not convert, on purpose (review decision 58).
+- The player, item and clock commands convert onto review decision 58's areas B7, B9 and B10 ("Player calls", "Items and equipment" and "Clock and server settings" above), and NPC timers read their tick from the server clock (tools/convert/README.md).
 - The presentation and quest icon commands convert onto review decision 58's areas B5 and B6 ("Presentation" and "Quest icons" above): `npctalk`, `unittalk` of the player, `emotion`, the effect commands, `setunittitle`, `setnpcdisplay`, `classchange`, `setunitdata`'s looks, the NPC walk commands, `progressbar_npc`, `npcskill`, `skilleffect`, the sound and music commands, `dispbottom`'s color, `showdigit`, `viewpointmap`, `questinfo` with its condition, `questinfo_refresh`, `open_quest_ui` and `showevent`'s mark. A game ID converts when it is the attached player's or an NPC's of `getnpcid`. A line whose view is a monster or a job is placed with its number (tools/convert/README.md).
 - An `OnTouch` or `OnTouch_` label with a dialog converts: it talks in the touch's conversation (review decision 56).
 - `R.touch_one` with a dialog does not run for the next player already in the area when the first one leaves, since that player has no conversation. It runs for the next player who comes in. rAthena shows the dialog to the player already in the area.
