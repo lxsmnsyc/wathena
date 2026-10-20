@@ -1278,6 +1278,16 @@ Player calls, items and the clock ([decision 0064](../docs/decisions/0064-npc-ap
 - Migration 00042 saves broken items, rentals' ends, the character a copy is named for, and the skills of `SKILL_PERM_GRANT`.
 - `wa.clock` reads the server clock in the server's time zone, and `rules.get` the exp rates and the look limits.
 
+Maps, areas and monsters ([decision 0065](../docs/decisions/0065-npc-api-group-4.md), review decision 58, mods/README.md, "Maps, areas and monsters"):
+
+- Each zone shares what other zones read of its map: its players' count and cells, its monsters' count and those of each label, its map flags, its cell marks and a copy of its cells. Another zone reads them as of the zone's last step.
+- A spawn, a kill, a warp, a cell change or a flag on another map is a message to that map's zone, which runs after the current step, as decision 0062's NPC messages. A spawn counts its monsters on the target at once, until the target places them.
+- A monster's label is resolved when it spawns: its NPC's zone and handle. Its death posts the NPC's event, with the killer, or the player that dealt the most damage, when the NPC runs in the same zone, and with no player otherwise. A script's kill without labels sets `npc_killmonster`.
+- Cell changes of `maps.set_cells` copy the zone's grid, send `MapCells` to the map's players, and go to each player that joins the zone. The client changes its map's cells and its paths.
+- `no_vending` and `no_buying_store` cells refuse to open shops there, with msg 204.
+- `nomemo` set by a script overrides the world layout's flag for Warp Portal's memo.
+- A script monster with an AI and no master follows `battle_check_target`'s rules for such monsters, and monsters without an AI look for it as a target.
+
 To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing. The sample mods need their permissions approved, in a config file such as:
 
 ```yaml

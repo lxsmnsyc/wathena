@@ -640,10 +640,19 @@ func (z *Zone) enemyCandidates(e *entity, rng int) []*entity {
 			out = append(out, o)
 		}
 	}
-	if m := e.monster; m.master == nil || m.specialAI == aiNone {
+	if m := e.monster; m.specialAI == aiNone {
 		for _, p := range z.players {
 			if pe := p.entity; pe != nil && z.entities.has(pe) {
 				add(pe)
+			}
+		}
+		// A script's monster with an AI and no master is an enemy too
+		// (isEnemy).
+		if z.aiMonsters {
+			for o := range z.entities.all() {
+				if om := o.monster; om != nil && om.master == nil && om.specialAI != aiNone {
+					add(o)
+				}
 			}
 		}
 	} else {

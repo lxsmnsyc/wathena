@@ -189,6 +189,10 @@ func isEnemy(a, b *entity) bool {
 	if p := b.player; p != nil && p.isBlocked(blockImmune) {
 		return false
 	}
+	// UMOB_DMGIMMUNE: no unit targets the monster (battle.cpp 7928).
+	if m := b.monster; m != nil && m.immune {
+		return false
+	}
 	// A player's summon, such as a flora (a special AI), is on its
 	// master's side. Players may hit floras and marine spheres as
 	// alchemist_summon_setting says, and other monsters treat them as
@@ -199,6 +203,18 @@ func isEnemy(a, b *entity) bool {
 	}
 	if m := a.monster; m != nil && m.master != nil && m.specialAI != aiNone {
 		return b.monster != nil && (b.monster.master == nil || b.monster.specialAI == aiNone)
+	}
+	// A script's monster with an AI and no master (battle.cpp 8101): its
+	// enemies are the monsters without an AI. Monsters without an AI
+	// fight it too, unless its AI is AI_WAVEMODE. Players may hit it.
+	if am, bm := a.monster, b.monster; am != nil && bm != nil {
+		if am.specialAI != aiNone {
+			return bm.specialAI == aiNone
+		}
+		return bm.specialAI != aiNone && bm.specialAI != aiWaveMode
+	}
+	if m := a.monster; m != nil && m.specialAI != aiNone {
+		return false
 	}
 	return a.player != nil && b.monster != nil || a.monster != nil && b.player != nil
 }

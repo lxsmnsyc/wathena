@@ -156,10 +156,10 @@ var Modules = []Module{
 	},
 	{
 		Name: "wa.spawning", Local: "spawning",
-		Doc: "Monsters that the context owns. They go when it ends.",
+		Doc: "Monsters that the context owns. They go when it ends. Monsters of another map belong to no context.",
 		Funcs: []Func{{
 			Name: "monsters", Params: []Param{{"spec", "wa.SpawnSpec", ""}}, Returns: "wa.Monster[]",
-			Doc: "Places monsters on the context's map and returns their handles. Without x and y, each lands on a random walkable cell.", Permission: "npc.create",
+			Doc: "Places monsters on a map and returns their handles, as rAthena's monster and areamonster. Without x and y, each lands on a random walkable cell away from the map's edges, as map_search_freecell. On another map, the map's zone places them after the current step, and the list is empty: maps.count_monsters counts them at once (review decision 58).", Permission: "npc.create",
 		}},
 	},
 	{
@@ -205,8 +205,11 @@ var Modules = []Module{
 	},
 	{
 		Name: "wa.monsters", Local: "monsters",
-		Doc:   "Monsters by name.",
-		Funcs: []Func{{Name: "id", Params: []Param{{"name", "string", "An AegisName, such as PORING."}}, Returns: "integer", Doc: "The monster's ID. An unknown name raises an error.", Permission: "game.read"}},
+		Doc: "Monsters by name.",
+		Funcs: []Func{
+			{Name: "id", Params: []Param{{"name", "string", "An AegisName, such as PORING."}}, Returns: "integer", Doc: "The monster's ID. An unknown name raises an error.", Permission: "game.read"},
+			{Name: "get", Params: []Param{{"monster", "integer", "From monsters.id."}}, Returns: "wa.MonsterInfo?", Doc: "The monster's record, as getmonsterinfo (review decision 58), or nil for an unknown monster. Exp is after the server's rates, as rAthena applies them when it loads mob_db.", Permission: "game.read"},
+		},
 	},
 	{
 		Name: "wa.text", Local: "text",
@@ -220,7 +223,25 @@ var Modules = []Module{
 		Name: "wa.maps", Local: "maps",
 		Doc: "Maps.",
 		Funcs: []Func{
-			{Name: "announce", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of a map, as mapannounce. Players see the mod's ID with a mod's line."},
+			{Name: "announce", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"text", "string", "At most 255 bytes."}, {"options", "wa.AnnounceOptions?", ""}}, Doc: "Shows a line to every player of a map, as mapannounce, or of a rectangle of it, as areaannounce. Players see the mod's ID with a mod's line."},
+			{Name: "count_players", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"options", "wa.AreaOptions?", ""}}, Returns: "integer?", Permission: "game.read",
+				Doc: "The players of a map, as getmapusers, or of a rectangle of it, as getareausers (review decision 58). nil for a map that does not run in this world. Another map's count is from its zone's last step."},
+			{Name: "count_monsters", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"options", "wa.CountMonstersOptions?", ""}}, Returns: "integer?", Permission: "game.read", Provisional: true,
+				Doc: "The living monsters of a map, or those of a label, as mobcount. Monsters that spawning.monsters asked another zone to place count at once. nil for a map that does not run in this world."},
+			{Name: "remove_monsters", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"options", "wa.RemoveMonstersOptions?", ""}}, Permission: "npc.create",
+				Doc: "Kills monsters of a map with no exp and no drops, as killmonster and killmonsterall (review decision 58). Without options, every monster dies, and those of spawn lines come back. Their labels do not run unless run_labels is set. Another map's zone kills them after the current step."},
+			{Name: "warp_players", Params: []Param{{"map", "string", "The map the players are on."}, {"to_map", "string", "The map they go to."}, {"x", "integer", ""}, {"y", "integer", ""}, {"options", "wa.WarpPlayersOptions?", ""}}, Permission: "player.warp",
+				Doc: "Moves the players of a map, as mapwarp and areawarp (review decision 58). A cell that is not on the target map is a random one. Dead players stay. The map's zone moves them after the current step."},
+			{Name: "set_cells", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"x1", "integer", ""}, {"y1", "integer", ""}, {"x2", "integer", ""}, {"y2", "integer", "The rectangle's opposite corner."}, {"kind", "wa.CellKind", ""}, {"on", "boolean", ""}}, Permission: "npc.create",
+				Doc: "Turns a kind of cell on or off in a rectangle, as setcell (review decision 58). walkable and shootable change where units walk and shoot, and the map's players get the cells, as setwall sends them; players who enter later get them too. no_vending and no_buying_store refuse shops there. Kinds whose systems do not exist raise an error. The map's zone changes them after the current step."},
+			{Name: "check_cell", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"x", "integer", ""}, {"y", "integer", ""}, {"kind", "wa.CellCheck", ""}}, Returns: "boolean", Permission: "game.read",
+				Doc: "Reads a cell, as checkcell's map_getcellp: a cell outside the map, or on its last row or column, is no_pass and nothing else. npc reads the touch areas of the context's own map. Kinds whose systems do not exist raise an error."},
+			{Name: "set_flag", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"flag", "string", "rAthena's name without MF_, such as nomemo."}, {"value", "boolean", "false removes it, as removemapflag."}},
+				Doc: "Sets a map flag, as setmapflag and removemapflag (review decision 58). nomemo is the flag wAthena has. Other flags raise an error that says why: their systems do not exist, or their effects are not built. The map's zone sets it after the current step."},
+			{Name: "get_flag", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"flag", "string", "rAthena's name without MF_, such as nomemo."}}, Returns: "boolean", Permission: "game.read", Provisional: true,
+				Doc: "Reads a map flag, as getmapflag: a script's, or else the world layout's. A flag that set_flag refuses is false."},
+			{Name: "find_free_cell", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"options", "wa.FreeCellOptions?", ""}}, Returns: "integer?, integer?", Permission: "game.read",
+				Doc: "A random walkable cell, as getfreecell's map_search_freecell: 50 tries within the range of x and y, never x and y themselves, or anywhere at least 15 cells from the map's edges. With no range, x and y themselves when walkable. nil when no try found one."},
 			{Name: "find_entities", Params: []Param{{"query", "wa.EntityQuery", "One area, filters, and an order."}}, Returns: "(wa.Player|wa.Monster|wa.Npc)[]",
 				Doc: "The entities of an area of the context's map that pass every filter, sorted, and cut to the limit. Ties sort by kind, then by entity. A query with no area, two areas, or a field it does not know raises an error.", Permission: "game.read"},
 			{Name: "get_display_name", Params: []Param{{"map", "string", "A map ID, such as \"gen:town:t7\"."}}, Returns: "string?",
@@ -670,6 +691,16 @@ var Classes = []Class{
 				Doc: "The monster uses a skill with the skill's own cast time, as unitskilluseid. No delay of its skills list applies. Returns false when the cast does not start."},
 			{Name: "talk", Params: []Param{{"text", "string", "1 to 255 bytes."}}, Doc: "The monster says a line to the players near it, after its name, as unittalk."},
 			{Name: "stop", Doc: "The monster stops walking and attacking, and drops its target, as unitstop."},
+			{Name: "kill", Doc: "The monster dies with no exp and no drops, as unitkill. Its label runs. The death event follows."},
+			{Name: "remove", Doc: "The monster dies with no exp and no drops, and its label does not run, as killmonster. The death event follows."},
+			{Name: "set_hp", Params: []Param{{"hp", "integer", "0 or more."}}, Returns: "boolean", Doc: "Sets the monster's HP, as setunitdata's UMOB_HP: at most its maximum. 0 changes nothing and returns false, so it never kills."},
+			{Name: "set_damage_immune", Params: []Param{{"immune", "boolean", ""}}, Doc: "true: no unit can target the monster, as setunitdata's UMOB_DMGIMMUNE."},
+			{Name: "set_modes", Params: []Param{{"modes", "wa.MonsterMode[]", "The modes it has from now on."}}, Doc: "Replaces the monster's modes, as setunitdata's UMOB_MODE."},
+			{Name: "set_speed", Params: []Param{{"milliseconds", "integer", "Per cell, 20 to 1000."}}, Doc: "Sets the monster's walk speed, as setunitdata's UMOB_SPEED."},
+			{Name: "use_skill_at", Params: []Param{{"skill", "integer", "A ground skill from skills.id."}, {"level", "integer", "1 to 100."}, {"x", "integer", ""}, {"y", "integer", ""}}, Returns: "boolean",
+				Doc: "The monster uses a ground skill on a cell with the skill's own cast time, as unitskillusepos. Returns false when the cast does not start, and for a skill that is not a ground skill."},
+			{Name: "warp_to", Params: []Param{{"x", "integer", ""}, {"y", "integer", ""}}, Returns: "boolean",
+				Doc: "Moves the monster to a cell of its map, as unitwarp. A cell that cannot be walked on is one within 4 cells of it. Returns false when none is found."},
 		}, statusMethods...),
 	},
 	{
@@ -876,6 +907,8 @@ var Classes = []Class{
 			{Name: "set_leader", Params: []Param{playerParam}, Returns: "boolean", Doc: "Makes an online member the leader, as party_changeleader. Returns false when the player is not an online member, or leads already. The party_change event follows.", Permission: "party.manage"},
 			{Name: "set_options", Params: []Param{{"options", "wa.PartyOptions", ""}}, Doc: "Changes the options it names, as party_changeoption. Even exp share needs the online members' base levels within the ruleset's party_share_level, else exp share stays each. The party_change event follows a change.", Permission: "party.manage"},
 			{Name: "disband", Doc: "Breaks the party up, as party_destroy. Each member gets the party_leave event, with the reason \"disbanded\".", Permission: "party.manage"},
+			{Name: "warp", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"x", "integer", ""}, {"y", "integer", ""}}, Permission: "player.warp",
+				Doc: "Moves every online member that lives, on any map, to a cell, as warpparty (review decision 58). A cell that is not on the map is a random one. Each member's zone moves it after the current step. Map flags that refuse warps do not exist yet."},
 		},
 	},
 	{
@@ -1285,13 +1318,71 @@ var Classes = []Class{
 		Name: "wa.SpawnSpec", Doc: "The monsters of spawning.monsters.",
 		Fields: []Field{
 			{"monster", "integer", "From monsters.id."},
-			{"map", "string?", "The context's own map, which is the default. Another map raises an error."},
+			{"map", "string?", "The context's own map by default. On another map, the monsters belong to no context, and respawn raises an error."},
 			{"amount", "integer?", "1 to 1000. 1 by default."},
 			{"x", "integer?", "With y, the cell. Without them, a random walkable cell for each monster."},
 			{"y", "integer?", ""},
 			{"area", "integer?", "Spreads the monsters within this many cells of x and y."},
 			{"respawn", "boolean?", "true: a dead monster comes back while the context lives, as a spawn line's monster. false by default: dead stays dead."},
 			{"respawn_milliseconds", "integer?", "With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay."},
+			{"rectangle", "integer[][]?", "Two opposite corners, such as { { 100, 100 }, { 110, 105 } }: each monster lands on a random walkable cell of it, as areamonster. Up to the rectangle's cells times 3 tries, at most 1000; a failure uses the last monster's cell, and the first failure places no more monsters. Not with x, y and area."},
+			{"display_name", "string?", "The name players see, at most 23 bytes, as the name of monster. \"--en--\" and \"--ja--\" are the monster's own. The monster's own by default."},
+			{"size", `"normal"|"small"|"big"|nil`, "Shows the monster small or big, as monster's size: players see the baby or giant body effect. Its stats stay, as mob_size_influence is off by default."},
+			{"ai", "wa.SpawnAI?", "rAthena's AI_ type. A monster with an AI and no master fights the monsters without an AI, which fight it unless its AI is wave_mode. Players may hit it. It gives exp, and drops nothing unless it is a sphere."},
+			{"label", "string?", "An event label, such as OnMyMobDead, of the context's own NPC, or \"<NPC>::<label>\" of another NPC, as monster's event label. The NPC's npc_event handler of the label runs when each monster dies: with the player that killed it, or the one that dealt the most damage, when the NPC runs in the monsters' zone, and with no player otherwise. It names the monsters for maps.count_monsters and maps.remove_monsters. Another mod's NPC needs npcs.control."},
+		},
+	},
+	{
+		Name: "wa.AnnounceOptions", Doc: "Options of maps.announce.",
+		Fields: []Field{{"rectangle", "integer[][]?", "Two opposite corners: only the players there see the line, as areaannounce."}},
+	},
+	{
+		Name: "wa.AreaOptions", Doc: "Options of maps.count_players.",
+		Fields: []Field{{"rectangle", "integer[][]?", "Two opposite corners, such as { { 100, 100 }, { 110, 105 } }."}},
+	},
+	{
+		Name: "wa.CountMonstersOptions", Doc: "Options of maps.count_monsters.", Provisional: true,
+		Fields: []Field{{"label", "string?", "Only the monsters of this label of spawning.monsters, as mobcount's event label. Every monster of the map by default, as mobcount's \"all\"."}},
+	},
+	{
+		Name: "wa.RemoveMonstersOptions", Doc: "Options of maps.remove_monsters.",
+		Fields: []Field{
+			{"label", "string?", "Only the monsters of this label, as killmonster."},
+			{"scripted", "boolean?", "Only monsters that no spawn line placed, as killmonster's \"All\". Not with label."},
+			{"run_labels", "boolean?", "The labels of the monsters run, as type 1. false by default."},
+		},
+	},
+	{
+		Name: "wa.WarpPlayersOptions", Doc: "Options of maps.warp_players.",
+		Fields: []Field{
+			{"rectangle", "integer[][]?", "Only the players of the rectangle, as areawarp."},
+			{"to_rectangle", "integer[][]?", "A random walkable cell of this rectangle of the target map, in place of x and y, as areawarp's second area: up to its cells times 3 tries, at most 1000, then the last try."},
+			{"party", "integer?", "Only the members of the party with this ID, as mapwarp's type 2."},
+			{"guild", "integer?", "Only the members of the guild with this ID, as mapwarp's type 1."},
+		},
+	},
+	{
+		Name: "wa.FreeCellOptions", Doc: "Options of maps.find_free_cell.",
+		Fields: []Field{
+			{"x", "integer?", "The center. 0 by default."},
+			{"y", "integer?", ""},
+			{"range_x", "integer?", "How far from x, or -1 for the whole map, the default."},
+			{"range_y", "integer?", "How far from y, or -1 for the whole map, the default."},
+			{"reachable_from", "wa.Player|wa.Monster|wa.Npc|nil", "The cell must be reachable from the entity by a direct walk, as getfreecell's flag 2. The entity must be on the map."},
+		},
+	},
+	{
+		Name: "wa.MonsterInfo", Doc: "A monster's record of monsters.get, as getmonsterinfo.",
+		Fields: []Field{
+			{"id", "integer", ""}, {"name", "string", ""}, {"level", "integer", ""}, {"hp", "integer", "Its maximum HP."}, {"sp", "integer", ""},
+			{"base_exp", "integer", ""}, {"job_exp", "integer", ""}, {"mvp_exp", "integer", ""},
+			{"attack_min", "integer", "MOB_ATKMIN."}, {"attack_max", "integer", "MOB_ATKMAX."}, {"magic_attack_min", "integer", ""}, {"magic_attack_max", "integer", ""},
+			{"defense", "integer", ""}, {"magic_defense", "integer", ""}, {"resistance", "integer", ""}, {"magic_resistance", "integer", ""},
+			{"str", "integer", ""}, {"agi", "integer", ""}, {"vit", "integer", ""}, {"int", "integer", ""}, {"dex", "integer", ""}, {"luk", "integer", ""},
+			{"speed", "integer", "Milliseconds per cell."}, {"attack_range", "integer", ""}, {"skill_range", "integer", ""}, {"chase_range", "integer", ""},
+			{"size", "integer", "From wa.sizes."}, {"race", "integer", "From wa.races."}, {"element", "integer", "From wa.elements."}, {"element_level", "integer", ""},
+			{"damage_taken", "integer", "The percent of damage it takes."},
+			{"modes", "wa.MonsterMode[]", "Its modes."},
 		},
 	},
 	{
@@ -1965,6 +2056,10 @@ func Aliases() []Alias {
 		{Name: "wa.ClockField", Values: []string{"second", "minute", "hour", "day_of_week", "day_of_month", "month", "year", "day_of_year", "date"}, Doc: "A field of clock.get, as gettime's DT_ types."},
 		{Name: "wa.RefineKind", Values: []string{"normal", "hd", "enriched"}, Doc: "A cost kind of items.refine_cost, as REFINE_COST_NORMAL, REFINE_COST_HD and REFINE_COST_ENRICHED."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
+		{Name: "wa.SpawnAI", Values: []string{"none", "attack", "sphere", "flora", "zanzou", "legion", "faw", "guild", "wave_mode", "abr", "bionic"}, Doc: "An AI of spawning.monsters, as rAthena's AI_ types."},
+		{Name: "wa.CellKind", Values: []string{"walkable", "shootable", "water", "npc", "basilica", "land_protector", "no_vending", "no_chat", "maelstrom", "ice_wall", "no_buying_store"}, Doc: "A kind of cell of maps.set_cells, as setcell's cell_ types. water, npc, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error: their systems do not exist or keep no cell flag."},
+		{Name: "wa.CellCheck", Values: []string{"wall", "water", "cliff", "pass", "reach", "no_pass", "no_reach", "stack", "npc", "basilica", "land_protector", "no_vending", "no_chat", "maelstrom", "ice_wall", "no_buying_store"}, Doc: "A check of maps.check_cell, as checkcell's cell_chk types. water, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error."},
+		{Name: "wa.MonsterMode", Values: []string{"can_move", "looter", "aggressive", "assist", "cast_sensor_idle", "no_random_walk", "no_cast", "can_attack", "cast_sensor_chase", "change_chase", "angry", "change_target_melee", "change_target_chase", "target_weak", "random_target", "ignore_melee", "ignore_magic", "ignore_ranged", "mvp", "ignore_misc", "knockback_immune", "teleport_block", "fixed_item_drop", "detector", "status_immune", "skill_immune"}, Doc: "A monster mode, as rAthena's MD_ flags and the modes of data/monsters.yml."},
 	}
 }
 

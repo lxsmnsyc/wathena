@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/schedule"
@@ -39,16 +40,35 @@ type SpawnHost interface {
 type SpawnSpec struct {
 	Monster uint32
 	Amount  int
+	// Map is the map, or "" for the context's own. Monsters on another
+	// map spawn in its zone after the current step, belong to no
+	// context, and have no handles.
+	Map string
 	// HasCell is set when the script gave x and y. Area spreads the
 	// monsters within that many cells of it.
 	HasCell bool
 	X, Y    int
 	Area    int
+	// Rectangle places each monster on a random cell of a rectangle, as
+	// areamonster (mob_once_spawn_area).
+	Rectangle *Rect
 	// Respawn makes dead monsters come back while the context lives,
 	// after RespawnMs, or DefaultRespawnMs when it is 0.
 	Respawn   bool
 	RespawnMs int
+	// DisplayName is the name players see, or nil for the monster's own
+	// (review decision 58, area B8).
+	DisplayName *string
+	// Size is rAthena's SZ_ value: 0 normal, 1 small and 2 big. AI is
+	// its AI_ value (SpawnAIs).
+	Size, AI int
+	// Label is the monsters' label, or nil.
+	Label *MonsterLabel
 }
+
+// MaxMonsterName is the longest name of a spawned monster, in bytes, as
+// NAME_LENGTH - 1.
+const MaxMonsterName = 23
 
 // Limits of the world calls.
 const (
@@ -796,12 +816,54 @@ func (r *Runtime) spawningMonsters(c *script.Call) error {
 		switch k {
 		case "map":
 			m, ok := f.Value.AsString()
-			if !ok {
+			if !ok || m == "" || len(m) > 64 {
 				return fmt.Errorf("%s: map must be a map name, such as prontera", what)
 			}
-			if m != r.host.Map() {
-				return fmt.Errorf("%s: this context runs on %s, and spawns monsters on its own map only, not on %s", what, r.host.Map(), m)
+			if m = strings.TrimPrefix(m, "map/"); m != strings.TrimPrefix(r.host.Map(), "map/") {
+				s.Map = m
 			}
+		case "display_name":
+			n, ok := f.Value.AsString()
+			if !ok || len(n) > MaxMonsterName || !utf8.ValidString(n) {
+				return fmt.Errorf("%s: display_name must be a text of at most %d bytes", what, MaxMonsterName)
+			}
+			s.DisplayName = &n
+		case "size", "ai":
+			n, _ := f.Value.AsString()
+			table := SpawnSizes
+			if k == "ai" {
+				table = SpawnAIs
+			}
+			v, known := table[n]
+			if !known {
+				names := make([]string, 0, len(table))
+				for name := range table {
+					names = append(names, name)
+				}
+				sort.Slice(names, func(i, j int) bool { return table[names[i]] < table[names[j]] })
+				return fmt.Errorf("%s: %s must be one of %s", what, k, strings.Join(names, ", "))
+			}
+			if k == "size" {
+				s.Size = v
+			} else {
+				s.AI = v
+			}
+		case "label":
+			h, err := r.mapHost(what)
+			if err != nil {
+				return err
+			}
+			l, err := r.monsterLabel(what, f.Value, h, true)
+			if err != nil {
+				return err
+			}
+			s.Label = &l
+		case "rectangle":
+			rc, err := readRect(what, "rectangle", f.Value)
+			if err != nil {
+				return err
+			}
+			s.Rectangle = &rc
 		case "monster":
 			n, err := num()
 			if err != nil {
@@ -858,7 +920,7 @@ func (r *Runtime) spawningMonsters(c *script.Call) error {
 			}
 			s.RespawnMs = int(n)
 		default:
-			return fmt.Errorf("%s: %q is not a field; the fields are map, monster, amount, x, y, area, respawn and respawn_milliseconds", what, k)
+			return fmt.Errorf("%s: %q is not a field; the fields are map, monster, amount, x, y, area, rectangle, respawn, respawn_milliseconds, display_name, size, ai and label", what, k)
 		}
 	}
 	if s.Monster == 0 {
@@ -871,6 +933,12 @@ func (r *Runtime) spawningMonsters(c *script.Call) error {
 		return fmt.Errorf("%s: give both x and y, or neither for a random cell", what)
 	}
 	s.HasCell = hasX
+	if s.Rectangle != nil && (s.HasCell || s.Area != 0) {
+		return fmt.Errorf("%s: give rectangle, or x and y with area, not both", what)
+	}
+	if s.Map != "" && s.Respawn {
+		return fmt.Errorf("%s: respawn needs the context's own map: monsters that come back go with the context, and those of another map belong to none", what)
+	}
 	ids, err := h.SpawnMonsters(ctx.ID, s)
 	if err != nil {
 		return fmt.Errorf("%s: %w", what, err)

@@ -118,7 +118,8 @@ func (z *Zone) memo(p *Player) {
 	if p.entity.dead {
 		return
 	}
-	if m, ok := z.atlas().Map(z.Map); ok && m.NoMemo {
+	if z.mapFlag("nomemo") {
+		// The layout's flag, or a script's (maps.set_flag).
 		z.answer(p, MemoRefused)
 		return
 	}

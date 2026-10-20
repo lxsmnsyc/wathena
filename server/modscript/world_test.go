@@ -229,7 +229,12 @@ return function()
   end, { monster = 1002, map = "prontera" })
   events.on("death", function() error("never") end, { map = "geffen" })
   for _, f in ipairs({
-    function() spawning.monsters { monster = 1002, map = "geffen" } end,
+    function() spawning.monsters { monster = 1002, map = "geffen", respawn = true } end,
+    function() spawning.monsters { monster = 1002, rectangle = { { 1, 1 }, { 2, 2 } }, x = 1, y = 1 } end,
+    function() spawning.monsters { monster = 1002, size = "huge" } end,
+    function() spawning.monsters { monster = 1002, ai = "smart" } end,
+    function() spawning.monsters { monster = 1002, display_name = string.rep("a", 24) } end,
+    function() spawning.monsters { monster = 1002, label = "Bad Label" } end,
     function() spawning.monsters { monster = 1002, x = 3 } end,
     function() spawning.monsters { monster = 1002, amount = 0 } end,
     function() spawning.monsters { monster = 1002, colour = "red" } end,

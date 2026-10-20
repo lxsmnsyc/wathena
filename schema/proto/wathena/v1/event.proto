@@ -123,7 +123,19 @@ message Event {
     DigitsShow digits = 111;
     QuestLogOpen quest_log_open = 112;
     BookOpen book_open = 113;
+    MapCells map_cells = 114;
   }
+}
+
+// MapCells changes cells of the player's map, as rAthena's
+// clif_changemapcell for setwall and delwall (decision 0065). A script
+// that changes cells sends them to the map's players, and a player who
+// enters the map gets every cell that scripts changed. Each cell is
+// packed: x in bits 0 to 9, y in bits 10 to 19, and the cell's WMAP
+// flags walkable (bit 20) and shootable (bit 21). An event holds at most
+// 4096 cells.
+message MapCells {
+  repeated uint32 cells = 1;
 }
 
 // QuestList is the player's quest log: its active and inactive quests,

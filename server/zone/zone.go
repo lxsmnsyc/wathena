@@ -485,6 +485,14 @@ type Zone struct {
 	// ownGrid is set once the zone copied its grid to change cells, as
 	// Ice Wall does. The map's grid may be shared.
 	ownGrid bool
+	// shared is what other zones read of the map, and cellChanges the
+	// cells that scripts changed, by index, for players who enter
+	// (maps.go).
+	shared      mapShared
+	cellChanges map[int]uint8
+	// aiMonsters is set once a script spawned a monster with an AI and
+	// no master, which monsters without an AI look for (mobai.go).
+	aiMonsters bool
 
 	start    time.Time
 	now      int64
@@ -854,6 +862,8 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		Metrics:   &metrics.Zone{Name: mapName},
 	}
 	z.npcIn.wake = make(chan struct{}, 1)
+	z.entities.shared = &z.shared
+	z.shared.grid.Store(grid)
 	z.spawn(spawns)
 	return z
 }
@@ -1130,6 +1140,9 @@ func (z *Zone) join(p *Player) joinResult {
 	z.nextChar++
 	p.charID = z.nextChar
 	z.players[p.charID] = p
+	z.shared.players.Store(int64(len(z.players)))
+	// map_iwall_get: the cells that scripts changed.
+	p.pending = append(p.pending, z.changedCells()...)
 	p.inventory = restoreInventory(z.Items, c, z.limits())
 	z.fixRolls(p)
 	// pc_authok starts the regen waits at login.
@@ -1347,6 +1360,7 @@ func (z *Zone) remove(p *Player, reason wathenav1.VanishReason) {
 	z.untouchAll(p)
 	z.entities.remove(p.entity)
 	delete(z.players, p.charID)
+	z.sharedCells()
 	z.forget(p.entity)
 	for e := range z.entities.all() {
 		if e.player == nil {
@@ -1712,6 +1726,7 @@ func (z *Zone) stepAt(now int64) {
 	z.used = z.used[:0]
 	clear(z.chats)
 	z.chats = z.chats[:0]
+	z.sharedCells()
 }
 
 // warpTouch is a player that stepped onto a warp this tick.
@@ -1830,6 +1845,11 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 					events = append(events, z.appear(id, e))
 					if len(e.path) > 0 {
 						events = append(events, z.move(id, e))
+					}
+					if m := e.monster; m != nil && m.spawn.size != 0 {
+						// A small or big monster of a script, as
+						// clif_getareachar_unit (clif.cpp 5118).
+						events = append(events, effectEvent(id, map[int]uint32{sizeSmall: efBabyBody2, sizeBig: efGiantBody2}[m.spawn.size]))
 					}
 					if icon, ok := p.questIcons[e]; ok {
 						events = append(events, questIconEvent(id, icon.icon, icon.mark))

@@ -22,6 +22,7 @@
 local context = require "wa.context"
 local events = require "wa.events"
 local monsters = require "wa.monsters"
+local maps = require "wa.maps"
 local world = require "wa.world"
 
 local R = require "core.lib.rathena"
@@ -32,17 +33,17 @@ return function()
   local event_oninit, event_onmymobdead, event_onother
   event_oninit = function(player, conversation)
     R.run(function()
-      R.monster(npc, "prontera", 0, 0, PORING, 2, "onmymobdead", event_onmymobdead)
-      R.monster(npc, "prontera", 150, 160, PORING, 1, "onmymobdead", event_onmymobdead)
-      R.monster(npc, "prontera", 150, 160, PORING, 1)
+      R.monster("prontera", 0, 0, "--ja--", PORING, 2, { label = "OnMyMobDead" })
+      R.monster("prontera", 150, 160, "Poring", PORING, 1, { label = "OnMyMobDead" })
+      R.monster("prontera", 150, 160, "", PORING, 1, nil)
       do return end
     end)
   end
   event_onmymobdead = function(player, conversation)
     R.run(function()
-      if (R.mobcount(npc, "prontera", "onmymobdead") < 1) then
+      if ((maps.count_monsters("prontera", { label = "OnMyMobDead" }) or -1) < 1) then
         world.announce("All dead")
-        R.monster(npc, "prontera", 0, 0, PORING, 1, "onother", event_onother)
+        R.monster("prontera", 0, 0, "--en--", PORING, 1, { label = "OnOther" })
       end
       do return end
     end)
@@ -58,7 +59,7 @@ return function()
   events.on("npc_event", function(event) event_onother(event.player, event.conversation) end, { name = "OnOther" })
   events.on("click", function(player, conversation)
     R.run(function()
-      conversation:say("[Mobs]", "There are " .. R.mobcount(npc, "prontera", "onmymobdead") .. " left.")
+      conversation:say("[Mobs]", "There are " .. (maps.count_monsters("prontera", { label = "OnMyMobDead" }) or -1) .. " left.")
       do return end
     end)
   end)

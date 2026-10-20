@@ -464,6 +464,8 @@ func (z *Zone) die(e, killer *entity) {
 	// mob_dead counts the kill for quests after the rewards, and only
 	// on the final death, whatever its rewards.
 	z.questKill(e, killer)
+	// mob_dead runs the monster's label (maps.go).
+	z.monsterLabelEvent(e, killer)
 	z.eventDied(e, killer)
 	// mob_deleteslave: its slaves die with it.
 	z.killSlaves(e)

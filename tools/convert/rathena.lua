@@ -8,7 +8,9 @@ local clock = require "wa.clock"
 local events = require "wa.events"
 local items = require "wa.items"
 local maps = require "wa.maps"
+local monsters = require "wa.monsters"
 local mounts = require "wa.mounts"
+local parties = require "wa.parties"
 local spawning = require "wa.spawning"
 local timers = require "wa.timers"
 local variables = require "wa.variables"
@@ -287,65 +289,290 @@ function R.mail_items(ids, amounts)
 	return out
 end
 
--- Monsters of rAthena's monster command. alive counts the living
--- monsters of each NPC by event label, for mobcount. Its keys are weak,
--- so an NPC that ends leaves it.
-local alive = setmetatable({}, { __mode = "k" })
+-- Maps, areas and monsters (review decision 58, area B8). rAthena does
+-- nothing for a map that does not run: map_runs checks it first.
+local function map_runs(map)
+	return maps.count_players(map) ~= nil
+end
 
--- own_map checks that a command works on the NPC's own map, the only
--- map where it can spawn monsters.
-local function own_map(npc, what, map)
-	if map ~= npc.map then
-		error(what .. ": this NPC is on " .. npc.map .. " and works on its own map only, not on " .. tostring(map), 3)
+-- on_map runs f on a map that runs, as killmonster, setcell and
+-- setmapflag, which do nothing for another.
+function R.on_map(map, f, ...)
+	if map_runs(map) then
+		return f(map, ...)
 	end
 end
 
--- monster is rAthena's monster command on the NPC's own map. A cell of
--- 0 or less places each monster on a random cell, as rAthena does. With
--- a label, on_death runs when each monster dies: with the player that
--- killed it, or with nil. The death handler goes once all have died.
-function R.monster(npc, map, x, y, mob, amount, label, on_death)
-	own_map(npc, "monster", map)
-	if amount <= 0 then
+-- spawn places amount monsters in calls of at most 1000, the most
+-- spawning.monsters takes. A monster that does not exist spawns nothing:
+-- rAthena warns and goes on. A negative ID is one of a random group,
+-- which the API does not take.
+local function spawn(spec, amount, extra)
+	if math.type(spec.monster) ~= "integer" or spec.monster <= 0 or monsters.get(spec.monster) == nil then
 		return
 	end
-	local spec = { monster = mob, amount = amount }
-	if x > 0 and y > 0 then
+	for k, v in pairs(extra or {}) do
+		spec[k] = v
+	end
+	while amount > 0 do
+		spec.amount = math.min(amount, 1000)
+		amount = amount - spec.amount
+		spawning.monsters(spec)
+	end
+end
+
+-- monster_name is a monster's name as rAthena keeps it: at most 23
+-- bytes (NAME_LENGTH).
+local function monster_name(name)
+	return string.sub(tostring(name), 1, 23)
+end
+
+-- monster is rAthena's monster command (script.cpp 11238). A cell on the
+-- map that units can walk on places each monster there. Any other cell,
+-- such as 0,0, is a random one, as mob_once_spawn_sub. extra holds the
+-- label, the size and the AI.
+function R.monster(map, x, y, name, mob, amount, extra)
+	if amount <= 0 or not map_runs(map) then
+		return
+	end
+	local spec = { map = map, monster = mob, display_name = monster_name(name) }
+	if x > 0 and y > 0 and x < 1024 and y < 1024 and maps.check_cell(map, x, y, "pass") then
 		spec.x, spec.y = x, y
 	end
-	local list = spawning.monsters(spec)
-	if label == nil or #list == 0 then
-		return
-	end
-	local counts = alive[npc]
-	if counts == nil then
-		counts = {}
-		alive[npc] = counts
-	end
-	counts[label] = (counts[label] or 0) + #list
-	local left = #list
-	local handle
-	handle = events.on("death", function(death)
-		counts[label] = counts[label] - 1
-		left = left - 1
-		if left == 0 then
-			handle:remove()
-		end
-		-- Only a player is attached to the event, as rAthena's RID.
-		local killer = death.killer
-		if killer ~= nil and killer.kind ~= "player" then
-			killer = nil
-		end
-		on_death(killer)
-	end, { victims = list })
+	spawn(spec, amount, extra)
 end
 
--- mobcount is rAthena's mobcount for one event label of the NPC: its
--- monsters with that label that live.
-function R.mobcount(npc, map, label)
-	own_map(npc, "mobcount", map)
-	local counts = alive[npc]
-	return counts and counts[label] or 0
+-- areamonster is rAthena's areamonster (script.cpp 11359): each monster
+-- on a random walkable cell of the rectangle, as mob_once_spawn_area.
+function R.areamonster(map, x1, y1, x2, y2, name, mob, amount, extra)
+	if amount <= 0 or not map_runs(map) then
+		return
+	end
+	spawn({ map = map, monster = mob, display_name = monster_name(name), rectangle = { { x1, y1 }, { x2, y2 } } }, amount, extra)
+end
+
+-- label is a monster label made when the script runs: nil for "", which
+-- names no label.
+function R.label(text)
+	text = tostring(text)
+	if text == "" then
+		return nil
+	end
+	return text
+end
+
+-- killmonster is killmonster with a label made when the script runs:
+-- "All" is every monster that no spawn line placed. "" kills nothing:
+-- the API keeps no monsters by an empty label.
+function R.killmonster(map, text, run_labels)
+	text = tostring(text)
+	if text == "" or not map_runs(map) then
+		return
+	end
+	if text == "All" then
+		maps.remove_monsters(map, { scripted = true, run_labels = run_labels })
+	else
+		maps.remove_monsters(map, { label = text, run_labels = run_labels })
+	end
+end
+
+-- mobcount is mobcount with a label made when the script runs: "all" is
+-- every monster, "" counts none, and a map that does not run gives -1.
+function R.mobcount(map, text)
+	text = tostring(text)
+	if not map_runs(map) then
+		return -1
+	end
+	if text == "all" then
+		return maps.count_monsters(map)
+	elseif text == "" then
+		return 0
+	end
+	return maps.count_monsters(map, { label = text })
+end
+
+-- warp_players is mapwarp and areawarp to a cell: nothing when either
+-- map does not run (script.cpp 14317, 5695).
+function R.warp_players(from, to, x, y, options)
+	if map_runs(from) and map_runs(to) then
+		maps.warp_players(from, to, x, y, options)
+	end
+end
+
+-- areawarp is areawarp with a second area: a random walkable cell of it
+-- when both of its corner's values are not 0, as buildin_areawarp_sub,
+-- else the first corner. A negative corner is 0.
+function R.areawarp(from, to, x1, y1, x2, y2, options)
+	if x2 < 0 or y2 < 0 then
+		x2, y2 = 0, 0
+	end
+	if x2 ~= 0 and y2 ~= 0 then
+		options.to_rectangle = { { x1, y1 }, { x2, y2 } }
+	end
+	R.warp_players(from, to, x1, y1, options)
+end
+
+-- warpparty is warpparty to a map and a cell (script.cpp 5781).
+function R.warpparty(id, map, x, y)
+	local party = parties.get(id)
+	if party ~= nil and map_runs(map) then
+		party:warp(map, x, y)
+	end
+end
+
+-- areaannounce is areaannounce: an empty text shows nothing.
+function R.areaannounce(map, x1, y1, x2, y2, text)
+	if text ~= "" and map_runs(map) then
+		maps.announce(map, text, { rectangle = { { x1, y1 }, { x2, y2 } } })
+	end
+end
+
+-- getfreecell is getfreecell (script.cpp 20657): the cell of
+-- map_search_freecell, or the center when no try found one. flag 1
+-- searches around x and y, else around the attached player, and flag 2
+-- needs a cell the player reaches.
+function R.getfreecell(map, x, y, rx, ry, flag, player)
+	if flag & 1 == 0 then
+		if player == nil then
+			return x, y
+		end
+		map, x, y = player.map, player.x, player.y
+	end
+	if not map_runs(map) then
+		return x, y
+	end
+	local options = { x = x, y = y, range_x = rx, range_y = ry }
+	if flag & 2 ~= 0 and player ~= nil and player.map == map then
+		options.reachable_from = player
+	end
+	local fx, fy = maps.find_free_cell(map, options)
+	if fx == nil then
+		return x, y
+	end
+	return fx, fy
+end
+
+-- Invisible walls of setwall and delwall (map.cpp 3455 to 3560). A wall
+-- is a temporary server value, as rAthena's iwall_db is one for every
+-- map: "<map>|x,y;x,y;...".
+local function walls()
+	return variables.server_temporary_table("rathena_walls")
+end
+
+-- iwall_cell is map_iwall_nextxy: the cell pos cells from x and y in a
+-- direction (0 north, counterclockwise).
+local function iwall_cell(x, y, dir, pos)
+	local x1, y1 = x + pos, y + pos
+	if dir == 0 or dir == 4 then
+		x1 = x
+	elseif dir > 0 and dir < 4 then
+		x1 = x - pos
+	end
+	if dir == 2 or dir == 6 then
+		y1 = y
+	elseif dir > 2 and dir < 6 then
+		y1 = y - pos
+	end
+	return x1, y1
+end
+
+local function blocked(map, x, y)
+	return x < 0 or y < 0 or x > 1023 or y > 1023 or maps.check_cell(map, x, y, "no_reach")
+end
+
+-- setwall is map_iwall_set: up to size cells in the direction, until a
+-- cell that units cannot walk on. Each becomes a wall, which spells pass
+-- when shootable is set. A name that has a wall, or a start that is a
+-- wall, makes none.
+function R.setwall(map, x, y, size, dir, shootable, name)
+	if size < 1 or not map_runs(map) then
+		return false
+	end
+	local all = walls():get() or {}
+	if all[name] ~= nil or blocked(map, x, y) then
+		return false
+	end
+	local cells = {}
+	for i = 0, size - 1 do
+		local cx, cy = iwall_cell(x, y, dir, i)
+		if blocked(map, cx, cy) then
+			break
+		end
+		maps.set_cells(map, cx, cy, cx, cy, "walkable", false)
+		maps.set_cells(map, cx, cy, cx, cy, "shootable", shootable)
+		cells[#cells + 1] = cx .. "," .. cy
+	end
+	all[name] = map .. "|" .. table.concat(cells, ";")
+	walls():set(all)
+	return true
+end
+
+-- delwall is map_iwall_remove: the wall's cells can be walked and shot
+-- through again.
+function R.delwall(name)
+	local all = walls():get() or {}
+	local wall = all[name]
+	if wall == nil then
+		return false
+	end
+	local map, list = wall:match("^(.-)|(.*)$")
+	for cx, cy in list:gmatch("(%d+),(%d+)") do
+		cx, cy = math.tointeger(tonumber(cx)), math.tointeger(tonumber(cy))
+		maps.set_cells(map, cx, cy, cx, cy, "shootable", true)
+		maps.set_cells(map, cx, cy, cx, cy, "walkable", true)
+	end
+	all[name] = nil
+	walls():set(next(all) ~= nil and all or nil)
+	return true
+end
+
+-- checkwall is map_iwall_exist.
+function R.checkwall(name)
+	local all = walls():get() or {}
+	return all[name] ~= nil
+end
+
+-- mode_bits are rAthena's MD_ bits of monster modes.
+local mode_bits = {
+	can_move = 0x1, looter = 0x2, aggressive = 0x4, assist = 0x8, cast_sensor_idle = 0x10, no_random_walk = 0x20,
+	no_cast = 0x40, can_attack = 0x80, cast_sensor_chase = 0x200, change_chase = 0x400, angry = 0x800,
+	change_target_melee = 0x1000, change_target_chase = 0x2000, target_weak = 0x4000, random_target = 0x8000,
+	ignore_melee = 0x10000, ignore_magic = 0x20000, ignore_ranged = 0x40000, mvp = 0x80000, ignore_misc = 0x100000,
+	knockback_immune = 0x200000, teleport_block = 0x400000, fixed_item_drop = 0x1000000, detector = 0x2000000,
+	status_immune = 0x4000000, skill_immune = 0x8000000,
+}
+
+-- mob_info_fields are monsters.get's fields by getmonsterinfo's MOB_
+-- type (script.hpp 360).
+local mob_info_fields = { "name", "level", "hp", "sp", "base_exp", "job_exp", "attack_min", "attack_max", "defense",
+	"magic_defense", "resistance", "magic_resistance", "str", "agi", "vit", "int", "dex", "luk", "speed", "attack_range",
+	"skill_range", "chase_range", "size", "race", "element", "element_level", "modes", "mvp_exp", "id" }
+
+-- monster_info is getmonsterinfo (script.cpp 18711): a monster by ID or
+-- AegisName. An unknown monster is "null" for MOB_NAME and -1 for the
+-- rest.
+function R.monster_info(mob, kind)
+	local id = mob
+	if type(mob) == "string" then
+		local ok, found = pcall(monsters.id, mob)
+		id = ok and found or nil
+	end
+	local info = math.type(id) == "integer" and id > 0 and monsters.get(id) or nil
+	local field = mob_info_fields[kind]
+	if field == nil then
+		error("getmonsterinfo: invalid type " .. tostring(kind), 2)
+	end
+	if info == nil then
+		return kind == 1 and "null" or -1
+	end
+	if field == "modes" then
+		local bits = 0
+		for _, m in ipairs(info.modes) do
+			bits = bits | mode_bits[m]
+		end
+		return bits
+	end
+	return info[field]
 end
 
 -- NpcTimer is rAthena's NPC timer of one NPC, without an attached
@@ -1053,19 +1280,6 @@ function R.donpcevent(text)
 		return world.fire_npc_event(label) > 0
 	end
 	return R.fire(name, label)
-end
-
--- npc_event_of is the death event of a monster whose label is another
--- NPC's: the label runs for the killer, as mob_dead's npc_event, or
--- with no player.
-function R.npc_event_of(target, label)
-	return function(player)
-		if player ~= nil then
-			R.doevent(target, label, player)
-		else
-			R.fire(target, label)
-		end
-	end
 end
 
 -- npc_of is the NPC of getvariableofnpc, which ends the script for an

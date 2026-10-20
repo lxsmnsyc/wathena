@@ -350,6 +350,82 @@
 ---| "friday"
 ---| "saturday"
 
+---An AI of spawning.monsters, as rAthena's AI_ types.
+---@alias wa.SpawnAI
+---| "none"
+---| "attack"
+---| "sphere"
+---| "flora"
+---| "zanzou"
+---| "legion"
+---| "faw"
+---| "guild"
+---| "wave_mode"
+---| "abr"
+---| "bionic"
+
+---A kind of cell of maps.set_cells, as setcell's cell_ types. water, npc, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error: their systems do not exist or keep no cell flag.
+---@alias wa.CellKind
+---| "walkable"
+---| "shootable"
+---| "water"
+---| "npc"
+---| "basilica"
+---| "land_protector"
+---| "no_vending"
+---| "no_chat"
+---| "maelstrom"
+---| "ice_wall"
+---| "no_buying_store"
+
+---A check of maps.check_cell, as checkcell's cell_chk types. water, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error.
+---@alias wa.CellCheck
+---| "wall"
+---| "water"
+---| "cliff"
+---| "pass"
+---| "reach"
+---| "no_pass"
+---| "no_reach"
+---| "stack"
+---| "npc"
+---| "basilica"
+---| "land_protector"
+---| "no_vending"
+---| "no_chat"
+---| "maelstrom"
+---| "ice_wall"
+---| "no_buying_store"
+
+---A monster mode, as rAthena's MD_ flags and the modes of data/monsters.yml.
+---@alias wa.MonsterMode
+---| "can_move"
+---| "looter"
+---| "aggressive"
+---| "assist"
+---| "cast_sensor_idle"
+---| "no_random_walk"
+---| "no_cast"
+---| "can_attack"
+---| "cast_sensor_chase"
+---| "change_chase"
+---| "angry"
+---| "change_target_melee"
+---| "change_target_chase"
+---| "target_weak"
+---| "random_target"
+---| "ignore_melee"
+---| "ignore_magic"
+---| "ignore_ranged"
+---| "mvp"
+---| "ignore_misc"
+---| "knockback_immune"
+---| "teleport_block"
+---| "fixed_item_drop"
+---| "detector"
+---| "status_immune"
+---| "skill_immune"
+
 ---A player. Each access looks the player up again. A handle to a player who left the map raises an error. Reading needs game.read.
 ---@class wa.Player
 ---@field kind "player" The entity's kind.
@@ -993,6 +1069,43 @@ function wa_Monster:talk(text) end
 ---The monster stops walking and attacking, and drops its target, as unitstop.
 function wa_Monster:stop() end
 
+---The monster dies with no exp and no drops, as unitkill. Its label runs. The death event follows.
+function wa_Monster:kill() end
+
+---The monster dies with no exp and no drops, and its label does not run, as killmonster. The death event follows.
+function wa_Monster:remove() end
+
+---Sets the monster's HP, as setunitdata's UMOB_HP: at most its maximum. 0 changes nothing and returns false, so it never kills.
+---@param hp integer 0 or more.
+---@return boolean
+function wa_Monster:set_hp(hp) end
+
+---true: no unit can target the monster, as setunitdata's UMOB_DMGIMMUNE.
+---@param immune boolean
+function wa_Monster:set_damage_immune(immune) end
+
+---Replaces the monster's modes, as setunitdata's UMOB_MODE.
+---@param modes wa.MonsterMode[] The modes it has from now on.
+function wa_Monster:set_modes(modes) end
+
+---Sets the monster's walk speed, as setunitdata's UMOB_SPEED.
+---@param milliseconds integer Per cell, 20 to 1000.
+function wa_Monster:set_speed(milliseconds) end
+
+---The monster uses a ground skill on a cell with the skill's own cast time, as unitskillusepos. Returns false when the cast does not start, and for a skill that is not a ground skill.
+---@param skill integer A ground skill from skills.id.
+---@param level integer 1 to 100.
+---@param x integer
+---@param y integer
+---@return boolean
+function wa_Monster:use_skill_at(skill, level, x, y) end
+
+---Moves the monster to a cell of its map, as unitwarp. A cell that cannot be walked on is one within 4 cells of it. Returns false when none is found.
+---@param x integer
+---@param y integer
+---@return boolean
+function wa_Monster:warp_to(x, y) end
+
 ---Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
 ---@param status integer A status from wa.statuses.
 ---@param options? wa.StatusOptions
@@ -1541,6 +1654,14 @@ function wa_Party:set_options(options) end
 ---
 ---Needs the permission `party.manage`.
 function wa_Party:disband() end
+
+---Moves every online member that lives, on any map, to a cell, as warpparty (review decision 58). A cell that is not on the map is a random one. Each member's zone moves it after the current step. Map flags that refuse warps do not exist yet.
+---
+---Needs the permission `player.warp`.
+---@param map string A map name, such as prontera.
+---@param x integer
+---@param y integer
+function wa_Party:warp(map, x, y) end
 
 ---One member of party:get_member_list.
 ---@class wa.PartyMember
@@ -2136,14 +2257,96 @@ local wa_WhenOptions = {}
 ---The monsters of spawning.monsters.
 ---@class wa.SpawnSpec
 ---@field monster integer From monsters.id.
----@field map string? The context's own map, which is the default. Another map raises an error.
+---@field map string? The context's own map by default. On another map, the monsters belong to no context, and respawn raises an error.
 ---@field amount integer? 1 to 1000. 1 by default.
 ---@field x integer? With y, the cell. Without them, a random walkable cell for each monster.
 ---@field y integer?
 ---@field area integer? Spreads the monsters within this many cells of x and y.
 ---@field respawn boolean? true: a dead monster comes back while the context lives, as a spawn line's monster. false by default: dead stays dead.
 ---@field respawn_milliseconds integer? With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay.
+---@field rectangle integer[][]? Two opposite corners, such as { { 100, 100 }, { 110, 105 } }: each monster lands on a random walkable cell of it, as areamonster. Up to the rectangle's cells times 3 tries, at most 1000; a failure uses the last monster's cell, and the first failure places no more monsters. Not with x, y and area.
+---@field display_name string? The name players see, at most 23 bytes, as the name of monster. "--en--" and "--ja--" are the monster's own. The monster's own by default.
+---@field size "normal"|"small"|"big"|nil Shows the monster small or big, as monster's size: players see the baby or giant body effect. Its stats stay, as mob_size_influence is off by default.
+---@field ai wa.SpawnAI? rAthena's AI_ type. A monster with an AI and no master fights the monsters without an AI, which fight it unless its AI is wave_mode. Players may hit it. It gives exp, and drops nothing unless it is a sphere.
+---@field label string? An event label, such as OnMyMobDead, of the context's own NPC, or "<NPC>::<label>" of another NPC, as monster's event label. The NPC's npc_event handler of the label runs when each monster dies: with the player that killed it, or the one that dealt the most damage, when the NPC runs in the monsters' zone, and with no player otherwise. It names the monsters for maps.count_monsters and maps.remove_monsters. Another mod's NPC needs npcs.control.
 local wa_SpawnSpec = {}
+
+---Options of maps.announce.
+---@class wa.AnnounceOptions
+---@field rectangle integer[][]? Two opposite corners: only the players there see the line, as areaannounce.
+local wa_AnnounceOptions = {}
+
+---Options of maps.count_players.
+---@class wa.AreaOptions
+---@field rectangle integer[][]? Two opposite corners, such as { { 100, 100 }, { 110, 105 } }.
+local wa_AreaOptions = {}
+
+---Options of maps.count_monsters.
+---
+---Provisional: not reviewed in proposal 0002 yet.
+---@class wa.CountMonstersOptions
+---@field label string? Only the monsters of this label of spawning.monsters, as mobcount's event label. Every monster of the map by default, as mobcount's "all".
+local wa_CountMonstersOptions = {}
+
+---Options of maps.remove_monsters.
+---@class wa.RemoveMonstersOptions
+---@field label string? Only the monsters of this label, as killmonster.
+---@field scripted boolean? Only monsters that no spawn line placed, as killmonster's "All". Not with label.
+---@field run_labels boolean? The labels of the monsters run, as type 1. false by default.
+local wa_RemoveMonstersOptions = {}
+
+---Options of maps.warp_players.
+---@class wa.WarpPlayersOptions
+---@field rectangle integer[][]? Only the players of the rectangle, as areawarp.
+---@field to_rectangle integer[][]? A random walkable cell of this rectangle of the target map, in place of x and y, as areawarp's second area: up to its cells times 3 tries, at most 1000, then the last try.
+---@field party integer? Only the members of the party with this ID, as mapwarp's type 2.
+---@field guild integer? Only the members of the guild with this ID, as mapwarp's type 1.
+local wa_WarpPlayersOptions = {}
+
+---Options of maps.find_free_cell.
+---@class wa.FreeCellOptions
+---@field x integer? The center. 0 by default.
+---@field y integer?
+---@field range_x integer? How far from x, or -1 for the whole map, the default.
+---@field range_y integer? How far from y, or -1 for the whole map, the default.
+---@field reachable_from wa.Player|wa.Monster|wa.Npc|nil The cell must be reachable from the entity by a direct walk, as getfreecell's flag 2. The entity must be on the map.
+local wa_FreeCellOptions = {}
+
+---A monster's record of monsters.get, as getmonsterinfo.
+---@class wa.MonsterInfo
+---@field id integer
+---@field name string
+---@field level integer
+---@field hp integer Its maximum HP.
+---@field sp integer
+---@field base_exp integer
+---@field job_exp integer
+---@field mvp_exp integer
+---@field attack_min integer MOB_ATKMIN.
+---@field attack_max integer MOB_ATKMAX.
+---@field magic_attack_min integer
+---@field magic_attack_max integer
+---@field defense integer
+---@field magic_defense integer
+---@field resistance integer
+---@field magic_resistance integer
+---@field str integer
+---@field agi integer
+---@field vit integer
+---@field int integer
+---@field dex integer
+---@field luk integer
+---@field speed integer Milliseconds per cell.
+---@field attack_range integer
+---@field skill_range integer
+---@field chase_range integer
+---@field size integer From wa.sizes.
+---@field race integer From wa.races.
+---@field element integer From wa.elements.
+---@field element_level integer
+---@field damage_taken integer The percent of damage it takes.
+---@field modes wa.MonsterMode[] Its modes.
+local wa_MonsterInfo = {}
 
 ---The object of the damage event (0002a, "Item events").
 ---@class wa.Damage

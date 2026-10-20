@@ -916,6 +916,32 @@ end
 monster_methods.stop = function(self)
 	call(H.monster_stop, monster_ids[self])
 end
+-- Area B8 of review decision 58: unitkill, killmonster's kill without
+-- the label, setunitdata's UMOB_ values, unitskillusepos and unitwarp.
+monster_methods.kill = function(self)
+	call(H.monster_call, "kill", monster_ids[self])
+end
+monster_methods.remove = function(self)
+	call(H.monster_call, "remove", monster_ids[self])
+end
+monster_methods.set_hp = function(self, hp)
+	return (call(H.monster_call, "set_hp", monster_ids[self], hp))
+end
+monster_methods.set_damage_immune = function(self, immune)
+	call(H.monster_call, "set_damage_immune", monster_ids[self], immune)
+end
+monster_methods.set_modes = function(self, modes)
+	call(H.monster_call, "set_modes", monster_ids[self], modes)
+end
+monster_methods.set_speed = function(self, milliseconds)
+	call(H.monster_call, "set_speed", monster_ids[self], milliseconds)
+end
+monster_methods.use_skill_at = function(self, skill, level, x, y)
+	return (call(H.monster_call, "use_skill_at", monster_ids[self], skill, level, x, y))
+end
+monster_methods.warp_to = function(self, x, y)
+	return (call(H.monster_call, "warp_to", monster_ids[self], x, y))
+end
 
 
 -- with_handles copies Go's fields, and makes handles of target, source,
@@ -1524,10 +1550,56 @@ api["wa.text"] = readonly("wa.text", {
 end)
 
 api["wa.maps"] = readonly("wa.maps", {
-	announce = function(map, text)
+	announce = function(map, text, options)
 		check(type(map) == "string", "maps.announce: the map must be a name, such as prontera")
 		check(type(text) == "string", "maps.announce: the text must be a string")
+		if options ~= nil then
+			-- areaannounce (review decision 58, area B8).
+			check(type(options) == "table", "maps.announce: the options must be a table, such as { rectangle = { { 100, 100 }, { 110, 105 } } }")
+			for k in pairs(options) do
+				check(k == "rectangle", "maps.announce: there is no option " .. tostring(k) .. "; the option is rectangle")
+			end
+			if options.rectangle ~= nil then
+				return (call(H.maps_call, "announce_area", map, text, options.rectangle))
+			end
+		end
 		return (call(H.announce, map, text))
+	end,
+	-- Maps, areas and monsters (review decision 58, area B8).
+	count_players = function(map, options)
+		return (call(H.maps_call, "count_players", map, options))
+	end,
+	count_monsters = function(map, options)
+		return (call(H.maps_call, "count_monsters", map, options))
+	end,
+	remove_monsters = function(map, options)
+		return (call(H.maps_call, "remove_monsters", map, options))
+	end,
+	warp_players = function(map, to_map, x, y, options)
+		return (call(H.maps_call, "warp_players", map, to_map, x, y, options))
+	end,
+	set_cells = function(map, x1, y1, x2, y2, kind, on)
+		return (call(H.maps_call, "set_cells", map, x1, y1, x2, y2, kind, on))
+	end,
+	check_cell = function(map, x, y, kind)
+		return (call(H.maps_call, "check_cell", map, x, y, kind))
+	end,
+	set_flag = function(map, flag, value)
+		return (call(H.maps_call, "set_flag", map, flag, value))
+	end,
+	get_flag = function(map, flag)
+		return (call(H.maps_call, "get_flag", map, flag))
+	end,
+	find_free_cell = function(map, options)
+		if options ~= nil and type(options) == "table" and options.reachable_from ~= nil then
+			local copy = {}
+			for k, v in pairs(options) do
+				copy[k] = v
+			end
+			copy.reachable_from = handle_key(options.reachable_from) or false
+			options = copy
+		end
+		return call(H.maps_call, "find_free_cell", map, options)
 	end,
 	find_entities = function(query)
 		return find_entities("maps.find_entities", query)
@@ -1693,6 +1765,10 @@ new_party, party_ids = handle_type("party", {
 	end,
 	get_member_list = function(self)
 		return (call(H.party_call, "get_member_list", party_ids[self]))
+	end,
+	-- warpparty to a map and a cell (review decision 58, area B8).
+	warp = function(self, map, x, y)
+		return (call(H.party_warp, party_ids[self], map, x, y))
 	end,
 	add = function(self, player)
 		local id = player_ids[player]
@@ -2249,6 +2325,15 @@ api["wa.monsters"] = readonly("wa.monsters", {
 	id = function(name)
 		check(type(name) == "string", "monsters.id: the monster name must be a string")
 		return (call(H.monsters_id, name))
+	end,
+	-- getmonsterinfo (review decision 58, area B8).
+	get = function(monster)
+		local info = call(H.monsters_get, monster)
+		if info == nil then
+			return nil
+		end
+		info.modes = readonly("modes", info.modes)
+		return readonly("monster record", info)
 	end,
 })
 

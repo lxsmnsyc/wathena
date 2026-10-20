@@ -982,8 +982,6 @@ func (b *body) call(e *Call) (val, error) {
 			return val{}, err
 		}
 		return done(val{code: "#" + v.asText(), t: tInt}, nil)
-	case "mobcount":
-		return done(b.mobcount(args))
 	case "getnpctimer":
 		return done(b.getnpctimer(args))
 	case "isequipped":
@@ -997,6 +995,9 @@ func (b *body) call(e *Call) (val, error) {
 		return done(val{code: code, t: tInt}, err)
 	}
 	if v, ok, err := b.group3Read(name, args); ok {
+		return done(v, err)
+	}
+	if v, ok, err := b.mapsRead(name, args); ok {
 		return done(v, err)
 	}
 	if v, ok, err := b.equipCall(name, args); ok {
@@ -1395,14 +1396,8 @@ func (b *body) commandErr(name string, args []Expr) error {
 	case "getpartymember":
 		_, err := b.getpartymember(args)
 		return err
-	case "warpparty":
-		return unsupported(name, "the party API cannot warp a party, and rAthena's warpparty has its own map checks")
-	case "monster":
-		return b.monster(args)
 	case "initnpctimer", "startnpctimer", "stopnpctimer", "setnpctimer":
 		return b.timerCommand(name, args)
-	case "killmonster":
-		return unsupported(name, "the API cannot remove spawned monsters")
 	case "enablenpc", "disablenpc", "hideonnpc", "hideoffnpc", "cloakonnpc", "cloakoffnpc", "cloakonnpcself", "cloakoffnpcself":
 		return b.npcView(name, args)
 	case "donpcevent":
@@ -1429,6 +1424,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 	case "atcommand", "setbattleflag":
 		return unsupported(name, "%s", refusedCommands[name])
 	default:
+		if ok, err := b.mapsCommand(name, args); ok {
+			return err
+		}
 		if ok, err := b.group3Command(name, args); ok {
 			return err
 		}
@@ -1528,135 +1526,6 @@ func walkStmts(list []Stmt, fn func(Stmt)) {
 			}
 		}
 	}
-}
-
-// monster writes rAthena's monster command: monster "<map>",<x>,<y>,
-// "<name>",<monster>,<amount>{,"<event label>"{,<size>{,<ai>}}}. It
-// converts with these limits:
-//   - The map is the NPC's own map. R.monster checks a computed map.
-//   - The name is "--ja--", "--en--", "", or the monster's own name.
-//   - The event label is "" or a label of this NPC. Its function runs
-//     when each monster dies, with the player that killed it.
-//   - The size and the AI are the defaults.
-func (b *body) monster(args []Expr) error {
-	const what = "monster"
-	if len(args) < 6 || len(args) > 9 {
-		return unsupported(what, "arguments")
-	}
-	vals := make([]val, 6)
-	for i := range vals {
-		v, err := b.expr(args[i])
-		if err != nil {
-			return err
-		}
-		vals[i] = v
-	}
-	m := vals[0]
-	if m.str != nil && *m.str != b.n.line.Map {
-		return unsupported(what, "on another map")
-	}
-	c := b.n.c
-	mob := vals[4]
-	id := int64(-1)
-	var code string
-	switch {
-	case mob.static != nil:
-		id = *mob.static
-	case mob.str != nil:
-		var ok bool
-		if id, ok = c.monsterIDs[strings.ToUpper(*mob.str)]; !ok {
-			return unsupported(what, "%q is not a monster", *mob.str)
-		}
-	default:
-		code = mob.asInt()
-	}
-	if code == "" {
-		info, ok := c.monsters[id]
-		if !ok {
-			return unsupported(what, "%d is not a monster, such as a random monster", id)
-		}
-		code = b.n.file.record("monsters.id", info.sprite)
-	}
-	// rAthena shows the name; wAthena shows the monster's own name.
-	name := vals[3]
-	switch {
-	case name.str == nil:
-		return unsupported(what, "a computed name")
-	case *name.str == "" || *name.str == "--ja--" || *name.str == "--en--":
-	case id >= 0 && *name.str == c.monsters[id].name:
-	default:
-		return unsupported(what, "a name of its own")
-	}
-	for i, def := range []string{"size", "AI"} {
-		if len(args) > 7+i {
-			v, err := b.expr(args[7+i])
-			if err != nil {
-				return err
-			}
-			if v.static == nil || *v.static != 0 {
-				return unsupported(what, "a %s other than the default", def)
-			}
-		}
-	}
-	call := fmt.Sprintf("R.monster(npc, %s, %s, %s, %s, %s", m.asText(), vals[1].asInt(), vals[2].asInt(), code, vals[5].asInt())
-	if len(args) > 6 {
-		label, err := b.ownEvent(what, args[6])
-		if err != nil {
-			other, ok := b.otherMobEvent(args[6])
-			if !ok {
-				return err
-			}
-			call += other
-		} else if label != "" {
-			call += fmt.Sprintf(", %s, %s", luaString(label), b.n.eventFn(label))
-		}
-	}
-	b.line("%s)", call)
-	return nil
-}
-
-// otherMobEvent is the death label of a monster command that names
-// another NPC's label, "<NPC>::<label>" (review decision 58): it runs
-// for the killer, as mob_dead's npc_event, or with no player. The NPC
-// must be on the monster's map, where the killer is.
-func (b *body) otherMobEvent(e Expr) (string, bool) {
-	s, ok := e.(*Str)
-	if !ok || b.n.isFunction {
-		return "", false
-	}
-	i := strings.LastIndex(s.Value, "::")
-	if i <= 0 {
-		return "", false
-	}
-	name, label := s.Value[:i], s.Value[i+2:]
-	if m, known := b.n.c.npcMap[name]; !known || name == b.n.line.Name || m != b.n.line.Map || !labelName.MatchString(label) {
-		return "", false
-	}
-	return fmt.Sprintf(", %s, R.npc_event_of(%s, %s)", luaString(s.Value), luaString(b.n.c.recordFor(name)), luaString(label)), true
-}
-
-// mobcount writes mobcount for an event label of this NPC: the monsters
-// of R.monster with that label that live.
-func (b *body) mobcount(args []Expr) (val, error) {
-	const what = "mobcount"
-	if len(args) != 2 {
-		return val{}, unsupported(what, "arguments")
-	}
-	m, err := b.expr(args[0])
-	if err != nil {
-		return val{}, err
-	}
-	if m.str != nil && *m.str != b.n.line.Map {
-		return val{}, unsupported(what, "on another map")
-	}
-	label, err := b.ownEvent(what, args[1])
-	if err != nil {
-		return val{}, err
-	}
-	if label == "" {
-		return val{}, unsupported(what, "without an event label")
-	}
-	return val{code: fmt.Sprintf("R.mobcount(npc, %s, %s)", m.asText(), luaString(label)), t: tInt}, nil
 }
 
 // menu writes rAthena's menu: a choice, then a jump to the option's

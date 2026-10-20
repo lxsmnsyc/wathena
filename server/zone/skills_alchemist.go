@@ -93,6 +93,10 @@ const (
 	aiAttack = 1 // AI_ATTACK
 	aiFlora  = 2 // AI_FLORA
 	aiSphere = 3 // AI_SPHERE
+	// aiWaveMode is AI_WAVEMODE. A script spawn may have any of
+	// rAthena's AI_ values (scriptAI, maps.go), which keep its numbers
+	// from 4 on.
+	aiWaveMode = 8
 )
 
 // summonSetting is alchemist_summon_setting in the zone's mode.

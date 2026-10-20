@@ -56,6 +56,12 @@ type Spawn struct {
 	// noRespawn keeps dead monsters from coming back.
 	owner     int64
 	noRespawn bool
+	// line is set for the map's spawn lines, as rAthena's md->spawn.
+	// label, size and ai are those of spawning.monsters (maps.go).
+	line  bool
+	label *monsterLabel
+	size  int
+	ai    int
 }
 
 type monster struct {
@@ -151,6 +157,13 @@ type monster struct {
 	// event marks a typed world event's monster (autoevents.go), or is
 	// nil.
 	event *eventTag
+	// label is the spawn's label, which the zone counts while the
+	// monster is in the entity set (maps.go). labelOff is
+	// state.npc_killmonster: a script killed it without its label.
+	// immune is ud.immune_attack (UMOB_DMGIMMUNE): no unit targets it.
+	label    *monsterLabel
+	labelOff bool
+	immune   bool
 }
 
 // Random walk timing, as rAthena's mob.cpp.
@@ -166,6 +179,7 @@ const (
 
 func (z *Zone) spawn(spawns []Spawn) {
 	for i := range spawns {
+		spawns[i].line = true
 		for range spawns[i].Amount {
 			z.spawnOne(&spawns[i])
 		}
@@ -179,12 +193,17 @@ func (z *Zone) spawnOne(s *Spawn) *entity {
 	if !ok {
 		return nil
 	}
+	return z.spawnAt(s, x, y)
+}
+
+// spawnAt places one monster of a spawn on a cell.
+func (z *Zone) spawnAt(s *Spawn, x, y int) *entity {
 	speed := s.Speed
 	if speed <= 0 {
 		speed = WalkSpeed
 	}
 	e := &entity{
-		monster: &monster{spawn: s, nextWalk: -1},
+		monster: &monster{spawn: s, nextWalk: -1, label: s.label, specialAI: s.ai},
 		x:       x, y: y,
 		dir:   z.rand.IntN(8),
 		speed: speed,

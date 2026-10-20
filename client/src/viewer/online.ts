@@ -13,7 +13,7 @@ import {
 import { create } from '@bufbuild/protobuf';
 import { type Camera, Group, Vector3 } from 'three';
 import { effects as effectTable, jobs, looks, partEffect, weapons } from '../data/tables';
-import { type WMap, cellHeight } from '../formats/wmap';
+import { SHOOTABLE, WALKABLE, type WMap, cellHeight } from '../formats/wmap';
 import {
   type BuyingStoreBought,
   type BuyingStoreList,
@@ -113,6 +113,9 @@ import {
   splitHits,
   unitEffect,
 } from './skillEffects';
+
+/** The cell flags that MapCells changes. */
+const MOVE_FLAGS = WALKABLE | SHOOTABLE;
 
 // Shows the entities a server sends: players appear, walk the paths the
 // server gives, and vanish. Items lie on the ground until someone picks
@@ -1245,6 +1248,24 @@ export default class Online {
         case 'digits':
           this.onDigits?.(e.body.value.kind, e.body.value.value);
           break;
+        case 'mapCells': {
+          // setwall and setcell: the cells' walkable and shootable flags
+          // change, and paths follow them (decision 0065). A map loads
+          // its cells again on each visit, so the change stays with
+          // this visit.
+          const map = this.map;
+          for (const c of e.body.value.cells) {
+            const x = c & 0x3ff;
+            const y = (c >>> 10) & 0x3ff;
+            if (x < map.width && y < map.height) {
+              const i = y * map.width + x;
+              map.cellFlags[i] =
+                ((map.cellFlags[i] ?? 0) & ~MOVE_FLAGS) | ((c >>> 20) & MOVE_FLAGS);
+            }
+          }
+          this.pathfinder.setMap(map);
+          break;
+        }
         case 'questLogOpen':
           this.onQuestLogOpen?.(e.body.value.quest);
           break;

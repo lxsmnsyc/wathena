@@ -109,6 +109,36 @@ describe('Online', () => {
     expect(portals(o)).toBe(0);
   });
 
+  it('changes cells and the paths of MapCells', () => {
+    let sets = 0;
+    const o = new Online(
+      1,
+      {} as SpriteCache,
+      {
+        setMap: () => {
+          sets++;
+        },
+      } as unknown as Pathfinder,
+    );
+    const m = map();
+    m.cellFlags[3 * 10 + 2] = 3 | 4;
+    o.setMap(m);
+    const pack = (x: number, y: number, flags: number): number => x | (y << 10) | (flags << 20);
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'mapCells',
+          value: { cells: [pack(2, 3, 0), pack(4, 4, 2), pack(20, 1, 0)] },
+        },
+      }),
+    ]);
+    // The water bit stays; walkable and shootable follow the event. A
+    // cell outside the map is left out.
+    expect(m.cellFlags[3 * 10 + 2]).toBe(4);
+    expect(m.cellFlags[4 * 10 + 4]).toBe(2);
+    expect(sets).toBe(1);
+  });
+
   it('clears the old map on a map change and waits for the new one', () => {
     const o = online();
     o.setMap(map());

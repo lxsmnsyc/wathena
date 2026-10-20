@@ -15,7 +15,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.events`](#waevents) | Event handlers. The context owns them, and removes them when it ends. |
 | [`wa.hooks`](#wahooks) | Hooks change a game result in a chain ordered by priority. Each hook calls next to get the rest of the chain's result. The innermost result is rAthena's value. Hooks only compute: calls that change the game raise an error in them. The context owns them. |
 | [`wa.schedules`](#waschedules) | Schedules on the server clock, in the server's time zone (time_zone in the config). A time that does not exist on a day clocks change runs at the next valid minute, and a time that happens twice runs once. A time that passed while the zone slept or the server was stopped runs once, or not at all. The context owns them. |
-| [`wa.spawning`](#waspawning) | Monsters that the context owns. They go when it ends. |
+| [`wa.spawning`](#waspawning) | Monsters that the context owns. They go when it ends. Monsters of another map belong to no context. |
 | [`wa.timers`](#watimers) | Timers on the zone clock. The context owns them, and cancels them when it ends. |
 | [`wa.items`](#waitems) | Items by name. |
 | [`wa.skills`](#waskills) | Skills by name. |
@@ -167,11 +167,11 @@ Runs the handler once the condition has held for lasting_minutes. The condition 
 local spawning = require "wa.spawning"
 ```
 
-Monsters that the context owns. They go when it ends.
+Monsters that the context owns. They go when it ends. Monsters of another map belong to no context.
 
 #### `spawning.monsters(spec) → wa.Monster[]`
 
-Places monsters on the context's map and returns their handles. Without x and y, each lands on a random walkable cell.
+Places monsters on a map and returns their handles, as rAthena's monster and areamonster. Without x and y, each lands on a random walkable cell away from the map's edges, as map_search_freecell. On another map, the map's zone places them after the current step, and the list is empty: maps.count_monsters counts them at once (review decision 58).
 
 Permission: `npc.create`.
 
@@ -369,6 +369,16 @@ Permission: `game.read`.
 |---|---|---|
 | `name` | `string` | An AegisName, such as PORING. |
 
+#### `monsters.get(monster) → wa.MonsterInfo?`
+
+The monster's record, as getmonsterinfo (review decision 58), or nil for an unknown monster. Exp is after the server's rates, as rAthena applies them when it loads mob_db.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `monster` | `integer` | From monsters.id. |
+
 ### wa.text
 
 ```lua
@@ -397,14 +407,127 @@ local maps = require "wa.maps"
 
 Maps.
 
-#### `maps.announce(map, text)`
+#### `maps.announce(map, text, options?)`
 
-Shows a line to every player of a map, as mapannounce. Players see the mod's ID with a mod's line.
+Shows a line to every player of a map, as mapannounce, or of a rectangle of it, as areaannounce. Players see the mod's ID with a mod's line.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `map` | `string` | A map name, such as prontera. |
 | `text` | `string` | At most 255 bytes. |
+| `options` | `wa.AnnounceOptions?` |  |
+
+#### `maps.count_players(map, options?) → integer?`
+
+The players of a map, as getmapusers, or of a rectangle of it, as getareausers (review decision 58). nil for a map that does not run in this world. Another map's count is from its zone's last step.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `options` | `wa.AreaOptions?` |  |
+
+#### `maps.count_monsters(map, options?) → integer?`
+
+The living monsters of a map, or those of a label, as mobcount. Monsters that spawning.monsters asked another zone to place count at once. nil for a map that does not run in this world.
+
+Permission: `game.read`.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `options` | `wa.CountMonstersOptions?` |  |
+
+#### `maps.remove_monsters(map, options?)`
+
+Kills monsters of a map with no exp and no drops, as killmonster and killmonsterall (review decision 58). Without options, every monster dies, and those of spawn lines come back. Their labels do not run unless run_labels is set. Another map's zone kills them after the current step.
+
+Permission: `npc.create`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `options` | `wa.RemoveMonstersOptions?` |  |
+
+#### `maps.warp_players(map, to_map, x, y, options?)`
+
+Moves the players of a map, as mapwarp and areawarp (review decision 58). A cell that is not on the target map is a random one. Dead players stay. The map's zone moves them after the current step.
+
+Permission: `player.warp`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | The map the players are on. |
+| `to_map` | `string` | The map they go to. |
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+| `options` | `wa.WarpPlayersOptions?` |  |
+
+#### `maps.set_cells(map, x1, y1, x2, y2, kind, on)`
+
+Turns a kind of cell on or off in a rectangle, as setcell (review decision 58). walkable and shootable change where units walk and shoot, and the map's players get the cells, as setwall sends them; players who enter later get them too. no_vending and no_buying_store refuse shops there. Kinds whose systems do not exist raise an error. The map's zone changes them after the current step.
+
+Permission: `npc.create`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `x1` | `integer` |  |
+| `y1` | `integer` |  |
+| `x2` | `integer` |  |
+| `y2` | `integer` | The rectangle's opposite corner. |
+| `kind` | `wa.CellKind` |  |
+| `on` | `boolean` |  |
+
+#### `maps.check_cell(map, x, y, kind) → boolean`
+
+Reads a cell, as checkcell's map_getcellp: a cell outside the map, or on its last row or column, is no_pass and nothing else. npc reads the touch areas of the context's own map. Kinds whose systems do not exist raise an error.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+| `kind` | `wa.CellCheck` |  |
+
+#### `maps.set_flag(map, flag, value)`
+
+Sets a map flag, as setmapflag and removemapflag (review decision 58). nomemo is the flag wAthena has. Other flags raise an error that says why: their systems do not exist, or their effects are not built. The map's zone sets it after the current step.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `flag` | `string` | rAthena's name without MF_, such as nomemo. |
+| `value` | `boolean` | false removes it, as removemapflag. |
+
+#### `maps.get_flag(map, flag) → boolean`
+
+Reads a map flag, as getmapflag: a script's, or else the world layout's. A flag that set_flag refuses is false.
+
+Permission: `game.read`.
+
+Provisional: not reviewed in proposal 0002 yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `flag` | `string` | rAthena's name without MF_, such as nomemo. |
+
+#### `maps.find_free_cell(map, options?) → integer?, integer?`
+
+A random walkable cell, as getfreecell's map_search_freecell: 50 tries within the range of x and y, never x and y themselves, or anywhere at least 15 cells from the map's edges. With no range, x and y themselves when walkable. nil when no try found one.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `options` | `wa.FreeCellOptions?` |  |
 
 #### `maps.find_entities(query) → (wa.Player|wa.Monster|wa.Npc)[]`
 
@@ -2367,6 +2490,66 @@ The monster says a line to the players near it, after its name, as unittalk.
 
 The monster stops walking and attacking, and drops its target, as unitstop.
 
+#### `monster:kill()`
+
+The monster dies with no exp and no drops, as unitkill. Its label runs. The death event follows.
+
+#### `monster:remove()`
+
+The monster dies with no exp and no drops, and its label does not run, as killmonster. The death event follows.
+
+#### `monster:set_hp(hp) → boolean`
+
+Sets the monster's HP, as setunitdata's UMOB_HP: at most its maximum. 0 changes nothing and returns false, so it never kills.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `hp` | `integer` | 0 or more. |
+
+#### `monster:set_damage_immune(immune)`
+
+true: no unit can target the monster, as setunitdata's UMOB_DMGIMMUNE.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `immune` | `boolean` |  |
+
+#### `monster:set_modes(modes)`
+
+Replaces the monster's modes, as setunitdata's UMOB_MODE.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `modes` | `wa.MonsterMode[]` | The modes it has from now on. |
+
+#### `monster:set_speed(milliseconds)`
+
+Sets the monster's walk speed, as setunitdata's UMOB_SPEED.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `milliseconds` | `integer` | Per cell, 20 to 1000. |
+
+#### `monster:use_skill_at(skill, level, x, y) → boolean`
+
+The monster uses a ground skill on a cell with the skill's own cast time, as unitskillusepos. Returns false when the cast does not start, and for a skill that is not a ground skill.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | A ground skill from skills.id. |
+| `level` | `integer` | 1 to 100. |
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+
+#### `monster:warp_to(x, y) → boolean`
+
+Moves the monster to a cell of its map, as unitwarp. A cell that cannot be walked on is one within 4 cells of it. Returns false when none is found.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+
 #### `monster:start_status(status, options?) → boolean`
 
 Starts a status, as sc_start, sc_start2 and sc_start4, with rAthena's resistance and rules. Returns true when it starts. The target's stats change before it returns, as in rAthena. The status_start event runs after the script's call returns. On a player it needs player.status.
@@ -3141,6 +3324,18 @@ Permission: `party.manage`.
 Breaks the party up, as party_destroy. Each member gets the party_leave event, with the reason "disbanded".
 
 Permission: `party.manage`.
+
+#### `party:warp(map, x, y)`
+
+Moves every online member that lives, on any map, to a cell, as warpparty (review decision 58). A cell that is not on the map is a random one. Each member's zone moves it after the current step. Map flags that refuse warps do not exist yet.
+
+Permission: `player.warp`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `x` | `integer` |  |
+| `y` | `integer` |  |
 
 ### wa.PartyMember
 
@@ -3990,13 +4185,114 @@ The monsters of spawning.monsters.
 | Field | Type | Meaning |
 |---|---|---|
 | `monster` | `integer` | From monsters.id. |
-| `map` | `string?` | The context's own map, which is the default. Another map raises an error. |
+| `map` | `string?` | The context's own map by default. On another map, the monsters belong to no context, and respawn raises an error. |
 | `amount` | `integer?` | 1 to 1000. 1 by default. |
 | `x` | `integer?` | With y, the cell. Without them, a random walkable cell for each monster. |
 | `y` | `integer?` |  |
 | `area` | `integer?` | Spreads the monsters within this many cells of x and y. |
 | `respawn` | `boolean?` | true: a dead monster comes back while the context lives, as a spawn line's monster. false by default: dead stays dead. |
 | `respawn_milliseconds` | `integer?` | With respawn, how long a dead monster takes to come back, 1000 to 268435455. 5000 by default, as a spawn line without a delay. |
+| `rectangle` | `integer[][]?` | Two opposite corners, such as { { 100, 100 }, { 110, 105 } }: each monster lands on a random walkable cell of it, as areamonster. Up to the rectangle's cells times 3 tries, at most 1000; a failure uses the last monster's cell, and the first failure places no more monsters. Not with x, y and area. |
+| `display_name` | `string?` | The name players see, at most 23 bytes, as the name of monster. "--en--" and "--ja--" are the monster's own. The monster's own by default. |
+| `size` | `"normal"\|"small"\|"big"\|nil` | Shows the monster small or big, as monster's size: players see the baby or giant body effect. Its stats stay, as mob_size_influence is off by default. |
+| `ai` | `wa.SpawnAI?` | rAthena's AI_ type. A monster with an AI and no master fights the monsters without an AI, which fight it unless its AI is wave_mode. Players may hit it. It gives exp, and drops nothing unless it is a sphere. |
+| `label` | `string?` | An event label, such as OnMyMobDead, of the context's own NPC, or "<NPC>::<label>" of another NPC, as monster's event label. The NPC's npc_event handler of the label runs when each monster dies: with the player that killed it, or the one that dealt the most damage, when the NPC runs in the monsters' zone, and with no player otherwise. It names the monsters for maps.count_monsters and maps.remove_monsters. Another mod's NPC needs npcs.control. |
+
+### wa.AnnounceOptions
+
+Options of maps.announce.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `rectangle` | `integer[][]?` | Two opposite corners: only the players there see the line, as areaannounce. |
+
+### wa.AreaOptions
+
+Options of maps.count_players.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `rectangle` | `integer[][]?` | Two opposite corners, such as { { 100, 100 }, { 110, 105 } }. |
+
+### wa.CountMonstersOptions
+
+Options of maps.count_monsters.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `label` | `string?` | Only the monsters of this label of spawning.monsters, as mobcount's event label. Every monster of the map by default, as mobcount's "all". |
+
+### wa.RemoveMonstersOptions
+
+Options of maps.remove_monsters.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `label` | `string?` | Only the monsters of this label, as killmonster. |
+| `scripted` | `boolean?` | Only monsters that no spawn line placed, as killmonster's "All". Not with label. |
+| `run_labels` | `boolean?` | The labels of the monsters run, as type 1. false by default. |
+
+### wa.WarpPlayersOptions
+
+Options of maps.warp_players.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `rectangle` | `integer[][]?` | Only the players of the rectangle, as areawarp. |
+| `to_rectangle` | `integer[][]?` | A random walkable cell of this rectangle of the target map, in place of x and y, as areawarp's second area: up to its cells times 3 tries, at most 1000, then the last try. |
+| `party` | `integer?` | Only the members of the party with this ID, as mapwarp's type 2. |
+| `guild` | `integer?` | Only the members of the guild with this ID, as mapwarp's type 1. |
+
+### wa.FreeCellOptions
+
+Options of maps.find_free_cell.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `x` | `integer?` | The center. 0 by default. |
+| `y` | `integer?` |  |
+| `range_x` | `integer?` | How far from x, or -1 for the whole map, the default. |
+| `range_y` | `integer?` | How far from y, or -1 for the whole map, the default. |
+| `reachable_from` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | The cell must be reachable from the entity by a direct walk, as getfreecell's flag 2. The entity must be on the map. |
+
+### wa.MonsterInfo
+
+A monster's record of monsters.get, as getmonsterinfo.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | `integer` |  |
+| `name` | `string` |  |
+| `level` | `integer` |  |
+| `hp` | `integer` | Its maximum HP. |
+| `sp` | `integer` |  |
+| `base_exp` | `integer` |  |
+| `job_exp` | `integer` |  |
+| `mvp_exp` | `integer` |  |
+| `attack_min` | `integer` | MOB_ATKMIN. |
+| `attack_max` | `integer` | MOB_ATKMAX. |
+| `magic_attack_min` | `integer` |  |
+| `magic_attack_max` | `integer` |  |
+| `defense` | `integer` |  |
+| `magic_defense` | `integer` |  |
+| `resistance` | `integer` |  |
+| `magic_resistance` | `integer` |  |
+| `str` | `integer` |  |
+| `agi` | `integer` |  |
+| `vit` | `integer` |  |
+| `int` | `integer` |  |
+| `dex` | `integer` |  |
+| `luk` | `integer` |  |
+| `speed` | `integer` | Milliseconds per cell. |
+| `attack_range` | `integer` |  |
+| `skill_range` | `integer` |  |
+| `chase_range` | `integer` |  |
+| `size` | `integer` | From wa.sizes. |
+| `race` | `integer` | From wa.races. |
+| `element` | `integer` | From wa.elements. |
+| `element_level` | `integer` |  |
+| `damage_taken` | `integer` | The percent of damage it takes. |
+| `modes` | `wa.MonsterMode[]` | Its modes. |
 
 ### wa.Damage
 
@@ -5240,4 +5536,28 @@ A cost kind of items.refine_cost, as REFINE_COST_NORMAL, REFINE_COST_HD and REFI
 A day of the week.
 
 `sunday`, `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`
+
+### wa.SpawnAI
+
+An AI of spawning.monsters, as rAthena's AI_ types.
+
+`none`, `attack`, `sphere`, `flora`, `zanzou`, `legion`, `faw`, `guild`, `wave_mode`, `abr`, `bionic`
+
+### wa.CellKind
+
+A kind of cell of maps.set_cells, as setcell's cell_ types. water, npc, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error: their systems do not exist or keep no cell flag.
+
+`walkable`, `shootable`, `water`, `npc`, `basilica`, `land_protector`, `no_vending`, `no_chat`, `maelstrom`, `ice_wall`, `no_buying_store`
+
+### wa.CellCheck
+
+A check of maps.check_cell, as checkcell's cell_chk types. water, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error.
+
+`wall`, `water`, `cliff`, `pass`, `reach`, `no_pass`, `no_reach`, `stack`, `npc`, `basilica`, `land_protector`, `no_vending`, `no_chat`, `maelstrom`, `ice_wall`, `no_buying_store`
+
+### wa.MonsterMode
+
+A monster mode, as rAthena's MD_ flags and the modes of data/monsters.yml.
+
+`can_move`, `looter`, `aggressive`, `assist`, `cast_sensor_idle`, `no_random_walk`, `no_cast`, `can_attack`, `cast_sensor_chase`, `change_chase`, `angry`, `change_target_melee`, `change_target_chase`, `target_weak`, `random_target`, `ignore_melee`, `ignore_magic`, `ignore_ranged`, `mvp`, `ignore_misc`, `knockback_immune`, `teleport_block`, `fixed_item_drop`, `detector`, `status_immune`, `skill_immune`
 

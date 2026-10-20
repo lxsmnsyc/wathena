@@ -28,8 +28,10 @@ type npcHost struct {
 	ended map[int64]bool
 	vars  map[modscript.VariableKey]string
 	zeny  int64
-	// spawned are the monsters that have not died yet, by handle ID.
+	// spawned are the monsters that have not died yet, by handle ID, and
+	// labels their labels (mapshost_test.go).
 	spawned     map[int64]uint32
+	labels      map[int64]modscript.MonsterLabel
 	nextMonster int64
 	market      marketHost
 	// questLog is the quest log of every player (npc_quest_test.go).
@@ -233,11 +235,21 @@ func (h *npcHost) SpawnMonsters(_ int64, s modscript.SpawnSpec) ([]int64, error)
 	if h.spawned == nil {
 		h.spawned = map[int64]uint32{}
 	}
+	if h.labels == nil {
+		h.labels = map[int64]modscript.MonsterLabel{}
+	}
 	ids := make([]int64, s.Amount)
 	for i := range ids {
 		h.nextMonster++
 		ids[i] = h.nextMonster
 		h.spawned[ids[i]] = s.Monster
+		if s.Label != nil {
+			h.labels[ids[i]] = *s.Label
+		}
+	}
+	if s.Map != "" {
+		// Monsters of another map have no handles.
+		return nil, nil
 	}
 	return ids, nil
 }
@@ -507,7 +519,7 @@ func TestRunConvertedNPCs(t *testing.T) {
 				for mapDeaths := 0; len(h.spawned) > 0 && mapDeaths < 10_000; {
 					for _, id := range sortedIDs(h.spawned) {
 						mob := h.spawned[id]
-						delete(h.spawned, id)
+						h.die(id, 1, true)
 						deaths++
 						mapDeaths++
 						rt.FireDeath(modscript.Death{Victim: id, VictimKind: "monster", Monster: int64(mob), Killer: 1, KillerKind: "player"})

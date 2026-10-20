@@ -288,6 +288,11 @@ func (z *Zone) openVending(p *Player, o *wathenav1.VendingOpen) {
 	case z.npcNear(p.entity):
 		fail(wathenav1.VendingOutcome_VENDING_OUTCOME_TOO_CLOSE)
 		return
+	case z.cellMark(p.entity.x, p.entity.y, markNoVending):
+		// clif_parse_OpenVending's CELL_CHKNOVENDING (clif.cpp 14259).
+		p.pending = append(p.pending, systemMessage(msgNoShopCell))
+		fail(wathenav1.VendingOutcome_VENDING_OUTCOME_FAILED)
+		return
 	}
 	mr := z.marketRules()
 	v := &vendShop{title: title}
@@ -663,6 +668,13 @@ func (z *Zone) openBuyingStore(p *Player, o *wathenav1.BuyingStoreOpen) {
 	title := strings.TrimSpace(o.GetTitle())
 	if len(lines) == 0 || p.trade != nil || p.buySetup == 0 || len(lines) > p.buySetup || limit <= 0 || limit > p.record.Zeny ||
 		title == "" || len(o.GetTitle()) > maxStoreTitle || !utf8.ValidString(title) || p.hasStore() || z.npcNear(p.entity) {
+		fail(wathenav1.BuyingStoreOutcome_BUYING_STORE_OUTCOME_FAILED)
+		return
+	}
+	if z.cellMark(p.entity.x, p.entity.y, markNoBuyingStore) {
+		// buyingstore_create's CELL_CHKNOBUYINGSTORE (buyingstore.cpp
+		// 154).
+		p.pending = append(p.pending, systemMessage(msgNoShopCell))
 		fail(wathenav1.BuyingStoreOutcome_BUYING_STORE_OUTCOME_FAILED)
 		return
 	}

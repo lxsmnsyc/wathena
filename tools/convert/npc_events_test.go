@@ -161,13 +161,13 @@ func TestNPCEventsConvert(t *testing.T) {
 		"Mob Test#t":       "",
 		"Day Test#t":       "event onday0101: a yearly schedule (OnDay) is not in the API",
 		"Bad Clock#t":      "event onclock2460: 2460 is not a valid time",
-		"Other Map#t":      "monster: on another map",
-		"Own Name#t":       "monster: a name of its own",
-		"Other NPC#t":      "monster: an event label of another NPC (Someone)",
+		"Other Map#t":      "",
+		"Own Name#t":       "",
+		"Other NPC#t":      "",
 		"Global Label#t":   "monster: a global event label (::OnMyMobDead)",
-		"No Label#t":       "monster: OnGone is not an event label of this NPC",
-		"Big Size#t":       "monster: a size other than the default",
-		"Kill Test#t":      "killmonster: the API cannot remove spawned monsters",
+		"No Label#t":       "",
+		"Big Size#t":       "",
+		"Kill Test#t":      "",
 		"Random Monster#t": "monster: -1 is not a monster, such as a random monster",
 	}
 	for _, n := range res.NPCs {
@@ -176,13 +176,17 @@ func TestNPCEventsConvert(t *testing.T) {
 			t.Errorf("%s: unsupported %q, want %q", n.Source, got, want[n.Source])
 		}
 	}
-	// The labels of other NPCs fail in the monster command, once the
-	// label is not an event of this NPC.
+	// Forms that do not convert (review decision 58, area B8).
 	for _, c := range []struct{ script, want string }{
-		{`{ monster "prontera",0,0,"--ja--",1002,1,"Someone::OnMyMobDead"; end; }`, "an event label of another NPC (Someone)"},
 		{`{ monster "prontera",0,0,"--ja--",1002,1,"::OnMyMobDead"; end; }`, "a global event label (::OnMyMobDead)"},
-		{`{ killmonster "prontera","All"; end; }`, "the API cannot remove spawned monsters"},
-		{`{ mes "" + mobcount("prontera", "all"); end; }`, `"all" is not an event label`},
+		{`{ monster "prontera",0,0,"--ja--",1002,1,"",5; end; }`, "the size 5, which rAthena refuses"},
+		{`{ monster "this",0,0,"--ja--",1002,1; end; }`, "on the attached player's map"},
+		{`{ killmonster "prontera",""; end; }`, "without an event label"},
+		{`{ setmapflag "prontera",mf_pvp; end; }`, "the map flag pvp: PvP is not ported"},
+		{`{ setmapflag "prontera",mf_noteleport; end; }`, "the map flag noteleport: its effect is not built yet"},
+		{`{ setcell "prontera",1,1,2,2,cell_basilica,1; end; }`, "basilica cells"},
+		{`{ warpparty "Leader",0,0,getcharid(1); end; }`, `to "Leader"`},
+		{`{ areawarp "prontera",1,1,2,2,"Random",0,0; end; }`, "to a random cell"},
 	} {
 		c2 := res.conv
 		n := c2.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
@@ -253,13 +257,16 @@ func TestRunNPCEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(rt.Close)
+	instances := map[int64]*modscript.NPC{}
 	start := func(name string) {
 		for i, n := range res.NPCs {
 			if n.Source == name {
 				h.npcs[int64(i+1)] = n
-				if _, err := rt.StartNPC(int64(i+1), "core:"+n.Script); err != nil {
+				in, err := rt.StartNPC(int64(i+1), "core:"+n.Script)
+				if err != nil {
 					t.Fatal(err)
 				}
+				instances[int64(i+1)] = in
 			}
 		}
 	}
@@ -294,8 +301,20 @@ func TestRunNPCEvents(t *testing.T) {
 	}
 	kill := func(id int64) {
 		mob := h.spawned[id]
-		delete(h.spawned, id)
+		h.die(id, 1, true)
 		rt.FireDeath(modscript.Death{Victim: id, VictimKind: "monster", Monster: int64(mob), Killer: 1, KillerKind: "player"})
+		// The label runs after the step, as the zone posts it.
+		queue := h.fired
+		h.fired = nil
+		for _, ev := range queue {
+			conv, _, err := rt.FireNPCEvent(instances[ev.npc], ev.label, ev.player)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if conv != nil && !conv.Done {
+				rt.CloseConversation(conv)
+			}
+		}
 	}
 	// Monster 4 has no label: its death runs nothing.
 	kill(4)

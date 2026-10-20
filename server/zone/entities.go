@@ -18,6 +18,9 @@ type entitySet struct {
 	items int
 	// uids counts the entities ever added, for their uid.
 	uids int64
+	// shared counts the monsters and the monsters of each label, for
+	// other zones (maps.go), or is nil.
+	shared *mapShared
 	// free are slots to reuse. freed are the slots of entities removed
 	// since the last compact.
 	free  []int32
@@ -50,6 +53,12 @@ func (s *entitySet) add(e *entity) {
 	e.uid = s.uids
 	s.list = append(s.list, e)
 	s.count++
+	if m := e.monster; m != nil && s.shared != nil {
+		s.shared.monsters.Add(1)
+		if m.label != nil {
+			s.shared.addLabel(m.label.key, 1)
+		}
+	}
 	if e.item != nil {
 		s.items++
 		if d := e.item.dropper; d != nil {
@@ -67,6 +76,12 @@ func (s *entitySet) remove(e *entity) {
 	s.list[e.idx] = nil
 	e.idx = -1
 	s.count--
+	if m := e.monster; m != nil && s.shared != nil {
+		s.shared.monsters.Add(-1)
+		if m.label != nil {
+			s.shared.addLabel(m.label.key, -1)
+		}
+	}
 	if e.item != nil {
 		s.items--
 		if d := e.item.dropper; d != nil {

@@ -12,4 +12,11 @@ local monsters = {}
 ---@return integer
 function monsters.id(name) end
 
+---The monster's record, as getmonsterinfo (review decision 58), or nil for an unknown monster. Exp is after the server's rates, as rAthena applies them when it loads mob_db.
+---
+---Needs the permission `game.read`.
+---@param monster integer From monsters.id.
+---@return wa.MonsterInfo?
+function monsters.get(monster) end
+
 return monsters

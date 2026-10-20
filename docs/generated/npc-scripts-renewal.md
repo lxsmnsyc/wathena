@@ -10,13 +10,13 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 |---|---:|---:|---:|---:|---:|
 | barter | 114 | 0 | 103 | 6 | 5 |
 | marketshop | 45 | 0 | 45 | 0 | 0 |
-| script | 7067 | 6213 | 6160 | 53 | 854 |
-| script (duplicate) | 7798 | 5955 | 5945 | 10 | 1843 |
+| script | 7067 | 6620 | 6608 | 12 | 447 |
+| script (duplicate) | 7798 | 6280 | 6276 | 4 | 1518 |
 | shop | 300 | 269 | 300 | 0 | 0 |
 | shop (duplicate) | 13 | 13 | 13 | 0 | 0 |
 | Kafras (scripts that call F_Kafra) | 55 | 55 | 55 | 0 | 0 |
 | Dialog NPCs (only talk, menus and emotions) | 3259 | 2582 | 2582 | 0 | 677 |
-| Job change NPCs (script NPCs of the jobs folders) | 710 | 530 | 530 | 0 | 180 |
+| Job change NPCs (script NPCs of the jobs folders) | 710 | 650 | 650 | 0 | 60 |
 
 - Shops that are not placed have no map or no sprite: scripts open them with `callshop`, which converts to `player:open_shop`.
 - cashshop, itemshop, pointshop, marketshop and barter shops become shops with a cost and a stock. Players cannot sell to them, as in rAthena.
@@ -25,7 +25,7 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 - A barter item that is refined, that takes refined items or more than 5 kinds of items, or that the barter sells a second time, does not convert.
 - 0 currencies were added for pointshop variables.
 - Pushcart rental converts: F_KafCart gives the cart with `player:set_cart`.
-- rAthena's getitem and delitem do nothing for an amount of 0 or less, and wAthena's calls raise an error. 0 scripts and functions have a fixed amount of 0 or less, which converts to nothing. 175 have a computed amount, which `R.give_item` and `R.take_item` check first.
+- rAthena's getitem and delitem do nothing for an amount of 0 or less, and wAthena's calls raise an error. 0 scripts and functions have a fixed amount of 0 or less, which converts to nothing. 176 have a computed amount, which `R.give_item` and `R.take_item` check first.
 
 Script NPCs of these folders are not in the extract yet (reference/rathena/README.md, "NPCs"):
 
@@ -46,16 +46,16 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 | Folder | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
 | airports | 63 | 62 | 62 | 0 | 1 |
-| cities | 947 | 922 | 913 | 9 | 25 |
-| events | 150 | 142 | 142 | 0 | 8 |
+| cities | 947 | 923 | 914 | 9 | 24 |
+| events | 150 | 148 | 148 | 0 | 2 |
 | guides | 95 | 92 | 92 | 0 | 3 |
 | guild3 | 10 | 0 | 0 | 0 | 10 |
 | instances | 671 | 4 | 4 | 0 | 667 |
-| jobs | 1804 | 1545 | 1545 | 0 | 259 |
+| jobs | 1804 | 1688 | 1688 | 0 | 116 |
 | kafras | 97 | 97 | 97 | 0 | 0 |
 | merchants | 690 | 463 | 458 | 5 | 227 |
-| other | 3466 | 2917 | 2869 | 48 | 549 |
-| quests | 6622 | 5686 | 5685 | 1 | 936 |
+| other | 3466 | 3062 | 3062 | 0 | 404 |
+| quests | 6622 | 6123 | 6121 | 2 | 499 |
 | warps | 250 | 238 | 238 | 0 | 12 |
 
 ## Touch areas
@@ -64,9 +64,9 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 
 | NPCs | Lines | Placed | With a touch area | With a dialog on touch |
 |---|---:|---:|---:|---:|
-| Scripts with OnTouch or OnTouch_ | 1265 | 1128 | 1065 | 611 |
-| Lines with OnTouch or OnTouch_, duplicates too | 4935 | 4434 | 4332 | 902 |
-| Script NPCs with a warp sprite, duplicates too | 2089 | 1803 | 1614 | 447 |
+| Scripts with OnTouch or OnTouch_ | 1265 | 1212 | 1145 | 623 |
+| Lines with OnTouch or OnTouch_, duplicates too | 4935 | 4650 | 4544 | 944 |
+| Script NPCs with a warp sprite, duplicates too | 2089 | 1871 | 1642 | 461 |
 
 ## Commands
 
@@ -74,228 +74,267 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 
 | Command | Scripts | NPC full | NPC partly | NPC not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| mes | 5486 | 5020 | 53 | 413 | 5486 |  |
-| close | 5070 | 4739 | 53 | 278 | 5070 |  |
-| next | 4472 | 4080 | 53 | 339 | 4472 |  |
-| end | 3538 | 3166 | 1 | 371 | 3538 |  |
-| variables | 3087 | 2703 | 53 | 331 | 3067 | $@3rdgc_room02 is not a valid name (4); $@3rdgc_room01 is not a valid name (3); $111204_avantlabo is not a valid name (2) |
-| select | 2696 | 2411 | 44 | 241 | 2696 |  |
-| close2 | 1389 | 1227 | 0 | 162 | 1389 |  |
-| warp | 1300 | 1243 | 1 | 56 | 1300 |  |
-| countitem | 1260 | 1140 | 43 | 77 | 1260 |  |
-| strcharinfo | 1118 | 1010 | 1 | 107 | 1118 |  |
-| getitem | 1027 | 960 | 2 | 65 | 1027 |  |
-| setquest | 1010 | 874 | 1 | 135 | 1010 |  |
-| event oninit | 1002 | 887 | 1 | 114 | 999 | it waits or shows a dialog, and OnInit runs without a player (3) |
-| delitem | 992 | 931 | 1 | 60 | 992 |  |
-| emotion | 964 | 891 | 1 | 72 | 962 | a game ID other than the attached player's or an NPC's of getnpcid (2) |
-| rand | 938 | 853 | 1 | 84 | 938 |  |
-| callfunc | 920 | 775 | 53 | 92 | 920 |  |
-| checkweight | 902 | 778 | 2 | 122 | 902 |  |
-| isbegin_quest | 817 | 716 | 1 | 100 | 817 |  |
-| erasequest | 812 | 696 | 1 | 115 | 812 |  |
-| getarg | 807 | 683 | 53 | 71 | 799 | outside a function (8) |
-| checkquest | 675 | 592 | 1 | 82 | 668 |  |
-| donpcevent | 656 | 525 | 0 | 131 | 654 | "OnControler1#aru_gd" is not an event label (1); "OnControler1#sch_gd" is not an event label (1) |
-| disablenpc | 641 | 525 | 0 | 116 | 641 |  |
-| cutin | 618 | 532 | 1 | 85 | 618 |  |
-| npctalk | 617 | 512 | 0 | 105 | 613 | an NPC name that is not a string (3); a computed flag (1) |
-| event ontouch_ | 592 | 553 | 0 | 39 | 592 |  |
-| event ontouch | 579 | 574 | 0 | 5 | 579 |  |
-| changequest | 573 | 550 | 0 | 23 | 573 |  |
-| enablenpc | 562 | 448 | 0 | 114 | 562 |  |
-| setarray | 493 | 377 | 44 | 72 | 493 |  |
-| completequest | 472 | 424 | 0 | 48 | 472 |  |
-| event onenable | 444 | 347 | 0 | 97 | 444 |  |
-| initnpctimer | 410 | 294 | 0 | 116 | 407 | a timer attached to the player (2); the timer of another NPC (Perishing blessing society#EP15_1D) (1) |
-| specialeffect | 403 | 367 | 1 | 35 | 399 | an effect that is not a fixed EF_ effect (3) |
-| getexp | 381 | 349 | 1 | 31 | 381 |  |
-| input | 380 | 309 | 42 | 29 | 380 |  |
-| Zeny | 357 | 348 | 1 | 8 | 357 |  |
-| questinfo | 336 | 318 | 1 | 17 | 321 | a computed condition (15) |
+| mes | 5496 | 5138 | 12 | 346 | 5496 |  |
+| close | 5081 | 4841 | 12 | 228 | 5081 |  |
+| next | 4479 | 4187 | 12 | 280 | 4479 |  |
+| end | 3720 | 3560 | 11 | 149 | 3720 |  |
+| variables | 3166 | 2930 | 12 | 224 | 3139 | $@3rdgc_room02 is not a valid name (5); $@3rdgc_room01 is not a valid name (4); $111204_avantlabo is not a valid name (3) |
+| select | 2714 | 2494 | 12 | 208 | 2714 |  |
+| close2 | 1411 | 1265 | 9 | 137 | 1411 |  |
+| warp | 1332 | 1295 | 9 | 28 | 1332 |  |
+| countitem | 1263 | 1198 | 1 | 64 | 1263 |  |
+| strcharinfo | 1134 | 1052 | 1 | 81 | 1134 |  |
+| event oninit | 1065 | 1055 | 2 | 8 | 1062 | it waits or shows a dialog, and OnInit runs without a player (3) |
+| getitem | 1055 | 999 | 3 | 53 | 1055 |  |
+| setquest | 1025 | 902 | 2 | 121 | 1025 |  |
+| delitem | 996 | 944 | 1 | 51 | 996 |  |
+| emotion | 971 | 918 | 0 | 53 | 969 | a game ID other than the attached player's or an NPC's of getnpcid (2) |
+| rand | 955 | 903 | 2 | 50 | 955 |  |
+| callfunc | 920 | 846 | 12 | 62 | 920 |  |
+| checkweight | 902 | 808 | 3 | 91 | 902 |  |
+| isbegin_quest | 822 | 727 | 2 | 93 | 822 |  |
+| erasequest | 818 | 714 | 2 | 102 | 818 |  |
+| getarg | 817 | 741 | 12 | 64 | 809 | outside a function (8) |
+| donpcevent | 798 | 771 | 1 | 26 | 796 | "OnControler1#aru_gd" is not an event label (1); "OnControler1#sch_gd" is not an event label (1) |
+| disablenpc | 698 | 690 | 0 | 8 | 698 |  |
+| checkquest | 676 | 619 | 2 | 55 | 669 |  |
+| event ontouch_ | 627 | 626 | 0 | 1 | 627 |  |
+| cutin | 618 | 537 | 1 | 80 | 618 |  |
+| npctalk | 617 | 537 | 1 | 79 | 613 | an NPC name that is not a string (3); a computed flag (1) |
+| enablenpc | 614 | 602 | 0 | 12 | 614 |  |
+| event ontouch | 590 | 585 | 0 | 5 | 590 |  |
+| changequest | 580 | 565 | 0 | 15 | 580 |  |
+| event onenable | 567 | 559 | 0 | 8 | 567 |  |
+| setarray | 502 | 450 | 3 | 49 | 502 |  |
+| completequest | 478 | 432 | 1 | 45 | 478 |  |
+| initnpctimer | 469 | 451 | 0 | 18 | 465 | a timer attached to the player (2); the timer of another NPC (Perishing blessing society#EP15_1D) (2) |
+| stopnpctimer | 423 | 413 | 0 | 10 | 422 | the timer of another NPC (Guardian Nidhogg#143nyd01) (1) |
+| specialeffect | 410 | 385 | 1 | 24 | 406 | an effect that is not a fixed EF_ effect (3) |
+| getexp | 395 | 365 | 2 | 28 | 395 |  |
+| input | 380 | 356 | 0 | 24 | 380 |  |
+| Zeny | 358 | 349 | 1 | 8 | 358 |  |
+| questinfo | 350 | 330 | 2 | 18 | 334 | a computed condition (16) |
+| event ondisable | 326 | 322 | 0 | 4 | 326 |  |
 | close3 | 321 | 290 | 1 | 30 | 321 |  |
-| stopnpctimer | 320 | 258 | 0 | 62 | 319 | the timer of another NPC (Guardian Nidhogg#143nyd01) (1) |
-| specialeffect2 | 317 | 291 | 0 | 26 | 317 |  |
-| getitemname | 260 | 241 | 1 | 18 | 260 |  |
-| strnpcinfo | 259 | 194 | 1 | 64 | 259 |  |
-| callsub | 247 | 221 | 1 | 25 | 247 |  |
-| cloakoffnpcself | 239 | 183 | 0 | 56 | 239 |  |
-| event ondisable | 223 | 170 | 0 | 53 | 223 |  |
-| cloakonnpcself | 222 | 174 | 0 | 48 | 222 |  |
-| monster | 206 | 8 | 0 | 198 | 78 | on another map (63); a name of its own (62); a computed name (3) |
+| specialeffect2 | 321 | 300 | 0 | 21 | 321 |  |
+| monster | 311 | 300 | 0 | 11 | 310 | OnMyMobDead is not an event label of this NPC (1) |
+| event onmymobdead | 277 | 271 | 0 | 6 | 277 |  |
+| killmonster | 268 | 261 | 0 | 7 | 268 |  |
+| mapannounce | 266 | 261 | 0 | 5 | 266 |  |
+| strnpcinfo | 264 | 224 | 0 | 40 | 264 |  |
+| getitemname | 262 | 247 | 1 | 14 | 262 |  |
+| callsub | 249 | 226 | 2 | 21 | 249 |  |
+| cloakoffnpcself | 240 | 187 | 0 | 53 | 240 |  |
+| cloakonnpcself | 222 | 178 | 0 | 44 | 222 |  |
+| percentheal | 205 | 203 | 0 | 2 | 205 |  |
 | isequipped | 203 | 202 | 0 | 1 | 203 |  |
-| percentheal | 202 | 195 | 0 | 7 | 202 |  |
-| checkre | 193 | 180 | 0 | 13 | 193 |  |
-| getargcount | 190 | 106 | 52 | 32 | 190 |  |
-| mapannounce | 183 | 135 | 0 | 48 | 183 |  |
-| sleep2 | 183 | 152 | 0 | 31 | 183 |  |
-| killmonster | 154 | 0 | 0 | 154 | 0 | the API cannot remove spawned monsters (154) |
-| logmes | 145 | 127 | 0 | 18 | 145 |  |
-| viewpoint | 143 | 136 | 0 | 7 | 143 |  |
+| checkre | 194 | 192 | 0 | 2 | 194 |  |
+| getargcount | 190 | 150 | 11 | 29 | 190 |  |
+| sleep2 | 184 | 156 | 1 | 27 | 184 |  |
+| event onreset | 179 | 173 | 0 | 6 | 179 |  |
+| viewpoint | 153 | 137 | 9 | 7 | 153 |  |
+| logmes | 145 | 129 | 0 | 16 | 145 |  |
 | progressbar | 133 | 120 | 0 | 13 | 133 |  |
-| getskilllv | 131 | 128 | 0 | 3 | 131 |  |
+| getarraysize | 131 | 106 | 9 | 16 | 126 | not of a variable (5) |
+| getskilllv | 131 | 129 | 0 | 2 | 131 |  |
+| mobcount | 129 | 122 | 0 | 7 | 129 |  |
 | consumeitem | 121 | 119 | 0 | 2 | 121 |  |
 | disable_items | 118 | 85 | 1 | 32 | 118 |  |
-| getarraysize | 117 | 90 | 0 | 27 | 113 | not of a variable (4) |
 | set | 116 | 113 | 0 | 3 | 114 | on getarg, a reference argument that is not an array element (1) |
+| unittalk | 113 | 89 | 0 | 24 | 105 | a game ID other than the attached player's or an NPC's of getnpcid (8) |
 | cloakonnpc | 112 | 107 | 0 | 5 | 112 |  |
-| unittalk | 112 | 86 | 0 | 26 | 104 | a game ID other than the attached player's or an NPC's of getnpcid (8) |
-| savepoint | 102 | 101 | 0 | 1 | 102 |  |
-| setpcblock | 92 | 77 | 0 | 15 | 92 |  |
-| compare | 82 | 53 | 0 | 29 | 82 |  |
-| getmapxy | 78 | 48 | 0 | 30 | 77 | of another unit by name or game ID (1) |
-| hideonnpc | 78 | 60 | 0 | 18 | 78 |  |
+| savepoint | 102 | 102 | 0 | 0 | 102 |  |
+| event ontimer3000 | 95 | 93 | 0 | 2 | 95 |  |
+| hideonnpc | 92 | 83 | 0 | 9 | 92 |  |
+| setpcblock | 92 | 79 | 1 | 12 | 92 |  |
+| event ontimer60000 | 87 | 85 | 0 | 2 | 87 |  |
+| compare | 83 | 75 | 0 | 8 | 83 |  |
+| event ontimer1000 | 80 | 78 | 0 | 2 | 80 |  |
+| getmapxy | 78 | 55 | 0 | 23 | 77 | of another unit by name or game ID (1) |
 | basicskillcheck | 75 | 74 | 0 | 1 | 75 |  |
+| event oncommandon | 74 | 70 | 0 | 4 | 74 |  |
 | callshop | 73 | 55 | 0 | 18 | 63 | a computed shop (5); Pet_Items is not a shop (1); the shop barter_ill_frozen does not convert (1) |
+| event ontimer2000 | 73 | 73 | 0 | 0 | 73 |  |
 | navigateto | 73 | 0 | 0 | 73 | 0 |  |
-| getequipid | 71 | 53 | 0 | 18 | 71 |  |
-| event oncommandon | 70 | 56 | 0 | 14 | 70 |  |
+| getequipid | 71 | 55 | 0 | 16 | 71 |  |
+| event ontimer5000 | 70 | 69 | 0 | 1 | 70 |  |
 | openstorage | 68 | 68 | 0 | 0 | 68 |  |
-| event ontimer3000 | 67 | 53 | 0 | 14 | 67 |  |
-| substr | 67 | 40 | 0 | 27 | 67 |  |
-| getgmlevel | 65 | 48 | 0 | 17 | 65 |  |
+| substr | 67 | 62 | 0 | 5 | 67 |  |
+| getgmlevel | 65 | 50 | 0 | 15 | 65 |  |
+| mapwarp | 64 | 60 | 0 | 4 | 64 |  |
 | checkcart | 63 | 63 | 0 | 0 | 63 |  |
 | implode | 63 | 63 | 0 | 0 | 63 |  |
+| hideoffnpc | 62 | 58 | 0 | 4 | 62 |  |
+| event ontimer300000 | 61 | 61 | 0 | 0 | 61 |  |
+| event ontimer30000 | 59 | 59 | 0 | 0 | 59 |  |
 | setcart | 59 | 59 | 0 | 0 | 59 |  |
-| event ontimer60000 | 58 | 55 | 0 | 3 | 58 |  |
 | dispbottom | 57 | 57 | 0 | 0 | 57 |  |
-| sc_start | 57 | 53 | 0 | 4 | 57 |  |
-| getmonsterinfo | 56 | 0 | 42 | 14 | 0 |  |
-| getguildname | 55 | 53 | 0 | 2 | 55 |  |
-| jobchange | 55 | 52 | 0 | 3 | 55 |  |
-| atoi | 54 | 41 | 0 | 13 | 54 |  |
-| eaclass | 54 | 48 | 0 | 6 | 54 |  |
+| sc_start | 57 | 55 | 0 | 2 | 57 |  |
+| atoi | 56 | 44 | 0 | 12 | 56 |  |
+| getmonsterinfo | 56 | 55 | 0 | 1 | 56 |  |
+| jobchange | 56 | 53 | 0 | 3 | 56 |  |
+| eaclass | 55 | 49 | 0 | 6 | 55 |  |
+| getguildname | 55 | 55 | 0 | 0 | 55 |  |
 | unknown_d | 54 | 54 | 0 | 0 | 54 |  |
-| hideoffnpc | 53 | 43 | 0 | 10 | 53 |  |
-| charat | 52 | 39 | 1 | 12 | 52 |  |
+| charat | 53 | 49 | 0 | 4 | 53 |  |
 | guildopenstorage | 52 | 52 | 0 | 0 | 52 |  |
-| event ontimer1000 | 49 | 42 | 0 | 7 | 49 |  |
-| event ontimer30000 | 49 | 44 | 0 | 5 | 49 |  |
-| event ontimer5000 | 47 | 36 | 0 | 11 | 47 |  |
-| getcharid | 47 | 19 | 0 | 28 | 43 | battlegrounds, clans and other IDs (4) |
-| getstrlen | 45 | 32 | 0 | 13 | 45 |  |
+| event ontimer120000 | 47 | 47 | 0 | 0 | 47 |  |
+| getcharid | 47 | 20 | 0 | 27 | 43 | battlegrounds, clans and other IDs (4) |
+| getstrlen | 45 | 38 | 0 | 7 | 45 |  |
+| event ontimer4000 | 44 | 43 | 0 | 1 | 44 |  |
+| event onstart | 42 | 42 | 0 | 0 | 42 |  |
+| gettime | 42 | 40 | 0 | 2 | 42 |  |
 | setunittitle | 42 | 42 | 0 | 0 | 42 |  |
-| event ontimer2000 | 41 | 30 | 0 | 11 | 41 |  |
-| mapwarp | 41 | 0 | 0 | 41 | 0 |  |
 | skill | 41 | 39 | 0 | 2 | 40 | a computed skill (1) |
+| event onstop | 40 | 38 | 0 | 2 | 40 |  |
 | event oncommandoff | 38 | 38 | 0 | 0 | 38 |  |
-| gettime | 38 | 31 | 0 | 7 | 38 |  |
-| setnpctimer | 37 | 36 | 0 | 1 | 36 | the timer of another NPC (Summoner#gnp) (1) |
+| event ontimer10000 | 38 | 37 | 0 | 1 | 38 |  |
+| setnpctimer | 38 | 37 | 0 | 1 | 37 | the timer of another NPC (Summoner#gnp) (1) |
 | startnpctimer | 37 | 37 | 0 | 0 | 37 |  |
-| f_infoboard | 36 | 0 | 36 | 0 | 36 |  |
+| f_infoboard | 36 | 36 | 0 | 0 | 36 |  |
+| getd | 36 | 20 | 9 | 7 | 20 | a computed name of a .@ or . variable, which are Lua locals (4); a name that does not start with fixed text (2); a name whose fixed start does not fix its scope (1) |
 | getequiprefinerycnt | 36 | 26 | 0 | 10 | 36 |  |
+| killmonsterall | 36 | 35 | 0 | 1 | 36 |  |
 | soundeffect | 36 | 34 | 0 | 2 | 34 | a computed file (1); the file "effect\\¼®¾çÀÇ ¾î½Ø½Å.wav" (1) |
-| event onstart | 34 | 20 | 0 | 14 | 34 |  |
+| event ontimer180000 | 35 | 35 | 0 | 0 | 35 |  |
+| npcskill | 35 | 34 | 0 | 1 | 35 |  |
+| event ontimer8000 | 34 | 34 | 0 | 0 | 34 |  |
 | f_navi | 34 | 32 | 0 | 2 | 34 |  |
-| setnpcdisplay | 34 | 17 | 0 | 17 | 34 |  |
-| event onstop | 33 | 23 | 0 | 10 | 33 |  |
-| event ontimer20000 | 33 | 26 | 0 | 7 | 33 |  |
+| getmapusers | 34 | 17 | 9 | 8 | 34 |  |
+| setnpcdisplay | 34 | 32 | 0 | 2 | 34 |  |
+| event ontimer20000 | 33 | 32 | 0 | 1 | 33 |  |
 | getequipcardid | 33 | 24 | 0 | 9 | 33 |  |
-| getmapusers | 33 | 0 | 9 | 24 | 0 |  |
-| mobcount | 33 | 4 | 0 | 29 | 27 | an event label of another NPC (Zeith#frozen02) (2); an event label of another NPC (ill_vampire_spawn_dracula) (2); a computed event label (1) |
-| npcskill | 33 | 32 | 0 | 1 | 33 |  |
 | waitingroom | 33 | 0 | 0 | 33 | 0 |  |
 | cloakoffnpc | 32 | 31 | 0 | 1 | 32 |  |
-| event ontimer10000 | 31 | 28 | 0 | 3 | 31 |  |
-| event ontimer4000 | 31 | 18 | 0 | 13 | 31 |  |
+| areamonster | 31 | 30 | 0 | 1 | 31 |  |
 | getitem2 | 31 | 30 | 0 | 1 | 31 |  |
 | deletearray | 29 | 28 | 0 | 1 | 29 |  |
-| event ontimer8000 | 29 | 19 | 0 | 10 | 29 |  |
+| event ontimer7000 | 29 | 28 | 0 | 1 | 29 |  |
 | mesitemlink | 29 | 17 | 0 | 12 | 20 | without brackets or with a name of its own (5); arguments (4) |
+| event ontimer240000 | 28 | 26 | 0 | 2 | 28 |  |
+| setd | 27 | 14 | 9 | 4 | 15 | a name that does not start with fixed text (3) |
 | delequip | 26 | 25 | 0 | 1 | 26 |  |
-| ismounting | 26 | 24 | 0 | 2 | 26 |  |
+| ismounting | 26 | 25 | 0 | 1 | 26 |  |
+| event ontimer6000 | 25 | 24 | 0 | 1 | 25 |  |
+| event ontouchnpc | 25 | 25 | 0 | 0 | 25 |  |
 | getequipisequiped | 25 | 19 | 0 | 6 | 25 |  |
 | getiteminfo | 25 | 19 | 1 | 5 | 25 |  |
-| areamonster | 24 | 0 | 0 | 24 | 0 |  |
-| event ontouchnpc | 23 | 23 | 0 | 0 | 23 |  |
-| getd | 23 | 15 | 0 | 8 | 16 | a computed name of a .@ or . variable, which are Lua locals (4); a name that does not start with fixed text (2); a name whose fixed start does not fix its scope (1) |
-| setunitdata | 23 | 17 | 0 | 6 | 18 | a type other than UNPC_CLASS, UNPC_SEX and the UNPC_ looks (5) |
-| event ontimer300000 | 22 | 18 | 0 | 4 | 22 |  |
-| event ontimer7000 | 22 | 19 | 0 | 3 | 22 |  |
+| setunitdata | 25 | 18 | 0 | 7 | 19 | a type other than UNPC_CLASS, UNPC_SEX and the UNPC_ looks (5); a game ID other than the attached player's or an NPC's of getnpcid (1) |
+| function | 24 | 23 | 0 | 1 | 24 |  |
+| makeitem | 23 | 22 | 0 | 1 | 23 |  |
+| areawarp | 22 | 22 | 0 | 0 | 22 |  |
+| event ontimer15000 | 22 | 21 | 0 | 1 | 22 |  |
+| event ontimer40000 | 22 | 21 | 0 | 1 | 22 |  |
 | getpartnerid | 22 | 0 | 0 | 22 | 0 |  |
-| killmonsterall | 22 | 0 | 0 | 22 | 0 |  |
-| makeitem | 22 | 21 | 0 | 1 | 22 |  |
-| setd | 22 | 8 | 9 | 5 | 10 | a name that does not start with fixed text (3) |
-| event ontimer120000 | 21 | 19 | 0 | 2 | 21 |  |
-| event ontimer15000 | 21 | 15 | 0 | 6 | 21 |  |
-| event ontimer40000 | 21 | 15 | 0 | 6 | 21 |  |
+| getvariableofnpc | 22 | 21 | 0 | 1 | 22 |  |
 | goto | 21 | 10 | 0 | 11 | 18 | l_key is in another part of the script (1); l_mes is in another part of the script (1); ontalk is in another part of the script (1) |
 | replacestr | 21 | 14 | 0 | 7 | 21 |  |
 | getequipname | 20 | 11 | 0 | 9 | 20 |  |
-| event ontimer6000 | 19 | 13 | 0 | 6 | 19 |  |
-| function | 19 | 16 | 0 | 3 | 19 |  |
+| soundeffectall | 20 | 20 | 0 | 0 | 20 |  |
+| event ontimer50000 | 19 | 19 | 0 | 0 | 19 |  |
+| event ontimer600000 | 19 | 19 | 0 | 0 | 19 |  |
+| sleep | 19 | 14 | 1 | 4 | 19 |  |
 | event onbingo | 18 | 18 | 0 | 0 | 18 |  |
 | unitwarp | 18 | 18 | 0 | 0 | 18 |  |
+| announce | 17 | 17 | 0 | 0 | 17 |  |
 | is_party_leader | 17 | 6 | 0 | 11 | 17 |  |
-| soundeffectall | 17 | 16 | 0 | 1 | 17 |  |
-| announce | 16 | 12 | 0 | 4 | 16 |  |
-| event ontimer240000 | 16 | 13 | 0 | 3 | 16 |  |
+| event onenter | 16 | 16 | 0 | 0 | 16 |  |
+| event ontimer12000 | 16 | 15 | 0 | 1 | 16 |  |
+| event ontimer300002 | 16 | 16 | 0 | 0 | 16 |  |
 | getbattleflag | 16 | 1 | 0 | 15 | 16 |  |
 | getbrokenid | 16 | 16 | 0 | 0 | 16 |  |
-| getvariableofnpc | 16 | 14 | 0 | 2 | 16 |  |
+| gettimetick | 16 | 15 | 0 | 1 | 16 |  |
 | sc_end | 16 | 16 | 0 | 0 | 16 |  |
+| sprintf | 16 | 14 | 0 | 2 | 15 | %s of a value that is not a string (1) |
 | checkriding | 15 | 14 | 0 | 1 | 15 |  |
-| event onmymobdead | 15 | 10 | 0 | 5 | 15 |  |
-| event ontimer50000 | 15 | 11 | 0 | 4 | 15 |  |
+| event ontimer63000 | 15 | 15 | 0 | 0 | 15 |  |
+| event ontimer9000 | 15 | 14 | 0 | 1 | 15 |  |
 | kick_mob | 15 | 15 | 0 | 0 | 15 |  |
-| sleep | 15 | 10 | 0 | 5 | 15 |  |
-| sprintf | 15 | 13 | 0 | 2 | 14 | %s of a value that is not a string (1) |
 | achievementinfo | 14 | 0 | 0 | 14 | 0 |  |
-| event onenter | 14 | 13 | 0 | 1 | 14 |  |
-| event ontimer180000 | 14 | 12 | 0 | 2 | 14 |  |
-| gettimetick | 14 | 10 | 0 | 4 | 14 |  |
-| nude | 14 | 10 | 0 | 4 | 14 |  |
+| nude | 14 | 11 | 0 | 3 | 14 |  |
 | progressbar_npc | 14 | 11 | 0 | 3 | 14 |  |
 | repair | 14 | 14 | 0 | 0 | 14 |  |
-| event onreset | 13 | 13 | 0 | 0 | 13 |  |
+| roclass | 14 | 13 | 0 | 1 | 14 |  |
+| event ontimer11000 | 13 | 13 | 0 | 0 | 13 |  |
 | event ontimer22500 | 13 | 13 | 0 | 0 | 13 |  |
+| event ontimer25000 | 13 | 13 | 0 | 0 | 13 |  |
 | explode | 13 | 12 | 0 | 1 | 13 |  |
-| roclass | 13 | 12 | 0 | 1 | 13 |  |
-| areawarp | 12 | 0 | 0 | 12 | 0 |  |
-| event ontimer12000 | 12 | 6 | 0 | 6 | 12 |  |
-| event ontimer35000 | 12 | 8 | 0 | 4 | 12 |  |
-| event ontimer45000 | 11 | 7 | 0 | 4 | 11 |  |
+| event onend | 12 | 12 | 0 | 0 | 12 |  |
+| event ontimer123000 | 12 | 12 | 0 | 0 | 12 |  |
+| event ontimer13000 | 12 | 11 | 0 | 1 | 12 |  |
+| event ontimer35000 | 12 | 12 | 0 | 0 | 12 |  |
+| event oncall | 11 | 11 | 0 | 0 | 11 |  |
+| event ontimer150000 | 11 | 11 | 0 | 0 | 11 |  |
+| event ontimer33000 | 11 | 11 | 0 | 0 | 11 |  |
+| event ontimer360000 | 11 | 10 | 0 | 1 | 11 |  |
+| event ontimer45000 | 11 | 11 | 0 | 0 | 11 |  |
 | setriding | 11 | 10 | 0 | 1 | 11 |  |
-| event ontimer11000 | 10 | 4 | 0 | 6 | 10 |  |
-| event ontimer150000 | 10 | 9 | 0 | 1 | 10 |  |
-| event ontimer25000 | 10 | 6 | 0 | 4 | 10 |  |
-| event ontimer9000 | 10 | 6 | 0 | 4 | 10 |  |
-| add_reputation_points | 9 | 0 | 0 | 9 | 0 |  |
+| add_reputation_points | 10 | 0 | 0 | 10 | 0 |  |
+| event onkill | 10 | 10 | 0 | 0 | 10 |  |
+| event ontimer3600000 | 10 | 10 | 0 | 0 | 10 |  |
+| event ontimer420000 | 10 | 10 | 0 | 0 | 10 |  |
+| event ontimer80000 | 10 | 10 | 0 | 0 | 10 |  |
+| event ontimer90000 | 10 | 10 | 0 | 0 | 10 |  |
 | countstr | 9 | 9 | 0 | 0 | 9 |  |
 | delchar | 9 | 9 | 0 | 0 | 9 |  |
-| event ontimer80000 | 9 | 5 | 0 | 4 | 9 |  |
+| event ontimer100000 | 9 | 9 | 0 | 0 | 9 |  |
+| event ontimer70000 | 9 | 9 | 0 | 0 | 9 |  |
 | getcastledata | 9 | 0 | 0 | 9 | 0 | castles, sieges and guardians are not in the API yet (9) |
 | getmercinfo | 9 | 0 | 0 | 9 | 0 |  |
 | instance_create | 9 | 0 | 0 | 9 | 0 |  |
 | questinfo_refresh | 9 | 6 | 0 | 3 | 9 |  |
 | refineui | 9 | 0 | 0 | 9 | 0 |  |
+| setcell | 9 | 6 | 0 | 3 | 6 | ice_wall cells: wAthena's Ice Wall keeps no cell flag (3) |
 | strtoupper | 9 | 9 | 0 | 0 | 9 |  |
+| assignment | 8 | 0 | 0 | 8 | 0 |  |
+| assignment in an expression | 8 | 0 | 0 | 8 | 0 |  |
+| event on04_start | 8 | 8 | 0 | 0 | 8 |  |
 | event onstop_timer | 8 | 8 | 0 | 0 | 8 |  |
-| event ontimer100000 | 8 | 6 | 0 | 2 | 8 |  |
-| event ontimer13000 | 8 | 5 | 0 | 3 | 8 |  |
-| event ontimer16000 | 8 | 4 | 0 | 4 | 8 |  |
-| event ontimer600000 | 8 | 8 | 0 | 0 | 8 |  |
-| event ontimer90000 | 8 | 6 | 0 | 2 | 8 |  |
+| event ontimer110000 | 8 | 8 | 0 | 0 | 8 |  |
+| event ontimer16000 | 8 | 8 | 0 | 0 | 8 |  |
+| event ontimer18000 | 8 | 8 | 0 | 0 | 8 |  |
+| event ontimer183000 | 8 | 8 | 0 | 0 | 8 |  |
+| event ontimer184000 | 8 | 8 | 0 | 0 | 8 |  |
+| event ontimer480000 | 8 | 8 | 0 | 0 | 8 |  |
+| event ontimer65000 | 8 | 8 | 0 | 0 | 8 |  |
+| event ontimer93000 | 8 | 8 | 0 | 0 | 8 |  |
 | f_sealfail | 8 | 8 | 0 | 0 | 8 |  |
 | getequipisenableref | 8 | 4 | 0 | 4 | 8 |  |
 | insertchar | 8 | 4 | 0 | 4 | 8 |  |
-| open_quest_ui | 8 | 1 | 0 | 7 | 3 | a computed quest (5) |
+| open_quest_ui | 8 | 3 | 0 | 5 | 3 | a computed quest (5) |
 | weightbigquest | 8 | 8 | 0 | 0 | 8 |  |
-| assignment | 7 | 0 | 0 | 7 | 0 |  |
-| assignment in an expression | 7 | 0 | 0 | 7 | 0 |  |
 | checkdragon | 7 | 6 | 0 | 1 | 7 |  |
 | doevent | 7 | 6 | 0 | 1 | 6 | the NPC Elder Sanyul#illusion_moonlight is not in the extract (1) |
+| event on01_end | 7 | 7 | 0 | 0 | 7 |  |
+| event on02_end | 7 | 7 | 0 | 0 | 7 |  |
+| event on03_end | 7 | 7 | 0 | 0 | 7 |  |
+| event on06_start | 7 | 7 | 0 | 0 | 7 |  |
+| event on07_end | 7 | 7 | 0 | 0 | 7 |  |
+| event on07_start | 7 | 7 | 0 | 0 | 7 |  |
+| event on08_start | 7 | 7 | 0 | 0 | 7 |  |
+| event on09_end | 7 | 7 | 0 | 0 | 7 |  |
+| event on09_start | 7 | 7 | 0 | 0 | 7 |  |
+| event ondead | 7 | 7 | 0 | 0 | 7 |  |
 | event onomg | 7 | 7 | 0 | 0 | 7 |  |
-| event ontimer110000 | 7 | 5 | 0 | 2 | 7 |  |
-| event ontimer18000 | 7 | 5 | 0 | 2 | 7 |  |
-| event ontimer23000 | 7 | 5 | 0 | 2 | 7 |  |
-| event ontimer3600000 | 7 | 6 | 0 | 1 | 7 |  |
-| event ontimer70000 | 7 | 5 | 0 | 2 | 7 |  |
+| event ontimer185000 | 7 | 7 | 0 | 0 | 7 |  |
+| event ontimer210000 | 7 | 7 | 0 | 0 | 7 |  |
+| event ontimer23000 | 7 | 7 | 0 | 0 | 7 |  |
+| event ontimer24000 | 7 | 7 | 0 | 0 | 7 |  |
+| event ontimer55000 | 7 | 7 | 0 | 0 | 7 |  |
+| event ontimeroff | 7 | 7 | 0 | 0 | 7 |  |
 | getequiprefinecost | 7 | 2 | 0 | 5 | 3 | a cost other than REFINE_COST_NORMAL, which the refine data lacks (4) |
 | openstylist | 7 | 0 | 0 | 7 | 0 |  |
 | setdragon | 7 | 6 | 0 | 1 | 7 |  |
 | copyarray | 6 | 3 | 0 | 3 | 6 |  |
-| event onend | 6 | 4 | 0 | 2 | 6 |  |
+| event on01_start | 6 | 6 | 0 | 0 | 6 |  |
+| event on02_start | 6 | 6 | 0 | 0 | 6 |  |
+| event on03_start | 6 | 6 | 0 | 0 | 6 |  |
+| event on05_end | 6 | 6 | 0 | 0 | 6 |  |
+| event on05_start | 6 | 6 | 0 | 0 | 6 |  |
+| event on06_end | 6 | 6 | 0 | 0 | 6 |  |
+| event onfailclearstage | 6 | 6 | 0 | 0 | 6 |  |
+| event onon2 | 6 | 6 | 0 | 0 | 6 |  |
+| event onout | 6 | 6 | 0 | 0 | 6 |  |
 | event onreset_01 | 6 | 6 | 0 | 0 | 6 |  |
 | event onreset_02 | 6 | 6 | 0 | 0 | 6 |  |
 | event onreset_03 | 6 | 6 | 0 | 0 | 6 |  |
@@ -305,34 +344,54 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onreset_07 | 6 | 6 | 0 | 0 | 6 |  |
 | event onreset_08 | 6 | 6 | 0 | 0 | 6 |  |
 | event onreset_09 | 6 | 6 | 0 | 0 | 6 |  |
-| event ontimer17000 | 6 | 3 | 0 | 3 | 6 |  |
-| event ontimer210000 | 6 | 5 | 0 | 1 | 6 |  |
-| event ontimer24000 | 6 | 3 | 0 | 3 | 6 |  |
+| event ontimer130000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer14000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer153000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer17000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer173000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer1800000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer181000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer182000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer186000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer243000 | 6 | 4 | 0 | 2 | 6 |  |
+| event ontimer303000 | 6 | 6 | 0 | 0 | 6 |  |
+| event ontimer61000 | 6 | 5 | 0 | 1 | 6 |  |
+| event ontimer85000 | 6 | 6 | 0 | 0 | 6 |  |
 | event onup | 6 | 6 | 0 | 0 | 6 |  |
 | getpartyname | 6 | 2 | 0 | 4 | 6 |  |
 | getstatus | 6 | 5 | 0 | 1 | 6 |  |
-| is_guild_leader | 6 | 4 | 0 | 2 | 6 |  |
+| is_guild_leader | 6 | 6 | 0 | 0 | 6 |  |
 | labels | 6 | 0 | 0 | 6 | 0 | l_askquestions: a label inside a block, which a jump from outside the block reaches (1); l_jobchange: a label inside a block, which a jump from outside the block reaches (1); l_mission: a label inside a block, which a jump from outside the block reaches (1) |
 | playbgm | 6 | 3 | 0 | 3 | 6 |  |
 | pranksterdiag | 6 | 6 | 0 | 0 | 6 |  |
 | que_dic | 6 | 6 | 0 | 0 | 6 |  |
 | sscanf | 6 | 0 | 0 | 6 | 0 |  |
 | checkfalcon | 5 | 5 | 0 | 0 | 5 |  |
+| event on04_end | 5 | 5 | 0 | 0 | 5 |  |
 | event onnomal1 | 5 | 5 | 0 | 0 | 5 |  |
 | event onnomal2 | 5 | 5 | 0 | 0 | 5 |  |
+| event onon1 | 5 | 5 | 0 | 0 | 5 |  |
 | event onsmile | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimeover1 | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimeover2 | 5 | 5 | 0 | 0 | 5 |  |
-| event ontimer130000 | 5 | 4 | 0 | 1 | 5 |  |
-| event ontimer14000 | 5 | 3 | 0 | 2 | 5 |  |
+| event ontimer105000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer1200000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer122000 | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimer1500 | 5 | 5 | 0 | 0 | 5 |  |
-| event ontimer19000 | 5 | 4 | 0 | 1 | 5 |  |
+| event ontimer19000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer200000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer21000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer220000 | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimer230000 | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimer2500 | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimer27000 | 5 | 5 | 0 | 0 | 5 |  |
-| event ontimer34000 | 5 | 3 | 0 | 2 | 5 |  |
+| event ontimer34000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer36000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer43000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer48000 | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimer500 | 5 | 5 | 0 | 0 | 5 |  |
-| event ontimer55000 | 5 | 2 | 0 | 3 | 5 |  |
+| event ontimer58000 | 5 | 5 | 0 | 0 | 5 |  |
+| event ontimer75000 | 5 | 5 | 0 | 0 | 5 |  |
 | excavator_part2 | 5 | 5 | 0 | 0 | 5 |  |
 | getequippercentrefinery | 5 | 4 | 0 | 1 | 4 | the enriched chance, which the refine data lacks (1) |
 | getequipweaponlv | 5 | 3 | 0 | 2 | 5 |  |
@@ -344,60 +403,102 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | check_sauce | 4 | 4 | 0 | 0 | 4 |  |
 | checkburglary | 4 | 4 | 0 | 0 | 4 |  |
 | event onreset_all | 4 | 4 | 0 | 0 | 4 |  |
-| event ontimer140000 | 4 | 2 | 0 | 2 | 4 |  |
-| event ontimer1800000 | 4 | 3 | 0 | 1 | 4 |  |
+| event onsummonmob_05 | 4 | 4 | 0 | 0 | 4 |  |
+| event onsummonmob_09 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer113000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer121000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer125000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer127000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer134000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer140000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer143000 | 4 | 4 | 0 | 0 | 4 |  |
 | event ontimer190000 | 4 | 4 | 0 | 0 | 4 |  |
-| event ontimer200000 | 4 | 1 | 0 | 3 | 4 |  |
-| event ontimer21000 | 4 | 3 | 0 | 1 | 4 |  |
-| event ontimer28000 | 4 | 2 | 0 | 2 | 4 |  |
-| event ontimer32000 | 4 | 1 | 0 | 3 | 4 |  |
-| event ontimer33000 | 4 | 3 | 0 | 1 | 4 |  |
-| event ontimer345000 | 4 | 1 | 0 | 3 | 4 |  |
-| event ontimer36000 | 4 | 1 | 0 | 3 | 4 |  |
-| event ontimer38000 | 4 | 2 | 0 | 2 | 4 |  |
-| event ontimer43000 | 4 | 3 | 0 | 1 | 4 |  |
-| event ontimer44000 | 4 | 2 | 0 | 2 | 4 |  |
+| event ontimer2400000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer270000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer28000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer305000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer308000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer32000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer345000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer37000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer370000 | 4 | 3 | 0 | 1 | 4 |  |
+| event ontimer38000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer44000 | 4 | 4 | 0 | 0 | 4 |  |
 | event ontimer47000 | 4 | 4 | 0 | 0 | 4 |  |
-| event ontimer48000 | 4 | 2 | 0 | 2 | 4 |  |
-| event ontimer65000 | 4 | 2 | 0 | 2 | 4 |  |
-| event ontimer75000 | 4 | 2 | 0 | 2 | 4 |  |
+| event ontimer487000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer490000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer492000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer53000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer603000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer62000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer7200000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer900000 | 4 | 4 | 0 | 0 | 4 |  |
 | getexp2 | 4 | 4 | 0 | 0 | 4 |  |
 | getgroupitem | 4 | 3 | 0 | 1 | 3 | a computed group (1) |
 | getnameditem | 4 | 4 | 0 | 0 | 4 |  |
 | isequippedcnt | 4 | 0 | 0 | 4 | 0 |  |
 | item_enchant | 4 | 0 | 0 | 4 | 0 |  |
 | item_reform | 4 | 0 | 0 | 4 | 0 |  |
-| npcspeed | 4 | 2 | 0 | 2 | 4 |  |
+| npcspeed | 4 | 2 | 1 | 1 | 4 |  |
 | readbook | 4 | 3 | 0 | 1 | 4 |  |
 | removespecialeffect | 4 | 1 | 0 | 3 | 2 | a send target other than AREA (1); an effect that is not a fixed EF_ effect (1) |
-| setcell | 4 | 0 | 0 | 4 | 0 |  |
 | successrefitem | 4 | 4 | 0 | 0 | 4 |  |
 | 171_worker_talk | 3 | 2 | 0 | 1 | 3 |  |
+| cell | 3 | 3 | 0 | 0 | 3 |  |
 | checkmadogear | 3 | 3 | 0 | 0 | 3 |  |
 | eclageinentrance | 3 | 3 | 0 | 0 | 3 |  |
-| event oncall | 3 | 0 | 0 | 3 | 3 |  |
 | event oneventon | 3 | 3 | 0 | 0 | 3 |  |
 | event onhide | 3 | 3 | 0 | 0 | 3 |  |
-| event ontimer105000 | 3 | 1 | 0 | 2 | 3 |  |
-| event ontimer115000 | 3 | 1 | 0 | 2 | 3 |  |
-| event ontimer143000 | 3 | 0 | 0 | 3 | 3 |  |
-| event ontimer160000 | 3 | 2 | 0 | 1 | 3 |  |
-| event ontimer22000 | 3 | 0 | 0 | 3 | 3 |  |
-| event ontimer220000 | 3 | 2 | 0 | 1 | 3 |  |
-| event ontimer243000 | 3 | 1 | 0 | 2 | 3 |  |
-| event ontimer270000 | 3 | 3 | 0 | 0 | 3 |  |
-| event ontimer301000 | 3 | 2 | 0 | 1 | 3 |  |
-| event ontimer345500 | 3 | 0 | 0 | 3 | 3 |  |
-| event ontimer346000 | 3 | 0 | 0 | 3 | 3 |  |
-| event ontimer360000 | 3 | 2 | 0 | 1 | 3 |  |
-| event ontimer37000 | 3 | 3 | 0 | 0 | 3 |  |
+| event onmobdead | 3 | 3 | 0 | 0 | 3 |  |
+| event onmymobdead2 | 3 | 3 | 0 | 0 | 3 |  |
+| event onsummonmob_03 | 3 | 3 | 0 | 0 | 3 |  |
+| event onsummonmob_04 | 3 | 3 | 0 | 0 | 3 |  |
+| event onsummonmob_07 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer115000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer131000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer133000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer135000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer136000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer160000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer187000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer22000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer250000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer26000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer3000000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer300500 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer301000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer310000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer315000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer320000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer330000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer3300000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer345500 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer346000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer3608000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer368000 | 3 | 2 | 0 | 1 | 3 |  |
+| event ontimer460000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer485000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer486000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer488000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer489000 | 3 | 3 | 0 | 0 | 3 |  |
 | event ontimer49000 | 3 | 3 | 0 | 0 | 3 |  |
-| event ontimer52000 | 3 | 0 | 0 | 3 | 3 |  |
-| event ontimer57000 | 3 | 2 | 0 | 1 | 3 |  |
+| event ontimer491000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer493000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer494000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer495000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer500000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer52000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer540000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer57000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer59000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer605000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer608000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer64000 | 3 | 3 | 0 | 0 | 3 |  |
 | event ontimer69000 | 3 | 3 | 0 | 0 | 3 |  |
-| event ontimer7200000 | 3 | 3 | 0 | 0 | 3 |  |
-| event ontimer85000 | 3 | 0 | 0 | 3 | 3 |  |
-| event onwin | 3 | 1 | 0 | 2 | 3 |  |
+| event ontimer74000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer83000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer903000 | 3 | 3 | 0 | 0 | 3 |  |
+| event onwin | 3 | 3 | 0 | 0 | 3 |  |
 | f_kids_roegenburg_quest | 3 | 3 | 0 | 0 | 3 |  |
 | failedrefitem | 3 | 3 | 0 | 0 | 3 |  |
 | freeloop | 3 | 0 | 0 | 3 | 0 |  |
@@ -405,94 +506,139 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | inarray | 3 | 1 | 0 | 2 | 2 | a value that may be a string for an array of numbers (1) |
 | instance_enter | 3 | 0 | 0 | 3 | 0 |  |
 | jobcanentermap | 3 | 0 | 0 | 3 | 0 | the job and map zone restrictions of job_noenter_map.txt, which need WoE:TE map flags (3) |
+| movenpc | 3 | 2 | 0 | 1 | 2 | a direction, which npc:move_to does not take (1) |
 | rentalcountitem | 3 | 3 | 0 | 0 | 3 |  |
 | setmadogear | 3 | 3 | 0 | 0 | 3 |  |
 | strtolower | 3 | 3 | 0 | 0 | 3 |  |
+| unitwalk | 3 | 1 | 1 | 1 | 2 | an event label at the walk's end (1) |
 | catwarp | 2 | 2 | 0 | 0 | 2 |  |
-| checkcell | 2 | 0 | 0 | 2 | 0 |  |
+| checkcell | 2 | 1 | 1 | 0 | 2 |  |
 | checkoption | 2 | 1 | 0 | 1 | 2 |  |
 | checkwug | 2 | 2 | 0 | 0 | 2 |  |
 | enable_items | 2 | 2 | 0 | 0 | 2 |  |
 | enablewaitingroomevent | 2 | 0 | 0 | 2 | 0 |  |
 | enchantgradeui | 2 | 0 | 0 | 2 | 0 |  |
+| event onangelingspawn | 2 | 2 | 0 | 0 | 2 |  |
 | event onbingx2 | 2 | 2 | 0 | 0 | 2 |  |
 | event onclock0000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ondead | 2 | 1 | 0 | 1 | 2 |  |
-| event ongame_start | 2 | 0 | 0 | 2 | 2 |  |
+| event ondevilingspawn | 2 | 2 | 0 | 0 | 2 |  |
+| event ongame_start | 2 | 2 | 0 | 0 | 2 |  |
 | event ongo | 2 | 2 | 0 | 0 | 2 |  |
 | event onho | 2 | 2 | 0 | 0 | 2 |  |
+| event onm1 | 2 | 2 | 0 | 0 | 2 |  |
+| event onm2 | 2 | 2 | 0 | 0 | 2 |  |
+| event onm3 | 2 | 2 | 0 | 0 | 2 |  |
+| event onmove | 2 | 1 | 1 | 0 | 2 |  |
 | event onmvp | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer113000 | 2 | 0 | 0 | 2 | 2 |  |
-| event ontimer1200000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer122000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer123000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer131000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer134000 | 2 | 0 | 0 | 2 | 2 |  |
-| event ontimer135000 | 2 | 0 | 0 | 2 | 2 |  |
-| event ontimer136000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer141000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer170000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer207000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer2400000 | 2 | 1 | 0 | 1 | 2 |  |
+| event onon3 | 2 | 2 | 0 | 0 | 2 |  |
+| event onover | 2 | 2 | 0 | 0 | 2 |  |
+| event onsummonmob1 | 2 | 2 | 0 | 0 | 2 |  |
+| event onsummonmob2 | 2 | 2 | 0 | 0 | 2 |  |
+| event onsummonmob_06 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer106000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer108000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer119000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer1203000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer1208000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer124000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer126000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer129000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer141000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer149000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer1500000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer1503000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer1508000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer1600 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer170000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer1803000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer1808000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer192000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer203000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer207000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer2100000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer2103000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer2108000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer213000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer217000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer2403000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer2408000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer241000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer242000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer245000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer246000 | 2 | 0 | 0 | 2 | 2 |  |
 | event ontimer249000 | 2 | 0 | 0 | 2 | 2 |  |
-| event ontimer250000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer26000 | 2 | 0 | 0 | 2 | 2 |  |
-| event ontimer260000 | 2 | 1 | 0 | 1 | 2 |  |
+| event ontimer260000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer2700000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer2703000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer2708000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer272000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer273000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer276000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer279000 | 2 | 1 | 0 | 1 | 2 |  |
+| event ontimer279000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer28500 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer29000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer290000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer299000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer300500 | 2 | 0 | 0 | 2 | 2 |  |
-| event ontimer31000 | 2 | 0 | 0 | 2 | 2 |  |
-| event ontimer310000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer320000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer330000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer339000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer340000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer370000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer29000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer290000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer299000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer3003000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer3008000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer301500 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer306000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer307000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer31000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer3303000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer3308000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer339000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer340000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer3603000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer365000 | 2 | 1 | 0 | 1 | 2 |  |
 | event ontimer39000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer3900000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer400000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer42000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer420000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer430000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer440000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer46000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer460000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer500000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer53000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer483000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer552000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer565000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer58000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer59000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer61000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer607000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer610000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer612000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer620000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer63000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer64000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer66000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer83000 | 2 | 0 | 0 | 2 | 2 |  |
-| event ontimer92000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer95000 | 2 | 0 | 0 | 2 | 2 |  |
+| event ontimer66000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer68000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer71000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer73000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer76000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer77000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer78000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer81000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer82000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer87000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer908000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer92000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer95000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer99000 | 2 | 2 | 0 | 0 | 2 |  |
 | event onunhide | 2 | 2 | 0 | 0 | 2 |  |
 | f_banquet_main_4_spica | 2 | 2 | 0 | 0 | 2 |  |
-| getareausers | 2 | 0 | 0 | 2 | 0 |  |
+| getareausers | 2 | 2 | 0 | 0 | 2 |  |
 | getbaseexp_ratio | 2 | 0 | 0 | 2 | 0 |  |
 | getgdskilllv | 2 | 2 | 0 | 0 | 2 |  |
 | getlook | 2 | 2 | 0 | 0 | 2 |  |
 | guild_has_permission | 2 | 2 | 0 | 0 | 2 |  |
 | jobname | 2 | 0 | 0 | 2 | 0 |  |
-| movenpc | 2 | 1 | 0 | 1 | 1 | a direction, which npc:move_to does not take (1) |
 | parameter | 2 | 0 | 0 | 2 | 0 |  |
 | parameter Zeny | 2 | 0 | 0 | 2 | 0 | set to a value (2) |
 | rentitem | 2 | 2 | 0 | 0 | 2 |  |
 | repairall | 2 | 2 | 0 | 0 | 2 |  |
 | setfalcon | 2 | 2 | 0 | 0 | 2 |  |
 | transform | 2 | 2 | 0 | 0 | 2 |  |
-| unitwalk | 2 | 1 | 0 | 1 | 1 | an event label at the walk's end (1) |
+| unitexists | 2 | 0 | 0 | 2 | 0 |  |
+| unitstopwalk | 2 | 1 | 1 | 0 | 2 |  |
 | achievementexists | 1 | 0 | 0 | 1 | 0 |  |
 | agitcheck3 | 1 | 0 | 0 | 1 | 0 | castles, sieges and guardians are not in the API yet (1) |
+| areaannounce | 1 | 1 | 0 | 0 | 1 |  |
 | atcommand | 1 | 0 | 0 | 1 | 0 | refused by review decision 58: GM commands are staff tools, not script commands (1) |
 | checkhomcall | 1 | 0 | 0 | 1 | 0 |  |
 | choice | 1 | 1 | 0 | 0 | 1 |  |
@@ -502,18 +648,27 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | downrefitem | 1 | 1 | 0 | 0 | 1 |  |
 | eldicastes_dp | 1 | 1 | 0 | 0 | 1 |  |
 | equip_check | 1 | 0 | 0 | 1 | 1 |  |
+| event on04_end1 | 1 | 1 | 0 | 0 | 1 |  |
+| event on04_end2 | 1 | 1 | 0 | 0 | 1 |  |
+| event on05_end1 | 1 | 1 | 0 | 0 | 1 |  |
+| event on05_end2 | 1 | 1 | 0 | 0 | 1 |  |
+| event on08_end | 1 | 1 | 0 | 0 | 1 |  |
+| event on10_end | 1 | 1 | 0 | 0 | 1 |  |
+| event on10_start | 1 | 1 | 0 | 0 | 1 |  |
 | event onbar | 1 | 1 | 0 | 0 | 1 |  |
 | event onbest | 1 | 1 | 0 | 0 | 1 |  |
 | event onbossdead | 1 | 1 | 0 | 0 | 1 |  |
 | event onbutton_off | 1 | 1 | 0 | 0 | 1 |  |
+| event oncaptainmobdead | 1 | 1 | 0 | 0 | 1 |  |
 | event oncast | 1 | 1 | 0 | 0 | 1 |  |
 | event ondisableall | 1 | 1 | 0 | 0 | 1 |  |
 | event ondisablenpc | 1 | 1 | 0 | 0 | 1 |  |
-| event ondoppel1off | 1 | 0 | 0 | 1 | 1 |  |
-| event ondoppel1on | 1 | 0 | 0 | 1 | 1 |  |
-| event ondoppel2off | 1 | 0 | 0 | 1 | 1 |  |
-| event ondoppel2on | 1 | 0 | 0 | 1 | 1 |  |
+| event ondoppel1off | 1 | 1 | 0 | 0 | 1 |  |
+| event ondoppel1on | 1 | 1 | 0 | 0 | 1 |  |
+| event ondoppel2off | 1 | 1 | 0 | 0 | 1 |  |
+| event ondoppel2on | 1 | 1 | 0 | 0 | 1 |  |
 | event oneffect | 1 | 1 | 0 | 0 | 1 |  |
+| event oneight | 1 | 1 | 0 | 0 | 1 |  |
 | event onenablenpc | 1 | 1 | 0 | 0 | 1 |  |
 | event onend_e16 | 1 | 1 | 0 | 0 | 1 |  |
 | event onend_e4 | 1 | 1 | 0 | 0 | 1 |  |
@@ -523,10 +678,18 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onend_n4 | 1 | 1 | 0 | 0 | 1 |  |
 | event onend_n8 | 1 | 1 | 0 | 0 | 1 |  |
 | event onevent | 1 | 1 | 0 | 0 | 1 |  |
+| event onexit | 1 | 1 | 0 | 0 | 1 |  |
+| event onfail | 1 | 1 | 0 | 0 | 1 |  |
+| event onfight | 1 | 1 | 0 | 0 | 1 |  |
+| event onfive | 1 | 1 | 0 | 0 | 1 |  |
+| event onfour | 1 | 1 | 0 | 0 | 1 |  |
 | event onfullon | 1 | 1 | 0 | 0 | 1 |  |
 | event ongasp | 1 | 1 | 0 | 0 | 1 |  |
+| event onglobaltimeroff | 1 | 1 | 0 | 0 | 1 |  |
+| event ongnpmobdead | 1 | 1 | 0 | 0 | 1 |  |
+| event ongreen | 1 | 1 | 0 | 0 | 1 |  |
 | event onheart | 1 | 1 | 0 | 0 | 1 |  |
-| event onhermiteoff | 1 | 0 | 0 | 1 | 1 |  |
+| event onhermiteoff | 1 | 1 | 0 | 0 | 1 |  |
 | event onhour00 | 1 | 1 | 0 | 0 | 1 |  |
 | event onhour03 | 1 | 1 | 0 | 0 | 1 |  |
 | event onhour06 | 1 | 1 | 0 | 0 | 1 |  |
@@ -536,17 +699,17 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onhour18 | 1 | 1 | 0 | 0 | 1 |  |
 | event onhour21 | 1 | 1 | 0 | 0 | 1 |  |
 | event oninterifinitonce | 1 | 0 | 0 | 1 | 0 |  |
-| event onkiehldead | 1 | 0 | 0 | 1 | 1 |  |
-| event onkiehlmobdead | 1 | 0 | 0 | 1 | 1 |  |
+| event onkiehldead | 1 | 1 | 0 | 0 | 1 |  |
+| event onkiehlmobdead | 1 | 1 | 0 | 0 | 1 |  |
 | event onkik | 1 | 1 | 0 | 0 | 1 |  |
 | event onkis | 1 | 1 | 0 | 0 | 1 |  |
 | event onkis2 | 1 | 1 | 0 | 0 | 1 |  |
-| event onknight1off | 1 | 0 | 0 | 1 | 1 |  |
-| event onknight1on | 1 | 0 | 0 | 1 | 1 |  |
-| event onknight2off | 1 | 0 | 0 | 1 | 1 |  |
-| event onknight2on | 1 | 0 | 0 | 1 | 1 |  |
-| event onknight3off | 1 | 0 | 0 | 1 | 1 |  |
-| event onknight3on | 1 | 0 | 0 | 1 | 1 |  |
+| event onknight1off | 1 | 1 | 0 | 0 | 1 |  |
+| event onknight1on | 1 | 1 | 0 | 0 | 1 |  |
+| event onknight2off | 1 | 1 | 0 | 0 | 1 |  |
+| event onknight2on | 1 | 1 | 0 | 0 | 1 |  |
+| event onknight3off | 1 | 1 | 0 | 0 | 1 |  |
+| event onknight3on | 1 | 1 | 0 | 0 | 1 |  |
 | event onlinerec_50 | 1 | 1 | 0 | 0 | 1 |  |
 | event onlinerec_60 | 1 | 1 | 0 | 0 | 1 |  |
 | event onlinerec_70 | 1 | 1 | 0 | 0 | 1 |  |
@@ -557,193 +720,269 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onlinerec_pri80 | 1 | 1 | 0 | 0 | 1 |  |
 | event onlinerec_pri90 | 1 | 1 | 0 | 0 | 1 |  |
 | event onlinerec_pt | 1 | 1 | 0 | 0 | 1 |  |
-| event onlowen2off | 1 | 0 | 0 | 1 | 1 |  |
-| event onlowenoff | 1 | 0 | 0 | 1 | 1 |  |
-| event onlowenon | 1 | 0 | 0 | 1 | 1 |  |
-| event onmeet | 1 | 0 | 0 | 1 | 1 |  |
-| event onmobdeath | 1 | 0 | 0 | 1 | 1 |  |
+| event onlowen2off | 1 | 1 | 0 | 0 | 1 |  |
+| event onlowenoff | 1 | 1 | 0 | 0 | 1 |  |
+| event onlowenon | 1 | 1 | 0 | 0 | 1 |  |
+| event onm4 | 1 | 1 | 0 | 0 | 1 |  |
+| event onm5 | 1 | 1 | 0 | 0 | 1 |  |
+| event onmeet | 1 | 1 | 0 | 0 | 1 |  |
+| event onmobdeath | 1 | 1 | 0 | 0 | 1 |  |
 | event onmon0000 | 1 | 1 | 0 | 0 | 1 |  |
-| event onmonster1 | 1 | 0 | 0 | 1 | 1 |  |
-| event onmonster2 | 1 | 0 | 0 | 1 | 1 |  |
-| event onmonster3 | 1 | 0 | 0 | 1 | 1 |  |
-| event onmove | 1 | 1 | 0 | 0 | 1 |  |
-| event onmymobdead2 | 1 | 1 | 0 | 0 | 1 |  |
+| event onmonster | 1 | 1 | 0 | 0 | 1 |  |
+| event onmonster1 | 1 | 1 | 0 | 0 | 1 |  |
+| event onmonster2 | 1 | 1 | 0 | 0 | 1 |  |
+| event onmonster3 | 1 | 1 | 0 | 0 | 1 |  |
+| event onmonsterdead | 1 | 1 | 0 | 0 | 1 |  |
 | event onnew_top1 | 1 | 1 | 0 | 0 | 1 |  |
 | event onnew_top2 | 1 | 1 | 0 | 0 | 1 |  |
 | event onnew_top3 | 1 | 1 | 0 | 0 | 1 |  |
 | event onnew_top4 | 1 | 1 | 0 | 0 | 1 |  |
 | event onnew_top5 | 1 | 1 | 0 | 0 | 1 |  |
-| event onon2 | 1 | 1 | 0 | 0 | 1 |  |
-| event onout | 1 | 1 | 0 | 0 | 1 |  |
+| event onon4 | 1 | 1 | 0 | 0 | 1 |  |
+| event onone | 1 | 1 | 0 | 0 | 1 |  |
 | event onpclogoutevent | 1 | 0 | 0 | 1 | 0 | rAthena runs it for the players of every map, and an NPC hears only the players of its own map (decision 0062) (1) |
 | event onready | 1 | 1 | 0 | 0 | 1 |  |
+| event onred | 1 | 1 | 0 | 0 | 1 |  |
+| event onresetmob | 1 | 1 | 0 | 0 | 1 |  |
 | event onsat2200 | 1 | 1 | 0 | 0 | 1 |  |
 | event onsci | 1 | 1 | 0 | 0 | 1 |  |
+| event onseven | 1 | 1 | 0 | 0 | 1 |  |
+| event onsix | 1 | 1 | 0 | 0 | 1 |  |
+| event onsold2on | 1 | 1 | 0 | 0 | 1 |  |
+| event onstart0 | 1 | 0 | 0 | 1 | 1 |  |
+| event onstart1 | 1 | 0 | 0 | 1 | 1 |  |
+| event onstart2 | 1 | 0 | 0 | 1 | 1 |  |
 | event onstarttimer | 1 | 1 | 0 | 0 | 1 |  |
 | event onstoptimer | 1 | 1 | 0 | 0 | 1 |  |
-| event onsummon | 1 | 0 | 0 | 1 | 1 |  |
+| event onsubon | 1 | 1 | 0 | 0 | 1 |  |
+| event onsummon | 1 | 1 | 0 | 0 | 1 |  |
 | event onsun0000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontalk | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer101000 | 1 | 0 | 0 | 1 | 1 |  |
+| event onthree | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimeoff | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimeon | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer101000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer102000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer103000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer103500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer104000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer104500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer10500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer106000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer108000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer105500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer106500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer107000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer107500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer10800000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer112000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer11500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer116000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer119000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer121000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer125000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer126000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer127000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer129000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer132000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer133000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer116000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer118000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer118500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer119500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer1200 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer120005 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer120500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer121500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer122500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer128000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer132000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer13500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer138000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer1400 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer142000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer144000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer145000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer146000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer149000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer155000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer145000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer146000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer148000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer151000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer154000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer155000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer157000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer161000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer164000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer16500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer173000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer179000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer181000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer184000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer185000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer187000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer192000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer179000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer1800 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer188000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer189000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer191000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer193000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer194000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer19500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer199000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer202000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer203000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer205000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer206000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer208000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer209000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer195000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer197000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer199000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer202000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer204000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer205000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer206000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer208000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer209000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer212000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer213000 | 1 | 0 | 0 | 1 | 1 |  |
 | event ontimer21600000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer217000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer219000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer219000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer2200 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer223000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer23500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer239000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer241000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer239000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer2400 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer24500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer252000 | 1 | 0 | 0 | 1 | 1 |  |
 | event ontimer253000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer25500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer259000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer263000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer280000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer259000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer2600 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer263000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer280000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer281000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer283000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer284000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer293000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer298000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer3000000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer301500 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer303000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer302000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer304000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer309000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer311000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer312000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer313000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer314000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer31500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer319000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer319000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer322000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer323000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer3300000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer3360000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer3420000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer323000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer3360000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer3420000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer344000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer348000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer3480000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer3480000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer349000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer3540000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer3605000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer3608000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer350000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer3540000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer3605000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer361000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer3610000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer3611000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer361500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer362000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer362500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer365000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer368000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer363000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer366000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer367000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer369000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer371000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer372000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer373000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer374000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer37500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer375000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer380000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer383000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer383000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer38500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer390000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer391000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer400000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer3960000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer40500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer405000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer410000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer411000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer414000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer416000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer421000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer423000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer424000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer425000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer426000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer427000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer428000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer429000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer431000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer432000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer433000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer434000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer43500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer440000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer443000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer445000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer435000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer443000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer445000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer4500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer450000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer46500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer465000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer470000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer480000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer483000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer487000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer492000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer48010 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer482000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer49500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer497000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer503000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer503000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer506000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer51000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer510000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer520000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer52500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer529000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer54000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer5400000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer5415000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer542000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer543000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer545000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer550000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer550500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer555000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer556000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer557000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer56000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer560000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer561000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer563000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer563000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer570000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer573000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer580000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer583000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer590000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer593000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer598000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer603000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer610000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer612000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer606000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer609000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer611000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer613000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer614000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer615000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer62000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer621000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer623000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer623000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer67000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer683000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer71000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer68100 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer683000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer72000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer73000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer74000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer743000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer73500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer743000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer74500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer7500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer76000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer77000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer78000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer75500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer76500 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer77500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer7800000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer803000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer81000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer82000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer863000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer87000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer79000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer803000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer84000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer86000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer863000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer88000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer89000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer893000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer893000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer9001 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer903000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer913000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer918000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer919000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer920000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer921000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer922000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer923000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer925000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer93000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer94000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer96000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer99000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer913000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer918000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer919000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer920000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer921000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer922000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer923000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer925000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer927000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer94000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer96000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer98000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontwo | 1 | 1 | 0 | 0 | 1 |  |
 | event onuse | 1 | 1 | 0 | 0 | 1 |  |
 | event onvriddead | 1 | 1 | 0 | 0 | 1 |  |
 | event onwarp | 1 | 1 | 0 | 0 | 1 |  |
@@ -753,13 +992,15 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onwin_n16 | 1 | 1 | 0 | 0 | 1 |  |
 | event onwin_n4 | 1 | 1 | 0 | 0 | 1 |  |
 | event onwin_n8 | 1 | 1 | 0 | 0 | 1 |  |
+| event onzeithdead | 1 | 1 | 0 | 0 | 1 |  |
 | func_juphist | 1 | 1 | 0 | 0 | 1 |  |
 | get_reputation_points | 1 | 0 | 0 | 1 | 0 |  |
 | getequiprandomoption | 1 | 0 | 0 | 1 | 0 |  |
 | gethominfo | 1 | 0 | 0 | 1 | 0 |  |
 | getinventorylist | 1 | 1 | 0 | 0 | 1 |  |
 | getitemslots | 1 | 1 | 0 | 0 | 1 |  |
-| getnpctimer | 1 | 0 | 0 | 1 | 1 |  |
+| getnpctimer | 1 | 1 | 0 | 0 | 1 |  |
+| gettimestr | 1 | 1 | 0 | 0 | 1 |  |
 | guildopenstorage_log | 1 | 1 | 0 | 0 | 1 |  |
 | heal | 1 | 1 | 0 | 0 | 1 |  |
 | hommutate | 1 | 0 | 0 | 1 | 0 |  |
@@ -777,7 +1018,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | playerattached | 1 | 0 | 0 | 1 | 1 |  |
 | prompt | 1 | 1 | 0 | 0 | 1 |  |
 | readparam | 1 | 0 | 0 | 1 | 0 | a parameter by number (1) |
-| removemapflag | 1 | 0 | 0 | 1 | 0 |  |
+| removemapflag | 1 | 0 | 0 | 1 | 0 | the map flag partylock: its effect is not built yet (1) |
 | removespecialeffect2 | 1 | 1 | 0 | 0 | 1 |  |
 | resetlvl | 1 | 1 | 0 | 0 | 1 |  |
 | resetskill | 1 | 1 | 0 | 0 | 1 |  |
@@ -785,7 +1026,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | sc_start2 | 1 | 0 | 0 | 1 | 1 |  |
 | setoption | 1 | 0 | 0 | 1 | 0 |  |
 | skilleffect | 1 | 1 | 0 | 0 | 1 |  |
-| unitstopwalk | 1 | 1 | 0 | 0 | 1 |  |
+| smonster | 1 | 1 | 0 | 0 | 1 |  |
 
 ## Functions
 
@@ -796,7 +1037,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | EclageinEntrance | npc/re/quests/quests_eclage.txt:12912 | whole |  |
 | Esseray_Ex | npc/re/jobs/novice/supernovice_ex.txt:18 | whole |  |
 | F_AuctionWarper | npc/other/auction.txt:37 | whole |  |
-| F_AvenBoard | npc/re/other/adven_boards.txt:11 | partly | getmonsterinfo |
+| F_AvenBoard | npc/re/other/adven_boards.txt:11 | whole |  |
 | F_BardSkillYhelle | npc/quests/skills/bard_skills.txt:1251 | whole |  |
 | F_Brilliant_Soda | npc/re/quests/juno_monster_society.txt:34 | whole |  |
 | F_CanChangeJob | npc/other/Global_Functions.txt:626 | whole |  |
@@ -839,14 +1080,14 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | F_Kienna | npc/quests/skills/rogue_skills.txt:1170 | whole |  |
 | F_MOS_1 | npc/quests/quests_moscovia.txt:2756 | whole |  |
 | F_Mal_Picture | npc/re/quests/quests_malangdo.txt:6305 | whole |  |
-| F_Malaya_Jeepney | npc/re/cities/malaya.txt:690 | partly | getmapusers; setd: a computed name of a .@ or . variable, which are Lua locals |
+| F_Malaya_Jeepney | npc/re/cities/malaya.txt:690 | partly | getd: a computed name of a .@ or . variable, which are Lua locals; setd: a computed name of a .@ or . variable, which... |
 | F_Malaya_Nurse | npc/re/quests/quests_malaya.txt:6575 | whole |  |
 | F_Malaya_Warp | npc/re/warps/cities/malaya.txt:94 | whole |  |
 | F_Mora_Enchant | npc/re/merchants/enchan_mora.txt:1497 | whole |  |
 | F_MotherMart | npc/jobs/2-1/priest.txt:1756 | whole |  |
 | F_Navi | npc/re/guides/navigation.txt:19 | whole |  |
 | F_Okolnir | npc/quests/okolnir.txt:18 | whole |  |
-| F_PVP_FSRS | npc/other/pvp.txt:287 | partly | getmapusers |
+| F_PVP_FSRS | npc/other/pvp.txt:287 | whole |  |
 | F_PartyRelay_Exp | npc/quests/partyrelay.txt:3072 | whole |  |
 | F_PotExchange | npc/merchants/novice_exchange.txt:299 | whole |  |
 | F_SetKafCode | npc/kafras/functions_kafras.txt:492 | whole |  |
@@ -926,7 +1167,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/cities/manuk.txt | 31 | 31 | 0 |
 | npc/cities/morocc.txt | 33 | 33 | 0 |
 | npc/cities/moscovia.txt | 8 | 8 | 0 |
-| npc/cities/niflheim.txt | 6 | 5 | 1 |
+| npc/cities/niflheim.txt | 6 | 6 | 0 |
 | npc/cities/payon.txt | 15 | 14 | 1 |
 | npc/cities/prontera.txt | 23 | 23 | 0 |
 | npc/cities/rachel.txt | 30 | 30 | 0 |
@@ -934,18 +1175,18 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/cities/umbala.txt | 18 | 18 | 0 |
 | npc/cities/veins.txt | 46 | 46 | 0 |
 | npc/cities/yuno.txt | 14 | 14 | 0 |
-| npc/events/gdevent_aru.txt | 73 | 70 | 3 |
-| npc/events/gdevent_sch.txt | 73 | 70 | 3 |
-| npc/events/god_se_festival.txt | 4 | 2 | 2 |
+| npc/events/gdevent_aru.txt | 73 | 72 | 1 |
+| npc/events/gdevent_sch.txt | 73 | 72 | 1 |
+| npc/events/god_se_festival.txt | 4 | 4 | 0 |
 | npc/jobs/1-1e/gunslinger.txt | 2 | 2 | 0 |
 | npc/jobs/1-1e/ninja.txt | 3 | 3 | 0 |
 | npc/jobs/1-1e/taekwon.txt | 1 | 1 | 0 |
-| npc/jobs/2-1/assassin.txt | 114 | 110 | 4 |
+| npc/jobs/2-1/assassin.txt | 114 | 113 | 1 |
 | npc/jobs/2-1/blacksmith.txt | 9 | 9 | 0 |
-| npc/jobs/2-1/hunter.txt | 396 | 394 | 2 |
-| npc/jobs/2-1/knight.txt | 14 | 8 | 6 |
-| npc/jobs/2-1/priest.txt | 23 | 21 | 2 |
-| npc/jobs/2-1/wizard.txt | 14 | 6 | 8 |
+| npc/jobs/2-1/hunter.txt | 396 | 395 | 1 |
+| npc/jobs/2-1/knight.txt | 14 | 12 | 2 |
+| npc/jobs/2-1/priest.txt | 23 | 23 | 0 |
+| npc/jobs/2-1/wizard.txt | 14 | 13 | 1 |
 | npc/jobs/2-1a/AssassinCross.txt | 1 | 1 | 0 |
 | npc/jobs/2-1a/HighPriest.txt | 1 | 1 | 0 |
 | npc/jobs/2-1a/HighWizard.txt | 1 | 1 | 0 |
@@ -953,13 +1194,13 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/jobs/2-1a/Sniper.txt | 1 | 1 | 0 |
 | npc/jobs/2-1a/WhiteSmith.txt | 1 | 1 | 0 |
 | npc/jobs/2-1e/StarGladiator.txt | 5 | 5 | 0 |
-| npc/jobs/2-2/alchemist.txt | 6 | 5 | 1 |
+| npc/jobs/2-2/alchemist.txt | 6 | 6 | 0 |
 | npc/jobs/2-2/bard.txt | 1 | 1 | 0 |
-| npc/jobs/2-2/crusader.txt | 18 | 10 | 8 |
-| npc/jobs/2-2/dancer.txt | 21 | 19 | 2 |
-| npc/jobs/2-2/monk.txt | 60 | 45 | 15 |
-| npc/jobs/2-2/rogue.txt | 35 | 17 | 18 |
-| npc/jobs/2-2/sage.txt | 14 | 7 | 7 |
+| npc/jobs/2-2/crusader.txt | 18 | 17 | 1 |
+| npc/jobs/2-2/dancer.txt | 21 | 20 | 1 |
+| npc/jobs/2-2/monk.txt | 60 | 60 | 0 |
+| npc/jobs/2-2/rogue.txt | 35 | 34 | 1 |
+| npc/jobs/2-2/sage.txt | 14 | 12 | 2 |
 | npc/jobs/2-2a/Champion.txt | 1 | 1 | 0 |
 | npc/jobs/2-2a/Clown.txt | 1 | 1 | 0 |
 | npc/jobs/2-2a/Creator.txt | 1 | 1 | 0 |
@@ -967,7 +1208,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/jobs/2-2a/Paladin.txt | 1 | 1 | 0 |
 | npc/jobs/2-2a/Professor.txt | 1 | 1 | 0 |
 | npc/jobs/2-2a/Stalker.txt | 1 | 1 | 0 |
-| npc/jobs/2-2e/SoulLinker.txt | 8 | 7 | 1 |
+| npc/jobs/2-2e/SoulLinker.txt | 8 | 8 | 0 |
 | npc/jobs/novice/supernovice.txt | 3 | 3 | 0 |
 | npc/jobs/valkyrie.txt | 5 | 5 | 0 |
 | npc/kafras/cool_event_corp.txt | 4 | 4 | 0 |
@@ -996,14 +1237,14 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/merchants/socket_enchant.txt | 10 | 10 | 0 |
 | npc/merchants/socket_enchant2.txt | 4 | 4 | 0 |
 | npc/merchants/wander_pet_food.txt | 2 | 2 | 0 |
-| npc/other/arena/arena_aco.txt | 55 | 34 | 21 |
-| npc/other/arena/arena_lvl50.txt | 44 | 24 | 20 |
-| npc/other/arena/arena_lvl60.txt | 43 | 24 | 19 |
-| npc/other/arena/arena_lvl70.txt | 44 | 24 | 20 |
-| npc/other/arena/arena_lvl80.txt | 44 | 25 | 19 |
-| npc/other/arena/arena_party.txt | 37 | 20 | 17 |
+| npc/other/arena/arena_aco.txt | 55 | 54 | 1 |
+| npc/other/arena/arena_lvl50.txt | 44 | 43 | 1 |
+| npc/other/arena/arena_lvl60.txt | 43 | 42 | 1 |
+| npc/other/arena/arena_lvl70.txt | 44 | 43 | 1 |
+| npc/other/arena/arena_lvl80.txt | 44 | 43 | 1 |
+| npc/other/arena/arena_party.txt | 37 | 36 | 1 |
 | npc/other/arena/arena_point.txt | 1 | 1 | 0 |
-| npc/other/arena/arena_room.txt | 28 | 24 | 4 |
+| npc/other/arena/arena_room.txt | 28 | 27 | 1 |
 | npc/other/auction.txt | 24 | 9 | 15 |
 | npc/other/books.txt | 9 | 9 | 0 |
 | npc/other/bulletin_boards.txt | 19 | 19 | 0 |
@@ -1012,16 +1253,16 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/fortune.txt | 3 | 3 | 0 |
 | npc/other/guildpvp.txt | 1 | 0 | 1 |
 | npc/other/gympass.txt | 1 | 1 | 0 |
-| npc/other/hugel_bingo.txt | 150 | 146 | 4 |
+| npc/other/hugel_bingo.txt | 150 | 149 | 1 |
 | npc/other/mail.txt | 32 | 31 | 1 |
 | npc/other/marriage.txt | 11 | 8 | 3 |
 | npc/other/mercenary_rent.txt | 10 | 4 | 6 |
 | npc/other/monster_museum.txt | 62 | 62 | 0 |
-| npc/other/monster_race.txt | 202 | 183 | 19 |
-| npc/other/poring_war.txt | 37 | 25 | 12 |
-| npc/other/powernpc.txt | 5 | 3 | 2 |
+| npc/other/monster_race.txt | 202 | 190 | 12 |
+| npc/other/poring_war.txt | 37 | 30 | 7 |
+| npc/other/powernpc.txt | 5 | 4 | 1 |
 | npc/other/pvp.txt | 26 | 20 | 6 |
-| npc/other/turbo_track.txt | 2141 | 2105 | 36 |
+| npc/other/turbo_track.txt | 2141 | 2121 | 20 |
 | npc/quests/bard_quest.txt | 11 | 11 | 0 |
 | npc/quests/bunnyband.txt | 1 | 1 | 0 |
 | npc/quests/cooking_quest.txt | 5 | 5 | 0 |
@@ -1039,7 +1280,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/guildrelay.txt | 84 | 0 | 84 |
 | npc/quests/gunslinger_quests.txt | 6 | 6 | 0 |
 | npc/quests/juice_maker.txt | 3 | 3 | 0 |
-| npc/quests/kiel_hyre_quest.txt | 110 | 103 | 7 |
+| npc/quests/kiel_hyre_quest.txt | 110 | 108 | 2 |
 | npc/quests/lvl4_weapon_quest.txt | 10 | 10 | 0 |
 | npc/quests/mage_solution.txt | 2 | 2 | 0 |
 | npc/quests/monstertamers.txt | 4 | 4 | 0 |
@@ -1050,37 +1291,37 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/newgears/2008_headgears.txt | 3 | 3 | 0 |
 | npc/quests/ninja_quests.txt | 5 | 5 | 0 |
 | npc/quests/obb_quest.txt | 4 | 4 | 0 |
-| npc/quests/okolnir.txt | 574 | 251 | 323 |
+| npc/quests/okolnir.txt | 574 | 530 | 44 |
 | npc/quests/partyrelay.txt | 24 | 18 | 6 |
-| npc/quests/quests_13_1.txt | 180 | 171 | 9 |
-| npc/quests/quests_13_2.txt | 264 | 256 | 8 |
-| npc/quests/quests_airship.txt | 34 | 33 | 1 |
+| npc/quests/quests_13_1.txt | 180 | 180 | 0 |
+| npc/quests/quests_13_2.txt | 264 | 262 | 2 |
+| npc/quests/quests_airship.txt | 34 | 34 | 0 |
 | npc/quests/quests_alberta.txt | 29 | 29 | 0 |
 | npc/quests/quests_aldebaran.txt | 1 | 1 | 0 |
-| npc/quests/quests_amatsu.txt | 35 | 30 | 5 |
+| npc/quests/quests_amatsu.txt | 35 | 34 | 1 |
 | npc/quests/quests_ayothaya.txt | 50 | 50 | 0 |
 | npc/quests/quests_brasilis.txt | 49 | 48 | 1 |
 | npc/quests/quests_comodo.txt | 22 | 22 | 0 |
-| npc/quests/quests_ein.txt | 34 | 33 | 1 |
+| npc/quests/quests_ein.txt | 34 | 34 | 0 |
 | npc/quests/quests_geffen.txt | 3 | 2 | 1 |
 | npc/quests/quests_gonryun.txt | 72 | 69 | 3 |
-| npc/quests/quests_hugel.txt | 87 | 85 | 2 |
+| npc/quests/quests_hugel.txt | 87 | 86 | 1 |
 | npc/quests/quests_izlude.txt | 1 | 1 | 0 |
-| npc/quests/quests_juperos.txt | 89 | 58 | 31 |
-| npc/quests/quests_lighthalzen.txt | 105 | 101 | 4 |
+| npc/quests/quests_juperos.txt | 89 | 85 | 4 |
+| npc/quests/quests_lighthalzen.txt | 105 | 104 | 1 |
 | npc/quests/quests_louyang.txt | 46 | 46 | 0 |
 | npc/quests/quests_lutie.txt | 2 | 2 | 0 |
-| npc/quests/quests_morocc.txt | 65 | 56 | 9 |
-| npc/quests/quests_moscovia.txt | 102 | 93 | 9 |
-| npc/quests/quests_nameless.txt | 96 | 89 | 7 |
+| npc/quests/quests_morocc.txt | 65 | 57 | 8 |
+| npc/quests/quests_moscovia.txt | 102 | 102 | 0 |
+| npc/quests/quests_nameless.txt | 96 | 96 | 0 |
 | npc/quests/quests_niflheim.txt | 11 | 11 | 0 |
 | npc/quests/quests_payon.txt | 4 | 4 | 0 |
 | npc/quests/quests_prontera.txt | 27 | 27 | 0 |
-| npc/quests/quests_rachel.txt | 75 | 73 | 2 |
+| npc/quests/quests_rachel.txt | 75 | 74 | 1 |
 | npc/quests/quests_umbala.txt | 10 | 10 | 0 |
 | npc/quests/quests_veins.txt | 120 | 120 | 0 |
 | npc/quests/quests_yuno.txt | 12 | 10 | 2 |
-| npc/quests/seals/brisingamen_seal.txt | 32 | 30 | 2 |
+| npc/quests/seals/brisingamen_seal.txt | 32 | 32 | 0 |
 | npc/quests/seals/god_global.txt | 1 | 0 | 1 |
 | npc/quests/seals/god_weapon_creation.txt | 17 | 16 | 1 |
 | npc/quests/seals/megingard_seal.txt | 16 | 16 | 0 |
@@ -1101,13 +1342,13 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/skills/merchant_skills.txt | 3 | 3 | 0 |
 | npc/quests/skills/monk_skills.txt | 2 | 2 | 0 |
 | npc/quests/skills/priest_skills.txt | 1 | 1 | 0 |
-| npc/quests/skills/rogue_skills.txt | 18 | 14 | 4 |
+| npc/quests/skills/rogue_skills.txt | 18 | 16 | 2 |
 | npc/quests/skills/sage_skills.txt | 1 | 0 | 1 |
 | npc/quests/skills/swordman_skills.txt | 3 | 3 | 0 |
 | npc/quests/skills/thief_skills.txt | 2 | 2 | 0 |
 | npc/quests/skills/wizard_skills.txt | 2 | 2 | 0 |
-| npc/quests/thana_quest.txt | 47 | 40 | 7 |
-| npc/quests/the_sign_quest.txt | 101 | 94 | 7 |
+| npc/quests/thana_quest.txt | 47 | 42 | 5 |
+| npc/quests/the_sign_quest.txt | 101 | 98 | 3 |
 | npc/re/airports/izlude.txt | 5 | 5 | 0 |
 | npc/re/cities/alberta.txt | 9 | 9 | 0 |
 | npc/re/cities/comodo.txt | 4 | 4 | 0 |
@@ -1192,20 +1433,20 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/re/jobs/1-1/thief.txt | 2 | 1 | 1 |
 | npc/re/jobs/1-1e/taekwon.txt | 1 | 1 | 0 |
 | npc/re/jobs/2-2/crusader.txt | 5 | 5 | 0 |
-| npc/re/jobs/2e/kagerou_oboro.txt | 64 | 55 | 9 |
-| npc/re/jobs/2e/rebellion.txt | 23 | 21 | 2 |
-| npc/re/jobs/3-1/archbishop.txt | 56 | 17 | 39 |
-| npc/re/jobs/3-1/guillotine_cross.txt | 67 | 30 | 37 |
+| npc/re/jobs/2e/kagerou_oboro.txt | 64 | 57 | 7 |
+| npc/re/jobs/2e/rebellion.txt | 23 | 23 | 0 |
+| npc/re/jobs/3-1/archbishop.txt | 56 | 28 | 28 |
+| npc/re/jobs/3-1/guillotine_cross.txt | 67 | 55 | 12 |
 | npc/re/jobs/3-1/mechanic.txt | 10 | 10 | 0 |
-| npc/re/jobs/3-1/ranger.txt | 31 | 5 | 26 |
-| npc/re/jobs/3-1/rune_knight.txt | 33 | 23 | 10 |
-| npc/re/jobs/3-1/warlock.txt | 18 | 12 | 6 |
+| npc/re/jobs/3-1/ranger.txt | 31 | 28 | 3 |
+| npc/re/jobs/3-1/rune_knight.txt | 33 | 33 | 0 |
+| npc/re/jobs/3-1/warlock.txt | 18 | 17 | 1 |
 | npc/re/jobs/3-2/genetic.txt | 27 | 27 | 0 |
 | npc/re/jobs/3-2/minstrel.txt | 45 | 45 | 0 |
 | npc/re/jobs/3-2/royal_guard.txt | 15 | 15 | 0 |
 | npc/re/jobs/3-2/shadow_chaser.txt | 22 | 22 | 0 |
 | npc/re/jobs/3-2/sorcerer.txt | 7 | 7 | 0 |
-| npc/re/jobs/3-2/sura.txt | 15 | 12 | 3 |
+| npc/re/jobs/3-2/sura.txt | 15 | 13 | 2 |
 | npc/re/jobs/3-2/wanderer.txt | 27 | 27 | 0 |
 | npc/re/jobs/doram/spirit_handler.txt | 24 | 14 | 10 |
 | npc/re/jobs/novice/academy.txt | 514 | 473 | 41 |
@@ -1333,37 +1574,37 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/re/quests/quests_14_3.txt | 12 | 12 | 0 |
 | npc/re/quests/quests_14_3_bis.txt | 197 | 181 | 16 |
 | npc/re/quests/quests_15_1.txt | 190 | 182 | 8 |
-| npc/re/quests/quests_15_2.txt | 152 | 150 | 2 |
-| npc/re/quests/quests_16_1.txt | 366 | 304 | 62 |
-| npc/re/quests/quests_16_2.txt | 184 | 169 | 15 |
+| npc/re/quests/quests_15_2.txt | 152 | 151 | 1 |
+| npc/re/quests/quests_16_1.txt | 366 | 323 | 43 |
+| npc/re/quests/quests_16_2.txt | 184 | 171 | 13 |
 | npc/re/quests/quests_17_1.txt | 246 | 230 | 16 |
-| npc/re/quests/quests_17_2.txt | 231 | 197 | 34 |
+| npc/re/quests/quests_17_2.txt | 231 | 198 | 33 |
 | npc/re/quests/quests_18.txt | 337 | 281 | 55 |
 | npc/re/quests/quests_aldebaran.txt | 3 | 3 | 0 |
 | npc/re/quests/quests_dewata.txt | 54 | 54 | 0 |
 | npc/re/quests/quests_dicastes.txt | 160 | 154 | 6 |
-| npc/re/quests/quests_dungeons_200.txt | 29 | 25 | 4 |
-| npc/re/quests/quests_eclage.txt | 181 | 174 | 7 |
-| npc/re/quests/quests_exp_175.txt | 6 | 4 | 2 |
+| npc/re/quests/quests_dungeons_200.txt | 29 | 28 | 1 |
+| npc/re/quests/quests_eclage.txt | 181 | 177 | 4 |
+| npc/re/quests/quests_exp_175.txt | 6 | 6 | 0 |
 | npc/re/quests/quests_glastheim.txt | 3 | 3 | 0 |
-| npc/re/quests/quests_illusion_dungeons.txt | 299 | 268 | 31 |
+| npc/re/quests/quests_illusion_dungeons.txt | 299 | 285 | 14 |
 | npc/re/quests/quests_izlude.txt | 5 | 5 | 0 |
 | npc/re/quests/quests_lighthalzen.txt | 5 | 5 | 0 |
-| npc/re/quests/quests_malangdo.txt | 148 | 136 | 12 |
+| npc/re/quests/quests_malangdo.txt | 148 | 146 | 2 |
 | npc/re/quests/quests_malaya.txt | 135 | 135 | 0 |
 | npc/re/quests/quests_mora.txt | 102 | 91 | 11 |
 | npc/re/quests/quests_morocc.txt | 15 | 15 | 0 |
 | npc/re/quests/quests_nameless.txt | 2 | 2 | 0 |
 | npc/re/quests/quests_niflheim.txt | 1 | 1 | 0 |
-| npc/re/quests/quests_rockridge.txt | 273 | 264 | 8 |
+| npc/re/quests/quests_rockridge.txt | 273 | 265 | 7 |
 | npc/re/quests/quests_veins.txt | 1 | 1 | 0 |
 | npc/re/quests/seals/brisingamen_seal.txt | 2 | 2 | 0 |
 | npc/re/quests/seals/megingard_seal.txt | 2 | 2 | 0 |
 | npc/re/quests/skills/merchant_skills.txt | 1 | 1 | 0 |
 | npc/re/quests/skills/swordman_skills.txt | 1 | 1 | 0 |
 | npc/re/quests/the_sign_quest.txt | 1 | 1 | 0 |
-| npc/re/quests/woe_te/te_goditem_alde1.txt | 25 | 7 | 18 |
-| npc/re/quests/woe_te/te_goditem_prt01.txt | 25 | 7 | 18 |
+| npc/re/quests/woe_te/te_goditem_alde1.txt | 25 | 14 | 11 |
+| npc/re/quests/woe_te/te_goditem_prt01.txt | 25 | 14 | 11 |
 | npc/re/quests/woe_te/te_mission_alde.txt | 26 | 0 | 26 |
 | npc/re/quests/woe_te/te_mission_main.txt | 3 | 0 | 3 |
 | npc/re/quests/woe_te/te_mission_prt.txt | 26 | 0 | 26 |

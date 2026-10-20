@@ -1,7 +1,6 @@
 package zone
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -98,54 +97,6 @@ func (z *Zone) killHooks(e, killer *entity) *progression.Hooks {
 		}
 	}
 	return h
-}
-
-// SpawnMonsters places monsters that a script context owns
-// (spawning.monsters).
-func (h scriptHost) SpawnMonsters(owner int64, s modscript.SpawnSpec) ([]int64, error) {
-	z := h.z
-	if z.Mods == nil || z.Mods.Monsters == nil {
-		return nil, errors.New("there are no monster records")
-	}
-	tmpl, ok := z.Mods.Monsters[s.Monster]
-	if !ok {
-		return nil, fmt.Errorf("there is no monster %d", s.Monster)
-	}
-	sp := tmpl
-	sp.Amount, sp.owner = s.Amount, owner
-	sp.X, sp.Y, sp.W, sp.H = 0, 0, 0, 0
-	if s.HasCell {
-		if s.X < 0 || s.Y < 0 || s.X >= z.grid.Width || s.Y >= z.grid.Height {
-			return nil, fmt.Errorf("%d,%d is outside the map", s.X, s.Y)
-		}
-		if s.Area == 0 && z.grid.NoPass(s.X, s.Y) {
-			return nil, fmt.Errorf("%d,%d is not a walkable cell", s.X, s.Y)
-		}
-		sp.X, sp.Y, sp.W, sp.H = s.X, s.Y, s.Area, s.Area
-		// spawnCell reads a center of 0,0 as anywhere.
-		if sp.X == 0 && sp.Y == 0 {
-			sp.X = 1
-		}
-	}
-	if s.Respawn {
-		// As a spawn line: its delay, or rAthena's default of 5 seconds.
-		// mob_setdelayspawn's spawn delay rates are 100% by default, and
-		// die keeps the 1 second floor.
-		sp.RespawnMs = cmp.Or(s.RespawnMs, modscript.DefaultRespawnMs)
-	} else {
-		sp.noRespawn = true
-	}
-	if z.owned == nil {
-		z.owned = map[int64][]*Spawn{}
-	}
-	z.owned[owner] = append(z.owned[owner], &sp)
-	ids := make([]int64, 0, s.Amount)
-	for range s.Amount {
-		if e := z.spawnOne(&sp); e != nil {
-			ids = append(ids, z.monsterHandle(e))
-		}
-	}
-	return ids, nil
 }
 
 // Despawn removes the monsters a context owns, alive or waiting to come

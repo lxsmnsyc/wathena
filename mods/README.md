@@ -1576,6 +1576,56 @@ local rate = rules.get("quest_exp_rate")  -- 100
 - `clock.format(format, seconds?)` is C's `strftime` in the C locale.
 - `rules.get` reads the server settings `base_exp_rate`, `job_exp_rate`, `quest_exp_rate`, `max_hair_style`, `max_hair_color` and `max_cloth_color`, as `getbattleflag`.
 
+#### Maps, areas and monsters
+
+These calls are review decision 58's area B8 ([decision 0065](../docs/decisions/0065-npc-api-group-4.md)), as rAthena's map and monster commands:
+
+```lua
+local events = require "wa.events"
+local maps = require "wa.maps"
+local spawning = require "wa.spawning"
+
+return function()
+  events.on("npc_event", function()
+    spawning.monsters { map = "gef_dun01", monster = 1002, amount = 5, label = "OnMyMobDead",
+      display_name = "Angry Poring", size = "big", rectangle = { { 100, 100 }, { 120, 110 } } }
+  end, { name = "OnStart" })
+  events.on("npc_event", function()
+    if maps.count_monsters("gef_dun01", { label = "OnMyMobDead" }) == 0 then
+      maps.warp_players("gef_dun01", "geffen", 120, 60, { rectangle = { { 90, 90 }, { 130, 120 } } })
+    end
+  end, { name = "OnMyMobDead" })
+end
+```
+
+| Call | rAthena | Meaning |
+|---|---|---|
+| `spawning.monsters { map, display_name, size, ai, label, rectangle }` | `monster`, `areamonster` | Any map. `label` is an event label of the NPC, or `"<NPC>::<label>"` of another NPC. Its `npc_event` handler runs when each monster dies. `rectangle` places each monster on a random walkable cell of it. |
+| `monster:kill()`, `monster:remove()` | `unitkill`, `killmonster` | The monster dies with no exp and no drops. `kill` runs its label, and `remove` does not. |
+| `maps.remove_monsters(map, { label, scripted, run_labels })` | `killmonster`, `killmonsterall` | Without options, every monster of the map; those of spawn lines come back. `scripted` is killmonster's `"All"`. Labels run only with `run_labels`. |
+| `maps.count_monsters(map, { label })` | `mobcount` | The living monsters of a label, or of the map. nil for a map that does not run. |
+| `maps.count_players(map, { rectangle })` | `getmapusers`, `getareausers` | nil for a map that does not run. |
+| `maps.warp_players(map, to_map, x, y, { rectangle, to_rectangle, party, guild })` | `mapwarp`, `areawarp` | Needs `player.warp`. `to_rectangle` picks a random walkable cell of the target. Dead players stay. |
+| `party:warp(map, x, y)` | `warpparty` | Needs `player.warp`. Every online member that lives, on any map. |
+| `maps.set_cells(map, x1, y1, x2, y2, kind, on)`, `maps.check_cell(map, x, y, kind)` | `setcell`, `checkcell` | `walkable`, `shootable`, `no_vending` and `no_buying_store`. Cell changes go to the map's players and to players who enter later, as `setwall`'s. |
+| `maps.set_flag(map, flag, value)`, `maps.get_flag(map, flag)` | `setmapflag`, `removemapflag`, `getmapflag` | `nomemo`. Other flags raise an error that says why. |
+| `maps.find_free_cell(map, { x, y, range_x, range_y, reachable_from })` | `getfreecell` | A random walkable cell, or nil. |
+| `maps.announce(map, text, { rectangle })` | `areaannounce` | The players of the rectangle. |
+| `monsters.get(monster)` | `getmonsterinfo` | The monster's record: level, HP, exp, stats, ranges, size, race, element and modes. |
+| `monster:set_hp(hp)`, `set_damage_immune(immune)`, `set_modes(modes)`, `set_speed(milliseconds)` | `setunitdata` with `UMOB_HP`, `UMOB_DMGIMMUNE`, `UMOB_MODE` and `UMOB_SPEED` | `set_hp` never kills. |
+| `monster:use_skill_at(skill, level, x, y)`, `monster:warp_to(x, y)` | `unitskillusepos`, `unitwarp` | A ground skill on a cell, and a move on the monster's map. |
+
+- A call on another map runs in that map's zone after the current step. Its counts and cells are those of that zone's last step. Monsters that a spawn asked another zone to place count at once.
+- A label's event runs with the killer, or else the player that dealt the most damage, when the NPC runs in the monsters' zone. It runs with no player when the NPC is on another map, or the monster died to a script.
+- Labels run after the step that killed the monsters, as events between NPCs do (decision 0062). rAthena runs each one inside `killmonster`'s loop.
+- Monsters on another map belong to no context: they stay when the NPC's script reloads, and `spawning.monsters` returns no handles for them.
+- `size` shows the baby or giant body effect. The stats stay, as rAthena's `mob_size_influence` is off by default.
+- A monster with an `ai` and no master fights the monsters without one, and those fight it unless its AI is `wave_mode`. Players may hit it. It gives exp and drops nothing, unless it is a `sphere`.
+- `maps.set_cells` refuses `water`, `npc`, `basilica`, `land_protector`, `no_chat`, `maelstrom` and `ice_wall`: their systems do not exist, or keep no cell flag.
+- `maps.set_flag` refuses every flag but `nomemo`, with the reason: PvP, sieges, battlegrounds, weather and chat rooms do not exist, and the other flags' effects are not built yet. `maps.get_flag` gives false for them.
+- `maps.find_entities` still finds entities of the context's map only, and `maps.can_enter` (`jobcanentermap`) is not built: it needs the WoE:TE map flags of sieges.
+- `maps.count_monsters`, `maps.get_flag` and the options of `maps.remove_monsters` are not named in proposal 0002b. They wait for review.
+
 ### Saved variables: wa.variables
 
 ```lua
@@ -2287,8 +2337,8 @@ return function()
 end
 ```
 
-- `spawning.monsters { map, monster, amount, x, y, area, respawn }` places monsters on the context's map and returns their handles. `map` may be left out. Another map raises an error, so a mod script, which runs in every zone, checks `context:get_instance().map` first.
-- Without `x` and `y`, each monster lands on a random walkable cell. `area` spreads them within that many cells of `x`, `y`.
+- `spawning.monsters { map, monster, amount, x, y, area, respawn }` places monsters on a map and returns their handles. `map` may be left out for the context's own map. On another map, the map's zone places them after the current step, they belong to no context, and the list is empty (review decision 58, "Maps, areas and monsters" above).
+- Without `x` and `y`, each monster lands on a random walkable cell at least 15 cells from the map's edges, as rAthena's `map_search_freecell`. `area` spreads them within that many cells of `x`, `y`. `rectangle`, `display_name`, `size`, `ai` and `label` are in "Maps, areas and monsters" above.
 - `amount` is 1 to 1,000. By default a dead monster stays dead. `respawn = true` makes it come back as a spawn line's monster does in rAthena: after `respawn_milliseconds` (1,000 or more), or after 5,000 ms without it, rAthena's delay for a spawn line that gives none. Monster data has no respawn time, so the delay belongs to the call.
 - The context owns the monsters: they go when it ends, such as when an event's run ends or the mod reloads.
 - It needs `npc.create`, which every mod has.
