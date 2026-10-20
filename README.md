@@ -6,8 +6,9 @@ wAthena is not affiliated with or endorsed by Gravity or the rAthena team.
 
 ## Status
 
-The first release is in progress (phase 8 of the plan). There is no tagged release yet.
+The first release is `v0.1.0`. Its [release notes](docs/releases/v0.1.0.md) list what it has and its known issues.
 
+- A release is a git tag. The project publishes no binaries or images. Server owners build from the tag with the setup guide.
 - The plan is in [docs/strategy.md](docs/strategy.md).
 - Reference data recorded from rAthena is in [reference/rathena](reference/rathena).
 
@@ -35,7 +36,7 @@ wAthena is server software. The project runs no server or world of its own.
 | `reference/` | Reference data from rAthena, used by parity tests. |
 | `internal/` | Go packages shared by the server and tools, such as the reference data loader. |
 | `e2e/` | End-to-end tests that play a real server with bots. |
-| `scripts/` | `check.sh`, which runs the CI checks on this machine. |
+| `scripts/` | `check.sh`, which runs the checks on this machine, and `release.sh`, which builds the binaries from source. |
 
 ## Game files
 

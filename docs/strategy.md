@@ -171,7 +171,7 @@ Done:
   - The release build ran a procedural world of 52 maps with PostgreSQL, with bots from 250 to 1,500 in the five scenarios of phase 2 and two new ones: `fields`, fights on 8 fields of every band, and `graph`, walks through the map graph's portals. Classic mode ran Town on the kRO Prontera.
   - The documented capacity is 250 players, on the shared 8 GB Apple M2: every run of every scenario but Crowd met section 3.8 there. At 500 the zone's work fits, with a thread CPU time p99 under 6 ms, but 3 of 10 runs had just over 1% of their ticks over 10 ms, from the machine's memory pressure. Spread over many maps, 1,500 bots met the budgets.
   - A fix: zones kept every player that left in memory, through the block index of a sleeping zone and each player's IDs for what it saw. Tests with weak pointers check that the players are freed.
-  - `wabots` ships in the release. It places bots on generated fields and towns through the database, and walks routes to portals. The deploy guide tells owners how to measure their own hardware against a test world.
+  - `wabots` is built with `scripts/release.sh`, and owners build it from the tag. It places bots on generated fields and towns through the database, and walks routes to portals. The deploy guide tells owners how to measure their own hardware against a test world.
   - One large slowdown is reported, not fixed: 1,000 players in one town are over the tick budget in the zone's own work.
 
 - Phase 8 step 5, the security review (review decisions 51 to 53, [review 2026-10](security/review-2026-10.md)):
@@ -436,7 +436,7 @@ Approach:
 | Shared client logic | Go package compiled to WebAssembly with TinyGo. |
 | Metrics and profiling | Prometheus client and `pprof`. |
 | Linting | `golangci-lint` with the `exhaustive` linter enabled. |
-| Release builds | `goreleaser`, static binaries for every target. |
+| Release builds | `scripts/release.sh`, static binaries for every target, for owners who build from a tag. Nothing is published (2026-10-20). |
 | Web client | TypeScript, WebGL2 (WebGPU later), DOM-based UI. Chromium-based browsers only (section 2.2). |
 | Mod tooling | `wactl` command-line tool written in Go (section 6.9). |
 | Password hashing | Argon2id (`golang.org/x/crypto/argon2`). |
@@ -2620,7 +2620,7 @@ deploy/        Docker Compose files and example configs
 ### 13.4 Releases
 
 - The server, client, and `wactl` share one version number and follow semantic versioning.
-- Releases are tagged, signed, and built by CI (section 7.9).
+- Releases are git tags of a commit that passed every check of `scripts/check.sh`, with release notes in docs/releases. The project publishes no binaries or images (section 7.9, 2026-10-20).
 - The public Lua API has its own version (section 6.12).
 
 ## 14. Solo development plan
@@ -3426,7 +3426,7 @@ Built with the `procedural` tag. Both world modes ship, with procedural as the d
 - GM audit logs, role-based GM permissions, and encrypted backups with restore tests (section 7.8).
 - Privacy settings and retention jobs (section 7.10).
 - Classic mode from the owner's GRF files: maps, converted NPCs, and fixed spawns from rAthena's data.
-- Load tests on the all-in-one release build, as large as the development machine allows. There is no rented machine (2026-10-18). The docs state the measured player count and the machine it ran on. The load test tool ships with the release, so owners can measure their own hardware.
+- Load tests on the all-in-one release build, as large as the development machine allows. There is no rented machine (2026-10-18). The docs state the measured player count and the machine it ran on. The load test tool is in the repository, so owners can build it from the tag and measure their own hardware.
 - A security review by the project against section 7. There is no paid review and no bug bounty (section 7.9).
 - Setup guide for server owners and a first-start guide for players.
 - A tagged release, `v0.1.0`, on the commit that passed every check, with release notes, the known issues and the classic coverage list. Owners build from the tag with the setup guide. The project publishes no binaries, images or signatures: wAthena is server software that owners build and run (2026-10-20). The project runs no server or beta of its own (section 2.2).

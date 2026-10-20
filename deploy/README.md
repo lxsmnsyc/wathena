@@ -33,7 +33,7 @@ The two wAthena images come from the repository's `Dockerfile`:
 
 - `wathena/waserver` is distroless (no shell), with one static binary: `waserver` with the web client and the reference data built in. The binary is about 107 MB, 22 MB compressed (2026-10-18). The build compiles Lua with `zig cc` and links the binary against musl, so it stays static. zig is downloaded in the build and checked against a pinned SHA-256.
 - `wathena/wactl` is `wactl` on the `postgres:18` image, for `pg_dump` and `pg_restore`. 170 MB compressed, mostly the PostgreSQL image, which the stack pulls anyway.
-- Both binaries are built with the tag `procedural`, as `scripts/release.sh` builds them (docs/decisions/0047-guild-towns-and-release-build.md). They run procedural and classic worlds, and `wactl world new --mode` picks the mode. Both have the reference data built in, so they need no copy of the repository. `WATHENA_VERSION` in `.env` is the version they print with `version`; set it to the output of `git describe --tags --always --dirty` for a release.
+- Both binaries are built with the tag `procedural`, as `scripts/release.sh` builds them (docs/decisions/0047-guild-towns-and-release-build.md). They run procedural and classic worlds, and `wactl world new --mode` picks the mode. Both have the reference data built in, so they need no copy of the repository. `WATHENA_VERSION` in `.env` is the version they print with `version`; set it to the output of `git describe --tags --always --dirty`, such as `v0.1.0` on a release's tag.
 
 You need Docker Engine with Compose 2.20 or later. The load tests of phase 8 measured 250 players on 4 CPU cores and 8 GB of memory (strategy section 3.9), with 50 GB of SSD suggested. For more players, measure your own hardware first (see "Measure your own hardware"). Building assets from a full game client takes 4 GB of memory.
 
@@ -272,7 +272,7 @@ docker compose run --rm -T backup world backup --out - --recipients-file=/run/se
 
 #### Checking backups on your own machine
 
-This is the default: the identity never goes to the server. Copy a backup and its manifest to a machine with PostgreSQL 18 and its client tools, then:
+This is the default: the identity never goes to the server. Copy a backup and its manifest to a machine with PostgreSQL 18 and its client tools, and a `wactl` built from the release's tag (`CGO_ENABLED=0 go build -tags procedural -o wactl ./tools/wactl`), then:
 
 ```text
 wactl world verify-backup --in world-20261018T030000Z.dump.age --identity backup-identity.txt \
@@ -333,7 +333,7 @@ docker compose up -d --wait
 
 ## Measure your own hardware
 
-`wabots` ships with each release, next to `waserver` and `wactl`. It plays the load tests of strategy section 3.8 against a server, and checks the results against the budgets. Run it before you open a world, to learn how many players your machine holds.
+`wabots` is a program of the repository, next to `waserver` and `wactl`. Build all three from the release's tag on the machine you measure, as docs/guides/setup.md, "Measure your own hardware", shows. The project publishes no binaries. `wabots` plays the load tests of strategy section 3.8 against a server, and checks the results against the budgets. Run it before you open a world, to learn how many players your machine holds.
 
 Always use a test world in a database of its own, never your live world. The bots log in with development sessions, make characters, and change their levels, items and places.
 
@@ -370,7 +370,7 @@ Set `GOMEMLIMIT` for the live server to the memory it may use, such as `GOMEMLIM
 
 ## Without Docker
 
-`waserver` and `wactl` are single binaries. To run them on a host:
+`waserver` and `wactl` are single binaries. Build them from the release's tag, with `go build` (docs/guides/setup.md, "Measure your own hardware") or `scripts/release.sh` (server/README.md, "Release builds"). To run them on a host:
 
 1. Run `postgres/roles.sql` once as a PostgreSQL superuser, and set each role's password with `\password` in psql.
 2. Make the world as the migrator, which also applies the migrations: `WATHENA_MIGRATE_DATABASE_URL=... wactl world new --admin Admin --admin-password-file -`.

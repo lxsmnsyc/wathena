@@ -91,7 +91,7 @@ Lua 5.4 follows strategy section 5.5 already. Integers are 64-bit and wrap on ov
 
 - With cgo, the default on amd64 and arm64, Go compiles Lua and `glue.c` with the C compiler. On Linux it links `libm`.
 - With `CGO_ENABLED=0`, the build tag `luawasm`, or another architecture, the same API runs `lua.wasm` in wazero. It needs no C compiler. It is 2 to 60 times slower, most for dialogs, since wazero's WebAssembly exceptions are slow (decision 0002).
-- Release builds use `zig cc`. The Dockerfile and CI show the flags. macOS builds need the macOS SDK, so CI builds them on a macOS runner.
+- Release builds use `zig cc`. `scripts/release.sh` and the Dockerfile show the flags. macOS builds need the macOS SDK, so `scripts/release.sh` builds them only on a Mac with `xcrun`.
 
 The Go build cache only tracks files in this folder. `lua_cgo.c` holds a digest of `csrc/` and `lua/src/`, so changing a C source changes it. After editing C sources:
 

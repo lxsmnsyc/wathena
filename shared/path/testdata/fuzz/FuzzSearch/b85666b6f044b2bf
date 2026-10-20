@@ -1,0 +1,9 @@
+go test fuzz v1
+byte('\b')
+byte('v')
+[]byte("\x8a@\xa3!\x95S\xd42")
+byte('\x00')
+byte('\x00')
+byte('\x00')
+byte(' ')
+bool(false)

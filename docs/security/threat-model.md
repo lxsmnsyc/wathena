@@ -220,7 +220,7 @@ The boundaries are:
 | A compromised GitHub Action. | The repository has no workflows. | Not applicable. | [Decision 0026](../decisions/0026-local-checks.md) |
 | A compromised download: Lua, zig, TinyGo, wasmtime, wasi-sdk, or pnpm. | The Dockerfile and the build scripts check each download against a pinned SHA-256, pnpm too. Developers install the local tools themselves, and the header of `scripts/check.sh` lists the pinned versions and hashes to check them against. | Partial. | `Dockerfile`, `scripts/check.sh`, `tools/luabench/wasm/build.sh` |
 | A vulnerable Go module or npm package. | `go.sum` and `pnpm-lock.yaml` pin dependencies. `govulncheck`, `gosec` and `pnpm audit` run in `scripts/check.sh` before every push. `trivy` scanned the images in the 2026-10 review. | Done. | Strategy 7.9 |
-| A tampered release. | Signed release binaries and a software bill of materials. | Decided. | Strategy 7.9 |
+| A tampered release. | A release is a git tag of the public repository. The project publishes no binaries or images, so owners build from source they can read (2026-10-20). | Done. Owners trust the repository's tags. Tags are not signed. | Strategy 7.9 |
 
 ## Findings from phase 0b
 

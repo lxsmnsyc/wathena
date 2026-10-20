@@ -397,7 +397,7 @@ func newServer(t testing.TB, o Options) *Server {
 			t.Fatal(err)
 		}
 		events := filepath.Join(mods, "fixture", "data", "events.yml")
-		data, err := os.ReadFile(events)
+		data, err := os.ReadFile(events) // #nosec G304 -- the copy of the fixture in the test's own folder.
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -405,7 +405,7 @@ func newServer(t testing.TB, o Options) *Server {
 		if moved == string(data) {
 			t.Fatal("the fixture's treasure hunt no longer names e2e_field")
 		}
-		if err := os.WriteFile(events, []byte(moved), 0o600); err != nil {
+		if err := os.WriteFile(events, []byte(moved), 0o600); err != nil { // #nosec G703 -- the copy of the fixture in the test's own folder.
 			t.Fatal(err)
 		}
 	}

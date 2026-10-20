@@ -152,8 +152,12 @@ func TestProceduralContent(t *testing.T) {
 	if id == 0 {
 		t.Fatal("the character was not saved in the town")
 	}
+	// The logout's save may still be on its way: the town in the database
+	// can be from an earlier save. Raising the save version makes that
+	// save fail as stale, as a newer session's claim does, so it cannot
+	// write the old levels over these.
 	if _, err := srv.DB.Exec(ctx, `UPDATE characters SET job_level = 10, skill_points = 0, base_level = 50,
-		str = 80, agi = 60, vit = 60, dex = 60 WHERE id = $1`, id); err != nil {
+		str = 80, agi = 60, vit = 60, dex = 60, save_version = save_version + 1 WHERE id = $1`, id); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := srv.DB.Exec(ctx, `INSERT INTO character_skills (character_id, skill_id, level) VALUES ($1, 1, 9)

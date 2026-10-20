@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 )
 
 // The reference records rAthena's results on six maps, for each mode.
@@ -128,6 +129,40 @@ func TestReference(t *testing.T) {
 			}
 			checked += len(m.Walk) + len(m.Shoot)
 		}
+	}
+}
+
+// TestSearchFromOrigin: a search that starts on (0, 0) and reaches a cell
+// of the start's node slot, such as (0, 32), ends. With rAthena's empty
+// slot test it wrote over the start node and looped forever on the
+// parents (the fuzz input testdata/fuzz/FuzzSearch/b85666b6f044b2bf).
+func TestSearchFromOrigin(t *testing.T) {
+	g := &Grid{Width: 9, Height: 39}
+	g.Cells = make([]uint8, g.Width*g.Height)
+	for i := range g.Cells {
+		g.Cells[i] = Walkable | Shootable
+	}
+	// The fuzz input's first row: (0, 0) and (1, 0) are blocked, so the
+	// search goes north first.
+	copy(g.Cells, []uint8{2, 0, 3, 1, 1, 3, 0, 2})
+	done := make(chan bool)
+	go func() {
+		_, found := Search(g, 0, 0, 0, 32, false)
+		done <- found
+	}()
+	select {
+	case found := <-done:
+		// The goal's slot is the start's, so the search fails, as any
+		// other collision does.
+		if found {
+			t.Error("found a path through the start's slot")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the search did not end")
+	}
+	// A shorter walk from (0, 0) still works.
+	if path, found := Search(g, 0, 0, 3, 5, false); !found || len(path) != 5 {
+		t.Errorf("from (0, 0) to (3, 5): %v %v", path, found)
 	}
 }
 

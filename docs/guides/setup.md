@@ -3,7 +3,7 @@
 This guide takes you from an empty Linux machine to a running world. It uses the Docker Compose stack in `deploy/compose`: `waserver`, PostgreSQL 18 and Caddy for TLS.
 
 - Time: about 15 minutes of your own work for a procedural world, after Docker is installed. The commands of steps 3 to 10 ran in under 2 minutes on the test machine (2026-10-20). Building the images took 7 minutes more, and importing a full game client takes about an hour.
-- You need to know how to use a shell and edit a text file. You do not need Go or Node.
+- You need to know how to use a shell and edit a text file. The stack needs no Go or Node. Only "Measure your own hardware" needs Go and a C compiler.
 - [deploy/README.md](../../deploy/README.md) is the reference for the stack, and [server/README.md](../../server/README.md) for every setting. This guide links to them instead of repeating them.
 - Players read [players.md](players.md). Link it from your site, or copy it and fill in your server's name.
 
@@ -44,18 +44,18 @@ Docker Compose version v2.20.0
 
 ## 2. Get wAthena
 
-Releases are on the [GitHub releases page](https://github.com/lxsmnsyc/wathena/releases). There is no tagged release yet. Until there is one, use the `main` branch and build the images on the server:
+Each release is a git tag, such as `v0.1.0`. The project publishes no binaries or images. You build the images on your server from the tag. The release notes are in [docs/releases](../releases).
+
+Clone the release's tag:
 
 ```sh
-git clone https://github.com/lxsmnsyc/wathena.git
+git clone --branch v0.1.0 https://github.com/lxsmnsyc/wathena.git
 cd wathena/deploy/compose
 ```
 
-Once releases exist:
-
-- Clone the release's tag instead: `git clone --branch v0.1.0 https://github.com/lxsmnsyc/wathena.git`.
-- Each release has the binaries `waserver`, `wactl` and `wabots` for linux/amd64, linux/arm64, darwin/arm64 and windows/amd64, and a `SHA256SUMS` file. You do not need them for the Compose stack. `wactl` and `wabots` are useful on your own machine, for backups and load tests.
-- `scripts/release.sh` builds the same binaries from source. It needs Go, zig 0.16.0, Node and pnpm.
+- To follow development instead, clone the `main` branch. It is not a release.
+- The Compose stack builds `waserver` and `wactl` into images in step 5. You need no other binaries for it.
+- `wactl` and `wabots` are useful on your own machine too, for backups and load tests. Build them from the same tag, as "Measure your own hardware" shows.
 
 Run every command from here on in `wathena/deploy/compose`, unless a step says otherwise.
 
@@ -197,7 +197,7 @@ age-keygen -o backup-identity.txt
 - It prints `Public key: age1...`. That public key is the recipient.
 - Keep `backup-identity.txt` off the server, such as in a password manager. Without it, no backup can be restored.
 - Install age with `sudo apt install age` or `brew install age`.
-- A release's `wactl world backup-key new --out backup-identity.txt` does the same. It prints the recipient on its first line.
+- `wactl world backup-key new --out backup-identity.txt` does the same, with a `wactl` you built from the tag. It prints the recipient on its first line.
 - Without age or `wactl`, a computer with Docker and the `wathena/wactl` image can make the key. Docker cannot write the file as your user, so the image prints it:
 
   ```sh
@@ -314,7 +314,7 @@ Copy them to another machine on a schedule, such as with `rsync` or `rclone`. A 
 
 Check that a backup restores. There are two ways:
 
-- On your own machine, with a release's `wactl` and PostgreSQL 18. The key never goes to the server. deploy/README.md, "Checking backups on your own machine", has the command.
+- On your own machine, with a `wactl` built from the tag and PostgreSQL 18. The key never goes to the server. deploy/README.md, "Checking backups on your own machine", has the command.
 - On the server, with the `verify` profile. It restores the newest backup into a temporary database once a day. The server then holds the key, so anyone who takes the server can read the backups. deploy/README.md, "Checking backups on the server", has the steps and the warning.
 
 To restore, see deploy/README.md, "Restoring".
@@ -353,13 +353,18 @@ wabots --scenario fields --bots 250 --metrics http://127.0.0.1:8301 --check
 
 deploy/README.md, "Measure your own hardware", has the full steps: the test database, the test `waserver` and each scenario.
 
-The test runs the `waserver`, `wactl` and `wabots` binaries of a release on the host, not in Docker. Until there is a release, build them from the repository with Go and a C compiler:
+The test runs `waserver`, `wactl` and `wabots` on the host, not in Docker. Build them from the release's tag with Go (the version in `go.mod`) and a C compiler, such as gcc on Linux or clang on macOS:
 
 ```sh
+git checkout v0.1.0
 go build -tags procedural -o waserver ./server/cmd/waserver
 CGO_ENABLED=0 go build -tags procedural -o wactl ./tools/wactl
 CGO_ENABLED=0 go build -tags procedural -o wabots ./tools/wabots
 ```
+
+- This `waserver` has no web client built in. The load test does not need one.
+- On the server, `wactl` runs from the tools image without Go, as `docker compose run --rm wactl ...` does in step 8. The load test cannot use it: `wabots` and the test `waserver` run on the host.
+- `scripts/release.sh` builds all three for several platforms, with the web client built into `waserver`. It needs zig 0.16.0, Node and pnpm as well. server/README.md, "Release builds", has the details.
 
 ### Update to a new release
 

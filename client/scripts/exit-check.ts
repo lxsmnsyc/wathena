@@ -553,9 +553,16 @@ export async function checkExit(
     u.pathname = `/${db}`;
     u.searchParams.delete('options');
     const base = u.toString();
-    return role === undefined
-      ? base
-      : `${base}${base.includes('?') ? '&' : '?'}options=-c%20role%3D${role}`;
+    if (role === undefined) {
+      return base;
+    }
+    // A waserver without --dev refuses a superuser that acts as a role
+    // (review 2026-10), so the URL logs in as the role itself.
+    const password = execFileSync(testdb, ['login', role], { encoding: 'utf8' }).trim();
+    const login = new URL(base);
+    login.username = role;
+    login.password = password;
+    return login.toString();
   };
   const c: Check = (step, ok, detail) => {
     check(name, `exit ${step}`, ok, detail);

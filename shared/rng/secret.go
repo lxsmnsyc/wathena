@@ -18,7 +18,7 @@ func (n Node) SecretStream() *Rand {
 
 // secretHashContext starts the HMAC message of SecretHash. It differs from
 // childContext, so a hash message is never a child message.
-const secretHashContext = "wa-secret-hash-v1"
+const secretHashContext = "wa-secret-hash-v1" // #nosec G101 -- a label of the HMAC message, not a secret.
 
 // SecretHash returns a stateless value for a cell of a secret node: the
 // first 8 bytes of HMAC-SHA256 of the cell, keyed by the node, read

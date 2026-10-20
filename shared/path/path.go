@@ -164,6 +164,11 @@ type node struct {
 	x, y         int16
 	gCost, fCost int16
 	closed       bool
+	// used marks a slot that holds a node. rAthena counts a slot with
+	// (0, 0) as empty instead, so a search that starts on (0, 0) could
+	// write another cell over its start node and loop forever on the
+	// parents.
+	used bool
 }
 
 // nodeIndex is rAthena's calc_index: a slot in a table of MaxWalkPath²
@@ -269,11 +274,14 @@ func (s *search) add(x, y, gCost, parent, hCost int) bool {
 		}
 		return true
 	}
-	// A slot with (0, 0) counts as empty, as in rAthena.
-	if n.x != 0 || n.y != 0 {
+	// A slot that holds another cell is a collision, which fails the
+	// search, as in rAthena. An empty slot matches (0, 0) above, as in
+	// rAthena, so only a start node on (0, 0) differs: rAthena would
+	// write over it.
+	if n.used {
 		return false
 	}
-	*n = node{parent: parent, x: int16(x), y: int16(y), gCost: int16(gCost), fCost: int16(gCost + hCost)} // #nosec G115 -- map sizes and costs fit.
+	*n = node{parent: parent, x: int16(x), y: int16(y), gCost: int16(gCost), fCost: int16(gCost + hCost), used: true} // #nosec G115 -- map sizes and costs fit.
 	s.push(i)
 	return true
 }
@@ -281,7 +289,7 @@ func (s *search) add(x, y, gCost, parent, hCost int) bool {
 func aStar(g *Grid, x0, y0, x1, y1 int) ([]Dir, bool) {
 	s := &search{open: make([]int, 0, 256)}
 	start := nodeIndex(x0, y0)
-	s.nodes[start] = node{parent: -1, x: int16(x0), y: int16(y0), fCost: int16(heuristic(x0, y0, x1, y1))} // #nosec G115 -- map sizes fit.
+	s.nodes[start] = node{parent: -1, x: int16(x0), y: int16(y0), fCost: int16(heuristic(x0, y0, x1, y1)), used: true} // #nosec G115 -- map sizes fit.
 	s.push(start)
 	xs, ys := g.Width-1, g.Height-1
 	var current int

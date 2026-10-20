@@ -22,8 +22,10 @@ Include:
 
 | Version | Supported |
 |---|---|
-| The first tagged release | Yes. Security fixes come as patch releases. |
-| `main` | Yes, until the first tagged release. After it, use a release. |
+| v0.1.x | Yes. Security fixes come as patch releases, such as v0.1.1. |
+| `main` | Yes. Fixes land here first. Run a release on a live server. |
 | Any other commit or fork | No. |
 
-This table is updated with each release. Known issues of the first release are in [docs/security/review-2026-10.md](docs/security/review-2026-10.md).
+- A release is a git tag. The project publishes no binaries or images, so build a fix from its tag (docs/guides/setup.md, "Update to a new release").
+- This table is updated with each release.
+- Known issues of v0.1.0 are in its [release notes](docs/releases/v0.1.0.md) and in [docs/security/review-2026-10.md](docs/security/review-2026-10.md).

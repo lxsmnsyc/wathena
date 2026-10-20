@@ -90,6 +90,8 @@ None.
 - A comparison of release builds on two machines.
 - A Docker image build with the new flags. The disk of this machine was too full to build it in this step.
 
+On 2026-10-20 the project chose to publish no binaries or images (strategy section 2.2). Releases are git tags, and `scripts/release.sh` is a build helper for owners. The first two items above are dropped.
+
 ## Later changes
 
 - A release `wactl world new`, outside the repository, failed for a procedural world with "reference: go.mod not found above the working directory". Only the mod commands read the reference data built into wactl. Now every command does, and the binary did not grow (decision 0048, "Reference data in wactl"). `waserver` read the built-in data already.

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Builds the release binaries of waserver, wactl and wabots (decisions
-# 0047 and 0050).
+# Builds waserver, wactl and wabots from the checked-out commit, such
+# as a release's tag (decisions 0047 and 0050). It is a build helper for
+# owners and developers. The project publishes no binaries: a release
+# is a git tag, and owners build from it (strategy section 2.2).
 #
 #   scripts/release.sh                       every target, into dist/<version>
 #   scripts/release.sh linux/amd64 ...       only the targets named
@@ -19,7 +21,8 @@
 #   - The version is the output of git describe --tags --always --dirty,
 #     stamped with -ldflags "-X main.buildVersion=...". waserver version
 #     and wactl version print it.
-#   - dist/<version>/SHA256SUMS lists the SHA-256 of every file.
+#   - dist/<version>/SHA256SUMS lists the SHA-256 of every file, to
+#     compare two builds.
 #
 # Flags for builds that repeat byte for byte:
 #   - -trimpath and -buildvcs=false keep paths and VCS data out.
@@ -37,8 +40,8 @@
 # wactl and wabots need no cgo.
 #
 # Tools: Go of go.mod, zig 0.16.0, Node 26 and pnpm (scripts/check.sh
-# lists the versions and hashes). Signing and the software bill of
-# materials are not here yet (strategy section 15, phase 8).
+# lists the versions and hashes). Nothing is signed and there is no
+# software bill of materials, since nothing is published.
 set -euo pipefail
 root=$(git rev-parse --show-toplevel)
 cd "$root"

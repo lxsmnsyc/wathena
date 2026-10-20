@@ -379,7 +379,7 @@ func (s *Service) checkIdentity(ctx context.Context, r *http.Request, sess db.Us
 
 // factorNames writes a session's factors for the settings page.
 func factorNames(factors []string) string {
-	names := map[string]string{
+	names := map[string]string{ // #nosec G101 -- names of login factors for the page, not credentials.
 		factorPassword: "password", factorTOTP: "authenticator code",
 		factorRecovery: "recovery code", factorPasskey: "passkey",
 		factorPasskeyVerified: "its PIN or fingerprint",

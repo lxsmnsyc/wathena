@@ -5,12 +5,17 @@
 //
 //	testdb create   makes a database and the service roles, and prints
 //	                the database's name
+//	testdb login ROLE
+//	                lets a service role log in with a new random
+//	                password, and prints the password
 //	testdb drop NAME
 //	                drops a database that create made
 //
 // The service roles of deploy/postgres/roles.sql are made without LOGIN,
-// as storetest makes them. waserver acts as them with the URL option
-// "-c role=wathena_game".
+// as storetest makes them. A --dev waserver may act as them with the URL
+// option "-c role=wathena_game". A waserver without --dev refuses a
+// superuser that acts as a role (review 2026-10), so it logs in as the
+// role itself, with the password of testdb login.
 package main
 
 import (
@@ -20,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -77,10 +83,24 @@ func run(args []string) error {
 		}
 		fmt.Println(name)
 		return nil
+	case len(args) == 2 && args[0] == "login" && slices.Contains(roles, args[1]):
+		b := make([]byte, 16)
+		if _, err := rand.Read(b); err != nil {
+			return err
+		}
+		password := hex.EncodeToString(b)
+		// DDL takes no bound parameters. The role is one of roles, and
+		// the password is random hex.
+		if _, err := conn.Exec(ctx, "ALTER ROLE "+pgx.Identifier{args[1]}.Sanitize()+
+			" LOGIN PASSWORD '"+password+"'"); err != nil {
+			return err
+		}
+		fmt.Println(password)
+		return nil
 	case len(args) == 2 && args[0] == "drop" && strings.HasPrefix(args[1], prefix):
 		_, err := conn.Exec(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{args[1]}.Sanitize()+" WITH (FORCE)")
 		return err
 	default:
-		return errors.New("usage: testdb create, or testdb drop " + prefix + "<hex>")
+		return errors.New("usage: testdb create, testdb login wathena_game|wathena_account, or testdb drop " + prefix + "<hex>")
 	}
 }

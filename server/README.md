@@ -29,13 +29,13 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 
 - `go build ./server/cmd/waserver` and `go test ./...` need a C compiler. Go uses the system one: clang on macOS, gcc on Linux.
 - Without a C compiler, or with `CGO_ENABLED=0`, the same code runs Lua compiled to WebAssembly in wazero. It is slower, and meant for development.
-- Release builds use `zig cc`: static musl binaries for Linux, and binaries for Windows and macOS. `scripts/release.sh` and the Dockerfile have the commands (below, "Release builds"). Static Linux builds need `-Wl,-z,stack-size=8388608`, since Lua needs more C stack than musl's default.
+- `scripts/release.sh` and the Dockerfile build with `zig cc`: static musl binaries for Linux, and binaries for Windows and macOS (below, "Release builds"). Static Linux builds need `-Wl,-z,stack-size=8388608`, since Lua needs more C stack than musl's default.
 - At startup, `waserver` runs a self-test of the Lua runtime and refuses to start when it fails.
 - Procedural mode is in builds with the tag `procedural`: `go build -tags procedural ./server/cmd/waserver`. Builds without it run only classic worlds (strategy section 8.1, docs/decisions/0038-generator-core.md). See "World modes".
 
 ### Release builds
 
-`scripts/release.sh` builds the release binaries (docs/decisions/0047-guild-towns-and-release-build.md):
+`scripts/release.sh` is a build helper for owners and developers (docs/decisions/0047-guild-towns-and-release-build.md). It builds `waserver`, `wactl` and `wabots` from the checked-out commit, such as a release's tag, for one or more platforms. The project publishes no binaries, images, signatures or software bill of materials: a release is a git tag, and owners build from it (docs/strategy.md, section 2.2).
 
 ```text
 scripts/release.sh                     every target
@@ -43,13 +43,12 @@ scripts/release.sh linux/amd64         only the targets named
 ```
 
 - Targets: `linux/amd64`, `linux/arm64`, `darwin/arm64` and `windows/amd64`. The darwin build needs a Mac with `xcrun`.
-- It builds `waserver` with the web client built in, and `wactl`, both with the tag `procedural`. These binaries run procedural and classic worlds. `wactl world new --mode` picks a world's mode, and procedural is the default.
+- It builds `waserver` with the web client built in, `wactl` and `wabots`, all with the tag `procedural`. These binaries run procedural and classic worlds. `wactl world new --mode` picks a world's mode, and procedural is the default.
 - The version is the output of `git describe --tags --always --dirty`. `waserver version` and `wactl version` print it with the build's world modes, such as `v0.1.0 (modes: classic, procedural)`.
-- The output goes to `dist/<version>/`, which git ignores: `waserver-<os>-<arch>`, `wactl-<os>-<arch>`, `.exe` for Windows, and `SHA256SUMS`.
+- The output goes to `dist/<version>/`, which git ignores: `waserver-<os>-<arch>`, `wactl-<os>-<arch>`, `wabots-<os>-<arch>`, `.exe` for Windows, and `SHA256SUMS`. `SHA256SUMS` lets you compare two builds of yours. Nothing is published with it.
 - The builds repeat byte for byte on one machine: `-trimpath`, `-buildvcs=false`, `-buildid=`, stripped symbols, and fixed `CGO_CFLAGS`, `CGO_LDFLAGS`, `GOAMD64`, `GOARM64` and `GOFLAGS`.
 - It needs Go, zig 0.16.0, Node and pnpm (scripts/check.sh lists the versions). For darwin/arm64, `waserver` and `wactl` are about 49 MB and `wabots` 35 MB.
 - It runs `go generate ./reference/rathena` first, and builds with the tag `gzextracts`, so the binaries embed gzipped copies of the extracts (review decision 56).
-- The binaries are not signed and have no software bill of materials yet.
 
 The Dockerfile builds the same way, for linux on the build machine's architecture. Its `VERSION` argument is the stamp, which Compose sets from `WATHENA_VERSION` (deploy/README.md).
 

@@ -1,0 +1,9 @@
+go test fuzz v1
+byte('H')
+byte('_')
+[]byte("00100100001100010011101011100000010100000100100010010001010")
+byte('D')
+byte('\f')
+byte('\x05')
+byte('\x00')
+bool(false)
