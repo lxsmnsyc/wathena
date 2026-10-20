@@ -34,6 +34,30 @@ type npcHost struct {
 	market      marketHost
 	// questLog is the quest log of every player (npc_quest_test.go).
 	questLog
+	// now is the zone clock in milliseconds, for timers.
+	now int64
+	// effects are the effects played on NPCs, as "kind id effect".
+	effects []string
+	// rolls counts the random numbers it gave.
+	rolls int64
+}
+
+func (h *npcHost) Now() int64 { return h.now }
+
+// RandomN counts up, so a script that loops until it rolls different
+// numbers, such as the Rune Device's, ends.
+func (h *npcHost) RandomN(n int64) int64 {
+	h.rolls++
+	return h.rolls % n
+}
+
+// The entity calls: NPC effects are recorded, and no query finds
+// anything.
+func (h *npcHost) FindEntities(modscript.EntityQuery) ([]modscript.Entity, error) { return nil, nil }
+func (h *npcHost) EntityExists(modscript.Entity) bool                             { return true }
+func (h *npcHost) ShowEntityEffect(e modscript.Entity, effect int64) error {
+	h.effects = append(h.effects, fmt.Sprintf("%s %d %d", e.Kind, e.ID, effect))
+	return nil
 }
 
 // marketHost is the MarketHost of the NPC runtime tests: core's
@@ -388,6 +412,11 @@ func TestRunConvertedNPCs(t *testing.T) {
 					}
 				}
 				rt.RunSchedules(testClock.Add(8 * 24 * time.Hour))
+				// Each NPC timer's labels run, a step of each chain at a
+				// time: a label arranges the next one when it runs.
+				for range 5 {
+					rt.Advance(1 << 40)
+				}
 				rt.Close()
 			}
 			bad := 0

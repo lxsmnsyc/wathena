@@ -3,6 +3,7 @@ package convert
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/lxsmnsyc/wathena/server/chat"
@@ -318,7 +319,14 @@ func (b *body) callfunc(args []Expr) (val, error) {
 	if !ok {
 		return val{}, unsupported("callfunc", "a computed function name")
 	}
-	key := strings.ToLower(name.Value)
+	return b.callFunction(strings.ToLower(name.Value), args[1:])
+}
+
+// callFunction writes a call to the global function key with its
+// arguments. An argument that the function writes through, as
+// F_time_limit_recorder's set getelementofarray(getarg(0), .@i), passes
+// the caller's array (refArgsOf).
+func (b *body) callFunction(key string, args []Expr) (val, error) {
 	if ignoredFunctions[key] {
 		b.n.ok("callfunc")
 		return intVal(0), nil
@@ -335,16 +343,268 @@ func (b *body) callfunc(args []Expr) (val, error) {
 	if b.n.bodyCalls != nil {
 		b.n.bodyCalls[key] = true
 	}
-	vals, err := b.args(args[1:])
-	if err != nil {
-		return val{}, err
-	}
+	refs := b.n.c.refArgsOf(key)
 	parts := []string{"player", "conversation", "npc"}
-	for _, v := range vals {
+	for i, a := range args {
+		if refs[i] {
+			t, err := b.refTable(a)
+			if err != nil {
+				return val{}, err
+			}
+			parts = append(parts, t)
+			continue
+		}
+		v, err := b.expr(a)
+		if err != nil {
+			return val{}, err
+		}
 		parts = append(parts, v.code)
 	}
 	b.n.ok("callfunc")
 	return val{code: fmt.Sprintf("require(%s)(%s)", luaString(moduleName(f.Path)), strings.Join(parts, ", ")), t: tAny}, nil
+}
+
+// refTable is the table of an array that a call passes by reference: a
+// .@ array, or a . array of an NPC.
+func (b *body) refTable(e Expr) (string, error) {
+	v, ok := asVar(e)
+	if ok && v.Index == nil {
+		switch p, _, _ := varName(v.Name); p {
+		case ".@":
+			if l := b.local(v.Name); l.array {
+				return l.lua, nil
+			}
+		case ".":
+			if nv, err := b.variable(v.Name); err == nil && nv.scope == "npc" && nv.array {
+				return nv.local, nil
+			}
+		}
+	}
+	return "", unsupported("callfunc", "a reference argument that is not an array of the script")
+}
+
+// refArgsOf returns the arguments that a global function writes
+// through: n for set getelementofarray(getarg(n), i), v;. rAthena passes
+// a variable argument as a reference to the caller's variable
+// (buildin_callfunc, script.cpp 5403), so the function writes the
+// caller's array. The converter passes the caller's array table at these
+// places.
+func (c *npcConverter) refArgsOf(key string) map[int]bool {
+	if r, ok := c.refArgs[key]; ok {
+		return r
+	}
+	out := map[int]bool{}
+	c.refArgs[key] = out
+	l := c.functions[key]
+	if l == nil {
+		return out
+	}
+	stmts, err := ParseNPC(l.Script)
+	if err != nil {
+		return out
+	}
+	// An argument converts by reference only when the function uses it
+	// only there: getarg(n) read as a value would get the table.
+	writes, reads := map[int]int{}, map[int]int{}
+	computed := false
+	var expr func(e Expr)
+	expr = func(e Expr) {
+		switch e := e.(type) {
+		case *Call:
+			if strings.EqualFold(e.Name, "getarg") && len(e.Args) > 0 {
+				if num, ok := e.Args[0].(*Num); ok {
+					reads[int(num.Value)]++
+				} else {
+					computed = true
+				}
+			}
+			for _, a := range e.Args {
+				expr(a)
+			}
+		case *Var:
+			if e.Index != nil {
+				expr(e.Index)
+			}
+		case *Unary:
+			expr(e.X)
+		case *Binary:
+			expr(e.X)
+			expr(e.Y)
+		case *Ternary:
+			expr(e.Cond)
+			expr(e.Then)
+			expr(e.Else)
+		case *Assign:
+			expr(e.Value)
+		}
+	}
+	walkStmts(stmts.Stmts, func(s Stmt) {
+		switch s := s.(type) {
+		case *SetRef:
+			if i, ok := refArgIndex(s.Ref); ok {
+				writes[i]++
+			}
+			expr(s.Ref)
+			expr(s.Value)
+		case *If:
+			expr(s.Cond)
+		case *Switch:
+			expr(s.Value)
+			for _, cs := range s.Cases {
+				for _, v := range cs.Values {
+					expr(v)
+				}
+			}
+		case *For:
+			if s.Cond != nil {
+				expr(s.Cond)
+			}
+			for _, part := range []Stmt{s.Init, s.Post} {
+				if a, ok := part.(*Assign); ok {
+					expr(a.Target)
+					expr(a.Value)
+				}
+			}
+		case *While:
+			expr(s.Cond)
+		case *Command:
+			for _, a := range s.Args {
+				expr(a)
+			}
+		case *Assign:
+			expr(s.Target)
+			expr(s.Value)
+		case *Return:
+			if s.Value != nil {
+				expr(s.Value)
+			}
+		}
+	})
+	for i, n := range writes {
+		if !computed && reads[i] == n {
+			out[i] = true
+		}
+	}
+	return out
+}
+
+// refArgIndex reads getelementofarray(getarg(n), i), and returns n.
+func refArgIndex(c *Call) (int, bool) {
+	if !strings.EqualFold(c.Name, "getelementofarray") || len(c.Args) != 2 {
+		return 0, false
+	}
+	g, ok := c.Args[0].(*Call)
+	if !ok || !strings.EqualFold(g.Name, "getarg") || len(g.Args) != 1 {
+		return 0, false
+	}
+	num, ok := g.Args[0].(*Num)
+	if !ok || num.Value < 0 || num.Value > 127 {
+		return 0, false
+	}
+	return int(num.Value), true
+}
+
+// markRefArgs marks the variables that a call passes by reference to a
+// global function as arrays, so the script keeps them as tables.
+func (n *npcConv) markRefArgs(name string, args []Expr, mark func(Expr)) {
+	key := strings.ToLower(name)
+	switch {
+	case key == "callfunc":
+		if len(args) == 0 {
+			return
+		}
+		str, ok := args[0].(*Str)
+		if !ok {
+			return
+		}
+		key, args = strings.ToLower(str.Value), args[1:]
+	case !n.callsByName(key):
+		return
+	}
+	for i := range n.c.refArgsOf(key) {
+		if i < len(args) {
+			mark(args[i])
+		}
+	}
+}
+
+// callsByName reports whether a command or a function in an expression
+// with this lower-case name calls a global function, as rAthena's
+// parse_callfunc does for a name that is not a script command or a local
+// function (script.cpp 960 to 1000).
+func (n *npcConv) callsByName(key string) bool {
+	return !builtins[key] && n.localFuncs[key] == nil && n.c.functions[key] != nil
+}
+
+// userCall writes a call by name: to a local function of the script,
+// which rAthena runs as callsub runs a label, or to a global function,
+// which it runs as callfunc (parse_callfunc, script.cpp 960 to 1000). A
+// script command of the same name wins. ok is false for any other name.
+func (b *body) userCall(key string, args []Expr) (v val, ok bool, err error) {
+	if builtins[key] {
+		return val{}, false, nil
+	}
+	if b.n.localFuncs[key] != nil {
+		fn, seen := b.funcs[key]
+		if !seen {
+			fn = "func_" + luaName(key)
+			b.funcs[key] = fn
+		}
+		vals, err := b.args(args)
+		if err != nil {
+			return val{}, true, err
+		}
+		parts := []string{"player", "conversation", "npc"}
+		for _, v := range vals {
+			parts = append(parts, v.code)
+		}
+		b.n.ok("function")
+		return val{code: fmt.Sprintf("%s(%s)", fn, strings.Join(parts, ", ")), t: tAny}, true, nil
+	}
+	if b.n.c.functions[key] != nil {
+		v, err := b.callFunction(key, args)
+		return v, true, err
+	}
+	return val{}, false, nil
+}
+
+// setRef writes set on a reference that is not a variable. Only
+// set getelementofarray(getarg(n), i), v; in a global function converts,
+// for an argument its callers pass by reference (refArgsOf).
+func (b *body) setRef(s *SetRef) error {
+	if i, ok := refArgIndex(s.Ref); ok && b.refArgs[i] {
+		idx, err := b.expr(s.Ref.Args[1])
+		if err != nil {
+			return b.unsupported(err)
+		}
+		v, err := b.expr(s.Value)
+		if err != nil {
+			return b.unsupported(err)
+		}
+		code := v.code
+		if v.t == tBool {
+			code = v.asInt()
+		}
+		b.line("R.arg(args, %d)[%s] = %s", i, idx.asInt(), code)
+		b.n.ok("set")
+		return nil
+	}
+	if _, ok := refArgIndex(s.Ref); ok {
+		return b.unsupported(unsupported("set", "on an element of an argument that the function also reads another way, or that a local function or callsub has"))
+	}
+	switch strings.ToLower(s.Ref.Name) {
+	case "getvariableofnpc":
+		return b.unsupported(unsupported("getvariableofnpc", "set on an NPC variable of another NPC"))
+	case "getarg":
+		return b.unsupported(unsupported("set", "on getarg, a reference argument that is not an array element"))
+	case "getd":
+		if err := b.setd("set", append(slices.Clone(s.Ref.Args), s.Value)); err != nil {
+			return b.unsupported(err)
+		}
+		b.n.ok("set")
+		return nil
+	}
+	return b.unsupported(unsupported("set", "on %s", s.Ref.Name))
 }
 
 // moduleName is the require name of a core file.
@@ -580,6 +840,15 @@ func (b *body) call(e *Call) (val, error) {
 		f.need("items")
 		return done(val{code: "items.name(" + it + ")", t: tStr}, nil)
 	case "mesitemlink":
+		// A second argument of true is the default: the name in
+		// brackets. false and a display name of its own need options
+		// that text.item_link does not have.
+		if len(args) == 2 {
+			if v, err := b.expr(args[1]); err != nil || v.static == nil || *v.static == 0 {
+				return val{}, unsupported(name, "without brackets or with a name of its own")
+			}
+			args = args[:1]
+		}
 		if len(args) != 1 {
 			return val{}, unsupported(name, "arguments")
 		}
@@ -662,7 +931,12 @@ func (b *body) call(e *Call) (val, error) {
 			}
 		}
 		if skill == "" {
-			return val{}, unsupported(name, "a computed skill")
+			if v.t != tInt {
+				return val{}, unsupported(name, "a computed skill that is not a skill ID")
+			}
+			// Core's skills have rAthena's IDs. pc_checkskill gives 0 for
+			// an ID that is not a skill.
+			return done(val{code: "R.skill_level(player, " + v.code + ")", t: tInt}, nil)
 		}
 		return done(val{code: "player:get_skill_level(" + f.record("skills.id", skill) + ")", t: tInt}, nil)
 	case "basicskillcheck":
@@ -697,6 +971,23 @@ func (b *body) call(e *Call) (val, error) {
 		return done(val{code: "#" + v.asText(), t: tInt}, nil)
 	case "mobcount":
 		return done(b.mobcount(args))
+	case "getnpctimer":
+		return done(b.getnpctimer(args))
+	case "isequipped":
+		return done(b.isequipped(args))
+	case "getd":
+		return done(b.getd(args))
+	case "inarray":
+		return done(b.inarray(args))
+	case "getmapxy":
+		code, err := b.getmapxy(args)
+		return done(val{code: code, t: tInt}, err)
+	}
+	if v, ok, err := b.equipCall(name, args); ok {
+		return done(v, err)
+	}
+	if v, ok, err := b.stringCall(name, args); ok {
+		return done(v, err)
 	}
 	if v, ok, err := b.partyRead(name, args); ok {
 		return done(v, err)
@@ -712,6 +1003,9 @@ func (b *body) call(e *Call) (val, error) {
 	}
 	if v, err := b.questRead(name, args); !errors.Is(err, errNotQuest) {
 		return done(v, err)
+	}
+	if v, ok, err := b.userCall(name, args); ok {
+		return v, err
 	}
 	return val{}, unsupported(name, "")
 }
@@ -842,16 +1136,17 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		if m.str != nil {
+			// buildin_warp reads "Random", and "SavePoint" or "Save".
 			switch *m.str {
 			case "Random":
 				b.line("player:warp_to_random_cell()")
 				return nil
-			case "SavePoint":
+			case "SavePoint", "Save":
 				b.line("player:warp_to_save_point()")
 				return nil
 			}
 		} else {
-			return unsupported(name, "to a computed map")
+			return b.warpComputed(m, args)
 		}
 		x, err := b.expr(args[1])
 		if err != nil {
@@ -1032,6 +1327,23 @@ func (b *body) commandErr(name string, args []Expr) error {
 		b.line("maps.announce(%s, %s)", m.asText(), v.asText())
 	case "logmes":
 		b.line("-- logmes: wAthena has no script log yet.")
+	case "debugmes":
+		// debugmes writes to the map server's console, which players do
+		// not see. wAthena has no script log yet.
+		b.line("-- debugmes: wAthena has no script log yet.")
+	case "specialeffect":
+		return b.specialeffect(args)
+	case "copyarray":
+		return b.copyarray(args)
+	case "explode":
+		return b.explode(args)
+	case "getmapxy":
+		_, err := b.getmapxy(args)
+		return err
+	case "getgroupitem":
+		return b.getgroupitem(args)
+	case "setd":
+		return b.setd(name, args)
 	case "setarray", "deletearray":
 		return b.arrayCommand(name, args)
 	case "jobchange":
@@ -1063,6 +1375,8 @@ func (b *body) commandErr(name string, args []Expr) error {
 		return unsupported(name, "the party API cannot warp a party, and rAthena's warpparty has its own map checks")
 	case "monster":
 		return b.monster(args)
+	case "initnpctimer", "startnpctimer", "stopnpctimer", "setnpctimer":
+		return b.timerCommand(name, args)
 	case "killmonster":
 		return unsupported(name, "the API cannot remove spawned monsters")
 	default:
@@ -1076,6 +1390,12 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		if ok, err := b.questCommand(name, args); ok {
+			return err
+		}
+		if v, ok, err := b.userCall(name, args); ok {
+			if err == nil && v.static == nil {
+				b.line("%s", v.code)
+			}
 			return err
 		}
 		return unsupported(name, "")
@@ -1313,7 +1633,7 @@ func (b *body) menu(args []Expr) error {
 			kw = "if"
 		}
 		first = false
-		b.gotos = append(b.gotos, l)
+		b.jumpTo(l)
 		b.line("%s %s == %d then goto %s", kw, choice, i+1, luaName(l))
 	}
 	if !first {

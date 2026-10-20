@@ -90,6 +90,12 @@ func (b *body) questCommand(name string, args []Expr) (ok bool, err error) {
 			return true, nil
 		}
 		method := map[string]string{"setquest": "add_quest", "completequest": "complete_quest", "erasequest": "remove_quest"}[name]
+		if id.static == nil {
+			// A computed ID that the quest data lacks is one rAthena's
+			// quest_db lacks, where it only logs an error.
+			b.line("R.quest(player, %q, %s)", method, id.asInt())
+			return true, nil
+		}
 		b.line("player:%s(%s)", method, id.asInt())
 		return true, nil
 	case "changequest":
@@ -109,6 +115,10 @@ func (b *body) questCommand(name string, args []Expr) (ok bool, err error) {
 		}
 		if !knownFrom || !knownTo {
 			b.line("-- changequest %s, %s: this mode's quest_db lacks a quest, so rAthena only logs an error.", from.code, to.code)
+			return true, nil
+		}
+		if from.static == nil || to.static == nil {
+			b.line("R.quest(player, \"change_quest\", %s, %s)", from.asInt(), to.asInt())
 			return true, nil
 		}
 		b.line("player:change_quest(%s, %s)", from.asInt(), to.asInt())

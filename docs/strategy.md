@@ -193,6 +193,11 @@ Done:
   - The extra Jellopy of 2026-10-19: a restore whose request ended while its zone worked on it let go of its offline holder, and the zone moved the items afterwards. Zone calls from other goroutines are now all or nothing. A stress test with stalls and requests that give up failed 3 of 6 runs before the fix.
   - L34 is fixed: a login waits until the older session's last save is written, up to 30 seconds.
   - The Lua wall-clock limit is a 30-second backstop. The CPU budgets measure the work, so a stalled machine no longer ends zones' Lua states.
+- Converter work toward parity with rAthena (section 14.2a), on 2026-10-20, with no Lua API change (proposal 0002, next step 40):
+  - Calls by name, local functions, `callsub` across event parts, labels inside blocks, reference arguments, and the forms of `set` and of assignment ends that rAthena's parser takes. Every NPC script of both modes parses.
+  - NPC timers over `timers.after`, equipment reads, `specialeffect` on the NPC itself, string, array and number functions, `getmapxy`, `getd` and `setd`.
+  - renewal places 3,458 of 7,067 script NPCs, up from 2,938, and 6,700 of 14,865 lines with duplicates, up from 4,700.
+  - pre-renewal places 2,061 of 3,754 script NPCs, up from 1,906, and 4,399 of 8,205 lines, up from 2,906.
 
 Open review items:
 

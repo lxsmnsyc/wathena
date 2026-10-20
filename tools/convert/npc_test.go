@@ -115,28 +115,24 @@ func TestClassicNotesCurrent(t *testing.T) {
 	}
 }
 
-// setTargets are the parse errors of set on a reference that is not a
-// variable, such as set getvariableofnpc(.x, "NPC"), 1; or set
-// getarg(0), 1;, which the parser does not read yet.
-const setTargets = "set needs a variable"
-
 // TestParseNPCScripts parses every NPC script and function of both
-// modes. Only the three scripts rAthena itself reads with errors fail,
-// such as a colon for a semicolon, and the scripts with set on a
-// reference of setTargets.
+// modes. Each parses, as rAthena reads each: set on a reference that is
+// not a variable, and a comma, a colon or a ) that ends an assignment
+// (TestParseRAthenaForms).
 func TestParseNPCScripts(t *testing.T) {
 	for _, mode := range reference.Modes {
 		res := loadCore(t, mode).NPCs
-		bad := 0
 		for _, n := range res.NPCs {
 			for _, u := range n.Unsupported {
-				if strings.HasPrefix(u, "parse") && !strings.Contains(u, setTargets) {
-					bad++
+				if strings.HasPrefix(u, "parse") {
+					t.Errorf("%s: %s: %s", mode, n.Source, u)
 				}
 			}
 		}
-		if bad > 3 {
-			t.Errorf("%s: %d scripts do not parse", mode, bad)
+		for _, f := range res.Functions {
+			if strings.Contains(f.Err, "does not parse") {
+				t.Errorf("%s: function %s: %s", mode, f.Name, f.Err)
+			}
 		}
 	}
 }

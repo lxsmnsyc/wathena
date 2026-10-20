@@ -1582,3 +1582,19 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
    - The wall-clock limit of each Lua call and resume is a 30-second backstop, up from 1 second. The CPU budget per call and each mod's budget per tick measure a script's work, so a machine that stalls no longer ends a zone's prelude or a mod's setup.
    - What a mod sees: a script stopped by the clock now ran for 30 seconds of clock time. A loop that never ends is stopped by the CPU budget, as before.
    - Review items: a mod that compares long strings in a loop can hold its zone up to 30 seconds per call. A limit on the thread's CPU time needs a change to the C glue and a new `lua.wasm`.
+40. Converter work toward parity with rAthena (strategy section 14.2a), done on 2026-10-20. No Lua API change. It maps rAthena commands onto API that exists, and fixes how the converter reads scripts (tools/convert/README.md):
+   - Every NPC script of both modes parses: `set` on a reference that is not a variable, and any one character after an assignment, as rAthena's `parse_line` skips it.
+   - Functions called by name without `callfunc`, local functions, `callsub` to a label in another event part, labels inside blocks that only their block jumps to, and parts that only `callsub` reaches after an `end`.
+   - A global function that writes `set getelementofarray(getarg(n), i)` writes its caller's array, as `F_time_limit_recorder` does.
+   - NPC timers through `R.npc_timer` over `timers.after`, equipment reads over `player:get_equipped`, `specialeffect` on the NPC itself, string, array and number functions with C's rules, `getmapxy` of the player or the NPC, `warp` to a computed map, `getd` and `setd` with a scope fixed by the name's start, `getgroupitem`, and `getskilllv` of a computed skill ID.
+   - renewal places 3,458 of 7,067 script NPCs, up from 2,938, and 6,700 of 14,865 lines with duplicates, up from 4,700. pre-renewal places 2,061 of 3,754, up from 1,906, and 4,399 of 8,205, up from 2,906.
+   - Review items:
+     - NPC timers follow the zone clock, which stops while the map has no players. rAthena's run anyway. Labels that announce to the world, or change server variables, wait while the map sleeps.
+     - `getnpctimer(0)`, and `startnpctimer` that resumes a stopped timer, need a clock that scripts can read. Timers attached to a player, `addtimer` and `deltimer` are left too.
+     - `areamonster` needs a rectangle in `spawning.monsters`, and rAthena's tries before it gives up: the API's `area` is a square, and after 50 tries it spawns anywhere on the map.
+     - `rentitem` needs rentals that expire, `freeloop` a decision about the CPU budget, `isequippedcnt` the amount of an equipped copy, and `getequiprandomoption` the option IDs of random options.
+     - `getd` and `setd` of a computed `.@` or `.` name need those variables kept by name at run time. A computed name declares a variable when the script runs, which counts toward a mod's 256 variables in each zone.
+     - Handles by game ID (`getnpcid`, `getunitdata`, `unitexists`, `getunittype`), a computed `callshop`, `checkweight` with several items, `mesitemlink` without brackets, `monster` and `mobcount` with a computed label, and `$@partymember*` outside the function need API additions or lookups of NPCs by name.
+     - A variable name that starts with a digit, such as `$2012_tegod_gloria`, needs a naming rule for `wa.variables`, and an assignment used as a value needs a rule for its order.
+     - `OnInterIfInitOnce` runs once when the map server first reaches the character server, not at each script load as `OnInit` does. Its only script also needs `setbattleflag`, so it is left.
+     - `strnpcinfo(0)` still converts to `npc.name`, which drops the `#` part. It needs the NPC's full name in the API.

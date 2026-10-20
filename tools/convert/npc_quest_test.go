@@ -234,7 +234,8 @@ func TestQuestCommandsConvert(t *testing.T) {
 		{`{ completequest 1100; erasequest 1100; end; }`, []string{"player:complete_quest(1100)", "player:remove_quest(1100)"}},
 		{`{ changequest 1100,1101; end; }`, []string{"player:change_quest(1100, 1101)"}},
 		{`{ changequest 1100,999999; end; }`, []string{"-- changequest 1100, 999999: this mode's quest_db lacks a quest"}},
-		{`{ .@q = 1100; setquest .@q; end; }`, []string{"player:add_quest(q)"}},
+		{`{ .@q = 1100; setquest .@q; end; }`, []string{`R.quest(player, "add_quest", q)`}},
+		{`{ .@q = 1100; erasequest .@q; changequest .@q, 1101; end; }`, []string{`R.quest(player, "remove_quest", q)`, `R.quest(player, "change_quest", q, 1101)`}},
 		{`{ if (checkquest(1100) == -1) end; end; }`, []string{"R.checkquest(player, 1100, 0) == -1"}},
 		{`{ if (checkquest(1100,HAVEQUEST) == 2) end; end; }`, []string{"R.checkquest(player, 1100, 0) == 2"}},
 		{`{ if (checkquest(62238,PLAYTIME) == 2) end; end; }`, []string{"R.checkquest(player, 62238, 1, true) == 2"}},
@@ -297,6 +298,12 @@ func TestRunQuestCommands(t *testing.T) {
 	erasequest 1101;
 	dispbottom "f " + checkquest(1101);
 	showevent QTYPE_QUEST;
+	// A computed ID that quest_db lacks only logs an error in rAthena.
+	.@q = 999999;
+	setquest .@q;
+	completequest .@q;
+	changequest .@q, 1100;
+	erasequest .@q;
 	end;
 }`})
 	lua, err := n.npcScript()

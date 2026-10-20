@@ -100,8 +100,8 @@ return function(player, conversation, npc, ...)
     local npc_name, comp_name, code = "", "", 0
     local args = table.pack(...)
     ::s_set::
-    npc_name = R.arg(args, 0)
-    comp_name = R.arg(args, 1)
+    npc_name = R.text(R.arg(args, 0))
+    comp_name = R.text(R.arg(args, 1))
     conversation:say(npc_name, "Now enter your ^FF0000new password^000000 to protect your storage from thieves.")
     code = (require("core.functions.F_EntKafCode")(player, conversation, npc) or 0)
     if (not (code ~= 0)) then
@@ -123,8 +123,8 @@ return function(player, conversation, npc, ...)
     do return end
   end
   local args = table.pack(...)
-  npc_name = R.arg(args, 0)
-  comp_name = R.arg(args, 1)
+  npc_name = R.text(R.arg(args, 0))
+  comp_name = R.text(R.arg(args, 1))
   conversation:say(npc_name)
   if (ACCOUNT_KAFRA_CODE:get(player) == 0) then
     conversation:say("" .. comp_name .. " proudly presents you a new service:", "Additional storage protection with a password.")
@@ -186,26 +186,4 @@ return function(player, conversation, npc, ...)
   end
   conversation:hide_image()
   R.stop()
-  ::s_set::
-  npc_name = R.arg(args, 0)
-  comp_name = R.arg(args, 1)
-  conversation:say(npc_name, "Now enter your ^FF0000new password^000000 to protect your storage from thieves.")
-  code = (require("core.functions.F_EntKafCode")(player, conversation, npc) or 0)
-  if (not (code ~= 0)) then
-    conversation:say("The password hasn't been changed.")
-    npc:show_emotion(emotions.scratch)
-    do return end
-  end
-  conversation:wait_for_next()
-  conversation:say(npc_name)
-  if (player.zeny < 5000) then
-    conversation:say("You don't have enough zeny.")
-    npc:show_emotion(emotions.money)
-    do return end
-  end
-  player:pay_zeny(5000)
-  ACCOUNT_KAFRA_CODE:set(player, code)
-  conversation:say("You've protected your storage with a secret password.", "Thank you for using " .. comp_name .. ".")
-  npc:show_emotion(emotions.thanks)
-  do return end
 end

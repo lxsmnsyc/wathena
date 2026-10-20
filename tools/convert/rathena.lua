@@ -5,7 +5,10 @@
 -- script from inside a function.
 
 local events = require "wa.events"
+local items = require "wa.items"
 local spawning = require "wa.spawning"
+local timers = require "wa.timers"
+local variables = require "wa.variables"
 
 local R = {}
 
@@ -42,6 +45,15 @@ end
 function R.not_available(conversation, what)
 	conversation:say(what .. " is not available yet.")
 	return 1
+end
+
+-- text is a value of no known type as a string, as rAthena's set of a
+-- string variable: a number becomes its digits, and nothing "".
+function R.text(v)
+	if v == nil then
+		return ""
+	end
+	return tostring(v)
 end
 
 -- truthy is rAthena's test of a value: not 0 and not "".
@@ -322,6 +334,583 @@ function R.mobcount(npc, map, label)
 	return counts and counts[label] or 0
 end
 
+-- NpcTimer is rAthena's NPC timer of one NPC, without an attached
+-- player (npc.cpp 1431 to 1735). labels are its OnTimer<n> labels as
+-- { tick, function } by tick. elapsed is nd->u.scr.timer, the tick the
+-- timer had at its last start, stop or label. running is
+-- nd->u.scr.timertick ~= 0, and handle the next label's timer,
+-- nd->u.scr.timerid. A stop while running would add the time since then,
+-- which scripts cannot read, so elapsed becomes unknown (nil) until init
+-- or set. The converter calls start only right after init or set.
+local NpcTimer = {}
+NpcTimer.__index = NpcTimer
+
+function R.npc_timer(labels)
+	return setmetatable({ labels = labels, elapsed = 0, running = false }, NpcTimer)
+end
+
+-- schedule arranges label i after delay milliseconds. When it runs,
+-- elapsed is its tick and the next label is arranged before the label's
+-- function runs, as npc_timerevent does, so a stop there cancels it.
+-- The function runs without a player.
+function NpcTimer:schedule(i, delay)
+	self.handle = timers.after(delay, function()
+		self.handle = nil
+		local label = self.labels[i]
+		self.elapsed, self.running = label[1], true
+		local after = self.labels[i + 1]
+		if after ~= nil then
+			self:schedule(i + 1, after[1] - label[1])
+		end
+		label[2](nil, nil)
+	end)
+end
+
+-- start is npc_timerevent_start: nothing when the timer runs, and else
+-- the first label after elapsed.
+function NpcTimer:start()
+	if self.handle ~= nil or self.running then
+		return
+	end
+	if self.elapsed == nil then
+		error("startnpctimer: resuming a stopped timer needs the server clock, which scripts cannot read yet", 2)
+	end
+	self.running = true
+	for i, label in ipairs(self.labels) do
+		if label[1] > self.elapsed then
+			self:schedule(i, label[1] - self.elapsed)
+			return
+		end
+	end
+end
+
+-- stop is npc_timerevent_stop.
+function NpcTimer:stop()
+	if self.handle == nil and not self.running then
+		return
+	end
+	if self.handle ~= nil then
+		self.handle:cancel()
+		self.handle = nil
+	end
+	if self.running then
+		self.elapsed, self.running = nil, false
+	end
+end
+
+-- set is npc_settimerevent_tick: a running timer stops, takes the tick,
+-- and starts again.
+function NpcTimer:set(tick)
+	local started = self.handle ~= nil or self.running
+	if started then
+		self:stop()
+	end
+	self.elapsed = tick
+	if started then
+		self:start()
+	end
+end
+
+-- init is initnpctimer: the timer starts again from 0.
+function NpcTimer:init()
+	self.running = false
+	self:set(0)
+	self:start()
+end
+
+-- due is getnpctimer(1): 1 while a label is arranged, else 0.
+function NpcTimer:due()
+	return self.handle ~= nil and 1 or 0
+end
+
+-- Equipment reads by rAthena's EQI_ slot numbers (pc.cpp equip_bitmask).
+local equip_slots = {
+	[0] = "left_accessory", "right_accessory", "shoes", "garment", "head_low", "head_middle", "head_top",
+	"armor", "left_hand", "right_hand", "costume_head_top", "costume_head_middle", "costume_head_low",
+	"costume_garment", "ammo", "shadow_armor", "shadow_weapon", "shadow_shield", "shadow_shoes",
+	"shadow_right_accessory", "shadow_left_accessory",
+}
+
+-- equipped is the copy in an EQI_ slot, or nil for an empty slot or a
+-- number that is not a slot, as equip_index_check and pc_checkequip.
+function R.equipped(player, slot)
+	local name = equip_slots[slot]
+	if name == nil then
+		return nil
+	end
+	return player:get_equipped(name)
+end
+
+-- equip_field reads a field of the copy in an EQI_ slot, or returns none
+-- for an empty slot: getequipid, getequiprefinerycnt, getequipweaponlv
+-- and getequiparmorlv.
+function R.equip_field(player, slot, field, none)
+	local e = R.equipped(player, slot)
+	if e == nil then
+		return none
+	end
+	return e[field]
+end
+
+-- equip_name is getequipname: the item's name, or "".
+function R.equip_name(player, slot)
+	local e = R.equipped(player, slot)
+	if e == nil then
+		return ""
+	end
+	return items.name(e.item)
+end
+
+-- equip_card is getequipcardid: the card in card slot n from 0 to 3, or
+-- 0.
+function R.equip_card(player, slot, n)
+	local e = R.equipped(player, slot)
+	if e == nil or n < 0 or n >= 4 then
+		return 0
+	end
+	local card = e.cards[n + 1]
+	return card and card.item or 0
+end
+
+-- isequipped is 1 when the player wears every item, else 0. The
+-- converter passes only items that are not cards.
+function R.isequipped(player, ...)
+	for i = 1, select("#", ...) do
+		local id = select(i, ...)
+		local found = false
+		for slot = 0, #equip_slots do
+			local e = player:get_equipped(equip_slots[slot])
+			if e ~= nil and e.item == id then
+				found = true
+				break
+			end
+		end
+		if not found then
+			return 0
+		end
+	end
+	return 1
+end
+
+-- int32 is a number truncated to 32 bits, as C's cast to int.
+local function int32(n)
+	n = n & 0xffffffff
+	if n >= 0x80000000 then
+		n = n - 0x100000000
+	end
+	return n
+end
+
+-- strtol64 is C's strtol on a 64-bit long: spaces, a sign, a 0x prefix
+-- for base 16 or 0, and digits of the base. It stops at the first other
+-- character and holds at the long's limits. A base other than 0 and 2
+-- to 36 gives 0.
+local function strtol64(s, base)
+	local i, len = 1, #s
+	while i <= len and s:find("^[ \t\n\v\f\r]", i) do
+		i = i + 1
+	end
+	local negative = false
+	local sign = s:sub(i, i)
+	if sign == "+" or sign == "-" then
+		negative = sign == "-"
+		i = i + 1
+	end
+	if base ~= 0 and (base < 2 or base > 36) then
+		return 0
+	end
+	local function digit(c)
+		local b = c:byte()
+		if b == nil then
+			return nil
+		elseif b >= 48 and b <= 57 then
+			return b - 48
+		elseif b >= 97 and b <= 122 then
+			return b - 87
+		elseif b >= 65 and b <= 90 then
+			return b - 55
+		end
+		return nil
+	end
+	local prefixed = s:find("^0[xX]", i) ~= nil
+	local after = s:sub(i + 2, i + 2)
+	if (base == 0 or base == 16) and prefixed and digit(after) ~= nil and digit(after) < 16 then
+		base, i = 16, i + 2
+	elseif base == 0 then
+		base = s:sub(i, i) == "0" and 8 or 10
+	end
+	local n, over = 0, false
+	while i <= len do
+		local d = digit(s:sub(i, i))
+		if d == nil or d >= base then
+			break
+		end
+		if not over then
+			if n > (math.maxinteger - d) // base then
+				over = true
+			else
+				n = n * base + d
+			end
+		end
+		i = i + 1
+	end
+	if over then
+		return negative and math.mininteger or math.maxinteger
+	end
+	return negative and -n or n
+end
+
+-- atoi is C's atoi, as buildin_atoi: glibc's (int) strtol(s, NULL, 10).
+function R.atoi(s)
+	return int32(strtol64(s, 10))
+end
+
+-- strtol is buildin_strtol: strtol held to the int32 limits.
+function R.strtol(s, base)
+	local n = strtol64(s, base)
+	if n > 2147483647 then
+		return 2147483647
+	elseif n < -2147483648 then
+		return -2147483648
+	end
+	return n
+end
+
+-- compare is buildin_compare: 1 when b is in a, without case (stristr),
+-- else 0. An empty b is in every string.
+function R.compare(a, b)
+	return string.find(string.upper(a), string.upper(b), 1, true) and 1 or 0
+end
+
+-- charat is buildin_charat: the character at index i from 0, or "".
+function R.charat(s, i)
+	if i < 0 or i >= #s then
+		return ""
+	end
+	return s:sub(i + 1, i + 1)
+end
+
+-- substr is buildin_substr: the characters from start to stop, both from
+-- 0 and included, or "" when they are out of the string.
+function R.substr(s, start, stop)
+	if start >= 0 and stop >= 0 and stop < #s and start <= stop then
+		return s:sub(start + 1, stop + 1)
+	end
+	return ""
+end
+
+-- insertchar is buildin_insertchar: c's first character put in at index
+-- i. An index below 0, which C reads as a large size_t, or past the end
+-- puts it at the end. An empty c ends the C string at i.
+function R.insertchar(s, c, i)
+	if i < 0 or i > #s then
+		i = #s
+	end
+	if c == "" then
+		return s:sub(1, i)
+	end
+	return s:sub(1, i) .. c:sub(1, 1) .. s:sub(i + 1)
+end
+
+-- delchar is buildin_delchar: s without the character at index i from
+-- 0. An index out of the string gives s.
+function R.delchar(s, i)
+	if i < 0 or i > #s then
+		return s
+	end
+	return s:sub(1, i) .. s:sub(i + 2)
+end
+
+-- sprintf is buildin_sprintf with a format read when the script runs.
+-- Each % starts a part that runs to the next %, which C's sprintf gets
+-- with one value. %% is %, and %n is left out. A conversion is %d or %i
+-- of a number, or %s of a string, with the flags, width and precision
+-- that string.format takes as C does. Others raise an error, as the
+-- converter does not know what C would print. Without values the format
+-- comes back as it is, and too few values give "".
+function R.sprintf(format, ...)
+	local n = select("#", ...)
+	if format == "" or n == 0 then
+		return format
+	end
+	local out, used, i = {}, 0, 1
+	while i <= #format do
+		local p = format:find("%", i, true)
+		if p == nil then
+			out[#out + 1] = format:sub(i)
+			break
+		end
+		out[#out + 1] = format:sub(i, p - 1)
+		local after = format:sub(p + 1, p + 1)
+		if after == "%" then
+			out[#out + 1] = "%"
+			i = p + 2
+		elseif after == "n" then
+			i = p + 2
+		else
+			if used >= n then
+				return ""
+			end
+			local spec = format:match("^%%[-+ 0]*%d?%d?%.?%d?%d?[di]", p)
+			local text = false
+			if spec == nil then
+				spec = format:match("^%%%-*%d?%d?%.?%d?%d?s", p)
+				text = true
+			end
+			if spec == nil then
+				error("sprintf: a conversion other than %d, %i and %s in " .. format, 2)
+			end
+			used = used + 1
+			local v = select(used, ...)
+			if text and type(v) ~= "string" or not text and math.type(v) ~= "integer" then
+				error("sprintf: " .. spec .. " of a value of another type", 2)
+			end
+			if not text then
+				spec = spec:sub(1, -2) .. "d"
+			end
+			out[#out + 1] = string.format(spec, v)
+			i = p + #spec
+		end
+	end
+	return table.concat(out)
+end
+
+-- matches reports whether find is in s at index i from 1, with case or
+-- without, as replacestr and countstr compare: a byte that differs
+-- matches without case when toupper makes them equal.
+local function matches(s, find, i, usecase)
+	if i + #find - 1 > #s then
+		return false
+	end
+	local part = s:sub(i, i + #find - 1)
+	if part == find then
+		return true
+	end
+	return not usecase and string.upper(part) == string.upper(find)
+end
+
+-- replacestr is buildin_replacestr: find replaced by replace from the
+-- left, with case unless usecase is 0, count times or every time when
+-- count is nil. An empty find, or a count of 0, ends the script.
+function R.replacestr(s, find, replace, usecase, count)
+	if find == "" or count == 0 then
+		R.stop()
+	end
+	local out, i, n = {}, 1, 0
+	while i <= #s do
+		if count ~= nil and n == count then
+			break
+		end
+		if matches(s, find, i, usecase == nil or usecase ~= 0) then
+			out[#out + 1] = replace
+			n = n + 1
+			i = i + #find
+		else
+			out[#out + 1] = s:sub(i, i)
+			i = i + 1
+		end
+	end
+	out[#out + 1] = s:sub(i)
+	return table.concat(out)
+end
+
+-- countstr is buildin_countstr: how many times find is in s from the
+-- left, without overlaps, with case unless usecase is 0. An empty find
+-- ends the script.
+function R.countstr(s, find, usecase)
+	if find == "" then
+		R.stop()
+	end
+	local i, n = 1, 0
+	while i <= #s do
+		if matches(s, find, i, usecase == nil or usecase ~= 0) then
+			n = n + 1
+			i = i + #find
+		else
+			i = i + 1
+		end
+	end
+	return n
+end
+
+-- pow is buildin_pow: (int32) pow(a, b). C's cast of a value out of
+-- the int32 range gives INT_MIN on x86.
+function R.pow(a, b)
+	local r = (a + 0.0) ^ b
+	if r ~= r or r >= 2147483648.0 or r < -2147483648.0 then
+		return -2147483648
+	end
+	if r < 0 then
+		return math.ceil(r)
+	end
+	return math.floor(r)
+end
+
+-- distance is buildin_distance: distance_xy without CIRCULAR_AREA, the
+-- larger of the two differences.
+function R.distance(x0, y0, x1, y1)
+	return math.max(math.abs(x0 - x1), math.abs(y0 - y1))
+end
+
+-- inarray is buildin_inarray: the first index from 0 below the array's
+-- size whose element, or the default for a missing one, equals v, or
+-- -1.
+function R.inarray(t, v, default)
+	for i = 0, R.size(t) - 1 do
+		local x = t[i]
+		if x == nil then
+			x = default
+		end
+		if x == v then
+			return i
+		end
+	end
+	return -1
+end
+
+-- copyarray is buildin_copyarray: count elements of from, from index
+-- j, to to from index i. Copying an array over itself to a later index
+-- goes from the end, so it does not read what it wrote.
+function R.copyarray(to, i, from, j, count, default)
+	if count <= 0 or to == from and i == j then
+		return
+	end
+	local function copy(k)
+		local v = from[j + k]
+		if v == nil then
+			v = default
+		end
+		to[i + k] = v
+	end
+	if to == from and i > j then
+		for k = count - 1, 0, -1 do
+			copy(k)
+		end
+	else
+		for k = 0, count - 1 do
+			copy(k)
+		end
+	end
+end
+
+-- explode is buildin_explode: the parts of s between the delimiter's
+-- first character, into t from index i. An empty delimiter matches
+-- nothing.
+function R.explode(t, i, s, delimiter)
+	local d = delimiter:sub(1, 1)
+	local part = {}
+	for k = 1, #s do
+		local c = s:sub(k, k)
+		if c == d then
+			t[i] = table.concat(part)
+			i = i + 1
+			part = {}
+		else
+			part[#part + 1] = c
+		end
+	end
+	t[i] = table.concat(part)
+end
+
+-- dynamic finds a variable of wa.variables by a name made when the
+-- script runs, as getd and setd read it (script.cpp 18016 and 18155):
+-- the prefix, which the converter checked, the name up to the first [
+-- with $ for a string, and the number after [, or 0. It returns the
+-- handle, the index for an array or nil, the owner, and the default.
+-- rAthena's x and x[0] are one value: a name that a script keeps as an
+-- array is read at index 0.
+local function dynamic(scope, text, player)
+	local name = text:match("^[^%[]*")
+	local index = math.tointeger(tonumber(text:match("^[^%[]*%[[ \t\n\v\f\r]*([+-]?%d+)") or "0")) or 0
+	local bare = name:gsub("^[$#@]+", "")
+	local str = bare:sub(-1) == "$"
+	if str then
+		bare = bare:sub(1, -2)
+	end
+	if not bare:find("^[A-Za-z_][A-Za-z0-9_]*$") or #bare > 64 then
+		error("getd: " .. text .. " is not a variable name", 3)
+	end
+	local declared = bare:lower() .. (str and "_text" or "")
+	local owner = player
+	if scope == "server" then
+		owner = nil
+	end
+	local default = str and "" or 0
+	if index == 0 then
+		local ok, handle = pcall(variables[scope .. "_" .. (str and "string" or "integer")], declared)
+		if ok then
+			return handle, nil, owner, default
+		end
+	end
+	return variables[scope .. "_table"](declared), index, owner, default
+end
+
+-- getd reads a variable by a name made when the script runs.
+function R.getd(scope, text, player)
+	local handle, index, owner, default = dynamic(scope, text, player)
+	if index ~= nil then
+		return R.aget(handle, owner, index, default)
+	end
+	local v
+	if owner == nil then
+		v = handle:get()
+	else
+		v = handle:get(owner)
+	end
+	if v == nil then
+		return default
+	end
+	return v
+end
+
+-- setd writes a variable by a name made when the script runs. A string
+-- variable takes the value as text; a number variable needs a number.
+function R.setd(scope, text, player, value)
+	local handle, index, owner, default = dynamic(scope, text, player)
+	if type(default) == "string" then
+		value = tostring(value)
+	elseif math.type(value) ~= "integer" then
+		error("setd: " .. text .. " takes a number", 2)
+	end
+	if index ~= nil then
+		R.aset(handle, owner, index, value)
+	elseif owner == nil then
+		handle:set(value)
+	else
+		handle:set(owner, value)
+	end
+end
+
+-- skill_level is getskilllv of a computed skill ID: 0 for an ID that is
+-- not a skill, as pc_checkskill.
+function R.skill_level(player, skill)
+	if skill <= 0 then
+		return 0
+	end
+	return player:get_skill_level(skill)
+end
+
+-- mapxy is getmapxy for a unit: 0 and its map and cell, or -1 without
+-- the unit.
+function R.mapxy(unit)
+	if unit == nil then
+		return -1, "", 0, 0
+	end
+	return 0, unit.map, unit.x, unit.y
+end
+
+-- warp is buildin_warp with a map read when it runs: "Random" warps to
+-- a random cell, "SavePoint" and "Save" to the save point.
+function R.warp(player, map, x, y)
+	if map == "Random" then
+		player:warp_to_random_cell()
+	elseif map == "SavePoint" or map == "Save" then
+		player:warp_to_save_point()
+	else
+		player:warp(map, x, y)
+	end
+end
+
 -- input is rAthena's input for a number: the player may enter any
 -- number. One above max becomes max and returns 1, one below min
 -- becomes min and returns 2, as buildin_input does.
@@ -451,6 +1040,20 @@ local function quest_state(player, quest)
 		return "none"
 	end
 	error(state, 0)
+end
+
+-- quest runs a quest command with a computed ID. A quest that
+-- data/quests.yml lacks is one rAthena's quest_db lacks, where
+-- quest_add, quest_delete, quest_update_status and quest_change only log
+-- an error.
+function R.quest(player, method, ...)
+	local ok, err = pcall(player[method], player, ...)
+	if not ok then
+		if type(err) == "string" and err:find("there is no quest", 1, true) then
+			return
+		end
+		error(err, 0)
+	end
 end
 
 -- checkquest is rAthena's quest_check for the attached player. kind is

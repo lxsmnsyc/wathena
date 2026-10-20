@@ -362,10 +362,13 @@ func (p *parser) stmt() (Stmt, error) {
 			return nil, err
 		}
 		v, ok := target.(*Var)
+		ref, isRef := target.(*Call)
 		if !ok {
 			if id, isIdent := target.(*Ident); isIdent {
 				v = &Var{Name: id.Name}
-			} else {
+			} else if !isRef || !p.npc {
+				// rAthena's set takes any reference, such as getarg(0) or
+				// getelementofarray(...). NPC scripts read it as a SetRef.
 				return nil, p.errorf("set needs a variable")
 			}
 		}
@@ -383,6 +386,9 @@ func (p *parser) stmt() (Stmt, error) {
 		}
 		if p.isOp(";") {
 			p.next()
+		}
+		if v == nil {
+			return &SetRef{Ref: ref, Value: val}, nil
 		}
 		return &Assign{Target: v, Op: "=", Value: val}, nil
 	case "function", "goto", "callsub", "menu":
@@ -507,20 +513,40 @@ func (p *parser) npcStmt(word string) (Stmt, error) {
 
 // endStmt makes a statement from an expression statement.
 func (p *parser) endStmt(e Expr) (Stmt, error) {
+	switch s := e.(type) {
+	case *Assign:
+		return s, p.endAssign()
+	case *IncDec:
+		return s, p.endAssign()
+	}
 	if p.isOp(";") {
 		p.next()
 	} else if !p.isOp("}") && p.peek().kind != tokEOF {
 		return nil, p.errorf("want ;")
 	}
 	switch s := e.(type) {
-	case *Assign:
-		return s, nil
-	case *IncDec:
-		return s, nil
 	case *Call:
 		return &Command{Name: s.Name, Args: s.Args}, nil
 	}
 	return nil, p.errorf("an expression is not a statement")
+}
+
+// endAssign reads the end of an assignment statement. rAthena's
+// parse_line calls parse_syntax_close(p2 + 1) after parse_variable
+// (script.cpp 1525), which skips the one character after the value
+// without checking it. So a comma or a colon ends an assignment as a
+// semicolon does, as in for (.@i = 0, .@i < 3; .@i++) or .@x = 1:. A
+// brace, or the end of the script, ends it without a character.
+func (p *parser) endAssign() error {
+	t := p.peek()
+	switch {
+	case t.kind == tokEOF || t.kind == tokOp && (t.text == "}" || t.text == "{"):
+		return nil
+	case t.kind == tokOp && len(t.text) == 1:
+		p.next()
+		return nil
+	}
+	return p.errorf("want ;")
 }
 
 func (p *parser) skipUnsupported() (Stmt, error) {
@@ -728,6 +754,14 @@ func (p *parser) forStmt() (Stmt, error) {
 			s = e
 		default:
 			return nil, p.errorf("want an assignment in for")
+		}
+		if end == ";" {
+			// The first part is a statement of its own, which ends as
+			// endAssign says.
+			if p.isOp("{") || p.isOp("}") || p.peek().kind == tokEOF {
+				return nil, p.errorf("want ;")
+			}
+			return s, p.endAssign()
 		}
 		return s, p.expect(end)
 	}

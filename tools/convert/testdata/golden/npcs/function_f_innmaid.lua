@@ -40,7 +40,7 @@ local R = require "core.lib.rathena"
 return function(player, conversation, npc, ...)
   local npc_name = ""
   local args = table.pack(...)
-  npc_name = R.arg(args, 0)
+  npc_name = R.text(R.arg(args, 0))
   conversation:say(npc_name, "Welcome to", R.arg(args, 1) .. ".", "How may I help you?")
   conversation:wait_for_next()
   do

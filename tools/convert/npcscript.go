@@ -3,6 +3,7 @@ package convert
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -50,8 +51,25 @@ func segments(stmts []Stmt) (click []Stmt, events map[string][]Stmt, order []str
 }
 
 // terminates reports whether statements end with a jump that leaves
-// them: end, close, return or goto.
-func terminates(stmts []Stmt) bool {
+// them: end, close, return or goto. A local function's body after it
+// does not count, as rAthena jumps over it. With returns, it also counts
+// these, whose every way out leaves:
+//   - callsub of a label whose part never returns (returns says which);
+//   - if with an else whose branches both leave;
+//   - a block that ends so;
+//   - a switch whose cases cover every value and each leave, by the
+//     end of its statements or through the next case. A switch on
+//     select of fixed options gets 1 to their count: a player who
+//     cancels the menu ends the script.
+func terminates(stmts []Stmt) bool { return endsFlow(stmts, nil) }
+
+func endsFlow(stmts []Stmt, returns func(label string) bool) bool {
+	for len(stmts) > 0 {
+		if _, ok := stmts[len(stmts)-1].(*FuncDecl); !ok {
+			break
+		}
+		stmts = stmts[:len(stmts)-1]
+	}
 	if len(stmts) == 0 {
 		return false
 	}
@@ -61,7 +79,159 @@ func terminates(stmts []Stmt) bool {
 	case *Return, *Goto:
 		return true
 	}
+	if returns == nil {
+		return false
+	}
+	return stmtEnds(stmts[len(stmts)-1], returns)
+}
+
+// stmtEnds reports whether every way out of a statement leaves, as
+// endsFlow says.
+func stmtEnds(s Stmt, returns func(string) bool) bool {
+	switch s := s.(type) {
+	case *Jump:
+		return s.Kind == "end" || s.Kind == "close"
+	case *Return, *Goto:
+		return true
+	case *Block:
+		return endsFlow(s.Stmts, returns)
+	case *If:
+		return s.Else != nil && stmtEnds(s.Then, returns) && stmtEnds(s.Else, returns)
+	case *Command:
+		switch strings.ToLower(s.Name) {
+		case "close3":
+			return true
+		case "callsub":
+			if len(s.Args) > 0 {
+				if id, ok := s.Args[0].(*Ident); ok {
+					return !returns(strings.ToLower(id.Name))
+				}
+			}
+		}
+	case *Switch:
+		return switchEnds(s, returns)
+	}
 	return false
+}
+
+// switchEnds reports whether every case of a switch covers the values
+// and leaves.
+func switchEnds(s *Switch, returns func(string) bool) bool {
+	covered := map[int64]bool{}
+	def := false
+	for _, cs := range s.Cases {
+		def = def || cs.Default
+		for _, v := range cs.Values {
+			n, ok := v.(*Num)
+			if !ok {
+				return false
+			}
+			covered[n.Value] = true
+		}
+	}
+	if !def {
+		count := selectOptions(s.Value)
+		if count <= 0 {
+			return false
+		}
+		for i := int64(1); i <= int64(count); i++ {
+			if !covered[i] {
+				return false
+			}
+		}
+	}
+	// A case leaves when its statements do, or when it has no break and
+	// runs on into a case that leaves.
+	next := false
+	for i := len(s.Cases) - 1; i >= 0; i-- {
+		body := s.Cases[i].Body
+		switch {
+		case breaks(body):
+			next = false
+		case endsFlow(body, returns):
+			next = true
+		case i == len(s.Cases)-1:
+			next = false
+		}
+		if !next {
+			return false
+		}
+	}
+	return true
+}
+
+// selectOptions is the number of options of select("A:B", "C") with
+// fixed text, or 0.
+func selectOptions(e Expr) int {
+	c, ok := e.(*Call)
+	if !ok || !strings.EqualFold(c.Name, "select") {
+		return 0
+	}
+	n := 0
+	for _, a := range c.Args {
+		s, ok := a.(*Str)
+		if !ok {
+			return 0
+		}
+		n += strings.Count(s.Value, ":") + 1
+	}
+	return n
+}
+
+// breaks reports whether statements hold a break or a continue that
+// leaves the switch they are in: one outside the loops and switches in
+// them.
+func breaks(stmts []Stmt) bool {
+	found := false
+	var walk func(list []Stmt)
+	walk = func(list []Stmt) {
+		for _, s := range list {
+			switch s := s.(type) {
+			case *Jump:
+				if s.Kind == "break" || s.Kind == "continue" {
+					found = true
+				}
+			case *Block:
+				walk(s.Stmts)
+			case *If:
+				walk([]Stmt{s.Then})
+				if s.Else != nil {
+					walk([]Stmt{s.Else})
+				}
+			}
+		}
+	}
+	walk(stmts)
+	return found
+}
+
+// subReturns reports whether the part that callsub runs from a label can
+// return to its caller: its reachable statements hold a return. A part
+// without one ends the script, as end does or as the script's end does.
+// A label that is not found, or a part that is being checked, may
+// return.
+func (n *npcConv) subReturns(label string) bool {
+	if r, ok := n.returns[label]; ok {
+		return r
+	}
+	n.returns[label] = true
+	start := -1
+	for i, s := range n.all {
+		if l, ok := s.(*Label); ok && strings.EqualFold(l.Name, label) {
+			start = i
+		}
+	}
+	if start < 0 {
+		return true
+	}
+	r := false
+	walkStmts(n.reachable(n.all[start:]), func(s Stmt) {
+		if _, ok := s.(*Return); ok {
+			r = true
+		}
+	})
+	n.returns[label] = r
+	return r
 }
 
 // clockSchedule returns the schedule of a clock label, as a format for
@@ -136,56 +306,82 @@ func emptyScript(stmts []Stmt) bool {
 }
 
 // writeBody converts statements into a Lua function body, with the
-// local functions of the labels it calls with callsub.
+// local functions of the labels it calls with callsub and of the local
+// functions it calls. Statements it cannot reach are left out
+// (reachable).
 func (n *npcConv) writeBody(stmts []Stmt, indent int, main, hasArgs bool) ([]string, error) {
 	b := n.newBody(indent)
 	b.main, b.hasArgs = main, hasArgs
 	if hasArgs {
 		b.line("local args = table.pack(...)")
 	}
-	if err := b.block(stmts); err != nil {
+	if n.isFunction && hasArgs {
+		// The body of a global function reads its reference arguments.
+		b.refArgs = n.refArgs
+	}
+	if err := b.block(n.reachable(stmts)); err != nil {
 		return nil, err
 	}
 	if err := checkGotos(b); err != nil {
 		return nil, err
 	}
 	// The labels callsub calls become local functions, each running from
-	// its label to the end of the top level. They may call each other.
+	// its label on, as rAthena's callsub runs the script from the label's
+	// position. A local function (function Name { }) becomes one too.
+	// rAthena calls both with a new scope for .@ variables
+	// (buildin_callsub, script.cpp 5465). They may call each other.
 	done := map[string]bool{}
 	var subLines []string
 	var names []string
+	all := n.all
+	if all == nil {
+		all = stmts
+	}
 	for {
 		var next []string
 		for _, l := range sortedKeys(b.subs) {
-			if !done[l] {
-				next = append(next, l)
+			if !done["sub "+l] {
+				next = append(next, "sub "+l)
+			}
+		}
+		for _, f := range sortedKeys(b.funcs) {
+			if !done["func "+f] {
+				next = append(next, "func "+f)
 			}
 		}
 		if len(next) == 0 {
 			break
 		}
-		for _, label := range next {
-			done[label] = true
-			start := -1
-			for i, s := range stmts {
-				if l, ok := s.(*Label); ok && strings.EqualFold(l.Name, label) {
-					start = i
+		for _, key := range next {
+			done[key] = true
+			kind, name, _ := strings.Cut(key, " ")
+			var part []Stmt
+			fn := b.subs[name]
+			if kind == "func" {
+				fn = b.funcs[name]
+				part = n.localFuncs[name].Body.Stmts
+			} else {
+				start := -1
+				for i, s := range all {
+					if l, ok := s.(*Label); ok && strings.EqualFold(l.Name, name) {
+						start = i
+					}
 				}
-			}
-			if start < 0 {
-				return nil, unsupported("callsub", "%s is not a label of this part of the script", label)
+				if start < 0 {
+					return nil, unsupported("callsub", "%s is not a label of the script's top level", name)
+				}
+				part = all[start:]
 			}
 			sb := n.newBody(indent + 1)
 			sb.hasArgs = true
-			sb.subs = b.subs
+			sb.subs, sb.funcs = b.subs, b.funcs
 			sb.line("local args = table.pack(...)")
-			if err := sb.block(stmts[start:]); err != nil {
+			if err := sb.block(n.reachable(part)); err != nil {
 				return nil, err
 			}
 			if err := checkGotos(sb); err != nil {
 				return nil, err
 			}
-			fn := b.subs[label]
 			names = append(names, fn)
 			lines, ok := sb.text(nil)
 			if !ok {
@@ -206,12 +402,95 @@ func (n *npcConv) writeBody(stmts []Stmt, indent int, main, hasArgs bool) ([]str
 	return lines, nil
 }
 
+// reachable leaves out the statements of the top level that the flow
+// cannot reach from the first one. The top level splits at its labels.
+// A part is reached when the part before it is reached and does not end
+// with end, close, return or goto, or when a goto or a menu of a reached
+// part names its label. A part that only callsub reaches, after an end,
+// is left out, as rAthena never runs it there: its getarg would fail.
+func (n *npcConv) reachable(stmts []Stmt) []Stmt {
+	type part struct {
+		stmts   []Stmt
+		targets []string
+	}
+	var parts []*part
+	index := map[string]int{}
+	for _, s := range stmts {
+		if l, ok := s.(*Label); ok || len(parts) == 0 {
+			if ok {
+				index[strings.ToLower(l.Name)] = len(parts)
+			}
+			parts = append(parts, &part{})
+		}
+		p := parts[len(parts)-1]
+		p.stmts = append(p.stmts, s)
+	}
+	if len(parts) <= 1 {
+		return stmts
+	}
+	for _, p := range parts {
+		walkStmts(p.stmts, func(s Stmt) {
+			switch s := s.(type) {
+			case *Goto:
+				p.targets = append(p.targets, strings.ToLower(s.Label))
+			case *Command:
+				if strings.EqualFold(s.Name, "menu") {
+					for i := 1; i < len(s.Args); i += 2 {
+						if id, ok := s.Args[i].(*Ident); ok && id.Name != "-" {
+							p.targets = append(p.targets, strings.ToLower(id.Name))
+						}
+					}
+				}
+			}
+		})
+	}
+	reach := make([]bool, len(parts))
+	reach[0] = true
+	for changed := true; changed; {
+		changed = false
+		mark := func(i int) {
+			if !reach[i] {
+				reach[i], changed = true, true
+			}
+		}
+		for i, p := range parts {
+			if !reach[i] {
+				continue
+			}
+			if i+1 < len(parts) && !endsFlow(p.stmts, n.subReturns) {
+				mark(i + 1)
+			}
+			for _, t := range p.targets {
+				if j, ok := index[t]; ok {
+					mark(j)
+				}
+			}
+		}
+	}
+	var out []Stmt
+	for i, p := range parts {
+		if reach[i] {
+			out = append(out, p.stmts...)
+		}
+	}
+	return out
+}
+
 // checkGotos checks that every goto finds its label in the same Lua
-// function.
+// function. A label inside a block is seen only from that block and
+// the blocks in it, as Lua's goto sees labels. rAthena allows a jump to
+// any label, so a goto from outside the block does not convert.
 func checkGotos(b *body) error {
 	for _, g := range b.gotos {
-		if !b.labels[g] {
-			return unsupported("goto", "%s is in another part of the script", g)
+		if b.labels[g.label] {
+			continue
+		}
+		path, ok := b.deepLabels[g.label]
+		if !ok {
+			return unsupported("goto", "%s is in another part of the script", g.label)
+		}
+		if len(path) > len(g.path) || !slices.Equal(path, g.path[:len(path)]) {
+			return unsupported("labels", "%s: a label inside a block, which a jump from outside the block reaches", g.label)
 		}
 	}
 	return nil
@@ -231,11 +510,16 @@ func (n *npcConv) npcScript() (string, error) {
 		return "", unsupported("parse", "%v", err)
 	}
 	click, events, order := segments(stmts.Stmts)
-	n.scanArrays(stmts.Stmts)
+	n.prepare(stmts.Stmts)
 	for _, e := range order {
 		n.eventLabels[e] = true
 	}
 	mobEvents := n.mobEvents(stmts.Stmts)
+	n.timerLabels = timerLabels(stmts.Stmts)
+	timed := map[string]bool{}
+	for _, l := range n.timerLabels {
+		timed[l.label] = true
+	}
 	schedules := map[string]string{}
 	// OnTouch_ wins over OnTouch: rAthena runs OnTouch only for an NPC
 	// without OnTouch_ (npc_touch_areanpc).
@@ -249,7 +533,7 @@ func (n *npcConv) npcScript() (string, error) {
 		if e == "oninit" || e == "ontouch" && touch == "ontouch_" {
 			continue
 		}
-		if e == touch {
+		if e == touch || timed[e] {
 			n.eventFn(e)
 			continue
 		}
@@ -322,6 +606,10 @@ func (n *npcConv) npcScript() (string, error) {
 		}
 		f.line("local %s = %s", v.local, init)
 	}
+	timer := n.timer || len(n.timerLabels) > 0
+	if timer {
+		f.line("local %s", timerVar)
+	}
 	if len(n.eventOrder) > 0 {
 		names := make([]string, len(n.eventOrder))
 		for i, e := range n.eventOrder {
@@ -339,6 +627,9 @@ func (n *npcConv) npcScript() (string, error) {
 			f.line("  end)")
 			f.line("end")
 		}
+	}
+	if timer {
+		f.line("%s", n.timerSetup())
 	}
 	for _, e := range order {
 		if format, ok := schedules[e]; ok {
@@ -476,13 +767,14 @@ func (c *npcConverter) function(key string) (*Function, error) {
 	f.Path = ScriptPathIn("scripts/functions/", l.Name, c.paths)
 	n := c.newNPCConv(l)
 	n.isFunction, n.allowStubs = true, true
+	n.refArgs = c.refArgsOf(key)
 	stmts, err := ParseNPC(l.Script)
 	if err != nil {
 		f.Err = "it does not parse: " + err.Error()
 		f.Path = ""
 		return nil, unsupported("callfunc "+l.Name, "%s", f.Err)
 	}
-	n.scanArrays(stmts.Stmts)
+	n.prepare(stmts.Stmts)
 	lines, err := n.writeBody(stmts.Stmts, 1, false, true)
 	if err != nil {
 		f.Err = err.Error()

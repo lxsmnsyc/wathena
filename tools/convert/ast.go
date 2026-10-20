@@ -63,6 +63,14 @@ type Assign struct {
 	Value  Expr
 }
 
+// SetRef is set on a reference that is not a variable, such as
+// set getelementofarray(getarg(0), .@i), 1; or set getd(.@name$), 1;.
+// Only NPC scripts read it.
+type SetRef struct {
+	Ref   *Call
+	Value Expr
+}
+
 // IncDec is ++x, x++, --x or x-- as a statement or an expression.
 type IncDec struct {
 	Target *Var
@@ -137,6 +145,7 @@ func (*For) stmt()         {}
 func (*While) stmt()       {}
 func (*Command) stmt()     {}
 func (*Assign) stmt()      {}
+func (*SetRef) stmt()      {}
 func (*IncDec) stmt()      {}
 func (*Jump) stmt()        {}
 func (*Return) stmt()      {}

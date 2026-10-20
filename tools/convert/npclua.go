@@ -2,6 +2,7 @@ package convert
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -128,12 +129,39 @@ type npcConv struct {
 	// touch is set when the script has a touch handler: OnTouch or
 	// OnTouch_. touchDialog is set when it shows a dialog.
 	touch, touchDialog bool
+	// all is the script's top level, where callsub finds its labels.
+	// localFuncs are its local functions by lower-case name.
+	all        []Stmt
+	localFuncs map[string]*FuncDecl
+	// refArgs are, for a global function, the arguments its callers pass
+	// by reference (refArgsOf).
+	refArgs map[int]bool
+	// returns says whether the part that callsub runs from a label can
+	// return, by lower-case label (subReturns).
+	returns map[string]bool
+	// timer is set when the script uses its NPC timer (npctimer.go), and
+	// timerLabels are its OnTimer labels.
+	timer       bool
+	timerLabels []timerLabel
 }
 
 func (c *npcConverter) newNPCConv(l *npcLine) *npcConv {
 	return &npcConv{c: c, line: l, file: newLuaFile(), vars: map[string]*npcVar{}, arrays: map[string]bool{},
 		features: map[string]bool{}, calls: map[string]bool{}, names: map[string]bool{},
-		eventLabels: map[string]bool{}, eventFns: map[string]string{}}
+		eventLabels: map[string]bool{}, eventFns: map[string]string{}, localFuncs: map[string]*FuncDecl{},
+		returns: map[string]bool{}}
+}
+
+// prepare reads what the conversion of a script's statements needs
+// first: its top level, its local functions, and its arrays.
+func (n *npcConv) prepare(stmts []Stmt) {
+	n.all = stmts
+	walkStmts(stmts, func(s Stmt) {
+		if f, ok := s.(*FuncDecl); ok && f.Body != nil {
+			n.localFuncs[strings.ToLower(f.Name)] = f
+		}
+	})
+	n.scanArrays(stmts)
 }
 
 func (n *npcConv) functions() []string {
@@ -206,10 +234,7 @@ func varName(name string) (prefix, bare string, str bool) {
 func (n *npcConv) scanArrays(stmts []Stmt) {
 	var expr func(e Expr)
 	mark := func(e Expr) {
-		switch v := e.(type) {
-		case *Var:
-			n.arrays[strings.ToLower(v.Name)] = true
-		case *Ident:
+		if v, ok := asVar(e); ok {
 			n.arrays[strings.ToLower(v.Name)] = true
 		}
 	}
@@ -226,7 +251,12 @@ func (n *npcConv) scanArrays(stmts []Stmt) {
 				if len(e.Args) > 0 {
 					mark(e.Args[0])
 				}
+			case "getd":
+				if v, ok := staticGetd(e); ok && v.Index != nil {
+					mark(v)
+				}
 			}
+			n.markRefArgs(e.Name, e.Args, mark)
 			for _, a := range e.Args {
 				expr(a)
 			}
@@ -287,10 +317,20 @@ func (n *npcConv) scanArrays(stmts []Stmt) {
 				if len(s.Args) > 0 {
 					mark(s.Args[0])
 				}
+			case "setd":
+				if len(s.Args) > 0 {
+					if v, ok := staticGetd(&Call{Name: "getd", Args: s.Args[:1]}); ok && v.Index != nil {
+						mark(v)
+					}
+				}
 			}
+			n.markRefArgs(s.Name, s.Args, mark)
 			for _, a := range s.Args {
 				expr(a)
 			}
+		case *SetRef:
+			expr(s.Ref)
+			expr(s.Value)
 		case *Assign:
 			expr(s.Target)
 			expr(s.Value)
@@ -324,12 +364,26 @@ type body struct {
 	main bool
 	// hasArgs is set where getarg reads the function's arguments.
 	hasArgs bool
-	// labels are the labels of the function's top level.
-	labels map[string]bool
-	gotos  []string
-	breaks []*breakable
-	// subs are the callsub targets, written as local functions.
-	subs map[string]string
+	// labels are the labels of the function's top level. deepLabels
+	// are the labels inside blocks, with the path of the block.
+	labels     map[string]bool
+	deepLabels map[string][]int
+	gotos      []gotoRef
+	breaks     []*breakable
+	// path is the Lua blocks the statement being written is in, by
+	// number, from the outermost. blocks counts them.
+	path   []int
+	blocks int
+	// subs are the callsub targets, written as local functions, and funcs
+	// the local functions of the script that it calls. Sub bodies share
+	// them.
+	subs, funcs map[string]string
+	// refArgs are the arguments of a global function that its callers
+	// pass by reference (npcConv.refArgs). Only its own body has them.
+	refArgs map[int]bool
+	// prev is the statement before the one being written in its list,
+	// or nil.
+	prev Stmt
 	// hidden are locals the converter adds, such as the result of an
 	// input, declared at the top with the others.
 	hidden []string
@@ -344,6 +398,24 @@ type body struct {
 	guildNames, guildCount string
 }
 
+// gotoRef is a jump to a label, with the path of the block it is in.
+type gotoRef struct {
+	label string
+	path  []int
+}
+
+// jumpTo records a jump to a label from the current block.
+func (b *body) jumpTo(label string) {
+	b.gotos = append(b.gotos, gotoRef{label: strings.ToLower(label), path: slices.Clone(b.path)})
+}
+
+// enter starts a Lua block, and the function it returns ends it.
+func (b *body) enter() func() {
+	b.blocks++
+	b.path = append(b.path, b.blocks)
+	return func() { b.path = b.path[:len(b.path)-1] }
+}
+
 // breakable is a loop or a switch, which break leaves.
 type breakable struct {
 	loop bool
@@ -354,7 +426,8 @@ type breakable struct {
 }
 
 func (n *npcConv) newBody(indent int) *body {
-	return &body{n: n, indent: indent, locals: map[string]*localVar{}, labels: map[string]bool{}, subs: map[string]string{}}
+	return &body{n: n, indent: indent, locals: map[string]*localVar{}, labels: map[string]bool{}, deepLabels: map[string][]int{},
+		subs: map[string]string{}, funcs: map[string]string{}}
 }
 
 func (b *body) line(format string, args ...any) {
@@ -600,6 +673,10 @@ func (b *body) writeVar(target *Var, value val) error {
 	code := value.asInt()
 	if str {
 		code = value.asText()
+		if value.t == tAny {
+			// rAthena's set turns a number into its digits.
+			code = "R.text(" + value.code + ")"
+		}
 	}
 	idx := "0"
 	if target.Index != nil {
@@ -642,14 +719,16 @@ func (b *body) writeVar(target *Var, value val) error {
 	return nil
 }
 
-// isVar reports whether an expression names a variable, for commands
-// that take one, such as input.
+// asVar reports whether an expression names a variable, for commands
+// that take one, such as input. getd of a fixed name is that variable.
 func asVar(e Expr) (*Var, bool) {
 	switch e := e.(type) {
 	case *Var:
 		return e, true
 	case *Ident:
 		return &Var{Name: e.Name}, true
+	case *Call:
+		return staticGetd(e)
 	}
 	return nil, false
 }
@@ -683,6 +762,10 @@ func (b *body) stmts(list []Stmt, deep bool) error {
 				continue
 			}
 		}
+		b.prev = nil
+		if i > 0 {
+			b.prev = list[i-1]
+		}
 		if err := b.stmt(list[i], deep); err != nil {
 			return err
 		}
@@ -693,12 +776,14 @@ func (b *body) stmts(list []Stmt, deep bool) error {
 func (b *body) nested(s Stmt) error {
 	b.indent++
 	defer func() { b.indent-- }()
+	defer b.enter()()
 	if bl, ok := s.(*Block); ok {
 		return b.nestedBlock(bl.Stmts)
 	}
 	if s == nil {
 		return nil
 	}
+	b.prev = nil
 	return b.stmt(s, true)
 }
 
@@ -719,16 +804,25 @@ func (b *body) stmt(s Stmt, deep bool) error {
 	case *Label:
 		name := strings.ToLower(s.Name)
 		if deep {
-			return b.unsupported(unsupported("labels", "%s: a label inside a block", s.Name))
+			// rAthena allows a label anywhere. In Lua only the block's own
+			// jumps see it, which checkGotos checks.
+			b.deepLabels[name] = slices.Clone(b.path)
+		} else {
+			b.labels[name] = true
 		}
-		b.labels[name] = true
 		b.line("::%s::", luaName(name))
 	case *Goto:
-		b.gotos = append(b.gotos, strings.ToLower(s.Label))
+		b.jumpTo(s.Label)
 		b.line("goto %s", luaName(s.Label))
 		b.n.ok("goto")
 	case *FuncDecl:
-		return b.unsupported(unsupported("function", "local functions"))
+		// rAthena jumps over a local function's body where it is written
+		// (parse_syntax, script.cpp 1918). Calls run it (userCall).
+		if s.Body != nil {
+			b.n.ok("function")
+		}
+	case *SetRef:
+		return b.setRef(s)
 	case *Assign:
 		return b.assign(s)
 	case *IncDec:
@@ -1022,6 +1116,7 @@ func (b *body) switchStmt(s *Switch) error {
 	defer func() { b.breaks = b.breaks[:len(b.breaks)-1] }()
 	b.line("do")
 	b.indent++
+	defer b.enter()()
 	b.line("local %s = %s", name, v.code)
 	if len(s.Pre) > 0 {
 		if err := b.block(s.Pre); err != nil {

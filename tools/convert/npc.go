@@ -53,6 +53,8 @@ type NPCInput struct {
 	// Quests are the mode's converted quests, which quest commands
 	// check (npcquest.go). They may be nil.
 	Quests *QuestResult
+	// Groups is item_groups.json, for getgroupitem. It may be nil.
+	Groups io.Reader
 }
 
 // npcLine is one line of npcs.json.
@@ -208,6 +210,17 @@ type npcConverter struct {
 	newCurrencies []currencyRecord
 	// quests are the mode's quests, or nil.
 	quests *QuestResult
+	// refArgs are the arguments that each global function writes
+	// through, by lower-case name (refArgsOf).
+	refArgs map[string]map[int]bool
+	// itemTypes are the items' item_db types, such as Card, by ID.
+	itemTypes map[uint32]string
+	// groups are the item groups' names by ID, from item_groups.json.
+	groups map[int64]string
+	// duplicated are the unique names of the NPCs that have duplicates.
+	// A duplicate runs its source's script, so a script that names its
+	// own NPC names the source there.
+	duplicated map[string]bool
 }
 
 // monsterInfo is a monster of client_tables.json: its AegisName, and
@@ -255,6 +268,7 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		Items []struct {
 			ID        uint32 `json:"id"`
 			AegisName string `json:"aegis_name"`
+			Type      string `json:"type"`
 		} `json:"items"`
 		NPCSprites []struct {
 			ID     uint32 `json:"id"`
@@ -275,10 +289,25 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		jobs: map[string]string{}, functions: map[string]*npcLine{}, converted: map[string]*Function{}, paths: map[string]bool{},
 		zeroAmounts: map[string]bool{}, checkedAmounts: map[string]bool{},
 		monsters: map[int64]monsterInfo{}, monsterIDs: map[string]int64{}, shops: map[string]*shopRef{}, quests: in.Quests,
+		refArgs: map[string]map[int]bool{}, duplicated: map[string]bool{}, itemTypes: map[uint32]string{}, groups: map[int64]string{},
 	}
 	shopsIn, err := readShops(in.Shops)
 	if err != nil {
 		return nil, err
+	}
+	if in.Groups != nil {
+		var groups struct {
+			Groups []struct {
+				ID   int64  `json:"id"`
+				Name string `json:"name"`
+			} `json:"groups"`
+		}
+		if err := json.NewDecoder(in.Groups).Decode(&groups); err != nil {
+			return nil, fmt.Errorf("item_groups.json: %w", err)
+		}
+		for _, g := range groups.Groups {
+			c.groups[g.ID] = g.Name
+		}
 	}
 	for _, m := range tables.Monsters {
 		c.monsters[m.ID] = monsterInfo{sprite: m.Sprite, name: m.Name}
@@ -287,12 +316,16 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 	for _, it := range tables.Items {
 		c.items[it.ID] = it.AegisName
 		c.itemIDs[strings.ToLower(it.AegisName)] = it.ID
+		c.itemTypes[it.ID] = it.Type
 	}
 	for _, s := range tables.NPCSprites {
 		c.sprites[strings.ToUpper(s.Sprite)] = s.ID
 		c.spriteID[s.ID] = true
 	}
 	for i := range extract.NPCs {
+		if d := extract.NPCs[i].DuplicateOf; d != "" {
+			c.duplicated[d] = true
+		}
 		if l := &extract.NPCs[i]; l.Kind == "function" {
 			// A later function of the same name replaces the earlier
 			// one, as npc_parse_function does.

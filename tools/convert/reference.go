@@ -122,7 +122,8 @@ func convertCore(in *coreInputs) (*Core, error) {
 	for i, p := range in.parts {
 		parts[i] = bytes.NewReader(p)
 	}
-	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in.files[4]), Parts: parts, Constants: bytes.NewReader(in.files[1]), ClientTables: bytes.NewReader(in.files[3]), Shops: bytes.NewReader(in.files[8]), Quests: quests})
+	npcs, err := ConvertNPCs(NPCInput{NPCs: bytes.NewReader(in.files[4]), Parts: parts, Constants: bytes.NewReader(in.files[1]), ClientTables: bytes.NewReader(in.files[3]), Shops: bytes.NewReader(in.files[8]), Quests: quests,
+		Groups: bytes.NewReader(in.files[2])})
 	if err != nil {
 		return nil, err
 	}
