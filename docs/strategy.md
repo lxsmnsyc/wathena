@@ -2644,6 +2644,14 @@ The project has one developer. The plan is ordered to reach a playable game earl
 
 Pre-Renewal, third and later classes, and tier 2 systems follow.
 
+### 14.2a Next release: parity with rAthena
+
+The release after v0.1.0 waits for 1:1 parity with rAthena (2026-10-20):
+
+- Every rAthena system in scope runs, in both rulesets.
+- Every rAthena NPC and item script converts and runs, except what a decision refuses on purpose, such as raw SQL (section 7.2).
+- The coverage reports in docs/generated and the parity tests show the numbers before a release is proposed.
+
 ### 14.3 Rough effort
 
 These are estimates for one full-time developer. They will change after phase 0.
