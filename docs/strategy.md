@@ -3421,6 +3421,8 @@ Phase 7 is done (2026-10-18). [Decision 0046](decisions/0046-economy-and-phase-7
 
 ### Phase 8: First release
 
+Phase 8 is done (2026-10-20). wAthena v0.1.0 is tagged, with release notes in [docs/releases/v0.1.0.md](releases/v0.1.0.md) and a GitHub release page with no files attached.
+
 Built with the `procedural` tag. Both world modes ship, with procedural as the default (section 14.2).
 
 - GM audit logs, role-based GM permissions, and encrypted backups with restore tests (section 7.8).
