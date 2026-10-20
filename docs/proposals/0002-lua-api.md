@@ -1131,6 +1131,14 @@ Methods on player handles check their own permissions, such as `player.give_item
     - The converter maps `skill` to it, so the renewal first-job changers in towns convert.
     - This adds to API 1.0.
 
+58. The NPC API toward parity with rAthena (strategy section 14.2a). The user approved this on 2026-10-20:
+    - **The B batch of [0002b](0002b-npc-api.md)**, areas B1 to B10, with the calls it proposes: lookups, NPC visibility and state, events between NPCs and NPCs without a map, variables, presentation, quest icons, player reads and actions, maps and monsters, items, and the clock and settings. All of it adds to API 1.0.
+    - **Calls across zones.** An NPC event goes to the target NPC's zone as a message and runs after the current step, as rAthena's `donpcevent` queues it. NPC variables live in the world service, as server variables do, so every zone reads the same value.
+    - **`$@` variables** are server-wide values that are not saved, as in rAthena. This replaces the comparison table's mapping to a script local.
+    - **Variable limit.** Core is exempt from the 256 variables per mod. Mods keep the limit.
+    - **Refused:** `atcommand` and `setbattleflag`. The first runs GM commands from a script, and the second changes fixed rules at run time.
+    - **`npc.full_name`** fixes `strnpcinfo(0)`, which drops the `#` part today.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
