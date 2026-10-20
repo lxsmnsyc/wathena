@@ -49,8 +49,9 @@ captcha: none
 # staff:
 #   owners: [Admin]
 
-# How long the server keeps data, in days, 1 to 3650 (server/README.md,
-# "Retention"). These are the defaults of the privacy policy. A longer
+# How long the server keeps data, in days (server/README.md,
+# "Retention"): 1 to 3650 for logins and chat, 30 to 3650 for the item
+# log and the audit log. These are the defaults of the privacy policy. A longer
 # period logs a warning and shows one on the admin status page.
 # retention:
 #   login_ip_days: 90

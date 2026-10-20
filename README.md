@@ -6,10 +6,18 @@ wAthena is not affiliated with or endorsed by Gravity or the rAthena team.
 
 ## Status
 
-Early planning. There is no playable build yet.
+The first release is in progress (phase 8 of the plan). There is no tagged release yet.
 
 - The plan is in [docs/strategy.md](docs/strategy.md).
 - Reference data recorded from rAthena is in [reference/rathena](reference/rathena).
+
+## Running a server
+
+- [docs/guides/setup.md](docs/guides/setup.md) takes a server owner from an empty machine to a running world.
+- [docs/guides/players.md](docs/guides/players.md) is a first-start guide for your players. Link it or copy it.
+- [deploy/README.md](deploy/README.md) is the reference for the Docker Compose stack, backups and load tests.
+
+wAthena is server software. The project runs no server or world of its own.
 
 ## Repository layout
 

@@ -2,6 +2,8 @@
 
 The all-in-one deployment of strategy section 3.9: one `waserver` process with PostgreSQL 18 next to it, and Caddy in front for TLS.
 
+This is the reference. To set up a server, follow [docs/guides/setup.md](../docs/guides/setup.md). For your players, [docs/guides/players.md](../docs/guides/players.md) is a first-start guide to link or copy.
+
 | Path | Content |
 |---|---|
 | `compose/` | The Docker Compose stack: `docker-compose.yml`, the `Caddyfile`, waserver's `waserver.yml`, `.env.example`, `secrets.sh` and the database setup script `init-db.sh`. |
@@ -37,43 +39,39 @@ You need Docker Engine with Compose 2.20 or later. The load tests of phase 8 mea
 
 ### First start
 
-Run these in `deploy/compose`.
+[docs/guides/setup.md](../docs/guides/setup.md) is the step-by-step guide, from an empty machine to a running world. It covers the settings, the secrets, the images, the assets, the world, the backup key and the first start. This section has the reference details it links to.
 
-1. Settings. Copy `.env.example` to `.env` and set `WATHENA_DOMAIN` to the server's public host name. Its DNS record must point at the machine, and ports 80 and 443 must be open, so Caddy can get a certificate. For a test on your own machine, see "Local mode".
-2. Secrets. Run `./secrets.sh`. It writes random passwords, the database URLs and the TOTP key into `secrets/`, which Git ignores. Running it again keeps files that exist.
-3. Images. Build both: `docker compose --profile tools build`.
-4. Assets. Build them from your own game client into the `assets` volume. The repository ships no game files.
+The commands, run in `deploy/compose`:
 
-   ```text
-   docker compose run --rm -v /path/to/client:/client:ro \
-     offline assets build --source grf:/client --out /srv/assets
-   ```
+```text
+cp .env.example .env                    # set WATHENA_DOMAIN
+./secrets.sh
+docker compose --profile tools build
+docker compose run --rm offline assets build --source placeholder --out /srv/assets
+printf '%s\n' "$PASSWORD" | docker compose run --rm -T wactl world new \
+  --name "My World" --admin Admin --admin-password-file -
+docker compose up -d --wait
+```
 
-   - The `offline` service has no network and no database secrets. Game clients, art packs and mods are untrusted files, so a bug in a parser must not reach the database.
+Assets:
 
-   - The client folder needs its `DATA.INI` and the GRF files it names. A kRO client takes about 21 minutes on 8 cores and gives 112,000 assets.
-   - Run the same command again after a client update. Unchanged assets come from the build's cache.
-   - To use a build you already have, set `WATHENA_ASSETS` in `.env` to its absolute path instead. The user 65532 must be able to read it.
-   - For a test without game files, use `--source placeholder`. For a classic world, also set `start_map: placeholder/map` in the `classic` block and `mode: none` in `waserver.yml`.
-5. World. Make the world and the first account. The password is read from standard input, so it stays out of the shell history and process lists:
+- The `offline` service has no network and no database secrets. Game clients, art packs and mods are untrusted files, so a bug in a parser must not reach the database.
+- `--source grf:/client`, with the client folder mounted at `/client`, imports your own client. The folder needs its `DATA.INI` and the GRF files it names. A full kRO client took 57 minutes with `--fast` on an Apple M2 with 8 GB: 112,792 assets, 2.8 GB on disk (decision 0053).
+- Run the same command again after a client update. Unchanged assets come from the build's cache.
+- To use a build you already have, set `WATHENA_ASSETS` in `.env` to its absolute path instead. The user 65532 must be able to read it.
+- For a classic world on the placeholder pack, set `start_map: placeholder/map` in the `classic` block and `mode: none` in `waserver.yml`.
 
-   ```text
-   read -rs PASSWORD
-   printf '%s\n' "$PASSWORD" | docker compose run --rm -T wactl world new \
-     --name "My World" --ruleset renewal --admin Admin --admin-password-file -
-   ```
+The world:
 
-   `--ruleset` must match `mode` in `waserver.yml`. The command applies the migrations first, and makes the world's secret seed.
+- `--ruleset` must match `mode` in `waserver.yml`. The command applies the migrations first, and makes the world's secret seed.
+- The command records the account's ID as the world's owner, so the account has the owner role with no change to `waserver.yml` (review decision 54). The role counts once the account turns on TOTP or a passkey and logs in with a TOTP code, a recovery code, or a passkey that checks a PIN or a fingerprint. A passkey that skips that check logs in without the role. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
+- `staff.owners` in `waserver.yml` still gives the owner role by account name, for worlds made before this change. The server logs a warning at start whenever it is set. If you use it:
+  - List only names that already have an account. Whoever signs up first with a listed name becomes an owner.
+  - At startup the server logs a warning for each listed name that has no account.
 
-   The command records the account's ID as the world's owner, so the account has the owner role with no change to `waserver.yml` (review decision 54). The role counts once the account turns on TOTP or a passkey and logs in with a TOTP code, a recovery code, or a passkey that checks a PIN or a fingerprint. A passkey that skips that check logs in without the role. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
+The backup key is made on your own machine. See "The backup key".
 
-   `staff.owners` in `waserver.yml` still gives the owner role by account name, for worlds made before this change. The server logs a warning at start whenever it is set. If you use it:
-   - List only names that already have an account. Whoever signs up first with a listed name becomes an owner.
-   - At startup the server logs a warning for each listed name that has no account.
-6. Backup key. On your own machine, run `wactl world backup-key new --out backup-identity.txt`, or `age-keygen -o backup-identity.txt`. Keep the identity file offline. Put the recipient it prints, `age1...`, on a line of its own in `secrets/backup_recipients` on the server. See "Backups".
-7. Start: `docker compose up -d --wait`. It waits until every service is healthy. Open `https://WATHENA_DOMAIN/`, sign up, make a character and press Play.
-
-`waserver` refuses to start while migrations are pending or before step 5. Its log then says why: `docker compose logs waserver`.
+`waserver` refuses to start while migrations are pending or before `wactl world new`. Its log then says why: `docker compose logs waserver`.
 
 ### Settings
 
@@ -82,7 +80,7 @@ Run these in `deploy/compose`.
 - A classic world ships with `mode: renewal`. A classic world with `mode: pre-renewal` is experimental until `core.ruleset.pre_renewal` matches rAthena's pre-renewal (phase 10), and `waserver` warns at start (review decision 55).
 - `start_map` and `maps` at the top level of `waserver.yml` still work, with a warning at start. Move them into the `classic` block. A procedural world fails to start with `maps: all` at the top level.
 - Fill in `privacy.contact` and `privacy.text` in `waserver.yml`. Players read them on `/account/privacy`, with the retention periods in effect. Players can download their data and delete their accounts on `/account/data`. You are responsible for following the laws that apply to you, such as the GDPR.
-- The `retention` block of `waserver.yml` sets how many days the server keeps login records with IP addresses (90), chat lines (30), the item and zeny logs (180) and the GM audit log (730). Each is 1 to 3650. `waserver` deletes older data once a day, at start and every 24 hours. A period longer than the default logs a warning and shows one on the admin World screen. Shorter periods need no notice. `chat.log_days` still works, with a warning: move it to `retention.chat_days`. server/README.md, "Retention", has the details.
+- The `retention` block of `waserver.yml` sets how many days the server keeps login records with IP addresses (90), chat lines (30), the item and zeny logs (180) and the GM audit log (730). The login and chat periods are 1 to 3650 days, and the log and audit periods 30 to 3650. `waserver` deletes older data once a day, at start and every 24 hours. A period longer than the default logs a warning and shows one on the admin World screen. Shorter periods need no notice. `chat.log_days` still works, with a warning: move it to `retention.chat_days`. server/README.md, "Retention", has the details.
 - Backups keep data that the retention job deleted since, for up to 4 weeks with the default schedule (see "Backups"). The privacy page says so.
 - `docker-compose.yml` passes `--public-url` and `--trusted-proxies` from `.env`.
 - Change a setting, then run `docker compose up -d --wait`.
@@ -92,7 +90,7 @@ Run these in `deploy/compose`.
 A classic world runs rAthena's maps from your client's GRF files, with rAthena's NPCs and spawns converted at start (review decision 55). To run one:
 
 - Make the world with `wactl world new --mode classic`.
-- Build the assets from your client, as in "First start", step 4.
+- Build the assets from your client, as in "First start" (docs/guides/setup.md, step 7).
 - In `waserver.yml`, set `mode: renewal`, and in the `classic` block set `start_map: prontera` and `maps: all`.
 
 Classic mode ships with `mode: renewal`. Not every rAthena NPC converts yet:
