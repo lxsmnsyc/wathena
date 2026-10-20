@@ -89,6 +89,9 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
       -ldflags "-s -w -X main.buildVersion=${VERSION}" -o /out/wactl ./tools/wactl && \
     /out/waserver version && /out/wactl version && \
     mkdir -p /out/srv/assets
+# The folder of the converted scripts cache (cache_dir). A new volume
+# mounted there takes its owner, so waserver can write it.
+RUN mkdir -p /out/cache
 
 # wactl with the PostgreSQL 18 client tools.
 FROM postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336 AS tools
@@ -105,6 +108,7 @@ CMD []
 # The all-in-one server.
 FROM gcr.io/distroless/static-debian13:nonroot@sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3
 COPY --from=server --chown=65532:65532 /out/srv /srv
+COPY --from=server --chown=65532:65532 /out/cache /var/cache/wathena
 COPY --from=server /out/waserver /usr/local/bin/waserver
 COPY deploy/docker/waserver.yml /etc/wathena/waserver.yml
 USER 65532:65532

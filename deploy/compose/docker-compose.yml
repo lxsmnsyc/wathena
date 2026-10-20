@@ -223,6 +223,7 @@ services:
     volumes:
       - ${WATHENA_ASSETS:-assets}:/srv/assets:ro
       - ${WATHENA_CONFIG:-./waserver.yml}:/etc/wathena/waserver.yml:ro
+      - cache:/var/cache/wathena
     networks: [edge, db]
     depends_on:
       postgres:
@@ -306,6 +307,9 @@ volumes:
   caddy_config:
   # The asset build, unless WATHENA_ASSETS names a folder instead.
   assets:
+  # waserver's converted scripts cache (cache_dir). Safe to delete: the
+  # next start converts again.
+  cache:
   # The backup service's backups. `docker compose down -v` deletes them
   # with the database. Copy them to another machine too.
   backups:

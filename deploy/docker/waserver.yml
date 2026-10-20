@@ -3,3 +3,6 @@
 # this file. Secrets never go here: see deploy/README.md.
 listen: 0.0.0.0:8300
 assets: /srv/assets
+# Converted item and NPC scripts, kept between starts. Mount a volume
+# here, or the cache lives in the container and goes with it.
+cache_dir: /var/cache/wathena

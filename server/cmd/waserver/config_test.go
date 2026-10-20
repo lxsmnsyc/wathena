@@ -465,3 +465,29 @@ func TestConnectionsConfig(t *testing.T) {
 		}
 	}
 }
+
+// TestCacheDirConfig: cache_dir names the converted scripts cache, the
+// flag wins, none turns it off, and empty is the OS cache folder.
+func TestCacheDirConfig(t *testing.T) {
+	p := writeConfig(t, "cache_dir: /var/cache/wathena\n")
+	o, _, err := parseOptions("waserver all", []string{"--config", p}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := o.coreCacheDir(); got != "/var/cache/wathena" {
+		t.Errorf("from the file: %q", got)
+	}
+	o, _, err = parseOptions("waserver all", []string{"--config", p, "--cache-dir", "none"}, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := o.coreCacheDir(); got != "" {
+		t.Errorf("none: %q", got)
+	}
+	o.CacheDir = ""
+	if dir, err := os.UserCacheDir(); err == nil {
+		if got := o.coreCacheDir(); got != filepath.Join(dir, "wathena") {
+			t.Errorf("default: %q", got)
+		}
+	}
+}

@@ -15,7 +15,8 @@
 #   4. Gives the backup service its recipient and starts it again,
 #      waits for its first encrypted backup, verifies it with the
 #      backup-verify service, restores it into an empty database, and
-#      starts again (decision 0048).
+#      starts again (decision 0048). The second start must read the
+#      converted scripts from the cache volume.
 # It removes the stack and its volumes at the end. It uses the project
 # name wathena-smoke and ports 18080 and 18443, so a local stack named
 # wathena keeps running.
@@ -148,6 +149,9 @@ if [ "$(roles)" != 1 ]; then
 	echo "the verify profile made no verify role" >&2
 	exit 1
 fi
+# The first start converted the scripts and wrote the cache volume.
+compose logs --no-color waserver >"$work/waserver-first.log"
+grep -q 'item and npc scripts converted.*cache=miss' "$work/waserver-first.log"
 compose down
 docker volume rm "${COMPOSE_PROJECT_NAME}_pgdata"
 compose run --rm -T -v "$WATHENA_BACKUP_IDENTITY:/keys/identity.txt:ro" wactl \
@@ -158,4 +162,6 @@ check
 # on a closed pipe under pipefail. Read the logs from a file instead.
 compose logs --no-color waserver >"$work/waserver.log"
 grep -q 'world=Smoke' "$work/waserver.log"
+# The new container read the scripts from the cache volume.
+grep -q 'item and npc scripts converted.*cache=hit' "$work/waserver.log"
 echo "compose smoke test passed"

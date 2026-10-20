@@ -420,4 +420,4 @@ docker compose logs waserver
 | A staff member does not see the admin screens | The role counts only after a login with two-factor or a passkey with a PIN. Log out and in again. |
 | The game page stays blank | Use a Chromium-based browser. Firefox and Safari are not supported. |
 
-To start over on a test machine, `docker compose down -v` deletes the stack and every volume: the database, the backups, the assets and the certificates. Never run it on a live server.
+To start over on a test machine, `docker compose down -v` deletes the stack and every volume: the database, the backups, the assets, the scripts cache and the certificates. Never run it on a live server.

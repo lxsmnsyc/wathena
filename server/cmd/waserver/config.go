@@ -61,7 +61,11 @@ type options struct {
 	Seed       string         `yaml:"seed"`
 	DebugAddr  string         `yaml:"debug_addr"`
 	ProfileDir string         `yaml:"profile_dir"`
-	Mods       modOptions     `yaml:"mods"`
+	// CacheDir is where converted item and NPC scripts are kept between
+	// starts. Empty is the OS cache folder's wathena folder, and none
+	// keeps no cache.
+	CacheDir string     `yaml:"cache_dir"`
+	Mods     modOptions `yaml:"mods"`
 	// ShutdownCountdown is how long players are warned before the server
 	// stops on SIGTERM or an interrupt. 0 stops at once.
 	ShutdownCountdown time.Duration `yaml:"shutdown_countdown"`
@@ -303,6 +307,22 @@ func defaultOptions() options {
 	}
 }
 
+// coreCacheDir is the folder for converted scripts, or "" for no cache:
+// cache_dir, else the wathena folder in the OS cache folder.
+func (o options) coreCacheDir() string {
+	switch o.CacheDir {
+	case "none":
+		return ""
+	case "":
+		dir, err := os.UserCacheDir()
+		if err != nil {
+			return ""
+		}
+		return filepath.Join(dir, "wathena")
+	}
+	return o.CacheDir
+}
+
 // devOrigins are the trusted client origins when nothing sets them and
 // there is no public URL: the web client's Vite dev server.
 var devOrigins = list{"http://localhost:5173", "http://127.0.0.1:5173"}
@@ -373,6 +393,7 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 	flags.StringVar(&f.Seed, "seed", "", "text that fixes the random streams of the zones and world events, so a test runs the same each time, for development; needs --dev (seed)")
 	flags.StringVar(&f.DebugAddr, "debug-addr", "", "loopback address to serve measurements and profiles on, such as 127.0.0.1:8301; empty serves none (debug_addr)")
 	flags.StringVar(&f.ProfileDir, "profile-dir", "", "folder for the CPU profiles taken when a zone is over the tick budget; empty takes none (profile_dir)")
+	flags.StringVar(&f.CacheDir, "cache-dir", "", "folder for the item and NPC scripts converted at start, so the next start skips the conversion; empty is the OS cache folder, none keeps no cache (cache_dir)")
 	flags.StringVar(&f.Mods.Dir, "mods", "", "folder of installed mods; empty loads only the built-in core mods (mods.dir)")
 	flags.StringVar(&f.Mods.Ruleset, "ruleset", "", "the world's ruleset mod, such as core.ruleset.renewal; empty picks the core ruleset of --mode (mods.ruleset)")
 	flags.BoolVar(&f.Mods.Strict, "mods-strict", false, "make data overlay warnings errors, such as two mods setting the same field (mods.strict)")
@@ -437,6 +458,8 @@ func parseOptions(name string, args []string, stderr io.Writer) (o options, data
 			o.DebugAddr = f.DebugAddr
 		case "profile-dir":
 			o.ProfileDir = f.ProfileDir
+		case "cache-dir":
+			o.CacheDir = f.CacheDir
 		case "mods":
 			o.Mods.Dir = f.Mods.Dir
 		case "ruleset":

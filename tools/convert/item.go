@@ -104,6 +104,20 @@ func ConvertItems(in Input) (*Result, error) {
 	if err := json.NewDecoder(in.Scripts).Decode(&scripts); err != nil {
 		return nil, fmt.Errorf("item_scripts.json: %w", err)
 	}
+	c, err := newConverter(in)
+	if err != nil {
+		return nil, err
+	}
+	out := &Result{Mode: scripts.Mode, conv: c}
+	for i := range scripts.Items {
+		out.Items = append(out.Items, c.convertItem(&scripts.Items[i]))
+	}
+	return out, nil
+}
+
+// newConverter reads the tables that item scripts refer to. It reads
+// every reader of in but Scripts.
+func newConverter(in Input) (*converter, error) {
 	consts, err := constants.Read(in.Constants)
 	if err != nil {
 		return nil, err
@@ -170,11 +184,7 @@ func ConvertItems(in Input) (*Result, error) {
 	for name := range consts.Skills {
 		c.skillNames[strings.ToLower(name)] = name
 	}
-	out := &Result{Mode: scripts.Mode, conv: c}
-	for i := range scripts.Items {
-		out.Items = append(out.Items, c.convertItem(&scripts.Items[i]))
-	}
-	return out, nil
+	return c, nil
 }
 
 func (c *converter) itemID(name string) (uint32, bool) {

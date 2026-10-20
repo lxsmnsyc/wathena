@@ -7,6 +7,10 @@
 listen: 0.0.0.0:8300
 assets: /srv/assets
 
+# The item and NPC scripts converted at start are kept here, in the
+# cache volume, so the next start skips the conversion.
+cache_dir: /var/cache/wathena
+
 # The maps of a classic world: where new characters start, and the
 # maps to run, as a list, or all for every map in the asset build. The
 # start map must be one of them. A procedural world runs its generated

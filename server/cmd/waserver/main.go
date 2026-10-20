@@ -119,7 +119,6 @@ import (
 	"github.com/lxsmnsyc/wathena/shared/gen"
 	"github.com/lxsmnsyc/wathena/shared/path"
 	"github.com/lxsmnsyc/wathena/shared/rng"
-	"github.com/lxsmnsyc/wathena/tools/convert"
 )
 
 func main() {
@@ -328,11 +327,11 @@ func runAll(name string, args []string) error {
 		ids = store.NewModIDs(pool)
 	}
 	converted := time.Now()
-	core, err := convert.LoadCore(statusMode)
+	core, cache, err := loadCore(cfg.options, statusMode, log)
 	if err != nil {
 		return fmt.Errorf("item and NPC scripts: %w", err)
 	}
-	log.Info("item and npc scripts converted", "mode", statusMode, "items", len(core.Result.Items), "npcs", len(core.NPCs.NPCs), "took", time.Since(converted).Round(time.Millisecond))
+	log.Info("item and npc scripts converted", "mode", statusMode, "items", len(core.Result.Items), "cache", cache, "took", time.Since(converted).Round(time.Millisecond))
 	statuses, failedStatuses, err := core.LoadStatuses(statusMode)
 	if err != nil {
 		return fmt.Errorf("statuses: %w", err)

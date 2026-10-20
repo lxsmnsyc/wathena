@@ -83,6 +83,7 @@ The backup key is made on your own machine. See "The backup key".
 - The `retention` block of `waserver.yml` sets how many days the server keeps login records with IP addresses (90), chat lines (30), the item and zeny logs (180) and the GM audit log (730). The login and chat periods are 1 to 3650 days, and the log and audit periods 30 to 3650. `waserver` deletes older data once a day, at start and every 24 hours. A period longer than the default logs a warning and shows one on the admin World screen. Shorter periods need no notice. `chat.log_days` still works, with a warning: move it to `retention.chat_days`. server/README.md, "Retention", has the details.
 - Backups keep data that the retention job deleted since, for up to 4 weeks with the default schedule (see "Backups"). The privacy page says so.
 - `docker-compose.yml` passes `--public-url` and `--trusted-proxies` from `.env`.
+- `waserver` converts rAthena's item and NPC scripts at start. It keeps the result in the `cache` volume (`cache_dir: /var/cache/wathena`), so the next start of the same image skips the conversion. A new image converts once and writes the cache again. Deleting the volume is safe: the next start converts again. server/README.md, "Converted scripts cache", has the details.
 - Change a setting, then run `docker compose up -d --wait`.
 
 ### Classic mode
@@ -195,6 +196,8 @@ Restart=on-failure
 RestartSec=2
 # Long enough for --shutdown-countdown and the last saves.
 TimeoutStopSec=90
+# /var/cache/wathena, for cache_dir: /var/cache/wathena.
+CacheDirectory=wathena
 # Sandbox. Add ReadWritePaths= for any folder waserver must write.
 NoNewPrivileges=yes
 ProtectSystem=strict
@@ -211,6 +214,7 @@ LockPersonality=yes
 WantedBy=multi-user.target
 ```
 
+- `ProtectHome=yes` hides the default cache folder in the home folder. Set `cache_dir: /var/cache/wathena` in `waserver.yml`. `CacheDirectory=` makes that folder for the `wathena` user. Without it, `waserver` warns at each start and converts the scripts every time.
 - Make the secrets file readable by root only: `chown root:root /etc/wathena/secrets.env` and `chmod 600 /etc/wathena/secrets.env`. Make it with `umask 077`, so it is never open to others.
 - `MemoryDenyWriteExecute=yes` is left out. wazero, which runs WebAssembly in some builds, may compile machine code at run time, which that option forbids. Test it on your host before you add it.
 
@@ -329,7 +333,7 @@ docker compose up -d --wait
 - Keep the `account_secret_key` that was in use when the backup was made, or players with TOTP must use a recovery code.
 - A backup from an older release gets its new migrations from `migrate` on `up`.
 - Nothing signs a backup or its manifest. Anyone who can write the backups, or a copy of them, can encrypt a forged backup to the recipient, with a matching manifest. Restore only files you copied from the server yourself, and keep the copies where others cannot write.
-- `docker compose down -v` deletes every volume: the database, the backups, the assets and Caddy's certificates. Use plain `down` unless you mean that.
+- `docker compose down -v` deletes every volume: the database, the backups, the assets, the scripts cache and Caddy's certificates. Use plain `down` unless you mean that.
 
 ## Measure your own hardware
 

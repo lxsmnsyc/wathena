@@ -3,6 +3,10 @@
 package buildinfo
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
+	"os"
 	"runtime/debug"
 	"strings"
 
@@ -43,4 +47,40 @@ func Version(stamp string) string {
 // The modes show whether the binary was built with -tags procedural.
 func Line(stamp string) string {
 	return Version(stamp) + " (modes: " + strings.Join(gen.Modes(), ", ") + ")"
+}
+
+// ID names the code of the running binary, for caches of what it
+// computes: its build information when that names a VCS revision with
+// no changes, else the SHA-256 of its executable. Release builds made
+// with -buildvcs=false, such as the container image, take the hash.
+func ID() (string, error) {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		clean := false
+		revision := ""
+		for _, s := range info.Settings {
+			switch s.Key {
+			case "vcs.revision":
+				revision = s.Value
+			case "vcs.modified":
+				clean = s.Value == "false"
+			}
+		}
+		if revision != "" && clean {
+			return "build " + info.String(), nil
+		}
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	f, err := os.Open(exe) // #nosec G304 -- the running executable.
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = f.Close() }()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return "executable " + hex.EncodeToString(h.Sum(nil)), nil
 }

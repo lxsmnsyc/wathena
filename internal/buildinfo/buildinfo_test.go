@@ -20,3 +20,18 @@ func TestVersion(t *testing.T) {
 		t.Errorf("version line %q", line)
 	}
 }
+
+// TestID: the build ID is the same on each call.
+func TestID(t *testing.T) {
+	a, err := ID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := ID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a == "" || a != b {
+		t.Errorf("IDs %q and %q", a, b)
+	}
+}

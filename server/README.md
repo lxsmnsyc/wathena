@@ -484,6 +484,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `seed` | `--seed` | none | Text that fixes the random streams of the zones and world events, so a test runs the same way each time. For tests only. Needs `dev`. |
 | `debug_addr` | `--debug-addr` | none | Loopback address for measurements and profiles. It answers only requests to a loopback host name, with no `Origin` of another page and no cross-site `Sec-Fetch-Site`, so a web page cannot reach it through the browser. |
 | `profile_dir` | `--profile-dir` | none | Folder for CPU profiles of slow ticks. |
+| `cache_dir` | `--cache-dir` | the `wathena` folder in the OS cache folder | Folder for the item and NPC scripts converted at start. `none` keeps no cache. See "Converted scripts cache". |
 | `shutdown_countdown` | `--shutdown-countdown` | `10s` | The countdown players see before the server stops, up to `10m`. `0s` turns it off. See "NPCs". |
 | `time_zone` | `--time-zone` | `UTC` | The server's time zone, as an IANA name such as `Asia/Manila`. Schedules and world events match their times there. See "World events". |
 | `mods.dir` | `--mods` | none | The folder of installed mods. See "Mods". |
@@ -644,7 +645,7 @@ Tests: each flag has tests at both values on both bases (`TestEveryFlagBothValue
 
 ## Item scripts
 
-`waserver` converts rAthena's item scripts for its `mode` when it starts, and logs `item and npc scripts converted` with the time it took, about 0.9 s for renewal ([decision 0007](../docs/decisions/0007-converted-item-scripts.md), mods/README.md, "Core's item scripts"). They are the files of the `core` mod.
+`waserver` converts rAthena's item scripts for its `mode` when it starts, and logs `item and npc scripts converted` with the time it took, about 1.7 s for renewal ([decision 0007](../docs/decisions/0007-converted-item-scripts.md), mods/README.md, "Core's item scripts"). They are the files of the `core` mod. A later start reads them from a cache: see "Converted scripts cache" below.
 
 - A used item runs its Lua `use` handler: heals, items, item boxes, effects, warps, status effects and timed bonuses.
 - An item whose script needs what the server does not have yet, such as pets, is refused and kept. The player sees a chat line that says what it needs.
@@ -691,6 +692,28 @@ curl -X POST 'http://127.0.0.1:8301/debug/wathena/mods/reload?mod=example.greete
 - `wactl dev` runs a server with one mod and calls the endpoint when the mod's Lua files change (mods/README.md, "Tools").
 
 Cost: each zone's Lua state holds about 50 KB for the sample mod. All 988 maps of a kRO build start in 2.1 seconds with it, against 2.0 without mods.
+
+### Converted scripts cache
+
+The conversion takes about 1.7 s on an idle Apple M2, and minutes on a loaded machine. `waserver` keeps its output in `cache_dir`, so a later start reads it instead:
+
+- The cache file is `core-<mode>.cache`, about 46 MB for renewal. The log line `item and npc scripts converted` has `cache=hit`, `miss`, `bad` or `off`.
+- The file is keyed by a SHA-256 of the extracts it converts, the mode and the build of `waserver`. The build is the binary's VCS revision when the build has no changes, else the SHA-256 of the executable. The container image is built without VCS information, so it takes the hash.
+- A file with another key is a miss: `waserver` converts and writes the file again. A new extract, a new binary or the other mode never reads an old file.
+- A file that is damaged, cut short or not a cache file is ignored, with a warning, and written again. The file carries a SHA-256 of its body.
+- A cache folder that cannot be written logs a warning. The start goes on, and the next start converts again.
+- The default folder is `wathena` in the OS cache folder, such as `~/.cache/wathena` on Linux and `~/Library/Caches/wathena` on macOS. `none` turns the cache off.
+- The Compose stack keeps it in the `cache` volume (deploy/README.md, "Settings"). Deleting the folder or the volume is safe.
+
+Start times on an Apple M2 with 8 GB, 2026-10-20, with a dev build, the placeholder assets and no database, from launch until `/readyz` answers:
+
+| Cache | Scripts step | Start |
+|---|---|---|
+| off | 1.65 s | 2.9 s |
+| miss (convert and write) | 1.9 to 2.0 s | 3.2 s |
+| hit | 0.3 s | 1.6 s |
+
+A hit reads the extracts to hash them and reads the cache file. A build with changes, such as this dev build, also hashes its executable. A hit does not convert.
 
 ## Equipment
 
