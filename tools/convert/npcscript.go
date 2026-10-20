@@ -574,7 +574,9 @@ func (n *npcConv) npcScript() (string, error) {
 		if e == touch || e == "oninit" {
 			n.bodyCalls = map[string]bool{}
 		}
+		n.inEvent = e != touch
 		bodies[e], err = n.writeBody(events[e], 3, true, false)
+		n.inEvent = false
 		if e == touch || e == "oninit" {
 			calls := n.bodyCalls
 			n.bodyCalls = nil

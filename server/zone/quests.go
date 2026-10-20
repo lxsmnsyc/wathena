@@ -148,6 +148,9 @@ func (h scriptHost) AddQuest(id int64, r *quest.Record) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	// setquest, completequest, erasequest and changequest show the quest
+	// icons again, whether or not the log changed (script.cpp 21073).
+	p.questInfoChanged()
 	z := h.z
 	if !quest.Add(&p.quests, r, z.wallClock()) {
 		return false, nil
@@ -163,6 +166,9 @@ func (h scriptHost) CompleteQuest(id int64, r *quest.Record) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	// setquest, completequest, erasequest and changequest show the quest
+	// icons again, whether or not the log changed (script.cpp 21073).
+	p.questInfoChanged()
 	if !quest.SetState(p.quests, r.ID, character.QuestComplete) {
 		return false, nil
 	}
@@ -177,6 +183,9 @@ func (h scriptHost) RemoveQuest(id int64, r *quest.Record) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	// setquest, completequest, erasequest and changequest show the quest
+	// icons again, whether or not the log changed (script.cpp 21073).
+	p.questInfoChanged()
 	i := quest.Find(p.quests, r.ID)
 	if i < 0 {
 		return false, nil
@@ -195,6 +204,9 @@ func (h scriptHost) ChangeQuest(id int64, from, to *quest.Record) (bool, error) 
 	if err != nil {
 		return false, err
 	}
+	// setquest, completequest, erasequest and changequest show the quest
+	// icons again, whether or not the log changed (script.cpp 21073).
+	p.questInfoChanged()
 	z := h.z
 	if !quest.Change(&p.quests, from.ID, to, z.wallClock()) {
 		return false, nil
@@ -246,7 +258,7 @@ func (h scriptHost) QuestTimedOut(id int64, r *quest.Record) (bool, error) {
 
 // ShowQuestIcon is showevent: the icon goes to the player now when it
 // sees the NPC, and when the NPC comes into view.
-func (h scriptHost) ShowQuestIcon(npcID, id int64, icon string) error {
+func (h scriptHost) ShowQuestIcon(npcID, id int64, icon, mark string) error {
 	e, err := h.npc(npcID)
 	if err != nil {
 		return err
@@ -255,22 +267,8 @@ func (h scriptHost) ShowQuestIcon(npcID, id int64, icon string) error {
 	if err != nil {
 		return err
 	}
-	if icon == "" {
-		delete(p.questIcons, e)
-	} else {
-		if p.questIcons == nil {
-			p.questIcons = map[*entity]string{}
-		}
-		p.questIcons[e] = icon
-	}
-	if net, ok := p.netIDs.get(e); ok {
-		p.pending = append(p.pending, questIconEvent(net, icon))
-	}
+	h.z.showQuestIcon(p, e, icon, mark)
 	return nil
-}
-
-func questIconEvent(net uint32, icon string) *wathenav1.Event {
-	return wathenav1.Event_builder{QuestIcon: wathenav1.QuestIcon_builder{Npc: net, Icon: icon}.Build()}.Build()
 }
 
 // QuestActive asks to mark a quest of the log active or inactive.
@@ -319,6 +317,9 @@ func (z *Zone) questKill(e, killer *entity) {
 	}
 	for _, p := range who {
 		z.countQuests(p, t, k, e)
+		// quest_update_objective ends with pc_show_questinfo (quest.cpp
+		// 837).
+		p.questInfoChanged()
 	}
 }
 

@@ -8,12 +8,12 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 
 | Kind | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
-| script | 3754 | 2827 | 2777 | 50 | 927 |
-| script (duplicate) | 4451 | 3633 | 3615 | 18 | 818 |
+| script | 3754 | 3032 | 2978 | 54 | 722 |
+| script (duplicate) | 4451 | 3953 | 3935 | 18 | 498 |
 | shop | 185 | 185 | 185 | 0 | 0 |
 | Kafras (scripts that call F_Kafra) | 43 | 43 | 43 | 0 | 0 |
-| Dialog NPCs (only talk, menus and emotions) | 1207 | 1018 | 1018 | 0 | 189 |
-| Job change NPCs (script NPCs of the jobs folders) | 315 | 197 | 189 | 8 | 118 |
+| Dialog NPCs (only talk, menus and emotions) | 1077 | 1074 | 1074 | 0 | 3 |
+| Job change NPCs (script NPCs of the jobs folders) | 315 | 200 | 192 | 8 | 115 |
 
 - Shops that are not placed have no map or no sprite: scripts open them with `callshop`, which converts to `player:open_shop`.
 - cashshop, itemshop, pointshop, marketshop and barter shops become shops with a cost and a stock. Players cannot sell to them, as in rAthena.
@@ -41,15 +41,15 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 | Folder | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
 | airports | 59 | 58 | 58 | 0 | 1 |
-| cities | 682 | 649 | 649 | 0 | 33 |
-| events | 150 | 120 | 118 | 2 | 30 |
+| cities | 682 | 659 | 659 | 0 | 23 |
+| events | 150 | 124 | 122 | 2 | 26 |
 | guides | 43 | 43 | 43 | 0 | 0 |
-| jobs | 1027 | 903 | 894 | 9 | 124 |
+| jobs | 1027 | 906 | 897 | 9 | 121 |
 | kafras | 71 | 71 | 71 | 0 | 0 |
-| merchants | 101 | 66 | 42 | 24 | 35 |
-| other | 3052 | 2491 | 2480 | 11 | 561 |
-| quests | 2939 | 1980 | 1959 | 21 | 959 |
-| warps | 81 | 79 | 78 | 1 | 2 |
+| merchants | 101 | 67 | 43 | 24 | 34 |
+| other | 3052 | 2805 | 2794 | 11 | 247 |
+| quests | 2939 | 2172 | 2147 | 25 | 767 |
+| warps | 81 | 80 | 79 | 1 | 1 |
 
 ## Touch areas
 
@@ -57,9 +57,9 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 
 | NPCs | Lines | Placed | With a touch area | With a dialog on touch |
 |---|---:|---:|---:|---:|
-| Scripts with OnTouch or OnTouch_ | 682 | 503 | 463 | 238 |
-| Lines with OnTouch or OnTouch_, duplicates too | 3974 | 3386 | 3321 | 440 |
-| Script NPCs with a warp sprite, duplicates too | 1392 | 1299 | 1147 | 206 |
+| Scripts with OnTouch or OnTouch_ | 682 | 584 | 535 | 289 |
+| Lines with OnTouch or OnTouch_, duplicates too | 3974 | 3748 | 3674 | 500 |
+| Script NPCs with a warp sprite, duplicates too | 1392 | 1334 | 1182 | 220 |
 
 ## Commands
 
@@ -67,64 +67,65 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 
 | Command | Scripts | NPC full | NPC partly | NPC not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| mes | 2636 | 2200 | 50 | 386 | 2636 |  |
-| close | 2379 | 2065 | 50 | 264 | 2379 |  |
-| next | 2223 | 1836 | 50 | 337 | 2223 |  |
-| end | 1557 | 1274 | 18 | 265 | 1557 |  |
-| variables | 1456 | 1076 | 50 | 330 | 1453 | $@08_ep13nydun02_in is not a valid name (2); $050908_minus1_yagu$ is not a valid name (1) |
-| select | 1240 | 955 | 48 | 237 | 1240 |  |
-| warp | 703 | 638 | 1 | 64 | 703 |  |
-| countitem | 598 | 470 | 7 | 121 | 598 |  |
-| strcharinfo | 591 | 441 | 7 | 143 | 591 |  |
-| close2 | 540 | 456 | 1 | 83 | 540 |  |
-| donpcevent | 508 | 396 | 10 | 102 | 506 | "OnControler1#aru_gd" is not an event label (1); "OnControler1#sch_gd" is not an event label (1) |
-| disablenpc | 468 | 352 | 5 | 111 | 468 |  |
-| rand | 467 | 331 | 6 | 130 | 467 |  |
-| delitem | 462 | 381 | 7 | 74 | 462 |  |
-| event ontouch_ | 438 | 397 | 0 | 41 | 438 |  |
-| event oninit | 419 | 313 | 1 | 105 | 416 | it waits or shows a dialog, and OnInit runs without a player (3) |
-| enablenpc | 394 | 297 | 4 | 93 | 394 |  |
-| emotion | 364 | 231 | 1 | 132 | 262 | on a player or another NPC (100) |
-| getitem | 361 | 300 | 7 | 54 | 361 |  |
-| callfunc | 342 | 229 | 50 | 63 | 342 |  |
-| event onenable | 309 | 233 | 1 | 75 | 309 |  |
-| changequest | 285 | 243 | 1 | 41 | 285 |  |
-| initnpctimer | 277 | 189 | 1 | 87 | 275 | a timer attached to the player (2) |
-| getarg | 227 | 154 | 48 | 25 | 224 | outside a function (3) |
-| stopnpctimer | 220 | 180 | 1 | 39 | 220 |  |
-| Zeny | 212 | 180 | 19 | 13 | 212 |  |
-| checkweight | 211 | 129 | 3 | 79 | 211 |  |
-| input | 199 | 147 | 25 | 27 | 199 |  |
-| specialeffect | 176 | 106 | 4 | 66 | 158 | on another NPC (13); an effect that is not a fixed EF_ effect (2) |
-| cutin | 163 | 125 | 0 | 38 | 163 |  |
-| monster | 162 | 3 | 0 | 159 | 67 | on another map (57); a name of its own (36); a computed name (2) |
-| mapannounce | 144 | 107 | 2 | 35 | 144 |  |
-| setarray | 136 | 99 | 3 | 34 | 136 |  |
-| event ondisable | 128 | 94 | 0 | 34 | 128 |  |
-| parameter | 123 | 0 | 0 | 123 | 0 |  |
-| percentheal | 121 | 102 | 0 | 19 | 121 |  |
-| checkre | 117 | 74 | 2 | 41 | 117 |  |
-| event ontouch | 111 | 106 | 0 | 5 | 111 |  |
-| specialeffect2 | 111 | 80 | 0 | 31 | 111 |  |
-| isequipped | 106 | 96 | 0 | 10 | 106 |  |
-| strnpcinfo | 106 | 65 | 2 | 39 | 106 |  |
-| killmonster | 105 | 0 | 0 | 105 | 0 | the API cannot remove spawned monsters (105) |
-| setquest | 99 | 60 | 7 | 32 | 99 |  |
-| viewpoint | 98 | 97 | 0 | 1 | 98 |  |
-| callsub | 88 | 71 | 1 | 16 | 88 |  |
-| getskilllv | 88 | 72 | 6 | 10 | 88 |  |
-| parameter MaxWeight | 88 | 0 | 0 | 88 | 0 |  |
-| savepoint | 83 | 78 | 1 | 4 | 83 |  |
-| getitemname | 81 | 60 | 2 | 19 | 81 |  |
-| getexp | 78 | 0 | 1 | 77 | 0 |  |
-| checkquest | 71 | 53 | 1 | 17 | 71 |  |
+| mes | 2658 | 2325 | 54 | 279 | 2658 |  |
+| close | 2435 | 2170 | 54 | 211 | 2435 |  |
+| next | 2243 | 1950 | 54 | 239 | 2243 |  |
+| end | 1631 | 1388 | 23 | 220 | 1631 |  |
+| variables | 1528 | 1175 | 54 | 299 | 1525 | $@08_ep13nydun02_in is not a valid name (2); $050908_minus1_yagu$ is not a valid name (1) |
+| select | 1262 | 1026 | 47 | 189 | 1262 |  |
+| warp | 730 | 675 | 1 | 54 | 730 |  |
+| countitem | 617 | 517 | 7 | 93 | 617 |  |
+| strcharinfo | 612 | 512 | 6 | 94 | 612 |  |
+| close2 | 573 | 503 | 1 | 69 | 573 |  |
+| donpcevent | 532 | 426 | 15 | 91 | 530 | "OnControler1#aru_gd" is not an event label (1); "OnControler1#sch_gd" is not an event label (1) |
+| event ontouch_ | 493 | 458 | 0 | 35 | 493 |  |
+| delitem | 489 | 410 | 7 | 72 | 489 |  |
+| disablenpc | 485 | 401 | 10 | 74 | 485 |  |
+| rand | 485 | 376 | 11 | 98 | 485 |  |
+| event oninit | 430 | 351 | 2 | 77 | 427 | it waits or shows a dialog, and OnInit runs without a player (3) |
+| enablenpc | 407 | 337 | 9 | 61 | 407 |  |
+| getitem | 386 | 325 | 12 | 49 | 386 |  |
+| emotion | 370 | 324 | 5 | 41 | 370 |  |
+| callfunc | 347 | 233 | 54 | 60 | 347 |  |
+| event onenable | 327 | 260 | 6 | 61 | 327 |  |
+| changequest | 315 | 272 | 1 | 42 | 315 |  |
+| initnpctimer | 294 | 216 | 1 | 77 | 292 | a timer attached to the player (2) |
+| stopnpctimer | 236 | 200 | 1 | 35 | 236 |  |
+| getarg | 233 | 155 | 53 | 25 | 230 | outside a function (3) |
+| checkweight | 219 | 141 | 8 | 70 | 219 |  |
+| Zeny | 214 | 185 | 19 | 10 | 214 |  |
+| input | 208 | 156 | 25 | 27 | 208 |  |
+| specialeffect | 186 | 159 | 3 | 24 | 182 | an effect that is not a fixed EF_ effect (3) |
+| monster | 167 | 4 | 0 | 163 | 70 | on another map (57); a name of its own (38); a computed name (2) |
+| cutin | 166 | 137 | 0 | 29 | 166 |  |
+| mapannounce | 149 | 117 | 2 | 30 | 149 |  |
+| event ondisable | 137 | 107 | 5 | 25 | 137 |  |
+| setarray | 137 | 100 | 3 | 34 | 137 |  |
+| parameter | 129 | 0 | 5 | 124 | 0 |  |
+| percentheal | 128 | 114 | 0 | 14 | 128 |  |
+| event ontouch | 126 | 120 | 5 | 1 | 126 |  |
+| specialeffect2 | 123 | 104 | 0 | 19 | 123 |  |
+| checkre | 122 | 74 | 2 | 46 | 122 |  |
+| setquest | 113 | 76 | 7 | 30 | 113 |  |
+| strnpcinfo | 109 | 68 | 2 | 39 | 109 |  |
+| killmonster | 108 | 0 | 0 | 108 | 0 | the API cannot remove spawned monsters (108) |
+| isequipped | 106 | 100 | 0 | 6 | 106 |  |
+| viewpoint | 99 | 99 | 0 | 0 | 99 |  |
+| getskilllv | 91 | 74 | 6 | 11 | 91 |  |
+| parameter MaxWeight | 89 | 0 | 0 | 89 | 0 |  |
+| callsub | 88 | 72 | 1 | 15 | 88 |  |
+| getexp | 87 | 0 | 1 | 86 | 0 |  |
+| savepoint | 83 | 79 | 1 | 3 | 83 |  |
+| getitemname | 81 | 61 | 2 | 18 | 81 |  |
+| checkquest | 76 | 59 | 1 | 16 | 76 |  |
+| completequest | 65 | 36 | 7 | 22 | 65 |  |
 | compare | 60 | 31 | 0 | 29 | 60 |  |
-| completequest | 60 | 32 | 7 | 21 | 60 |  |
 | basicskillcheck | 58 | 51 | 6 | 1 | 58 |  |
 | substr | 55 | 28 | 0 | 27 | 55 |  |
 | close3 | 54 | 51 | 0 | 3 | 54 |  |
 | event oncommandon | 54 | 54 | 0 | 0 | 54 |  |
-| hideonnpc | 52 | 38 | 0 | 14 | 52 |  |
+| hideonnpc | 53 | 39 | 0 | 14 | 53 |  |
+| event ontimer3000 | 52 | 49 | 0 | 3 | 52 |  |
 | implode | 50 | 49 | 0 | 1 | 50 |  |
 | getarraysize | 49 | 31 | 1 | 17 | 47 | not of a variable (2) |
 | openstorage | 49 | 49 | 0 | 0 | 49 |  |
@@ -133,84 +134,85 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getguildname | 47 | 45 | 0 | 2 | 47 |  |
 | setcart | 47 | 47 | 0 | 0 | 47 |  |
 | logmes | 46 | 46 | 0 | 0 | 46 |  |
-| event ontimer3000 | 44 | 41 | 0 | 3 | 44 |  |
+| event ontimer60000 | 42 | 41 | 0 | 1 | 42 |  |
 | guildopenstorage | 42 | 42 | 0 | 0 | 42 |  |
-| event ontimer60000 | 41 | 39 | 0 | 2 | 41 |  |
+| skill | 38 | 28 | 5 | 5 | 36 | SKILL_PERM_GRANT (1); a computed skill (1) |
 | setnpctimer | 37 | 36 | 0 | 1 | 36 | the timer of another NPC (Summoner#gnp) (1) |
+| startnpctimer | 37 | 36 | 0 | 1 | 36 | resuming a stopped timer needs the tick it stopped at, which needs the server clock; it converts right after setnpcti... (1) |
 | event oncommandoff | 36 | 36 | 0 | 0 | 36 |  |
-| skill | 36 | 26 | 5 | 5 | 34 | SKILL_PERM_GRANT (1); a computed skill (1) |
-| startnpctimer | 36 | 36 | 0 | 0 | 36 |  |
+| event ontimer1000 | 36 | 29 | 1 | 6 | 36 |  |
+| sc_start | 36 | 35 | 0 | 1 | 36 |  |
 | getargcount | 35 | 0 | 25 | 10 | 35 |  |
-| hideoffnpc | 34 | 24 | 0 | 10 | 34 |  |
+| hideoffnpc | 35 | 28 | 0 | 7 | 35 |  |
+| event ontimer2000 | 34 | 26 | 0 | 8 | 34 |  |
 | charat | 33 | 22 | 0 | 11 | 33 |  |
 | getgmlevel | 33 | 0 | 25 | 8 | 0 |  |
-| event ontimer1000 | 32 | 23 | 1 | 8 | 32 |  |
-| event ontimer2000 | 31 | 22 | 0 | 9 | 31 |  |
+| event ontimer5000 | 31 | 24 | 0 | 7 | 31 |  |
 | parameter SkillPoint | 31 | 0 | 0 | 31 | 0 |  |
+| gettime | 30 | 0 | 0 | 30 | 0 |  |
+| soundeffect | 30 | 27 | 0 | 3 | 28 | a computed file (1); the file "effect\\¼®¾çÀÇ ¾î½Ø½Å.wav" (1) |
 | getstrlen | 29 | 19 | 0 | 10 | 29 |  |
-| event onstop | 28 | 20 | 1 | 7 | 28 |  |
-| gettime | 28 | 0 | 0 | 28 | 0 |  |
-| soundeffect | 28 | 0 | 0 | 28 | 0 |  |
+| event onstop | 28 | 21 | 1 | 6 | 28 |  |
+| mapwarp | 28 | 0 | 0 | 28 | 0 |  |
+| event ontimer10000 | 27 | 25 | 0 | 2 | 27 |  |
 | isbegin_quest | 27 | 23 | 2 | 2 | 27 |  |
-| mapwarp | 27 | 0 | 0 | 27 | 0 |  |
-| sc_start | 26 | 14 | 0 | 12 | 26 |  |
-| event ontimer30000 | 25 | 21 | 0 | 4 | 25 |  |
-| event onstart | 24 | 15 | 0 | 9 | 24 |  |
-| event ontimer10000 | 24 | 21 | 0 | 3 | 24 |  |
-| event ontimer5000 | 24 | 16 | 0 | 8 | 24 |  |
+| event onstart | 25 | 17 | 0 | 8 | 25 |  |
+| event ontimer20000 | 25 | 21 | 0 | 4 | 25 |  |
+| event ontimer30000 | 25 | 22 | 0 | 3 | 25 |  |
+| event ontimer8000 | 24 | 16 | 0 | 8 | 24 |  |
 | waitingroom | 24 | 0 | 0 | 24 | 0 |  |
 | deletearray | 23 | 22 | 0 | 1 | 23 |  |
-| event ontimer20000 | 23 | 14 | 0 | 9 | 23 |  |
 | killmonsterall | 22 | 0 | 0 | 22 | 0 |  |
 | disable_items | 21 | 0 | 2 | 19 | 0 |  |
-| event ontimer8000 | 21 | 12 | 0 | 9 | 21 |  |
+| event ontimer4000 | 21 | 16 | 0 | 5 | 21 |  |
 | eaclass | 20 | 0 | 0 | 20 | 0 |  |
 | getpartnerid | 20 | 0 | 0 | 20 | 0 |  |
 | makeitem | 20 | 0 | 0 | 20 | 0 |  |
-| event ontimer4000 | 18 | 13 | 0 | 5 | 18 |  |
-| soundeffectall | 17 | 0 | 0 | 17 | 0 |  |
-| event ontimer40000 | 16 | 10 | 0 | 6 | 16 |  |
-| event ontimer7000 | 16 | 13 | 0 | 3 | 16 |  |
-| event ontimer300000 | 15 | 11 | 0 | 4 | 15 |  |
+| event ontimer7000 | 19 | 17 | 0 | 2 | 19 |  |
+| soundeffectall | 17 | 15 | 0 | 2 | 17 |  |
+| event ontimer300000 | 16 | 12 | 0 | 4 | 16 |  |
+| event ontimer40000 | 16 | 11 | 0 | 5 | 16 |  |
+| erasequest | 15 | 11 | 0 | 4 | 15 |  |
+| event ontimer15000 | 15 | 12 | 0 | 3 | 15 |  |
 | getbrokenid | 15 | 0 | 14 | 1 | 0 |  |
 | event onenter | 14 | 13 | 0 | 1 | 14 |  |
-| event ontimer15000 | 14 | 10 | 0 | 4 | 14 |  |
+| event ontimer120000 | 14 | 13 | 0 | 1 | 14 |  |
 | repair | 14 | 0 | 14 | 0 | 0 |  |
-| event ontimer120000 | 13 | 12 | 0 | 1 | 13 |  |
 | function | 13 | 10 | 0 | 3 | 13 |  |
-| getvariableofnpc | 13 | 8 | 1 | 4 | 13 |  |
+| getequipid | 13 | 10 | 0 | 3 | 13 |  |
+| getvariableofnpc | 13 | 9 | 1 | 3 | 13 |  |
+| announce | 12 | 8 | 0 | 4 | 12 |  |
 | areawarp | 12 | 0 | 0 | 12 | 0 |  |
-| erasequest | 12 | 7 | 0 | 5 | 12 |  |
-| getequipid | 12 | 7 | 0 | 5 | 12 |  |
-| event onmymobdead | 11 | 8 | 0 | 3 | 11 |  |
+| event onmymobdead | 12 | 8 | 0 | 4 | 12 |  |
+| event ontimer22500 | 12 | 12 | 0 | 0 | 12 |  |
 | event ontimer240000 | 11 | 8 | 0 | 3 | 11 |  |
-| event ontimer50000 | 11 | 8 | 0 | 3 | 11 |  |
-| announce | 10 | 7 | 0 | 3 | 10 |  |
+| event ontimer50000 | 11 | 9 | 0 | 2 | 11 |  |
+| sc_end | 11 | 11 | 0 | 0 | 11 |  |
 | areamonster | 10 | 0 | 0 | 10 | 0 |  |
-| event ontimer6000 | 10 | 6 | 0 | 4 | 10 |  |
+| event ontimer6000 | 10 | 7 | 0 | 3 | 10 |  |
 | getmapusers | 10 | 0 | 0 | 10 | 0 |  |
 | goto | 10 | 5 | 0 | 5 | 8 | l_key is in another part of the script (1); l_mes is in another part of the script (1) |
-| event ontimer35000 | 9 | 5 | 0 | 4 | 9 |  |
+| event ontimer35000 | 9 | 6 | 0 | 3 | 9 |  |
 | jobchange | 9 | 2 | 7 | 0 | 2 |  |
 | mobcount | 9 | 0 | 0 | 9 | 8 | a computed event label (1) |
 | setd | 9 | 5 | 0 | 4 | 6 | a name that does not start with fixed text (3) |
-| event onreset | 8 | 3 | 0 | 5 | 8 |  |
+| event onreset | 8 | 8 | 0 | 0 | 8 |  |
 | event onstop_timer | 8 | 8 | 0 | 0 | 8 |  |
-| event ontimer25000 | 8 | 4 | 0 | 4 | 8 |  |
-| event ontimer45000 | 8 | 5 | 0 | 3 | 8 |  |
+| event ontimer25000 | 8 | 5 | 0 | 3 | 8 |  |
+| event ontimer45000 | 8 | 6 | 0 | 2 | 8 |  |
 | f_sealfail | 8 | 8 | 0 | 0 | 8 |  |
 | getcharid | 8 | 6 | 1 | 1 | 8 |  |
 | getd | 8 | 6 | 0 | 2 | 7 | a computed name of a .@ or . variable, which are Lua locals (1) |
+| event onomg | 7 | 7 | 0 | 0 | 7 |  |
 | event ontimer12000 | 7 | 3 | 0 | 4 | 7 |  |
 | event ontimer150000 | 7 | 6 | 0 | 1 | 7 |  |
 | event ontimer180000 | 7 | 5 | 1 | 1 | 7 |  |
 | getbattleflag | 7 | 0 | 0 | 7 | 0 |  |
 | getcastledata | 7 | 0 | 0 | 7 | 0 | castles, sieges and guardians are not in the API yet (7) |
 | gettimetick | 7 | 0 | 0 | 7 | 0 |  |
-| progressbar | 7 | 4 | 0 | 3 | 7 |  |
+| progressbar | 7 | 7 | 0 | 0 | 7 |  |
 | atoi | 6 | 4 | 0 | 2 | 6 |  |
 | event onend | 6 | 4 | 0 | 2 | 6 |  |
-| event onomg | 6 | 5 | 0 | 1 | 6 |  |
 | event onreset_01 | 6 | 6 | 0 | 0 | 6 |  |
 | event onreset_02 | 6 | 6 | 0 | 0 | 6 |  |
 | event onreset_03 | 6 | 6 | 0 | 0 | 6 |  |
@@ -224,13 +226,13 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer110000 | 6 | 5 | 0 | 1 | 6 |  |
 | event ontimer13000 | 6 | 4 | 0 | 2 | 6 |  |
 | event ontimer16000 | 6 | 3 | 0 | 3 | 6 |  |
-| event ontimer22500 | 6 | 6 | 0 | 0 | 6 |  |
 | event ontimer3600000 | 6 | 5 | 0 | 1 | 6 |  |
 | event ontimer70000 | 6 | 5 | 0 | 1 | 6 |  |
 | event ontimer80000 | 6 | 5 | 0 | 1 | 6 |  |
-| event ontimer9000 | 6 | 3 | 0 | 3 | 6 |  |
-| event onup | 6 | 1 | 0 | 5 | 6 |  |
+| event ontimer9000 | 6 | 4 | 0 | 2 | 6 |  |
+| event onup | 6 | 6 | 0 | 0 | 6 |  |
 | explode | 6 | 5 | 0 | 1 | 6 |  |
+| is_guild_leader | 6 | 4 | 0 | 2 | 6 |  |
 | countstr | 5 | 5 | 0 | 0 | 5 |  |
 | delchar | 5 | 5 | 0 | 0 | 5 |  |
 | event onnomal1 | 5 | 5 | 0 | 0 | 5 |  |
@@ -241,7 +243,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer100000 | 5 | 4 | 0 | 1 | 5 |  |
 | event ontimer130000 | 5 | 4 | 0 | 1 | 5 |  |
 | event ontimer1500 | 5 | 5 | 0 | 0 | 5 |  |
-| event ontimer19000 | 5 | 3 | 0 | 2 | 5 |  |
+| event ontimer19000 | 5 | 4 | 0 | 1 | 5 |  |
 | event ontimer230000 | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimer2500 | 5 | 5 | 0 | 0 | 5 |  |
 | event ontimer500 | 5 | 5 | 0 | 0 | 5 |  |
@@ -255,58 +257,58 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | strtoupper | 5 | 5 | 0 | 0 | 5 |  |
 | assignment | 4 | 0 | 0 | 4 | 0 |  |
 | assignment in an expression | 4 | 0 | 0 | 4 | 0 |  |
+| checkriding | 4 | 1 | 0 | 3 | 4 |  |
 | event onreset_all | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer17000 | 4 | 3 | 0 | 1 | 4 |  |
 | event ontimer190000 | 4 | 4 | 0 | 0 | 4 |  |
 | event ontimer210000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer23000 | 4 | 4 | 0 | 0 | 4 |  |
+| event ontimer27000 | 4 | 4 | 0 | 0 | 4 |  |
 | event ontimer34000 | 4 | 2 | 0 | 2 | 4 |  |
 | event ontimer345000 | 4 | 1 | 0 | 3 | 4 |  |
 | event ontimer44000 | 4 | 2 | 0 | 2 | 4 |  |
-| event ontimer55000 | 4 | 1 | 0 | 3 | 4 |  |
+| event ontimer55000 | 4 | 2 | 0 | 2 | 4 |  |
 | event ontimer90000 | 4 | 3 | 0 | 1 | 4 |  |
 | getlook | 4 | 0 | 0 | 4 | 0 |  |
-| is_guild_leader | 4 | 2 | 0 | 2 | 4 |  |
 | ismounting | 4 | 0 | 0 | 4 | 0 |  |
-| sc_end | 4 | 3 | 0 | 1 | 4 |  |
-| checkriding | 3 | 0 | 0 | 3 | 3 |  |
+| setnpcdisplay | 4 | 3 | 0 | 1 | 4 |  |
 | event onhide | 3 | 3 | 0 | 0 | 3 |  |
 | event ontimer140000 | 3 | 2 | 0 | 1 | 3 |  |
 | event ontimer160000 | 3 | 2 | 0 | 1 | 3 |  |
-| event ontimer17000 | 3 | 1 | 0 | 2 | 3 |  |
-| event ontimer18000 | 3 | 1 | 0 | 2 | 3 |  |
+| event ontimer18000 | 3 | 2 | 0 | 1 | 3 |  |
 | event ontimer1800000 | 3 | 2 | 0 | 1 | 3 |  |
 | event ontimer200000 | 3 | 1 | 0 | 2 | 3 |  |
 | event ontimer21000 | 3 | 2 | 0 | 1 | 3 |  |
 | event ontimer220000 | 3 | 2 | 0 | 1 | 3 |  |
-| event ontimer23000 | 3 | 3 | 0 | 0 | 3 |  |
 | event ontimer24000 | 3 | 1 | 0 | 2 | 3 |  |
 | event ontimer243000 | 3 | 1 | 0 | 2 | 3 |  |
-| event ontimer27000 | 3 | 2 | 0 | 1 | 3 |  |
-| event ontimer28000 | 3 | 0 | 0 | 3 | 3 |  |
+| event ontimer28000 | 3 | 1 | 0 | 2 | 3 |  |
 | event ontimer32000 | 3 | 0 | 0 | 3 | 3 |  |
 | event ontimer345500 | 3 | 0 | 0 | 3 | 3 |  |
 | event ontimer346000 | 3 | 0 | 0 | 3 | 3 |  |
-| event ontimer38000 | 3 | 1 | 0 | 2 | 3 |  |
+| event ontimer38000 | 3 | 2 | 0 | 1 | 3 |  |
 | event ontimer43000 | 3 | 3 | 0 | 0 | 3 |  |
-| event ontimer47000 | 3 | 2 | 0 | 1 | 3 |  |
-| event ontimer48000 | 3 | 0 | 0 | 3 | 3 |  |
-| event ontimer49000 | 3 | 2 | 0 | 1 | 3 |  |
+| event ontimer47000 | 3 | 3 | 0 | 0 | 3 |  |
+| event ontimer48000 | 3 | 1 | 0 | 2 | 3 |  |
+| event ontimer49000 | 3 | 3 | 0 | 0 | 3 |  |
 | event ontimer7200000 | 3 | 3 | 0 | 0 | 3 |  |
 | event ontimer75000 | 3 | 2 | 0 | 1 | 3 |  |
 | event onwin | 3 | 1 | 0 | 2 | 3 |  |
 | getnameditem | 3 | 0 | 0 | 3 | 0 |  |
-| npcskill | 3 | 0 | 0 | 3 | 0 |  |
+| npcskill | 3 | 2 | 0 | 1 | 3 |  |
 | parameter Weight | 3 | 0 | 0 | 3 | 0 |  |
-| setnpcdisplay | 3 | 0 | 0 | 3 | 0 |  |
 | sleep | 3 | 0 | 0 | 3 | 3 |  |
 | catwarp | 2 | 2 | 0 | 0 | 2 |  |
 | enablewaitingroomevent | 2 | 0 | 0 | 2 | 0 |  |
 | event ondead | 2 | 1 | 0 | 1 | 2 |  |
 | event ongame_start | 2 | 0 | 0 | 2 | 2 |  |
-| event onmvp | 2 | 0 | 0 | 2 | 2 |  |
+| event onho | 2 | 2 | 0 | 0 | 2 |  |
+| event onmvp | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer105000 | 2 | 1 | 0 | 1 | 2 |  |
 | event ontimer115000 | 2 | 1 | 0 | 1 | 2 |  |
 | event ontimer1200000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer123000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer22000 | 2 | 0 | 0 | 2 | 2 |  |
 | event ontimer2400000 | 2 | 1 | 0 | 1 | 2 |  |
 | event ontimer242000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer245000 | 2 | 2 | 0 | 0 | 2 |  |
@@ -327,7 +329,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer340000 | 2 | 1 | 0 | 1 | 2 |  |
 | event ontimer36000 | 2 | 0 | 0 | 2 | 2 |  |
 | event ontimer360000 | 2 | 1 | 1 | 0 | 2 |  |
-| event ontimer37000 | 2 | 1 | 0 | 1 | 2 |  |
+| event ontimer37000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer370000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer420000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer46000 | 2 | 2 | 0 | 0 | 2 |  |
@@ -335,8 +337,8 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer500000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer52000 | 2 | 0 | 0 | 2 | 2 |  |
 | event ontimer53000 | 2 | 2 | 0 | 0 | 2 |  |
-| event ontimer57000 | 2 | 1 | 0 | 1 | 2 |  |
-| event ontimer58000 | 2 | 1 | 0 | 1 | 2 |  |
+| event ontimer57000 | 2 | 2 | 0 | 0 | 2 |  |
+| event ontimer58000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer61000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer620000 | 2 | 2 | 0 | 0 | 2 |  |
 | event ontimer65000 | 2 | 1 | 0 | 1 | 2 |  |
@@ -349,7 +351,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | checkwug | 1 | 0 | 0 | 1 | 0 |  |
 | consumeitem | 1 | 0 | 0 | 1 | 0 |  |
 | countitem2 | 1 | 0 | 0 | 1 | 0 |  |
-| event onbest | 1 | 0 | 0 | 1 | 1 |  |
+| event onbest | 1 | 1 | 0 | 0 | 1 |  |
 | event onbutton_off | 1 | 1 | 0 | 0 | 1 |  |
 | event oncall | 1 | 0 | 0 | 1 | 1 |  |
 | event oncast | 1 | 1 | 0 | 0 | 1 |  |
@@ -367,13 +369,12 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onend_n8 | 1 | 1 | 0 | 0 | 1 |  |
 | event ongasp | 1 | 1 | 0 | 0 | 1 |  |
 | event ongo | 1 | 1 | 0 | 0 | 1 |  |
-| event onheart | 1 | 0 | 0 | 1 | 1 |  |
+| event onheart | 1 | 1 | 0 | 0 | 1 |  |
 | event onhermiteoff | 1 | 0 | 0 | 1 | 1 |  |
-| event onho | 1 | 1 | 0 | 0 | 1 |  |
 | event onkiehldead | 1 | 0 | 0 | 1 | 1 |  |
 | event onkiehlmobdead | 1 | 0 | 0 | 1 | 1 |  |
-| event onkik | 1 | 0 | 0 | 1 | 1 |  |
-| event onkis | 1 | 0 | 0 | 1 | 1 |  |
+| event onkik | 1 | 1 | 0 | 0 | 1 |  |
+| event onkis | 1 | 1 | 0 | 0 | 1 |  |
 | event onkis2 | 1 | 1 | 0 | 0 | 1 |  |
 | event onknight1off | 1 | 0 | 0 | 1 | 1 |  |
 | event onknight1on | 1 | 0 | 0 | 1 | 1 |  |
@@ -404,11 +405,11 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onnew_top3 | 1 | 1 | 0 | 0 | 1 |  |
 | event onnew_top4 | 1 | 1 | 0 | 0 | 1 |  |
 | event onnew_top5 | 1 | 1 | 0 | 0 | 1 |  |
-| event onon2 | 1 | 0 | 0 | 1 | 1 |  |
+| event onon2 | 1 | 1 | 0 | 0 | 1 |  |
 | event onout | 1 | 1 | 0 | 0 | 1 |  |
 | event onpclogoutevent | 1 | 0 | 0 | 1 | 0 | rAthena runs it for the players of every map, and an NPC hears only the players of its own map (decision 0062) (1) |
 | event onready | 1 | 1 | 0 | 0 | 1 |  |
-| event onsci | 1 | 0 | 0 | 1 | 1 |  |
+| event onsci | 1 | 1 | 0 | 0 | 1 |  |
 | event onstarttimer | 1 | 1 | 0 | 0 | 1 |  |
 | event onstoptimer | 1 | 1 | 0 | 0 | 1 |  |
 | event onsummon | 1 | 0 | 0 | 1 | 1 |  |
@@ -434,7 +435,6 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer207000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer21600000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer219000 | 1 | 0 | 0 | 1 | 1 |  |
-| event ontimer22000 | 1 | 0 | 0 | 1 | 1 |  |
 | event ontimer23500 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer239000 | 1 | 0 | 0 | 1 | 1 |  |
 | event ontimer241000 | 1 | 1 | 0 | 0 | 1 |  |
@@ -446,7 +446,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer279000 | 1 | 0 | 0 | 1 | 1 |  |
 | event ontimer280000 | 1 | 0 | 0 | 1 | 1 |  |
 | event ontimer28500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer29000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer29000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer3000000 | 1 | 0 | 0 | 1 | 1 |  |
 | event ontimer301500 | 1 | 0 | 0 | 1 | 1 |  |
 | event ontimer303000 | 1 | 0 | 0 | 1 | 1 |  |
@@ -468,7 +468,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer368000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer380000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer38500 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer39000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer39000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer390000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer391000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer400000 | 1 | 1 | 0 | 0 | 1 |  |
@@ -487,12 +487,13 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer552000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer556000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer561000 | 1 | 1 | 0 | 0 | 1 |  |
-| event ontimer59000 | 1 | 0 | 0 | 1 | 1 |  |
+| event ontimer59000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer598000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer603000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer610000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer612000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer615000 | 1 | 1 | 0 | 0 | 1 |  |
+| event ontimer62000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer621000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer63000 | 1 | 1 | 0 | 0 | 1 |  |
 | event ontimer66000 | 1 | 1 | 0 | 0 | 1 |  |
@@ -523,7 +524,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | labels | 1 | 0 | 0 | 1 | 0 | l_askquestions: a label inside a block, which a jump from outside the block reaches (1) |
 | menu | 1 | 1 | 0 | 0 | 1 |  |
 | mercenary_get_faith | 1 | 0 | 0 | 1 | 0 |  |
-| movenpc | 1 | 0 | 0 | 1 | 0 |  |
+| movenpc | 1 | 1 | 0 | 0 | 1 |  |
 | openauction | 1 | 0 | 0 | 1 | 0 |  |
 | openmail | 1 | 1 | 0 | 0 | 1 |  |
 | parameter Zeny | 1 | 0 | 0 | 1 | 0 | set to a value (1) |
@@ -531,6 +532,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | replacestr | 1 | 1 | 0 | 0 | 1 |  |
 | set | 1 | 0 | 0 | 1 | 0 |  |
 | setlook | 1 | 0 | 0 | 1 | 0 |  |
+| setriding | 1 | 1 | 0 | 0 | 1 |  |
 | strtolower | 1 | 1 | 0 | 0 | 1 |  |
 | unloadnpc | 1 | 0 | 0 | 1 | 0 | an NPC with duplicates, which rAthena unloads with it (1) |
 
@@ -539,10 +541,11 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | Function | File | Converts | Parts that fail when reached |
 |---|---|---|---|
 | F_AuctionWarper | npc/other/auction.txt:37 | whole |  |
+| F_BardSkillYhelle | npc/quests/skills/bard_skills.txt:1251 | partly | parameter MaxWeight |
 | F_CanChangeJob | npc/other/Global_Functions.txt:626 | whole |  |
 | F_CanOpenStorage | npc/other/Global_Functions.txt:618 | whole |  |
 | F_CheckKafCode | npc/kafras/functions_kafras.txt:475 | whole |  |
-| F_Cherno | npc/quests/quests_airship.txt:934 | partly | emotion: on a player or another NPC; specialeffect: on another NPC |
+| F_Cherno | npc/quests/quests_airship.txt:934 | whole |  |
 | F_ClearJobVar | npc/other/Global_Functions.txt:56 | whole |  |
 | F_ClockTowerGate | npc/cities/aldebaran.txt:1494 | whole |  |
 | F_CmdGuide | npc/pre-re/guides/guides_comodo.txt:34 | whole |  |
@@ -567,7 +570,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | F_KafTele | npc/kafras/functions_kafras.txt:287 | whole |  |
 | F_Kafra | npc/kafras/functions_kafras.txt:75 | whole |  |
 | F_Kienna | npc/quests/skills/rogue_skills.txt:1170 | whole |  |
-| F_MOS_1 | npc/quests/quests_moscovia.txt:2756 | partly | emotion: on a player or another NPC |
+| F_MOS_1 | npc/quests/quests_moscovia.txt:2756 | whole |  |
 | F_MercKafra | npc/pre-re/jobs/1-1/merchant.txt:1060 | whole |  |
 | F_MotherMart | npc/jobs/2-1/priest.txt:1756 | whole |  |
 | F_Okolnir | npc/quests/okolnir.txt:18 | whole |  |
@@ -608,7 +611,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/airports/yuno.txt | 10 | 10 | 0 |
 | npc/cities/alberta.txt | 11 | 10 | 1 |
 | npc/cities/aldebaran.txt | 31 | 29 | 2 |
-| npc/cities/amatsu.txt | 14 | 13 | 1 |
+| npc/cities/amatsu.txt | 14 | 14 | 0 |
 | npc/cities/ayothaya.txt | 8 | 8 | 0 |
 | npc/cities/comodo.txt | 18 | 18 | 0 |
 | npc/cities/einbech.txt | 25 | 25 | 0 |
@@ -618,22 +621,22 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/cities/hugel.txt | 10 | 10 | 0 |
 | npc/cities/izlude.txt | 11 | 11 | 0 |
 | npc/cities/jawaii.txt | 28 | 14 | 14 |
-| npc/cities/lighthalzen.txt | 139 | 134 | 5 |
+| npc/cities/lighthalzen.txt | 139 | 139 | 0 |
 | npc/cities/louyang.txt | 19 | 19 | 0 |
 | npc/cities/lutie.txt | 10 | 10 | 0 |
 | npc/cities/manuk.txt | 31 | 31 | 0 |
-| npc/cities/morocc.txt | 33 | 31 | 2 |
+| npc/cities/morocc.txt | 33 | 33 | 0 |
 | npc/cities/moscovia.txt | 8 | 8 | 0 |
 | npc/cities/niflheim.txt | 6 | 5 | 1 |
 | npc/cities/payon.txt | 15 | 12 | 3 |
 | npc/cities/prontera.txt | 23 | 23 | 0 |
 | npc/cities/rachel.txt | 30 | 29 | 1 |
-| npc/cities/splendide.txt | 36 | 35 | 1 |
-| npc/cities/umbala.txt | 18 | 17 | 1 |
+| npc/cities/splendide.txt | 36 | 36 | 0 |
+| npc/cities/umbala.txt | 18 | 18 | 0 |
 | npc/cities/veins.txt | 46 | 46 | 0 |
 | npc/cities/yuno.txt | 14 | 14 | 0 |
-| npc/events/gdevent_aru.txt | 73 | 59 | 14 |
-| npc/events/gdevent_sch.txt | 73 | 59 | 14 |
+| npc/events/gdevent_aru.txt | 73 | 61 | 12 |
+| npc/events/gdevent_sch.txt | 73 | 61 | 12 |
 | npc/events/god_se_festival.txt | 4 | 2 | 2 |
 | npc/jobs/1-1e/gunslinger.txt | 2 | 1 | 1 |
 | npc/jobs/1-1e/ninja.txt | 3 | 2 | 1 |
@@ -642,7 +645,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/jobs/2-1/blacksmith.txt | 9 | 8 | 1 |
 | npc/jobs/2-1/hunter.txt | 396 | 393 | 3 |
 | npc/jobs/2-1/knight.txt | 14 | 7 | 7 |
-| npc/jobs/2-1/priest.txt | 23 | 17 | 6 |
+| npc/jobs/2-1/priest.txt | 23 | 20 | 3 |
 | npc/jobs/2-1/wizard.txt | 14 | 5 | 9 |
 | npc/jobs/2-1a/AssassinCross.txt | 1 | 0 | 1 |
 | npc/jobs/2-1a/HighPriest.txt | 1 | 0 | 1 |
@@ -682,7 +685,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/merchants/gemstone.txt | 1 | 1 | 0 |
 | npc/merchants/hair_dyer.txt | 1 | 0 | 1 |
 | npc/merchants/hair_style.txt | 2 | 0 | 2 |
-| npc/merchants/inn.txt | 12 | 11 | 1 |
+| npc/merchants/inn.txt | 12 | 12 | 0 |
 | npc/merchants/kunai_maker.txt | 1 | 1 | 0 |
 | npc/merchants/milk_trader.txt | 1 | 0 | 1 |
 | npc/merchants/novice_exchange.txt | 5 | 0 | 5 |
@@ -701,7 +704,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/arena/arena_lvl80.txt | 44 | 25 | 19 |
 | npc/other/arena/arena_party.txt | 37 | 19 | 18 |
 | npc/other/arena/arena_point.txt | 1 | 1 | 0 |
-| npc/other/arena/arena_room.txt | 28 | 15 | 13 |
+| npc/other/arena/arena_room.txt | 28 | 24 | 4 |
 | npc/other/auction.txt | 24 | 9 | 15 |
 | npc/other/books.txt | 9 | 9 | 0 |
 | npc/other/bulletin_boards.txt | 19 | 19 | 0 |
@@ -710,16 +713,16 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/fortune.txt | 3 | 3 | 0 |
 | npc/other/guildpvp.txt | 1 | 0 | 1 |
 | npc/other/gympass.txt | 1 | 0 | 1 |
-| npc/other/hugel_bingo.txt | 150 | 141 | 9 |
+| npc/other/hugel_bingo.txt | 150 | 146 | 4 |
 | npc/other/mail.txt | 32 | 31 | 1 |
 | npc/other/marriage.txt | 11 | 8 | 3 |
 | npc/other/mercenary_rent.txt | 10 | 4 | 6 |
-| npc/other/monster_museum.txt | 62 | 30 | 32 |
+| npc/other/monster_museum.txt | 62 | 62 | 0 |
 | npc/other/monster_race.txt | 202 | 182 | 20 |
-| npc/other/poring_war.txt | 37 | 13 | 24 |
+| npc/other/poring_war.txt | 37 | 25 | 12 |
 | npc/other/powernpc.txt | 5 | 3 | 2 |
 | npc/other/pvp.txt | 26 | 20 | 6 |
-| npc/other/turbo_track.txt | 2141 | 1839 | 302 |
+| npc/other/turbo_track.txt | 2141 | 2095 | 46 |
 | npc/pre-re/airports/izlude.txt | 1 | 1 | 0 |
 | npc/pre-re/cities/alberta.txt | 8 | 8 | 0 |
 | npc/pre-re/cities/izlude.txt | 9 | 9 | 0 |
@@ -775,19 +778,19 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/pre-re/quests/monstertamers.txt | 1 | 1 | 0 |
 | npc/pre-re/quests/mrsmile.txt | 1 | 1 | 0 |
 | npc/pre-re/quests/quest_payon.txt | 1 | 1 | 0 |
-| npc/pre-re/quests/quests_13_1.txt | 6 | 4 | 2 |
+| npc/pre-re/quests/quests_13_1.txt | 6 | 5 | 1 |
 | npc/pre-re/quests/quests_izlude.txt | 1 | 1 | 0 |
 | npc/pre-re/quests/quests_lighthalzen.txt | 1 | 1 | 0 |
 | npc/pre-re/quests/quests_morocc.txt | 36 | 35 | 1 |
 | npc/pre-re/quests/quests_nameless.txt | 2 | 2 | 0 |
-| npc/pre-re/quests/quests_niflheim.txt | 1 | 0 | 1 |
+| npc/pre-re/quests/quests_niflheim.txt | 1 | 1 | 0 |
 | npc/pre-re/quests/quests_veins.txt | 1 | 0 | 1 |
 | npc/pre-re/quests/seals/brisingamen_seal.txt | 2 | 2 | 0 |
 | npc/pre-re/quests/seals/megingard_seal.txt | 2 | 2 | 0 |
 | npc/pre-re/quests/skills/swordman_skills.txt | 1 | 1 | 0 |
 | npc/pre-re/quests/the_sign_quest.txt | 1 | 1 | 0 |
 | npc/pre-re/warps/fields/veins_fild.txt | 1 | 1 | 0 |
-| npc/quests/bard_quest.txt | 11 | 9 | 2 |
+| npc/quests/bard_quest.txt | 11 | 10 | 1 |
 | npc/quests/bunnyband.txt | 1 | 1 | 0 |
 | npc/quests/cooking_quest.txt | 5 | 3 | 2 |
 | npc/quests/counteragent_mixture.txt | 3 | 3 | 0 |
@@ -795,7 +798,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/doomed_swords_quest.txt | 3 | 3 | 0 |
 | npc/quests/eye_of_hellion.txt | 15 | 9 | 6 |
 | npc/quests/first_class/tu_acolyte.txt | 15 | 12 | 3 |
-| npc/quests/first_class/tu_archer.txt | 14 | 8 | 6 |
+| npc/quests/first_class/tu_archer.txt | 14 | 10 | 4 |
 | npc/quests/first_class/tu_ma_th01.txt | 16 | 0 | 16 |
 | npc/quests/first_class/tu_magician01.txt | 2 | 1 | 1 |
 | npc/quests/first_class/tu_merchant.txt | 6 | 0 | 6 |
@@ -804,47 +807,47 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/guildrelay.txt | 84 | 0 | 84 |
 | npc/quests/gunslinger_quests.txt | 6 | 6 | 0 |
 | npc/quests/juice_maker.txt | 3 | 3 | 0 |
-| npc/quests/kiel_hyre_quest.txt | 110 | 97 | 13 |
+| npc/quests/kiel_hyre_quest.txt | 110 | 101 | 9 |
 | npc/quests/lvl4_weapon_quest.txt | 10 | 9 | 1 |
 | npc/quests/mage_solution.txt | 2 | 2 | 0 |
 | npc/quests/monstertamers.txt | 4 | 4 | 0 |
 | npc/quests/mrsmile.txt | 7 | 7 | 0 |
-| npc/quests/newgears/2004_headgears.txt | 24 | 3 | 21 |
-| npc/quests/newgears/2005_headgears.txt | 10 | 5 | 5 |
+| npc/quests/newgears/2004_headgears.txt | 24 | 9 | 15 |
+| npc/quests/newgears/2005_headgears.txt | 10 | 7 | 3 |
 | npc/quests/newgears/2006_headgears.txt | 5 | 5 | 0 |
-| npc/quests/newgears/2008_headgears.txt | 3 | 2 | 1 |
+| npc/quests/newgears/2008_headgears.txt | 3 | 3 | 0 |
 | npc/quests/ninja_quests.txt | 5 | 5 | 0 |
 | npc/quests/obb_quest.txt | 4 | 3 | 1 |
-| npc/quests/okolnir.txt | 574 | 241 | 333 |
+| npc/quests/okolnir.txt | 574 | 251 | 323 |
 | npc/quests/partyrelay.txt | 24 | 6 | 18 |
-| npc/quests/quests_13_1.txt | 180 | 145 | 35 |
-| npc/quests/quests_13_2.txt | 264 | 226 | 38 |
-| npc/quests/quests_airship.txt | 34 | 27 | 7 |
+| npc/quests/quests_13_1.txt | 180 | 155 | 25 |
+| npc/quests/quests_13_2.txt | 264 | 249 | 15 |
+| npc/quests/quests_airship.txt | 34 | 30 | 4 |
 | npc/quests/quests_alberta.txt | 29 | 27 | 2 |
 | npc/quests/quests_aldebaran.txt | 1 | 1 | 0 |
 | npc/quests/quests_amatsu.txt | 35 | 29 | 6 |
-| npc/quests/quests_ayothaya.txt | 50 | 36 | 14 |
+| npc/quests/quests_ayothaya.txt | 50 | 45 | 5 |
 | npc/quests/quests_comodo.txt | 22 | 22 | 0 |
-| npc/quests/quests_ein.txt | 34 | 26 | 8 |
+| npc/quests/quests_ein.txt | 34 | 27 | 7 |
 | npc/quests/quests_geffen.txt | 3 | 2 | 1 |
 | npc/quests/quests_gonryun.txt | 72 | 69 | 3 |
-| npc/quests/quests_hugel.txt | 87 | 62 | 25 |
+| npc/quests/quests_hugel.txt | 87 | 75 | 12 |
 | npc/quests/quests_izlude.txt | 1 | 1 | 0 |
-| npc/quests/quests_juperos.txt | 89 | 42 | 47 |
-| npc/quests/quests_lighthalzen.txt | 105 | 67 | 38 |
-| npc/quests/quests_louyang.txt | 46 | 29 | 17 |
+| npc/quests/quests_juperos.txt | 89 | 57 | 32 |
+| npc/quests/quests_lighthalzen.txt | 105 | 90 | 15 |
+| npc/quests/quests_louyang.txt | 46 | 30 | 16 |
 | npc/quests/quests_lutie.txt | 2 | 2 | 0 |
-| npc/quests/quests_morocc.txt | 65 | 49 | 16 |
-| npc/quests/quests_moscovia.txt | 102 | 66 | 36 |
-| npc/quests/quests_nameless.txt | 96 | 79 | 17 |
-| npc/quests/quests_niflheim.txt | 11 | 10 | 1 |
+| npc/quests/quests_morocc.txt | 65 | 54 | 11 |
+| npc/quests/quests_moscovia.txt | 102 | 78 | 24 |
+| npc/quests/quests_nameless.txt | 96 | 85 | 11 |
+| npc/quests/quests_niflheim.txt | 11 | 11 | 0 |
 | npc/quests/quests_payon.txt | 4 | 4 | 0 |
-| npc/quests/quests_prontera.txt | 27 | 19 | 8 |
-| npc/quests/quests_rachel.txt | 75 | 67 | 8 |
-| npc/quests/quests_umbala.txt | 10 | 6 | 4 |
-| npc/quests/quests_veins.txt | 120 | 103 | 17 |
+| npc/quests/quests_prontera.txt | 27 | 20 | 7 |
+| npc/quests/quests_rachel.txt | 75 | 69 | 6 |
+| npc/quests/quests_umbala.txt | 10 | 7 | 3 |
+| npc/quests/quests_veins.txt | 120 | 110 | 10 |
 | npc/quests/quests_yuno.txt | 12 | 9 | 3 |
-| npc/quests/seals/brisingamen_seal.txt | 32 | 23 | 9 |
+| npc/quests/seals/brisingamen_seal.txt | 32 | 28 | 4 |
 | npc/quests/seals/god_global.txt | 1 | 0 | 1 |
 | npc/quests/seals/god_weapon_creation.txt | 17 | 16 | 1 |
 | npc/quests/seals/megingard_seal.txt | 16 | 14 | 2 |
@@ -854,12 +857,12 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/skills/acolyte_skills.txt | 1 | 1 | 0 |
 | npc/quests/skills/alchemist_skills.txt | 12 | 12 | 0 |
 | npc/quests/skills/archer_skills.txt | 2 | 2 | 0 |
-| npc/quests/skills/assassin_skills.txt | 7 | 4 | 3 |
-| npc/quests/skills/bard_skills.txt | 10 | 4 | 6 |
+| npc/quests/skills/assassin_skills.txt | 7 | 7 | 0 |
+| npc/quests/skills/bard_skills.txt | 10 | 9 | 1 |
 | npc/quests/skills/blacksmith_skills.txt | 2 | 1 | 1 |
 | npc/quests/skills/crusader_skills.txt | 3 | 3 | 0 |
-| npc/quests/skills/dancer_skills.txt | 2 | 0 | 2 |
-| npc/quests/skills/hunter_skills.txt | 1 | 0 | 1 |
+| npc/quests/skills/dancer_skills.txt | 2 | 2 | 0 |
+| npc/quests/skills/hunter_skills.txt | 1 | 1 | 0 |
 | npc/quests/skills/knight_skills.txt | 7 | 7 | 0 |
 | npc/quests/skills/mage_skills.txt | 1 | 1 | 0 |
 | npc/quests/skills/merchant_skills.txt | 3 | 3 | 0 |
@@ -871,8 +874,8 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/skills/swordman_skills.txt | 3 | 3 | 0 |
 | npc/quests/skills/thief_skills.txt | 2 | 2 | 0 |
 | npc/quests/skills/wizard_skills.txt | 2 | 2 | 0 |
-| npc/quests/thana_quest.txt | 47 | 36 | 11 |
-| npc/quests/the_sign_quest.txt | 101 | 67 | 34 |
+| npc/quests/thana_quest.txt | 47 | 38 | 9 |
+| npc/quests/the_sign_quest.txt | 101 | 80 | 21 |
 | npc/warps/cities/umbala.txt | 1 | 1 | 0 |
 | npc/warps/cities/yuno.txt | 13 | 13 | 0 |
 | npc/warps/dungeons/alde_dun.txt | 4 | 4 | 0 |
@@ -883,7 +886,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/warps/dungeons/pay_dun.txt | 1 | 1 | 0 |
 | npc/warps/dungeons/prt_maze.txt | 4 | 4 | 0 |
 | npc/warps/dungeons/ra_san.txt | 1 | 1 | 0 |
-| npc/warps/fields/abyss_warper.txt | 3 | 2 | 1 |
+| npc/warps/fields/abyss_warper.txt | 3 | 3 | 0 |
 | npc/warps/fields/glastheim.txt | 1 | 1 | 0 |
 | npc/warps/fields/jawaii.txt | 1 | 0 | 1 |
 | npc/warps/guildcastles.txt | 1 | 1 | 0 |

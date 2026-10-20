@@ -130,6 +130,8 @@ func (z *Zone) jobChange(p *Player, job int, target, previous uint64) {
 	from := p.char.Job
 	p.char.Job = job
 	z.updateBodyLook(p)
+	// pc_jobchange shows the quest icons again (pc.cpp 11076).
+	p.questInfoChanged()
 	if z.Progress != nil {
 		p.progress.Job = job
 		p.progress.JobLevel = 1

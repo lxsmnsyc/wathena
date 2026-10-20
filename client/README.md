@@ -92,7 +92,12 @@ The server places every character and item:
 - Click an NPC to talk to it. The dialog window opens beside the player, with the NPC's name and its lines. RO's color codes, such as `^FF0000`, are drawn as colors, and the text is only ever shown as text. Next, Close, menus, and number and text inputs answer the server, and Escape cancels. Clicks on the game view do nothing while the window is open, except during a progress bar.
 - NPC images (`cutin`) show at the left, center or right of the screen from `image/illust/<name>`, and hide when the dialog window closes.
 - Emotions play over a unit from `sprite/effect/emotion`, one action per emotion. NPC speech shows over the NPC and in the chat log. Announcements show in the chat log in their color.
-- The progress bar shows over the player for the time the server sends.
+- The progress bar shows over the player for the time the server sends. An `NpcProgressBar` shows over its NPC, in its color, until it is full.
+- An NPC's title (`setunittitle`) shows under its name when the pointer is over it. An NPC whose `Look.npc_view` is a monster shows the monster's sprite, and one whose view is a job shows a character with the look's hair, colors and headgear.
+- `EffectRemove` stops an effect that plays on an entity. `SoundPlay` plays a sound from its entity, or from the player itself. `MusicPlay` plays background music until the next map change.
+- `DigitsShow` shows a clock at the top of the screen (`src/viewer/digits.ts`): a value for 5 seconds, or a counter that moves once a second.
+- A server line with a color, as `dispbottom`'s, shows in that color. `QuestLogOpen` opens the quest window.
+- The client has no minimap, so minimap marks and the marks of quest icons are not drawn.
 - Clicking a shop NPC, or a script's `open_shop`, opens the shop window. It shows:
   - The shop's name.
   - A Buy list. Each row shows the item's full cost: zeny, items with how many the player has, and currencies with the player's balance. A shop that limits an item shows how many are left, such as "12 left".
@@ -177,6 +182,7 @@ The server keeps each character's quest log (proposal 0002, review decision 45).
 - A `QuestIcon` shows an icon over an NPC until the server removes it, the NPC goes out of sight, or the map changes. The asset pack has no quest icon art, so the icon is a round badge:
   - "!" or "?" in yellow for `quest` and `quest_question`, green for `job` and `job_question`, and orange for `event` and `event_question`.
   - "W" in gray for `warg` and `warg_face`.
+  - "!" in blue for `daily_quest`, "!" in green for `job_quest`, "!" and "?" in orange for `click_me` and `event3`, and "P" in orange for `jumping_poring` (review decision 58).
 - `viewer.quests()` returns the log as `[{ id, title, active, limitMs, timeLeftMs, objectives }]`, and `viewer.questIcons()` returns the icons as `[{ npc, name, icon }]`. The browser checks read them. The window is `#quest-window`, its button `#quest-toggle`, each quest an `li` with `data-quest-id`, and its button a `.quest-state`.
 
 ## Mod names and art

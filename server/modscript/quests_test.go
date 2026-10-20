@@ -57,7 +57,10 @@ func (h *questHost) QuestTimedOut(_ int64, r *quest.Record) (bool, error) {
 	return i >= 0 && quest.TimedOut(&h.log[i], h.now), nil
 }
 
-func (h *questHost) ShowQuestIcon(npc, player int64, icon string) error {
+func (h *questHost) ShowQuestIcon(npc, player int64, icon, mark string) error {
+	if mark != "" {
+		icon += "/" + mark
+	}
 	h.icons = append(h.icons, icon)
 	return nil
 }

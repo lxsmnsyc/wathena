@@ -289,11 +289,18 @@ export class ChatLog {
     this.append(row);
   }
 
-  /** Adds text the server sent to this player alone, such as a mod's message. */
-  server(text: string): void {
+  /**
+   * Adds text the server sent to this player alone, such as a mod's
+   * message, in its color as 0xrrggbb, or the server color for 0.
+   */
+  server(text: string, color = 0): void {
     const row = this.row('');
     row.className = 'server';
     row.textContent = text;
+    const css = chatColor(color);
+    if (css !== undefined) {
+      row.style.color = css;
+    }
     this.append(row);
   }
 

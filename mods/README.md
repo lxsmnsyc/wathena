@@ -369,6 +369,7 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 - `touch: {x_span, y_span}` gives the NPC a touch area: the cells within `x_span` and `y_span` of its cell, each 0 to 100, as rAthena's `OnTouch` area (review decision 55). It needs a `script`, whose `touch` and `untouch` handlers run ("NPC scripts" below).
 - `state` is how the NPC starts, as rAthena's `script(DISABLED)`, `(HIDDEN)` and `(CLOAKED)` lines (review decision 58): `disabled`, `hidden` or `cloaked`. A script shows it later ("Visibility and state" below).
 - `sprite: none` is an NPC without a view, as rAthena's view -1: players cannot see or click it, and its events and touch area work.
+- `sprite` takes the number of a monster or a job too, as rAthena takes any class as an NPC's view (review decision 58). A monster's number shows its sprite, and a job's shows a character, whose hair, colors and headgear `npc:set_look` sets.
 - A record with `script` and no `map` or `place` is an NPC without a map, as rAthena's floating NPCs (review decision 58). It runs only through events, schedules and timers, in the zone of the world's start map. It takes `display_name`, and no `x`, `y`, `direction`, `sprite`, `touch` or `state`.
 
 ```yaml
@@ -1351,7 +1352,7 @@ A click starts a conversation: the NPC's click handlers run in a thread of their
 | `conversation:hide_image()` | Hides it. The client also hides it when the window closes. |
 | `conversation:show_progress(seconds)` | Shows a progress bar over the player and waits until it is full, up to 600 seconds. A walk cancels it and ends the conversation. |
 | `npc:show_emotion(emotion)` | Shows an emotion over the NPC, from `wa.emotions`, such as `emotions.thanks`. |
-| `npc:say_aloud(text)` | Says a line of local chat as the NPC, as `npctalk`. Players within 9 cells hear it. |
+| `npc:say_aloud(text, options?)` | Says a line as the NPC, as `npctalk`. Every player who sees the NPC hears it. "Presentation" below has the options. |
 
 Rules, as rAthena's:
 
@@ -1401,7 +1402,8 @@ end
 
 - Each zone runs its own NPCs. A handle of an NPC of another map reads its fields: `name`, `full_name`, `hidden_name`, `unique_name`, `map`, `x`, `y` and `state`.
 - Its view changes and events go to its zone as a message, and run there after the current step. Messages from one zone arrive in the order sent.
-- Its other methods, such as `npc:say_aloud`, raise "the NPC is on another map".
+- So do the presentation methods ("Presentation" below), such as `npc:say_aloud` and `npc:set_title`. `npc:walk_to` returns true there, and the NPC's zone checks the walk.
+- Its other methods, such as `npc:use_skill`, `npc:show_progress` and `npc:add_quest_icon`, raise "the NPC is on another map".
 - A message starts the NPC scripts of a zone that has not started them, so the NPCs of a map nobody visited still get their events.
 - `npc.full_name` is the name with its `#` part, as `strnpcinfo(0)`: `name`, then `#` and `hidden_name` when the record's name has a `#` part. `unique_name` is the record's name without the mod's ID, as `strnpcinfo(3)`. `map` is "" for an NPC without a map.
 - `maps.find_player(name)` and `maps.find_player_by_id(id)` find an online player of the context's map, by name, or by account ID and else character ID. A player on another map is nil: a player handle acts in its own zone.
@@ -1449,6 +1451,67 @@ end)
 - `world.fire_npc_event(name)` is `donpcevent "::OnX"`: every NPC with the label, on every map, with no player. It returns how many NPCs have one, of the zones that started their scripts. Without `npcs.control` it reaches the mod's own NPCs only.
 - Events run after the current step: in the same zone once the script's call returned, in another zone when that zone runs its messages. An NPC that sends events to itself in a loop runs at most 4 rounds of 4,096 messages per pass of its zone.
 - An NPC without a map runs in the start map's zone, as a world event without a map. It has no view, no click and no touch.
+
+#### Presentation
+
+These calls are review decision 58's area B5: what players see and hear of NPCs and players. Another mod's NPC needs `npcs.control`. Who gets each follows rAthena's send targets:
+
+- `"area"` is every player who sees the entity, as `AREA`. It is the default.
+- `"map"` is every player of the entity's map, as `ALL_SAMEMAP`. A player who does not see the entity sees no effect on it, as rAthena's client.
+- `"world"` is every player of every map, as `ALL_CLIENT`.
+- A player handle is that player alone, as `SELF`.
+
+| Call | rAthena | Meaning |
+|---|---|---|
+| `npc:say_aloud(text, { to, color })` | `npctalk` | A line as the NPC: to the area, the map (`bc_map`), the world (`bc_all`) or one player (`bc_self`). `color` is 0xRRGGBB. A player who does not see the NPC gets the line with its name and no speaker. |
+| `player:say_aloud(text, { to })` | `unittalk` | A line of local chat as the player: the players within 9 cells who see it, and the player itself, as `AREA_CHAT_WOC`. `to = player` is `bc_self`. |
+| `player:show_emotion(emotion)` | `emotion` | An emotion over the player, for everyone who sees it. |
+| `npc:show_effect(effect, { to })`, `player:show_effect(effect, { to })` | `specialeffect`, `specialeffect2` | An effect on the entity: the area, the map or one player. |
+| `npc:remove_effect(effect)`, `player:remove_effect(effect)` | `removespecialeffect` | Stops the effect for everyone who sees the entity. |
+| `entity:show_skill_effect(skill, level)` | `skilleffect` | A skill's effect on a player, monster or NPC, and nothing else. |
+| `npc:set_title(text)` | `setunittitle` | A title of at most 23 bytes, shown with the NPC's name. |
+| `npc:set_display_name(name)` | `setnpcdisplay` | The name players see. `npc.name` reads it. |
+| `npc:set_sprite(sprite)` | `setnpcdisplay`, `classchange` | An NPC sprite, a monster or a job, as `npcs.yml`'s numbers. |
+| `npc:set_look { sprite, hair_style, hair_color, cloth_color, head_top, head_middle, head_bottom, sex }` | `setunitdata` with `UNPC_` | The fields given change. The look shows when the sprite is a job. |
+| `npc:move_to(x, y)` | `movenpc` | The NPC jumps to a cell, capped to the map. Players near the old cell see it go, and those near the new one see it come. |
+| `npc:walk_to(x, y)` | `npcwalkto`, `unitwalk` | The NPC walks there, and the players it walks into touch it. Returns false when no walk reaches the cell. |
+| `npc:set_speed(milliseconds)` | `npcspeed` | 20 to 1000 per cell. NPCs start at 200. |
+| `npc:stop()` | `npcstop`, `unitstopwalk` | Past half of its step, the NPC finishes the cell, then stands. |
+| `npc:show_progress(seconds, { color })` | `progressbar_npc` | A bar over the NPC for everyone who sees it, and the conversation waits until it is full. It runs only in a conversation's handler. |
+| `npc:use_skill(skill, level, target, { stat, npc_level })` | `npcskill` | The NPC casts at once, with no range check, with every stat at `stat` and its level at `npc_level`. The NPC must be on the context's map. |
+| `npc:play_sound(file, { to, ["repeat"] })` | `soundeffectall` | A sound from the NPC to its area, or to its map. `file` is a sound name of the assets without `sound/`. |
+| `player:play_sound(file, { ["repeat"] })` | `soundeffect` | A sound to the player alone. |
+| `player:play_music(file)`, `maps.play_music(map, file)` | `playBGM`, `playBGMall` | Background music, a music name without `music/`. The map's own comes back with the next map change. |
+| `maps.play_sound(map, file, { ["repeat"] })` | `soundeffectall` with a map | A sound to every player of a map. |
+| `player:send_message(text, { color })` | `dispbottom` | A server line in its color. |
+| `player:show_digits(value, kind)` | `showdigit` | A clock at the top of the screen: `"show"` for 5 seconds, `"count_up"`, `"count_down"`, or `"count_down_to_zero"` from at most 99. |
+| `maps.mark_minimap(map, id, x, y, color)`, `maps.unmark_minimap(map, id)` | `viewpointmap` | A mark on the minimap of every player of a map now. |
+
+#### Quest icons
+
+These calls are review decision 58's area B6, as rAthena's `questinfo`:
+
+```lua
+local context = require "wa.context"
+
+return function()
+  local npc = context:get_instance()
+  npc:add_quest_icon("quest", {
+    mark = "yellow",
+    condition = function(player) return player:get_quest_state(7104) == "none" end,
+  })
+  npc:add_quest_icon("daily_quest", {
+    condition = function(player) return player:get_quest_state(7104) == "complete" end,
+  })
+end
+```
+
+- Each player of the map sees, for each NPC, the first icon whose condition holds, and no icon when none holds.
+- A condition only reads, as a hook: a call that changes the game raises an error, and a condition that fails counts as false.
+- The icons show again for a player at map entry, on an item gained or lost, a level or job change, a quest added, completed, removed or changed, a kill that counts for a quest, and `player:refresh_quest_icons()`, as rAthena's `pc_show_questinfo`. The check runs at the end of that step.
+- `mark` is the NPC's minimap mark: `"yellow"`, `"green"` or `"purple"`.
+- `wa.QuestIcon` has `daily_quest`, `job_quest`, `click_me`, `event3` and `jumping_poring` too. `npc:show_quest_icon(player, icon, { mark })` is `showevent`, which turns `daily_quest`, `job_quest` and `jumping_poring` into no icon.
+- `player:open_quest_log(quest?)` opens the quest window, as `open_quest_ui`.
 
 ### Saved variables: wa.variables
 
@@ -2795,6 +2858,7 @@ The extract keeps the script NPCs of the folders the first release needs, and of
 - The line's span becomes the record's `touch` field. A line without a span gets no touch area. A line without a sprite (-1) gets `sprite: none`: no view and no click, events and touch only (review decision 58).
 - The NPC-to-NPC commands convert onto review decision 58's API: every `On` label is an `npc_event` handler, `donpcevent` and `doevent` fire them, enable, disable, hide and cloak change the view, and `getvariableofnpc` reads NPC variables, which every zone shares. `$@` variables are temporary server variables. A script NPC without a map is placed without one and runs in the start map's zone, and a line that starts disabled, hidden or cloaked gets `state` (tools/convert/README.md).
 - `atcommand` and `setbattleflag` do not convert, on purpose (review decision 58).
+- The presentation and quest icon commands convert onto review decision 58's areas B5 and B6 ("Presentation" and "Quest icons" above): `npctalk`, `unittalk` of the player, `emotion`, the effect commands, `setunittitle`, `setnpcdisplay`, `classchange`, `setunitdata`'s looks, the NPC walk commands, `progressbar_npc`, `npcskill`, `skilleffect`, the sound and music commands, `dispbottom`'s color, `showdigit`, `viewpointmap`, `questinfo` with its condition, `questinfo_refresh`, `open_quest_ui` and `showevent`'s mark. A game ID converts when it is the attached player's or an NPC's of `getnpcid`. A line whose view is a monster or a job is placed with its number (tools/convert/README.md).
 - An `OnTouch` or `OnTouch_` label with a dialog converts: it talks in the touch's conversation (review decision 56).
 - `R.touch_one` with a dialog does not run for the next player already in the area when the first one leaves, since that player has no conversation. It runs for the next player who comes in. rAthena shows the dialog to the player already in the area.
 - `percentheal` with a negative amount converts to `player:heal_percent`, which takes HP and SP. So every Kafra converts fully, Niflheim's too.

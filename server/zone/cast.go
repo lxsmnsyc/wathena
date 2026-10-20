@@ -145,6 +145,9 @@ func (z *Zone) useSkill(p *Player, c *useSkillCommand) {
 type castOverride struct {
 	ms     int
 	cancel bool
+	// ignoreRange is unit_skilluse_id2's ignore_range, which npcskill
+	// sets: the target may be at any distance.
+	ignoreRange bool
 }
 
 // skillUseID is unit_skilluse_id2: a unit starts a skill on a target.
@@ -198,7 +201,7 @@ func (z *Zone) skillUseIDWith(src, target *entity, def *skill.Def, lv int, o *ca
 	}
 	rng := def.RangeFor(src.status, lv)
 	// A combo skill during an attack has the attack's range.
-	if src != target && (!combo || src.target == nil) && !z.checkRange(src, target.x, target.y, rng) {
+	if src != target && (!combo || src.target == nil) && (o == nil || !o.ignoreRange) && !z.checkRange(src, target.x, target.y, rng) {
 		// rAthena's stepaction: a walking player casts once a step brings
 		// it in range. Here the server walks the player there.
 		z.approach(src, &pendingSkill{def: def, lv: lv, target: target}, target.x, target.y)
@@ -306,7 +309,7 @@ func (z *Zone) skillUsePosWith(src *entity, def *skill.Def, lv, x, y int, o *cas
 		return false
 	}
 	rng := def.RangeFor(src.status, lv)
-	if !z.checkRange(src, x, y, rng) {
+	if (o == nil || !o.ignoreRange) && !z.checkRange(src, x, y, rng) {
 		z.approach(src, &pendingSkill{def: def, lv: lv, x: x, y: y, ground: true}, x, y)
 		return false
 	}

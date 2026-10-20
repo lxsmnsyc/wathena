@@ -18,7 +18,7 @@ return function()
   local event_ontouch
   event_ontouch = function(player, conversation)
     R.run(function()
-      npc:say_aloud("Welcome, " .. player.name .. ".")
+      R.say_aloud(npc, "Welcome, " .. player.name .. ".")
       do return end
     end)
   end

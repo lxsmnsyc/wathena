@@ -38,4 +38,28 @@ function maps.find_player(name) end
 ---@return wa.Player?
 function maps.find_player_by_id(id) end
 
+---Plays background music to every player of a map, as playBGMall with a map. The map's own music comes back with each player's next map change.
+---@param map string A map name, such as prontera.
+---@param file string A music name of the assets, without music/, such as 08.
+function maps.play_music(map, file) end
+
+---Plays a sound to every player of a map, as soundeffectall with a map.
+---@param map string A map name, such as prontera.
+---@param file string A sound name of the assets, without sound/.
+---@param options? wa.SoundOptions
+function maps.play_sound(map, file, options) end
+
+---Marks a cell on the minimap of every player of a map, as viewpointmap. A mark with the same ID replaces it. Players who come later do not see it.
+---@param map string A map name, such as prontera.
+---@param id integer
+---@param x integer
+---@param y integer
+---@param color? integer 0xRRGGBB, white by default.
+function maps.mark_minimap(map, id, x, y, color) end
+
+---Removes a minimap mark from every player of a map, as viewpointmap with type 2.
+---@param map string A map name, such as prontera.
+---@param id integer
+function maps.unmark_minimap(map, id) end
+
 return maps

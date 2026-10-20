@@ -24,6 +24,7 @@ import {
   type ChannelJoined,
   type ChatRefused,
   DamageKind,
+  type DigitsKind,
   type DropItemFailure,
   type EffectPlay,
   EffectPlaySchema,
@@ -48,6 +49,7 @@ import {
   type MailSummary,
   type MinimapMark,
   type NpcDialog,
+  NpcView,
   type Options,
   type PartyBookingList,
   type PartyInfo,
@@ -622,8 +624,17 @@ export default class Online {
   onSanction: ((notice: SanctionNotice) => void) | undefined;
   /** Called with the server's answer to a report. */
   onReportResult: ((outcome: ReportOutcome) => void) | undefined;
-  /** Called for text the server sends to this player alone, such as a mod's message. */
-  onServerText: ((text: string) => void) | undefined;
+  /**
+   * Called for text the server sends to this player alone, such as a
+   * mod's message, with its color as 0xRRGGBB, or 0 for the usual color.
+   */
+  onServerText: ((text: string, color: number) => void) | undefined;
+  /** Called when the background music changes, as rAthena's playBGM. */
+  onMusic: ((name: string) => void) | undefined;
+  /** Called for a digital clock at the top of the screen, as rAthena's showdigit. */
+  onDigits: ((kind: DigitsKind, value: number) => void) | undefined;
+  /** Called when the server opens the quest log, with a quest or 0. */
+  onQuestLogOpen: ((quest: number) => void) | undefined;
   /** Called for an announcement to the map or the world, with its color or 0. */
   onAnnouncement: ((text: string, color: number) => void) | undefined;
   /** Called for each NPC dialog step, with the NPC's name. */
@@ -696,6 +707,12 @@ export default class Online {
   private readonly boards = new Map<number, ShopBoard>();
   /** The quest icons over NPCs, by entity ID, from QuestIcon. */
   private readonly icons = new Map<number, string>();
+  /** NPC titles, by entity ID, from EntityAppear. */
+  private readonly titles = new Map<number, string>();
+  /** The progress bars over NPCs, by entity ID, with when they end on the clock. */
+  private readonly bars = new Map<number, { end: number; ms: number; color: number }>();
+  /** The effects that play on entities, by entity and effect ID, which EffectRemove stops. */
+  private readonly entityEffects = new Map<string, Playing[]>();
   private map: WMap | undefined;
 
   constructor(
@@ -816,6 +833,9 @@ export default class Online {
           if (a.kind === EntityKind.MONSTER) {
             this.monsterLooks.set(a.id, a.look?.body ?? 0);
           }
+          if (a.title !== '') {
+            this.titles.set(a.id, a.title);
+          }
           if (a.guild !== undefined && a.guild.guildId !== 0n) {
             this.badges.set(a.id, a.guild);
           }
@@ -831,11 +851,18 @@ export default class Online {
           };
           this.pending.set(a.id, pending);
           // Monsters and NPCs are one sprite. Players are characters
-          // built from their look.
-          const single = a.kind === EntityKind.MONSTER || a.kind === EntityKind.NPC;
+          // built from their look, and so are NPCs with a job's view.
+          const view =
+            a.kind === EntityKind.NPC ? (a.look?.npcView ?? NpcView.UNSPECIFIED) : undefined;
+          const single =
+            a.kind === EntityKind.MONSTER || (a.kind === EntityKind.NPC && view !== NpcView.JOB);
+          const sprite =
+            view === NpcView.MONSTER
+              ? monsterSprite(a.look?.body ?? 0)
+              : spriteOf(a.kind, a.look?.body ?? 0);
           const body: Promise<Body | undefined> = single
             ? this.sprites
-                .get(spriteOf(a.kind, a.look?.body ?? 0))
+                .get(sprite)
                 .then((s) => (s === undefined ? undefined : new SpriteView(s)))
             : Character.load(this.sprites, lookOf(a.look, a.options?.option));
           body
@@ -1174,6 +1201,33 @@ export default class Online {
         case 'effect':
           this.playEffect(e.body.value, this.map);
           break;
+        case 'effectRemove':
+          this.stopEffect(e.body.value.entity, e.body.value.effectId);
+          break;
+        case 'npcProgressBar': {
+          const b = e.body.value;
+          const now = this.clock?.() ?? performance.now();
+          this.bars.set(b.npc, { end: now + b.durationMs, ms: b.durationMs, color: b.color });
+          break;
+        }
+        case 'sound': {
+          // The sound comes from its entity, or from the player itself.
+          const s = e.body.value;
+          const at = this.position(s.entity === 0 ? this.self : s.entity);
+          if (at !== undefined) {
+            this.onSound?.(s.name, at.clone());
+          }
+          break;
+        }
+        case 'music':
+          this.onMusic?.(e.body.value.name);
+          break;
+        case 'digits':
+          this.onDigits?.(e.body.value.kind, e.body.value.value);
+          break;
+        case 'questLogOpen':
+          this.onQuestLogOpen?.(e.body.value.quest);
+          break;
         case 'chat': {
           const c = e.body.value;
           if (c.channel === ChatChannel.LOCAL) {
@@ -1181,7 +1235,7 @@ export default class Online {
           } else if (c.channel === ChatChannel.WHISPER && c.fromMod !== '') {
             // A mod's whisper is not a player's: it shows as a server line
             // with the mod, and opens no whisper tab to answer.
-            this.onServerText?.(modLine(c.fromMod, `${c.fromName}: ${c.text}`));
+            this.onServerText?.(modLine(c.fromMod, `${c.fromName}: ${c.text}`), 0);
           } else if (c.channel === ChatChannel.WHISPER) {
             this.onWhisper?.(c.fromName, c.text, c.lineId);
           } else if (c.channel === ChatChannel.PARTY) {
@@ -1191,7 +1245,7 @@ export default class Online {
           } else if (c.channel === ChatChannel.NAMED) {
             this.onChannelChat?.(c.channelName, c.fromName, c.text, c.color, c.lineId);
           } else if (c.channel === ChatChannel.SYSTEM) {
-            this.onServerText?.(c.text);
+            this.onServerText?.(c.text, c.color);
           } else if (c.channel === ChatChannel.ANNOUNCEMENT) {
             this.onAnnouncement?.(c.fromMod === '' ? c.text : modLine(c.fromMod, c.text), c.color);
           }
@@ -1703,6 +1757,28 @@ export default class Online {
     return this.icons;
   }
 
+  /** An NPC's title, while it is in sight, or ''. */
+  titleOf(id: number): string {
+    return this.titles.get(id) ?? '';
+  }
+
+  /**
+   * The progress bars over NPCs in sight, by entity ID: how full each is,
+   * from 0 to 1, and its color. Full bars go.
+   */
+  npcBars(): Map<number, { fill: number; color: number }> {
+    const now = this.clock?.() ?? performance.now();
+    const out = new Map<number, { fill: number; color: number }>();
+    for (const [id, b] of this.bars) {
+      if (now >= b.end) {
+        this.bars.delete(id);
+        continue;
+      }
+      out.set(id, { fill: b.ms === 0 ? 1 : 1 - (b.end - now) / b.ms, color: b.color });
+    }
+    return out;
+  }
+
   /** Whether an entity is an NPC, which a click talks to. */
   isNpc(id: number): boolean {
     return this.kinds.get(id) === 'npc';
@@ -1717,6 +1793,8 @@ export default class Online {
     this.badges.delete(id);
     this.boards.delete(id);
     this.icons.delete(id);
+    this.titles.delete(id);
+    this.bars.delete(id);
     this.items.remove(id);
     const portal = this.portals.get(id);
     if (portal !== undefined) {
@@ -1784,6 +1862,9 @@ export default class Online {
     this.badges.clear();
     this.boards.clear();
     this.icons.clear();
+    this.titles.clear();
+    this.bars.clear();
+    this.entityEffects.clear();
     this.waiting = [];
   }
 
@@ -1799,9 +1880,28 @@ export default class Online {
    * Effects the table lacks, and entities not shown, show nothing.
    */
   private playEffect(e: EffectPlay, map: WMap): void {
-    if (e.at.case !== undefined) {
+    if (e.at.case === 'entity') {
+      const key = `${e.at.value}:${e.effectId}`;
+      const parts = this.play(e.effectId, e.at, map);
+      // play fills the list as the effect's files load, so it is kept as is.
+      this.entityEffects.set(key, parts);
+    } else if (e.at.case !== undefined) {
       this.play(e.effectId, e.at, map);
     }
+  }
+
+  /** Stops an effect that plays on an entity, as rAthena's removespecialeffect. */
+  private stopEffect(entity: number, effectId: number): void {
+    const key = `${entity}:${effectId}`;
+    const parts = this.entityEffects.get(key);
+    if (parts === undefined) {
+      return;
+    }
+    this.entityEffects.delete(key);
+    for (const v of parts) {
+      v.group.removeFromParent();
+    }
+    this.playing = this.playing.filter((p) => !parts.includes(p));
   }
 
   /** The cell of an entity or a cell target, while it is known. */
@@ -2125,5 +2225,10 @@ export default class Online {
       }
     }
     this.playing = this.playing.filter((v) => !v.done);
+    for (const [key, parts] of this.entityEffects) {
+      if (parts.length > 0 && parts.every((v) => v.done)) {
+        this.entityEffects.delete(key);
+      }
+    }
   }
 }

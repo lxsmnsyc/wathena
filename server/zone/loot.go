@@ -340,6 +340,9 @@ func (z *Zone) gainExp(p *Player, base, job int64) {
 	e := p.entity
 	if g.BaseLevels > 0 || g.JobLevels > 0 {
 		z.recalc(p)
+		// pc_baselevelchanged and pc_checkjoblevelup show the quest icons
+		// again (pc.cpp 8314 and 8356).
+		p.questInfoChanged()
 	}
 	if g.BaseLevels > 0 {
 		e.hp, e.hpChanged = int64(e.status.MaxHP), true

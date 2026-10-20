@@ -50,13 +50,17 @@ type QuestHost interface {
 	// false for a quest without one, and one the player lacks.
 	QuestTimedOut(player int64, q *quest.Record) (bool, error)
 	// ShowQuestIcon shows an icon over an NPC to a player, or removes it
-	// for "".
-	ShowQuestIcon(npc, player int64, icon string) error
+	// for "". mark is the minimap mark, yellow, green or purple, or "".
+	ShowQuestIcon(npc, player int64, icon, mark string) error
 }
 
-// QuestIcons are the icon names of npc:show_quest_icon, as rAthena's
-// QTYPE_ values 0 to 6 and 8 (QTYPE_WARG2), which PACKETVER 20211103 shows.
-var QuestIcons = []string{"quest", "quest_question", "job", "job_question", "event", "event_question", "warg", "warg_face"}
+// shownByShowevent reports whether showevent shows an icon: rAthena's
+// QTYPE_ values 0 to 6 and 8 (script.cpp 21195). It turns the others into
+// QTYPE_NONE, which removes the icon.
+func shownByShowevent(icon string) bool {
+	v, ok := QuestIconNames[icon]
+	return ok && v != 7 && v <= 8
+}
 
 func (r *Runtime) questHost(what string) (QuestHost, error) {
 	h, ok := r.host.(QuestHost)
@@ -215,16 +219,29 @@ func (r *Runtime) npcShowQuestIcon(c *script.Call) error {
 	icon := ""
 	if v := c.Arg(2); !v.IsNil() {
 		s, ok := v.AsString()
-		if !ok || !slices.Contains(QuestIcons, s) {
-			return fmt.Errorf("%s: the icon is nil or one of %q", what, QuestIcons)
+		if _, known := QuestIconNames[s]; !ok || !known {
+			return fmt.Errorf("%s: the icon is nil or one of wa.QuestIcon, such as quest", what)
 		}
 		icon = s
+	}
+	mark := ""
+	if v := c.Arg(3); !v.IsNil() {
+		s, ok := v.AsString()
+		if !ok || !slices.Contains(QuestMarks, s) {
+			return fmt.Errorf("%s: the mark is one of %q, or nil", what, QuestMarks)
+		}
+		mark = s
+	}
+	if icon != "" && !shownByShowevent(icon) {
+		// showevent turns daily_quest, job_quest and jumping_poring into
+		// QTYPE_NONE, which removes the icon. The mark still goes out.
+		icon = ""
 	}
 	h, err := r.questHost(what)
 	if err != nil {
 		return err
 	}
-	return h.ShowQuestIcon(id, player, icon)
+	return h.ShowQuestIcon(id, player, icon, mark)
 }
 
 // QuestEvent is a quest_add, quest_progress or quest_complete event.

@@ -160,6 +160,9 @@ func (z *Zone) updateWeight(p *Player) {
 	if p.inventory == nil {
 		return
 	}
+	// pc_additem and pc_delitem show the quest icons again (pc.cpp 6088
+	// and 6125). Every change of the inventory sends the weight.
+	p.questInfoChanged()
 	level := z.itemConfig().Overweight(p.inventory.Weight, p.maxWeight)
 	if level != p.overweight && level == item.Weight90 {
 		p.entity.target = nil

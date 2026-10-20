@@ -13,6 +13,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/currency"
+	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
 // NPC conversion: rAthena's NPC lines (npcs.json) become core's NPC data
@@ -437,17 +438,25 @@ func displayName(display string) string {
 }
 
 // sprite resolves a line's view to what npcs.yml takes: an NPC sprite
-// name or number. ok is false for views that show nothing (-1) or that
-// are not NPC sprites, such as monsters.
+// name or number, or the number of a monster or a job, as rAthena takes
+// any class (review decision 58). ok is false for views that show
+// nothing (-1) or that are no class.
 func (c *npcConverter) sprite(view string) (string, bool) {
 	if n, err := strconv.Atoi(view); err == nil {
-		if n < 0 || !c.spriteID[uint32(n)] { // #nosec G115 -- checked above.
+		if n < 0 {
+			return "", false
+		}
+		_, monster := c.monsters[int64(n)]
+		if !c.spriteID[uint32(n)] && !monster && !mod.IsJobView(uint32(n)) { // #nosec G115 -- checked above.
 			return "", false
 		}
 		return view, true
 	}
 	if _, ok := c.sprites[strings.ToUpper(view)]; ok {
 		return view, true
+	}
+	if id, ok := c.monsterIDs[strings.ToUpper(view)]; ok {
+		return strconv.FormatInt(id, 10), true
 	}
 	return "", false
 }

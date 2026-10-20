@@ -6,7 +6,14 @@ import type { ClientData } from '../data/clientData';
 import type { Sprite } from '../formats/wspr';
 import type { WMap } from '../formats/wmap';
 import { ChatChannel } from '../gen/wathena/v1/command_pb';
-import { EntityKind, type Event, EventSchema, LookSchema } from '../gen/wathena/v1/event_pb';
+import {
+  DigitsKind,
+  EntityKind,
+  type Event,
+  EventSchema,
+  LookSchema,
+  NpcView,
+} from '../gen/wathena/v1/event_pb';
 import type { EffectCache } from '../render/effects';
 import { SpriteAsset, type SpriteCache } from '../render/sprites';
 import type { Pathfinder } from '../world/pathfinder';
@@ -154,6 +161,108 @@ describe('Online', () => {
       }),
     ]);
     expect(asked).toEqual(['sprite/npc/112', 'sprite/npc/999999']);
+  });
+
+  it('loads a monster or a job view of an NPC, and keeps its title', () => {
+    vi.stubGlobal('reportError', () => {});
+    const asked: string[] = [];
+    const sprites = {
+      get: async (name: string) => {
+        asked.push(name);
+        await Promise.resolve();
+        return undefined;
+      },
+    } as unknown as SpriteCache;
+    const o = new Online(1, sprites, {} as Pathfinder);
+    o.setMap(map());
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: {
+            id: 7,
+            kind: EntityKind.NPC,
+            x: 1,
+            y: 1,
+            title: '<Society>',
+            look: { body: 1002, npcView: NpcView.MONSTER },
+          },
+        },
+      }),
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: {
+            id: 8,
+            kind: EntityKind.NPC,
+            x: 2,
+            y: 2,
+            look: { body: 7, npcView: NpcView.JOB },
+          },
+        },
+      }),
+    ]);
+    expect(asked[0]).toBe('sprite/mob/1002');
+    // A job view loads a character's sprites, not an NPC sprite.
+    expect(asked.slice(1).some((n) => n.startsWith('sprite/npc/'))).toBe(false);
+    expect(asked.length).toBeGreaterThan(1);
+    expect(o.titleOf(7)).toBe('<Society>');
+    expect(o.titleOf(8)).toBe('');
+  });
+
+  it('passes music, digits, the quest log, sounds and colored server text on', () => {
+    const o = online();
+    o.setMap(map());
+    const got: string[] = [];
+    o.onMusic = (name) => {
+      got.push(`music ${name}`);
+    };
+    o.onDigits = (kind, value) => {
+      got.push(`digits ${String(kind)} ${String(value)}`);
+    };
+    o.onQuestLogOpen = (quest) => {
+      got.push(`log ${String(quest)}`);
+    };
+    o.onServerText = (text, color) => {
+      got.push(`text ${text} ${String(color)}`);
+    };
+    o.onSound = (name) => {
+      got.push(`sound ${name}`);
+    };
+    o.handle([
+      create(EventSchema, { body: { case: 'music', value: { name: 'music/30' } } }),
+      create(EventSchema, {
+        body: { case: 'digits', value: { kind: DigitsKind.COUNT_DOWN, value: -10 } },
+      }),
+      create(EventSchema, { body: { case: 'questLogOpen', value: { quest: 7 } } }),
+      create(EventSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.SYSTEM, text: 'Hi', color: 0xff00 } },
+      }),
+      // The player is not in sight yet, so its sound has no place.
+      create(EventSchema, { body: { case: 'sound', value: { name: 'sound/ding' } } }),
+    ]);
+    expect(got).toEqual([
+      'music music/30',
+      `digits ${String(DigitsKind.COUNT_DOWN)} -10`,
+      'log 7',
+      'text Hi 65280',
+    ]);
+  });
+
+  it('shows NPC progress bars until they are full', () => {
+    const o = online();
+    o.setMap(map());
+    let now = 1000;
+    o.clock = () => now;
+    o.handle([
+      create(EventSchema, {
+        body: { case: 'npcProgressBar', value: { npc: 5, durationMs: 2000, color: 0xff0000 } },
+      }),
+    ]);
+    now = 1500;
+    expect([...o.npcBars()]).toEqual([[5, { fill: 0.25, color: 0xff0000 }]]);
+    now = 3000;
+    expect(o.npcBars().size).toBe(0);
   });
 
   it('passes server text on, and local chat to onChat', () => {

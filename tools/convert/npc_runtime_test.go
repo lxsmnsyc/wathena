@@ -47,6 +47,9 @@ type npcHost struct {
 	byName   map[string]int64
 	fired    []firedEvent
 	controls []string
+	// presents are the presentation calls of review decision 58, areas
+	// B5 and B6 (npc_present_test.go).
+	presents []string
 }
 
 // firedEvent is an event a script sent to an NPC, or to every NPC with
@@ -568,8 +571,8 @@ func TestRunConvertedNPCs(t *testing.T) {
 					t.Error(m)
 				}
 			}
-			t.Logf("%d NPCs started, %d touched, %d clicks, %d steps, %d monster deaths, %d events, %d view changes, %d errors",
-				started, touches, clicks, steps, deaths, fired, len(h.controls), bad)
+			t.Logf("%d NPCs started, %d touched, %d clicks, %d steps, %d monster deaths, %d events, %d view changes, %d presentations, %d errors",
+				started, touches, clicks, steps, deaths, fired, len(h.controls), len(h.presents), bad)
 		})
 	}
 }

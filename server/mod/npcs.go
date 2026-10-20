@@ -568,3 +568,26 @@ func ParseRestock(s string) (Restock, error) {
 	}
 	return Restock{Every: time.Duration(n) * unit}, nil
 }
+
+// IsJobView is rAthena's pcdb_checkid (pc.hpp 1219): the classes that an
+// NPC's sprite shows as a character, as status_set_viewdata (review
+// decision 58).
+func IsJobView(c uint32) bool {
+	switch {
+	case c < 31, // JOB_MAX_BASIC
+		c >= 4001 && c <= 4052,          // JOB_NOVICE_HIGH to JOB_DARK_COLLECTOR
+		c >= 4054 && c <= 4087,          // JOB_RUNE_KNIGHT to JOB_MECHANIC_T2
+		c >= 4096 && c <= 4112,          // JOB_BABY_RUNE_KNIGHT to JOB_BABY_MECHANIC2
+		c >= 4190 && c <= 4191,          // JOB_SUPER_NOVICE_E to JOB_SUPER_BABY_E
+		c >= 4211 && c <= 4212,          // JOB_KAGEROU to JOB_OBORO
+		c == 4215, c == 4218, c == 4220, // JOB_REBELLION, JOB_SUMMONER, JOB_BABY_SUMMONER
+		c >= 4222 && c <= 4229, // JOB_BABY_NINJA to JOB_BABY_REBELLION
+		c >= 4238 && c <= 4244, // JOB_BABY_STAR_GLADIATOR2 to JOB_BABY_STAR_EMPEROR2
+		c >= 4252 && c <= 4264, // JOB_DRAGON_KNIGHT to JOB_TROUVERE
+		c >= 4278 && c <= 4281, // JOB_WINDHAWK2 to JOB_IMPERIAL_GUARD2
+		c >= 4302 && c <= 4308, // JOB_SKY_EMPEROR to JOB_SPIRIT_HANDLER
+		c == 4316:              // JOB_SKY_EMPEROR2
+		return true
+	}
+	return false
+}

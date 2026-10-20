@@ -539,33 +539,23 @@ var npcFields = map[string]func(h scriptHost, e *entity) script.Value{
 	"state": func(_ scriptHost, e *entity) script.Value { return script.String(e.npc.state()) },
 }
 
-// NPCEmotion shows an emotion over an NPC to everyone who sees it.
+// NPCEmotion shows an emotion over an NPC to everyone who sees it, as
+// clif_emotion. An NPC of another map shows it in its zone after the
+// current step (review decision 58).
 func (h scriptHost) NPCEmotion(id int64, emotion int64) error {
-	e, err := h.npc(id)
-	if err != nil {
-		return err
-	}
-	if e.npc.floating {
-		// An NPC without a map has no place to show it (nd->m < 0).
-		return nil
-	}
-	h.z.emotions = append(h.z.emotions, npcEmotion{e, uint32(emotion)}) // #nosec G115 -- checked by the runtime.
-	return nil
+	return h.onNPC(id, false, func(z *Zone, e *entity) {
+		if e.npc.floating {
+			// An NPC without a map has no place to show it (nd->m < 0).
+			return
+		}
+		z.emotions = append(z.emotions, npcEmotion{e, uint32(emotion)}) // #nosec G115 -- checked by the runtime.
+	})
 }
 
-// NPCSay is npctalk: a line of local chat from the NPC, heard within
-// ChatRange.
+// NPCSay is npctalk: a line from the NPC to every player who sees it, as
+// AREA (npcpresent.go).
 func (h scriptHost) NPCSay(id int64, text string) error {
-	e, err := h.npc(id)
-	if err != nil {
-		return err
-	}
-	if e.npc.floating {
-		// Nobody hears an NPC without a map.
-		return nil
-	}
-	h.z.chats = append(h.z.chats, chatLine{speaker: e, name: e.npc.DisplayName, text: text})
-	return nil
+	return h.SayAloud(modscript.Entity{Kind: "npc", ID: id}, text, modscript.SendTarget{To: "area"}, -1)
 }
 
 // Converse shows a conversation step.

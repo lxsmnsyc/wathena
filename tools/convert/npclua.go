@@ -149,6 +149,12 @@ type npcConv struct {
 	// timerLabels are its OnTimer labels.
 	timer       bool
 	timerLabels []timerLabel
+	// npcIDs are the variables that only hold getnpcid's value, with the
+	// NPC's code, once npcIDVars read them (npcpresent.go).
+	npcIDs map[string]string
+	// inEvent is set while an event label's body is written, which may
+	// run without a player.
+	inEvent bool
 }
 
 func (c *npcConverter) newNPCConv(l *npcLine) *npcConv {
@@ -650,6 +656,9 @@ func (v *npcVar) add(amount string) string {
 
 // readVar reads a variable or one element of an array.
 func (b *body) readVar(name string, index Expr) (val, error) {
+	if _, ok := b.npcIDVars()[strings.ToLower(name)]; ok && index == nil {
+		return val{}, unsupported("getnpcid", "the game ID of an NPC, which only the unit commands take")
+	}
 	prefix, _, str := varName(name)
 	t := tInt
 	if str {
@@ -965,6 +974,12 @@ func (b *body) jump(kind string) error {
 
 func (b *body) assign(s *Assign) error {
 	t := s.Target
+	if _, ok := b.npcIDVars()[strings.ToLower(t.Name)]; ok && t.Index == nil {
+		// The variable holds an NPC's game ID, which the unit commands
+		// read as the NPC (npcpresent.go).
+		b.line("-- %s holds the game ID of an NPC.", t.Name)
+		return nil
+	}
 	if cur, ok := b.n.c.currencyVar(t.Name); ok {
 		return b.assignCurrency(s, cur)
 	}

@@ -153,6 +153,8 @@ import { groundItemLabel } from './groundItems';
 import randomLook from './looks';
 import { StatusIconBar } from './statusIcons';
 import { StatusWindow } from './statusWindow';
+import { digitsText } from './digits';
+import type { DigitsKind } from '../gen/wathena/v1/event_pb';
 import { CastBars, Cooldowns, cooldownText } from './cooldowns';
 import { HotkeyBar, hotkeySlot, loadHotkeys, saveHotkeys } from './hotkeys';
 import {
@@ -302,6 +304,8 @@ let hotkeysOf: string | undefined;
 let castSkill: (skillId: number, level: number | undefined) => void = () => {};
 /** A progress bar over the player: when it started and how long it lasts. */
 let progressBar: { start: number; ms: number } | undefined;
+/** The digital clock of the server's DigitsShow, and when it came. */
+let digits: { kind: DigitsKind; value: number; start: number } | undefined;
 /** Shows a short message to the player, such as why an action failed. */
 let showMessage: (text: string) => void = () => {};
 /** Shows the touch cancel button while a skill waits, once it exists. */
@@ -1419,8 +1423,8 @@ if (serverURL === null) {
     };
     // Server lines and announcements, such as a world event's boss that
     // appears, show in every tab.
-    view.onServerText = (text) => {
-      log.server(text);
+    view.onServerText = (text, color) => {
+      log.server(text, color);
     };
     view.onAnnouncement = (text, color) => {
       log.announce(text, color);
@@ -2161,6 +2165,12 @@ if (serverURL === null) {
   view.onMinimapMark = () => {
     // The client has no minimap yet. Marks are ignored.
   };
+  view.onMusic = (name) => {
+    audio.playMusic(name).catch(reportError);
+  };
+  view.onDigits = (kind, value) => {
+    digits = { kind, value, start: performance.now() };
+  };
   const shopRoot = document.querySelector<HTMLElement>('#shop-window');
   if (shopRoot !== null) {
     const w = new ShopWindow(
@@ -2555,6 +2565,9 @@ if (serverURL === null) {
       }
     });
   }
+  view.onQuestLogOpen = () => {
+    questWindow?.show();
+  };
   view.onQuestList = (quests) => {
     questLog = quests;
     questWindow?.set(questLog);
@@ -3219,7 +3232,9 @@ function showItemLabel(): void {
     text = groundItemLabel(itemTexts.label(g.itemId), g.amount);
     itemLabelAt.copy(g.position);
   } else if (unit !== undefined && unitName !== undefined && unitName !== '') {
-    text = unitName;
+    // An NPC's title of setunittitle shows under its name.
+    const title = hoveredUnit === undefined ? '' : (session?.online.titleOf(hoveredUnit) ?? '');
+    text = title === '' ? unitName : `${unitName}\n${title}`;
     itemLabelAt.copy(unit);
   } else {
     itemLabelView.hidden = true;
@@ -3575,6 +3590,70 @@ function showProgress(now: number): void {
   }
 }
 
+const npcBarViews = new Map<number, HTMLDivElement>();
+const npcBarAt = new Vector3();
+
+/** Places the progress bars over NPCs, as rAthena's progressbar_npc, and fills them. */
+function showNpcBars(): void {
+  const bars = session?.online.npcBars() ?? new Map<number, { fill: number; color: number }>();
+  for (const [id, div] of npcBarViews) {
+    if (!bars.has(id)) {
+      div.remove();
+      npcBarViews.delete(id);
+    }
+  }
+  for (const [id, b] of bars) {
+    let div = npcBarViews.get(id);
+    if (div === undefined) {
+      div = document.createElement('div');
+      div.className = 'npc-progress';
+      div.append(document.createElement('div'));
+      document.body.append(div);
+      npcBarViews.set(id, div);
+    }
+    const p = session?.online.position(id);
+    if (p === undefined) {
+      div.hidden = true;
+      continue;
+    }
+    npcBarAt.copy(p);
+    npcBarAt.y += 3.5;
+    npcBarAt.project(camera);
+    div.hidden = npcBarAt.z > 1;
+    div.style.left = `${((npcBarAt.x + 1) / 2) * 100}%`;
+    div.style.top = `${((1 - npcBarAt.y) / 2) * 100}%`;
+    const bar = div.firstElementChild;
+    if (bar instanceof HTMLElement) {
+      bar.style.width = `${Math.min(100, b.fill * 100)}%`;
+      bar.style.background = `#${b.color.toString(16).padStart(6, '0')}`;
+    }
+  }
+}
+
+let digitsView: HTMLDivElement | undefined;
+
+/** Shows the digital clock of DigitsShow at the top of the screen. */
+function showDigits(now: number): void {
+  const text =
+    digits === undefined ? undefined : digitsText(digits.kind, digits.value, now - digits.start);
+  if (text === undefined) {
+    digits = undefined;
+    if (digitsView !== undefined) {
+      digitsView.hidden = true;
+    }
+    return;
+  }
+  if (digitsView === undefined) {
+    digitsView = document.createElement('div');
+    digitsView.id = 'digits';
+    document.body.append(digitsView);
+  }
+  digitsView.hidden = false;
+  if (digitsView.textContent !== text) {
+    digitsView.textContent = text;
+  }
+}
+
 const follow = new Vector3();
 const hpOutput = document.querySelector<HTMLOutputElement>('#hp');
 const expOutput = document.querySelector<HTMLOutputElement>('#exp');
@@ -3637,6 +3716,8 @@ renderer.setAnimationLoop((time) => {
   showQuestIcons();
   questWindow?.tick();
   showProgress(performance.now());
+  showNpcBars();
+  showDigits(performance.now());
   right.setFromMatrixColumn(camera.matrixWorld, 0);
   soundscape?.update(timer.getDelta(), { position: controls.target, right });
   for (const e of playing) {

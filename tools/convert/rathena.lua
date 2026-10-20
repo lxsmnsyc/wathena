@@ -31,6 +31,16 @@ function R.run(fn, ...)
 	end
 end
 
+-- sleep is sleep and sleep2 in an event label. rAthena's script sleeps
+-- with a timer even without a player. Here the wait needs the
+-- conversation of an event with a player.
+function R.sleep(conversation, ms)
+	if conversation == nil then
+		R.unsupported("a wait in an event without a player")
+	end
+	conversation:wait(ms)
+end
+
 -- stop is rAthena's end, and close, inside a function.
 function R.stop()
 	error(STOP, 0)
@@ -853,18 +863,73 @@ end
 -- npc_named is the handle of an NPC: a record name, or a handle.
 local function npc_named(target)
 	if type(target) == "string" then
+		-- npc_name2id finds no NPC for an empty name.
+		if target == "" then
+			return nil
+		end
 		return world.get_npc(target)
 	end
 	return target
 end
 
--- npc_view is enablenpc, disablenpc, hideonnpc and hideoffnpc, and the
--- cloaks for everyone: a method of the NPC's handle.
+-- or_self is the NPC of npctalk's and classchange's name argument: the
+-- NPC itself for an empty name.
+function R.or_self(target, self)
+	if target == "" then
+		return self
+	end
+	return target
+end
+
+-- npc_view is enablenpc, disablenpc, hideonnpc and hideoffnpc, the
+-- cloaks for everyone, and the presentation commands of review decision
+-- 58, area B5: a method of the NPC's handle, and what it returns.
 function R.npc_view(target, method, ...)
 	local n = npc_named(target)
 	if n ~= nil then
-		n[method](n, ...)
+		return n[method](n, ...)
 	end
+end
+
+-- say_aloud is npctalk of a line made when the script runs: an empty
+-- line, which rAthena sends, is left out, as the API refuses it.
+function R.say_aloud(target, text, options)
+	text = R.text(text)
+	local n = npc_named(target)
+	if n ~= nil and text ~= "" then
+		n:say_aloud(text, options)
+	end
+end
+
+-- title is setunittitle's title made when the script runs: safestrncpy
+-- cuts it to NAME_LENGTH - 1 bytes, at a character's start.
+function R.title(text)
+	text = R.text(text)
+	if #text <= 23 then
+		return text
+	end
+	local n = 23
+	while n > 0 and (text:byte(n + 1) or 0) >= 0x80 and (text:byte(n + 1) or 0) < 0xC0 do
+		n = n - 1
+	end
+	return text:sub(1, n)
+end
+
+-- npc_display is setnpcdisplay: the name players see and the class, or
+-- nil for no change. It gives 1 for an NPC that does not exist, and 0
+-- otherwise.
+function R.npc_display(target, name, class)
+	local n = npc_named(target)
+	if n == nil then
+		return 1
+	end
+	if name ~= nil then
+		n:set_display_name(name)
+	end
+	if class ~= nil then
+		n:set_sprite(class)
+	end
+	return 0
 end
 
 -- npc_cloak_for is the cloak of one player: cloakonnpcself and

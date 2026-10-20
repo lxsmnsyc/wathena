@@ -65,12 +65,13 @@ type npcEntry struct {
 	handle   int64
 	name     string
 	mod      string
-	display  string
-	x, y     int
 	scripted bool
 	floating bool
 
-	// Under the directory's lock:
+	// Under the directory's lock. display, x and y change with
+	// npc:set_display_name and the NPC's moves (npcpresent.go).
+	display  string
+	x, y     int
 	state    string
 	cloaked  bool
 	cloakFor map[int64]bool
@@ -206,6 +207,24 @@ func cloneSet(m map[int64]bool) map[int64]bool {
 	return out
 }
 
+// mirrorPlace copies an NPC's name and cell into its entry.
+func (d *NPCDirectory) mirrorPlace(e *entity) {
+	en := e.npc.entry
+	if en == nil {
+		return
+	}
+	d.mu.Lock()
+	en.display, en.x, en.y = e.npc.DisplayName, e.x, e.y
+	d.mu.Unlock()
+}
+
+// place returns an entry's name and cell.
+func (d *NPCDirectory) place(en *npcEntry) (display string, x, y int) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return en.display, en.x, en.y
+}
+
 // read returns an entry's view state.
 func (d *NPCDirectory) read(en *npcEntry) (state string, cloaked bool, cloakFor map[int64]bool, removed bool) {
 	d.mu.Lock()
@@ -258,6 +277,11 @@ type npcMessage struct {
 	player, charID int64
 	control        modscript.NPCControl
 	mods           []string
+	// run is the work of a presentation message on the NPC, and
+	// zoneRun the work of a message for a zone's players
+	// (npcpresent.go).
+	run     func(z *Zone, e *entity)
+	zoneRun func(z *Zone)
 }
 
 type npcMessageKind int
@@ -267,6 +291,10 @@ const (
 	npcBroadcastMessage
 	npcControlMessage
 	npcEndMessage
+	// npcPresentMessage and npcZoneMessage need no NPC scripts: they show
+	// something to the zone's players (npcpresent.go).
+	npcPresentMessage
+	npcZoneMessage
 )
 
 // npcInbox is a zone's NPC messages. Other zones post to it.
@@ -343,7 +371,12 @@ func (z *Zone) npcMessages() int {
 	if len(msgs) == 0 {
 		return 0
 	}
-	z.startNPCs()
+	for _, m := range msgs {
+		if m.kind != npcPresentMessage && m.kind != npcZoneMessage {
+			z.startNPCs()
+			break
+		}
+	}
 	for _, m := range msgs {
 		z.runNPCMessage(m)
 	}
@@ -351,6 +384,16 @@ func (z *Zone) npcMessages() int {
 }
 
 func (z *Zone) runNPCMessage(m npcMessage) {
+	switch m.kind {
+	case npcZoneMessage:
+		m.zoneRun(z)
+		return
+	case npcPresentMessage:
+		if e := z.npcHandles[m.handle]; e != nil && !e.npc.removed {
+			m.run(z, e)
+		}
+		return
+	}
 	// A view change needs no scripts: a shop NPC shows and hides too.
 	r := z.scripts
 	if r == nil && m.kind != npcControlMessage {
@@ -897,12 +940,13 @@ func npcNames(full, display string) (unique, hidden, withHidden string) {
 
 // remoteField reads a field of an NPC of another zone.
 func (h scriptHost) remoteField(en *npcEntry, field string) (script.Value, error) {
-	unique, hidden, full := npcNames(en.name, en.display)
+	display, x, y := h.z.npcDir().place(en)
+	unique, hidden, full := npcNames(en.name, display)
 	switch field {
 	case "kind":
 		return script.String("npc"), nil
 	case "name":
-		return script.String(en.display), nil
+		return script.String(display), nil
 	case "full_name":
 		return script.String(full), nil
 	case "hidden_name":
@@ -915,9 +959,9 @@ func (h scriptHost) remoteField(en *npcEntry, field string) (script.Value, error
 		}
 		return script.String(strings.TrimPrefix(en.zone.Map, "map/")), nil
 	case "x":
-		return intValue(en.x), nil
+		return intValue(x), nil
 	case "y":
-		return intValue(en.y), nil
+		return intValue(y), nil
 	case "state":
 		state, _, _, _ := h.z.npcDir().read(en)
 		return script.String(state), nil

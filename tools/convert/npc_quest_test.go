@@ -78,7 +78,10 @@ func (h *questLog) QuestTimedOut(_ int64, r *quest.Record) (bool, error) {
 	return i >= 0 && quest.TimedOut(&h.log[i], h.at()), nil
 }
 
-func (h *questLog) ShowQuestIcon(_, _ int64, icon string) error {
+func (h *questLog) ShowQuestIcon(_, _ int64, icon, mark string) error {
+	if mark != "" {
+		icon += "/" + mark
+	}
 	h.icons = append(h.icons, icon)
 	return nil
 }
@@ -247,6 +250,7 @@ func TestQuestCommandsConvert(t *testing.T) {
 		{`{ showevent QTYPE_QUEST; end; }`, []string{`npc:show_quest_icon(player, "quest")`}},
 		{`{ showevent QTYPE_QUEST2,QMARK_NONE; end; }`, []string{`npc:show_quest_icon(player, "quest_question")`}},
 		{`{ showevent QTYPE_WARG2; end; }`, []string{`npc:show_quest_icon(player, "warg_face")`}},
+		{`{ showevent QTYPE_QUEST,QMARK_YELLOW; end; }`, []string{`npc:show_quest_icon(player, "quest", { mark = "yellow" })`}},
 		{`{ showevent QTYPE_DAILYQUEST; end; }`, []string{`npc:show_quest_icon(player, nil)`}},
 		{`{ showevent QTYPE_NONE; end; }`, []string{`npc:show_quest_icon(player, nil)`}},
 		{`{ showevent 7; end; }`, []string{`npc:show_quest_icon(player, nil)`}},
@@ -267,7 +271,8 @@ func TestQuestCommandsConvert(t *testing.T) {
 		{`{ setquest 1100,150001; end; }`, "setquest: for another character"},
 		{`{ if (checkquest(1100,PLAYTIME,150001)) end; end; }`, "checkquest: for another character"},
 		{`{ .@k = 1; if (checkquest(1100,.@k)) end; end; }`, "checkquest: a check other than HAVEQUEST, PLAYTIME and HUNTING"},
-		{`{ showevent QTYPE_QUEST,QMARK_YELLOW; end; }`, "showevent: a minimap mark color"},
+		{`{ showevent QTYPE_QUEST,QMARK_YELLOW,.@i; end; }`, "showevent: for another character"},
+		{`{ showevent QTYPE_QUEST,.@i; end; }`, "showevent: a computed mark color"},
 		{`{ showevent .@i; end; }`, "showevent: a computed icon"},
 		{`{ setquest "x"; end; }`, "setquest: a quest named by text"},
 	} {

@@ -246,7 +246,7 @@ func TestQuestIcons(t *testing.T) {
 		}
 		return out
 	}
-	if err := h.ShowQuestIcon(npc.npc.handle, int64(p.charID), "quest"); err != nil {
+	if err := h.ShowQuestIcon(npc.npc.handle, int64(p.charID), "quest", ""); err != nil {
 		t.Fatal(err)
 	}
 	w.step(100)
@@ -262,7 +262,7 @@ func TestQuestIcons(t *testing.T) {
 	if got := icons(); len(got) != 1 || got[0] != "quest" {
 		t.Errorf("icons on coming back %v", got)
 	}
-	if err := h.ShowQuestIcon(npc.npc.handle, int64(p.charID), ""); err != nil {
+	if err := h.ShowQuestIcon(npc.npc.handle, int64(p.charID), "", ""); err != nil {
 		t.Fatal(err)
 	}
 	w.step(250)

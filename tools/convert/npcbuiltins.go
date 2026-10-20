@@ -116,46 +116,6 @@ func (b *body) isequipped(args []Expr) (val, error) {
 	return val{code: "R.isequipped(player, " + strings.Join(ids, ", ") + ")", t: tInt}, nil
 }
 
-// specialeffect converts specialeffect <effect>{, AREA{, "<NPC>"}} on
-// the NPC itself: npc:show_effect plays it for the players near. In a
-// function it plays on the NPC that called it, as rAthena's st->oid.
-// Other targets and other NPCs need more of the API.
-func (b *body) specialeffect(args []Expr) error {
-	const what = "specialeffect"
-	if len(args) < 1 || len(args) > 3 {
-		return unsupported(what, "arguments")
-	}
-	if len(args) >= 2 {
-		t, err := b.expr(args[1])
-		if err != nil {
-			return err
-		}
-		if t.static == nil || *t.static != sendAREA {
-			return unsupported(what, "a send target other than AREA")
-		}
-	}
-	if len(args) == 3 {
-		s, ok := args[2].(*Str)
-		if !ok || b.n.isFunction || s.Value != b.n.line.Name || b.n.c.duplicated[b.n.line.Name] {
-			return unsupported(what, "on another NPC")
-		}
-	}
-	e, err := b.expr(args[0])
-	if err != nil {
-		return err
-	}
-	name, ok := "", false
-	if e.static != nil {
-		name, ok = b.n.c.modules["effects"].Names[*e.static]
-	}
-	if !ok {
-		// rAthena does nothing for an effect outside EF_NONE to EF_MAX.
-		return unsupported(what, "an effect that is not a fixed EF_ effect")
-	}
-	b.line("npc:show_effect(%s.%s)", b.n.file.need("effects"), name)
-	return nil
-}
-
 // sendAREA is rAthena's send_target AREA.
 const sendAREA = 2
 

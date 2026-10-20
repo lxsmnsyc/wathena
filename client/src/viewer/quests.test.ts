@@ -143,6 +143,11 @@ describe('questIconMark', () => {
     expect(questIconMark('event_question')).toEqual({ mark: '?', kind: 'event' });
     expect(questIconMark('warg')).toEqual({ mark: 'W', kind: 'warg' });
     expect(questIconMark('warg_face')).toEqual({ mark: 'W', kind: 'warg' });
+    expect(questIconMark('daily_quest')).toEqual({ mark: '!', kind: 'daily' });
+    expect(questIconMark('job_quest')).toEqual({ mark: '!', kind: 'job' });
+    expect(questIconMark('click_me')).toEqual({ mark: '!', kind: 'event' });
+    expect(questIconMark('event3')).toEqual({ mark: '?', kind: 'event' });
+    expect(questIconMark('jumping_poring')).toEqual({ mark: 'P', kind: 'event' });
     expect(questIconMark('unknown')).toEqual({ mark: '!', kind: 'quest' });
   });
 });

@@ -127,8 +127,9 @@ func TestBuiltinsConvert(t *testing.T) {
 		{`{ mes "" + getequipid(); end; }`, "!getequipid: without a slot"},
 		// Effects on the NPC itself.
 		{`{ specialeffect EF_HEAL; specialeffect EF_HEAL,AREA,"X#t"; end; }`, "npc:show_effect(effects."},
-		{`{ specialeffect EF_HEAL,SELF; end; }`, "!specialeffect: a send target other than AREA"},
-		{`{ specialeffect EF_HEAL,AREA,"Other#t"; end; }`, "!specialeffect: on another NPC"},
+		{`{ specialeffect EF_HEAL,SELF; end; }`, `if player ~= nil then npc:show_effect(effects.heal, { to = player }) end`},
+		{`{ specialeffect EF_HEAL,AREA,"Other#t"; end; }`, `R.npc_view("Other#t", "show_effect", effects.heal)`},
+		{`{ specialeffect EF_HEAL,ALL_CLIENT; end; }`, "!specialeffect: a send target other than AREA, ALL_SAMEMAP and SELF"},
 		// Strings and numbers.
 		{`{ .@n = atoi(.@s$) + atoi(.@i); end; }`, "R.atoi(s) + R.atoi(tostring(i))"},
 		{`{ .@n = compare(.@s$, "a"); end; }`, `R.compare(s, "a")`},

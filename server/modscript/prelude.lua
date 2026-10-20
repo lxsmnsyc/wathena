@@ -213,14 +213,52 @@ local function heal(self, spec, percent, what)
 	return (call(H.player_heal, player_ids[self], percent, hp1, hp2, sp1, sp2))
 end
 
+-- send_to reads the options of the presentation calls of review
+-- decision 58, area B5. allowed lists the option names. to is "area",
+-- "map", "world" or a player handle. It returns to's name and the
+-- player's ID for a handle.
+local function send_to(what, options, allowed)
+	if options == nil then
+		return nil, nil
+	end
+	if type(options) ~= "table" then
+		error(what .. ": the options must be a table, such as { to = \"map\" }", 3)
+	end
+	for k in pairs(options) do
+		if not allowed[k] then
+			error(what .. ": there is no option " .. tostring(k), 3)
+		end
+	end
+	local to = options.to
+	if to == nil or type(to) == "string" then
+		return to, nil
+	end
+	local id = player_ids[to]
+	if id == nil then
+		error(what .. ": to is \"area\", \"map\", \"world\" or a player handle", 3)
+	end
+	return "player", id
+end
+
 -- Party and guild handles are made after the player handle, which reads
 -- them.
 local new_party, party_ids
 local new_guild, guild_ids
 
 new_player, player_ids = handle_type("player", {
-	send_message = function(self, text)
-		return (call(H.player_send_message, player_ids[self], text))
+	send_message = function(self, text, options)
+		if options == nil then
+			return (call(H.player_send_message, player_ids[self], text))
+		end
+		if type(options) ~= "table" then
+			error("player:send_message: the options must be a table, such as { color = 0xFF0000 }", 2)
+		end
+		for k in pairs(options) do
+			if k ~= "color" then
+				error("player:send_message: there is no option " .. tostring(k) .. "; the option is color", 2)
+			end
+		end
+		return (call(H.player_present, player_ids[self], "send_message", text, options.color))
 	end,
 	give_item = function(self, item, amount, options)
 		local rent, roll, to, bound = 0, nil, nil, nil
@@ -298,8 +336,12 @@ new_player, player_ids = handle_type("player", {
 	warp_to_save_point = function(self)
 		return (call(H.player_warp, player_ids[self], "save_point"))
 	end,
-	show_effect = function(self, effect)
-		return (call(H.player_show_effect, player_ids[self], effect, false))
+	show_effect = function(self, effect, options)
+		if options == nil then
+			return (call(H.player_show_effect, player_ids[self], effect, false))
+		end
+		local to, to_id = send_to("player:show_effect", options, { to = true })
+		return (call(H.player_present, player_ids[self], "show_effect", effect, to, to_id))
 	end,
 	show_headgear_effect = function(self, effect)
 		return (call(H.player_show_effect, player_ids[self], effect, true))
@@ -681,15 +723,28 @@ new_npc, npc_ids = handle_type("npc", {
 	show_emotion = function(self, emotion)
 		return (call(H.npc_emotion, npc_ids[self], emotion))
 	end,
-	say_aloud = function(self, text)
-		return (call(H.npc_say, npc_ids[self], text))
+	say_aloud = function(self, text, options)
+		local to, to_id = send_to("npc:say_aloud", options, { to = true, color = true })
+		return (call(H.npc_present, npc_ids[self], "say_aloud", text, to, to_id, options ~= nil and options.color or nil))
 	end,
-	show_quest_icon = function(self, player, icon)
+	show_quest_icon = function(self, player, icon, options)
 		local id = player_ids[player]
 		if id == nil then
 			error("npc:show_quest_icon: want a player handle", 2)
 		end
-		return (call(H.npc_show_quest_icon, npc_ids[self], id, icon))
+		local mark
+		if options ~= nil then
+			if type(options) ~= "table" then
+				error("npc:show_quest_icon: the options must be a table, such as { mark = \"yellow\" }", 2)
+			end
+			for k, v in pairs(options) do
+				if k ~= "mark" then
+					error("npc:show_quest_icon: there is no option " .. tostring(k) .. "; the option is mark", 2)
+				end
+				mark = v
+			end
+		end
+		return (call(H.npc_show_quest_icon, npc_ids[self], id, icon, mark))
 	end,
 	-- Visibility and state (review decision 58): rAthena's enablenpc,
 	-- disablenpc, hideonnpc, hideoffnpc, the cloak commands, isnpccloaked
@@ -809,6 +864,7 @@ monster_methods.stop = function(self)
 	call(H.monster_stop, monster_ids[self])
 end
 
+
 -- with_handles copies Go's fields, and makes handles of target, source,
 -- caster and owner with their kinds.
 local function with_handles(fields)
@@ -885,6 +941,122 @@ new_conversation, conversation_ids = handle_type("conversation", {
 		return (answer(call(H.conversation_progress, conversation_ids[self], seconds)))
 	end,
 })
+
+-- The presentation and quest icons of review decision 58, areas B5 and
+-- B6: rAthena's npctalk, unittalk, emotion, specialeffect,
+-- removespecialeffect, setunittitle, setnpcdisplay, setunitdata's looks,
+-- movenpc, npcwalkto, npcspeed, npcstop, progressbar_npc, npcskill,
+-- soundeffect, soundeffectall, playBGM, dispbottom's color, showdigit,
+-- questinfo, questinfo_refresh and open_quest_ui.
+local npc_methods = handle_methods["npc"]
+local player_methods = handle_methods["player"]
+
+local function present_options(what, options, allowed)
+	if options == nil then
+		return {}
+	end
+	if type(options) ~= "table" then
+		error(what .. ": the options must be a table", 3)
+	end
+	for k in pairs(options) do
+		if not allowed[k] then
+			error(what .. ": there is no option " .. tostring(k), 3)
+		end
+	end
+	return options
+end
+
+npc_methods.show_effect = function(self, effect, options)
+	local to, to_id = send_to("npc:show_effect", options, { to = true })
+	return (call(H.npc_present, npc_ids[self], "show_effect", effect, to, to_id))
+end
+npc_methods.remove_effect = function(self, effect)
+	return (call(H.npc_present, npc_ids[self], "remove_effect", effect))
+end
+npc_methods.set_title = function(self, text)
+	return (call(H.npc_present, npc_ids[self], "set_title", text))
+end
+npc_methods.set_display_name = function(self, name)
+	return (call(H.npc_present, npc_ids[self], "set_display_name", name))
+end
+npc_methods.set_sprite = function(self, sprite)
+	return (call(H.npc_present, npc_ids[self], "set_sprite", sprite))
+end
+npc_methods.set_look = function(self, look)
+	if type(look) ~= "table" then
+		error("npc:set_look: want a table, such as { hair_style = 13 }", 2)
+	end
+	return (call(H.npc_present, npc_ids[self], "set_look", look))
+end
+npc_methods.move_to = function(self, x, y)
+	return (call(H.npc_present, npc_ids[self], "move_to", x, y))
+end
+npc_methods.walk_to = function(self, x, y)
+	return (call(H.npc_present, npc_ids[self], "walk_to", x, y))
+end
+npc_methods.set_speed = function(self, milliseconds)
+	return (call(H.npc_present, npc_ids[self], "set_speed", milliseconds))
+end
+npc_methods.stop = function(self)
+	return (call(H.npc_present, npc_ids[self], "stop"))
+end
+npc_methods.show_progress = function(self, seconds, options)
+	options = present_options("npc:show_progress", options, { color = true })
+	return (answer(call(H.npc_present, npc_ids[self], "show_progress", seconds, options.color)))
+end
+npc_methods.use_skill = function(self, skill, level, target, options)
+	local key = handle_key(target)
+	if key == nil then
+		error("npc:use_skill: the target must be a player, monster or NPC handle", 2)
+	end
+	options = present_options("npc:use_skill", options, { stat = true, npc_level = true })
+	return (call(H.npc_present, npc_ids[self], "use_skill", skill, level, key, options.stat, options.npc_level))
+end
+npc_methods.play_sound = function(self, file, options)
+	options = present_options("npc:play_sound", options, { to = true, ["repeat"] = true })
+	return (call(H.npc_present, npc_ids[self], "play_sound", file, options.to, options["repeat"]))
+end
+npc_methods.add_quest_icon = function(self, icon, options)
+	options = present_options("npc:add_quest_icon", options, { mark = true, condition = true })
+	if options.condition ~= nil and type(options.condition) ~= "function" then
+		error("npc:add_quest_icon: condition must be a function of the player", 2)
+	end
+	return (call(H.npc_present, npc_ids[self], "add_quest_icon", icon, options.mark, options.condition))
+end
+
+player_methods.say_aloud = function(self, text, options)
+	local to, to_id = send_to("player:say_aloud", options, { to = true })
+	return (call(H.player_present, player_ids[self], "say_aloud", text, to, to_id))
+end
+player_methods.show_emotion = function(self, emotion)
+	return (call(H.player_present, player_ids[self], "show_emotion", emotion))
+end
+player_methods.remove_effect = function(self, effect)
+	return (call(H.player_present, player_ids[self], "remove_effect", effect))
+end
+player_methods.play_sound = function(self, file, options)
+	options = present_options("player:play_sound", options, { ["repeat"] = true })
+	return (call(H.player_present, player_ids[self], "play_sound", file, options["repeat"]))
+end
+player_methods.play_music = function(self, file)
+	return (call(H.player_present, player_ids[self], "play_music", file))
+end
+player_methods.show_digits = function(self, value, kind)
+	return (call(H.player_present, player_ids[self], "show_digits", value, kind))
+end
+player_methods.open_quest_log = function(self, quest)
+	return (call(H.player_present, player_ids[self], "open_quest_log", quest))
+end
+player_methods.refresh_quest_icons = function(self)
+	return (call(H.player_present, player_ids[self], "refresh_quest_icons"))
+end
+
+for _, kind in ipairs({ "player", "monster", "npc" }) do
+	local ids = ({ player = player_ids, monster = monster_ids })[kind]
+	handle_methods[kind].show_skill_effect = function(self, skill, level)
+		return (call(H.entity_skill_effect, kind, (ids or npc_ids)[self], skill, level))
+	end
+end
 
 local event_ids
 local new_event_handle
@@ -1220,6 +1392,24 @@ api["wa.maps"] = readonly("wa.maps", {
 			return nil
 		end
 		return new_player(p)
+	end,
+	-- Music, sounds and minimap marks of a map (review decision 58, area
+	-- B5): playBGMall, soundeffectall and viewpointmap.
+	play_music = function(map, file)
+		return (call(H.maps_present, "play_music", map, file))
+	end,
+	play_sound = function(map, file, options)
+		check(options == nil or type(options) == "table", "maps.play_sound: the options must be a table, such as { [\"repeat\"] = true }")
+		for k in pairs(options or {}) do
+			check(k == "repeat", "maps.play_sound: there is no option " .. tostring(k) .. "; the option is repeat")
+		end
+		return (call(H.maps_present, "play_sound", map, file, options ~= nil and options["repeat"] or nil))
+	end,
+	mark_minimap = function(map, id, x, y, color)
+		return (call(H.maps_present, "mark_minimap", map, id, x, y, color))
+	end,
+	unmark_minimap = function(map, id)
+		return (call(H.maps_present, "unmark_minimap", map, id))
 	end,
 })
 

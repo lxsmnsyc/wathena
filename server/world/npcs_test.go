@@ -116,3 +116,78 @@ func TestNPCsAcrossZones(t *testing.T) {
 		t.Fatalf("results: %q", got)
 	}
 }
+
+// presentScript is the script of TestNPCPresentAcrossZones: the floating
+// Teller renames the Sign of map/b, gives it a title, moves it, and asks
+// it what it is, and the Sign notes its name, title and cell. The Teller
+// then reads the Sign's name and cell from its own zone.
+const presentScript = `
+local context = require "wa.context"
+local events = require "wa.events"
+local world = require "wa.world"
+local variables = require "wa.variables"
+local seen = variables.server_temporary_string("seen")
+local read = variables.server_temporary_string("read")
+return function()
+  local npc = context:get_instance()
+  events.on("npc_event", function(event)
+    seen:set(npc.name .. " " .. npc.x .. "," .. npc.y)
+    world.get_npc("Teller"):fire_event("OnRead")
+  end, { name = "OnCheck" })
+  events.on("npc_event", function(event)
+    local sign = world.get_npc("Sign")
+    read:set(sign.name .. " " .. sign.x .. "," .. sign.y)
+  end, { name = "OnRead" })
+  if npc.unique_name == "Teller" then
+    local sign = world.get_npc("Sign")
+    sign:set_display_name("Renamed")
+    sign:set_title("<Title>")
+    sign:move_to(7, 8)
+    sign:say_aloud("hello", { to = "world" })
+    sign:fire_event("OnCheck")
+  end
+end`
+
+// TestNPCPresentAcrossZones checks that the presentation calls of review
+// decision 58, area B5, reach an NPC of another zone in the order sent,
+// before an event sent after them, and that the world's directory gives
+// the NPC's new name and cell to the zone that changed it. It runs the
+// world's goroutines, so go test -race checks it.
+func TestNPCPresentAcrossZones(t *testing.T) {
+	a, b := testZone("map/a"), testZone("map/b")
+	sc := &mod.Scripts{Mod: "example.test", Files: map[string]string{"scripts/npc.lua": presentScript}, Grants: mod.Grants{}, Visible: []string{"example.test"}}
+	for _, p := range mod.Permissions {
+		sc.Grants[p.Name] = true
+	}
+	temp := variables.NewTemporary()
+	mods := &zone.Mods{Scripts: []*mod.Scripts{sc}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.DiscardHandler),
+		Server: variables.NewServer(nil, nil), Temporary: temp}
+	s := "example.test:scripts/npc.lua"
+	a.SetNPCs([]zone.NPC{{Name: "example.test:Teller", DisplayName: "Teller", Script: s, Floating: true}})
+	b.SetNPCs([]zone.NPC{{Name: "example.test:Sign", DisplayName: "Sign", X: 5, Y: 5, Sprite: 112, Script: s}})
+	a.Mods, b.Mods = mods, mods
+	w, err := New("map/a", a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	go w.Run(ctx)
+	defer func() {
+		cancel()
+		<-w.Stopped()
+	}()
+	get := func(name string) string {
+		v, _ := temp.Get(variables.TempKey{Mod: "example.test", Name: name})
+		return strings.Trim(v, `"`)
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) && get("read") == "" {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := get("seen"); got != "Renamed 7,8" {
+		t.Errorf("the Sign saw itself as %q", got)
+	}
+	if got := get("read"); got != "Renamed 7,8" {
+		t.Errorf("the Teller read the Sign as %q", got)
+	}
+}

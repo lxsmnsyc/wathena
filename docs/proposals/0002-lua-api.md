@@ -1616,3 +1616,12 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
      - `fire_event` and `fire_npc_event` count a zone that has not started its scripts as handled.
      - A broadcast starts the NPC scripts of every zone that has not started them.
      - Commands of B1 to B4 left for later groups: `getnpcid`, `mobcount` of another NPC's label, `awake`, `attachrid`, and `sc_start2` on another character.
+42. Build review decision 58, group 2: areas B5 and B6 of [0002b](0002b-npc-api.md), NPC presentation and quest icons. Done on 2026-10-21 ([decision 0063](../decisions/0063-npc-api-group-2.md)). Groups B7 to B10 come later.
+   - API: `say_aloud` with `to` and `color`, `show_effect` with `to`, `remove_effect`, `show_skill_effect`, `set_title`, `set_display_name`, `set_sprite`, `set_look`, `move_to`, `walk_to`, `set_speed`, `stop`, `show_progress`, `use_skill`, `play_sound`, `add_quest_icon` and `show_quest_icon`'s mark on NPCs. `say_aloud`, `show_emotion`, `remove_effect`, `play_sound`, `play_music`, `send_message`'s color, `show_digits`, `open_quest_log` and `refresh_quest_icons` on players. `maps.play_music`, `maps.play_sound`, `maps.mark_minimap` and `maps.unmark_minimap`. `wa.QuestIcon` gains `click_me`, `daily_quest`, `event3`, `job_quest` and `jumping_poring`.
+   - Data: an NPC record's `sprite` takes a monster's or a job's number.
+   - Protocol: `EffectRemove`, `NpcProgressBar`, `SoundPlay`, `MusicPlay`, `DigitsShow`, `QuestLogOpen`, `EntityAppear.title`, `Look.npc_view` and `QuestIcon.mark`.
+   - Converter: every command of B5 and B6, `getnpcid` as a game ID of the unit commands, and lines whose view is a monster or a job. renewal places 5,371 of 7,067 script NPCs, up from 4,557, and 10,986 of 14,865 lines with duplicates, up from 9,617. pre-renewal places 3,032 of 3,754, up from 2,827, and 6,985 of 8,205, up from 6,460.
+   - Details to review, in decision 0063:
+     - `classchange` keeps the class for players who come later, and a walking NPC's touch area moves with it.
+     - A wait in an event without a player stops the script, through `R.sleep`.
+     - API that 0002b does not name and that converted scripts would use: a direction for `npc:move_to`, an event at the end of `npc:walk_to`, `to` for `remove_effect` and `player:play_sound`, sounds and music on a part of a map, and `maps.play_music` for every map.

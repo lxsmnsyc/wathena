@@ -222,6 +222,11 @@ var Modules = []Module{
 				Doc: "An online player of the context's map by name, as rAthena's map_nick2sd (review decision 58). nil for a player who is offline or on another map: a player handle acts in its own zone.", Permission: "game.read"},
 			{Name: "find_player_by_id", Params: []Param{{"id", "integer", "An account ID, or a character ID, as player.account_id and player.character_id."}}, Returns: "wa.Player?",
 				Doc: "An online player of the context's map by account ID, or else by character ID, as rAthena's convertpcinfo reads map_id2sd, then map_charid2sd (review decision 58). nil for a player who is offline or on another map.", Permission: "game.read"},
+			{Name: "play_music", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"file", "string", "A music name of the assets, without music/, such as 08."}}, Doc: "Plays background music to every player of a map, as playBGMall with a map. The map's own music comes back with each player's next map change."},
+			{Name: "play_sound", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"file", "string", "A sound name of the assets, without sound/."}, {"options", "wa.SoundOptions?", ""}}, Doc: "Plays a sound to every player of a map, as soundeffectall with a map."},
+			{Name: "mark_minimap", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"id", "integer", ""}, {"x", "integer", ""}, {"y", "integer", ""}, {"color", "integer?", "0xRRGGBB, white by default."}},
+				Doc: "Marks a cell on the minimap of every player of a map, as viewpointmap. A mark with the same ID replaces it. Players who come later do not see it."},
+			{Name: "unmark_minimap", Params: []Param{{"map", "string", "A map name, such as prontera."}, {"id", "integer", ""}}, Doc: "Removes a minimap mark from every player of a map, as viewpointmap with type 2."},
 		},
 	},
 	{
@@ -478,7 +483,7 @@ var Classes = []Class{
 		Doc:    "A player. Each access looks the player up again. A handle to a player who left the map raises an error. Reading needs game.read.",
 		Fields: playerFields(),
 		Methods: append([]Func{
-			{Name: "send_message", Params: []Param{{"text", "string", "1 to 255 bytes."}}, Doc: "Shows a line in the player's chat log, as CHAT_CHANNEL_SYSTEM."},
+			{Name: "send_message", Params: []Param{{"text", "string", "1 to 255 bytes."}, {"options", "wa.MessageOptions?", ""}}, Doc: "Shows a line in the player's chat log, as CHAT_CHANNEL_SYSTEM, as dispbottom."},
 			{Name: "give_item", Params: []Param{itemParam, {"amount", "integer?", "1 to 30000. 1 by default."}, {"options", "wa.GiveItemOptions?", ""}}, Returns: "boolean", Doc: "Gives items, as getitem. Returns false when they do not fit.", Permission: "player.give_items"},
 			{Name: "give_item_from_group", Params: []Param{{"group", "integer", "A group from items.group."}}, Doc: "Gives one use of an item group, as getgroupitem.", Permission: "player.give_items"},
 			{Name: "count_item", Params: []Param{itemParam, {"options", "wa.FromOptions?", ""}}, Returns: "integer?", Doc: "How many of the item the player has, as countitem. With from, how many a storage or the cart holds, as storagecountitem and cartcountitem; nil when it cannot be read: no cart, or a storage window open.", Permission: "game.read"},
@@ -509,7 +514,18 @@ var Classes = []Class{
 			{Name: "warp_to_random_cell", Returns: "boolean", Doc: "A Fly Wing: a random walkable cell of the map.", Permission: "player.warp"},
 			{Name: "warp_to_save_point", Returns: "boolean", Doc: "A Butterfly Wing: the save point.", Permission: "player.warp"},
 			{Name: "set_save_point", Params: []Param{{"map", "string", ""}, {"x", "integer", ""}, {"y", "integer", ""}}, Returns: "boolean", Doc: "Sets the save point, as savepoint. Returns false when the map does not run or the cell is not walkable.", Permission: "player.warp"},
-			{Name: "show_effect", Params: []Param{{"effect", "integer", "An effect from wa.effects."}}, Doc: "Plays an effect on the player for everyone near, as specialeffect2."},
+			{Name: "show_effect", Params: []Param{{"effect", "integer", "An effect from wa.effects."}, {"options", "wa.EffectOptions?", ""}}, Doc: "Plays an effect on the player, as specialeffect2: for everyone who sees the player, or as the to option says (review decision 58)."},
+			{Name: "remove_effect", Params: []Param{{"effect", "integer", "An effect from wa.effects."}}, Doc: "Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2."},
+			{Name: "say_aloud", Params: []Param{{"text", "string", "1 to 255 bytes. Players see the player's name before it."}, {"options", "wa.SayAloudOptions?", "Only to: a player's line has no color."}},
+				Doc: "Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself is bc_self: only the player hears it. The chat filter and the chat hooks do not see it."},
+			{Name: "show_emotion", Params: []Param{{"emotion", "integer", "An emotion from wa.emotions."}}, Doc: "Shows an emotion over the player to everyone who sees it, as emotion on a player's game ID."},
+			{Name: "play_sound", Params: []Param{{"file", "string", "A sound name of the assets, without sound/, such as effect/ef_hit1."}, {"options", "wa.SoundOptions?", ""}}, Doc: "Plays a sound to the player alone, as soundeffect."},
+			{Name: "play_music", Params: []Param{{"file", "string", "A music name of the assets, without music/, such as 08."}}, Doc: "Plays background music to the player, as playBGM. The map's own music comes back with the next map change."},
+			{Name: "show_digits", Params: []Param{{"value", "integer", "Seconds."}, {"kind", "wa.DigitKind?", "show by default."}},
+				Doc: "Shows a digital clock at the top of the player's screen, as showdigit: show shows the value for 5 seconds, count_up counts up from the value, count_down counts down from it past 0, and count_down_to_zero counts down from at most 99 and stops at 0."},
+			{Name: "open_quest_log", Params: []Param{{"quest", "integer|string|nil", "A quest of data/quests.yml to show, or nil. The player need not have it."}}, Doc: "Opens the player's quest log window, as open_quest_ui."},
+			{Name: "refresh_quest_icons", Doc: "Checks the conditions of the quest icons of the NPCs of the player's map again, as questinfo_refresh. The icons change at the end of the current step."},
+			showSkillEffect("player"),
 			findNearby, existsMethod,
 			{Name: "show_headgear_effect", Params: []Param{{"effect", "integer", "An effect from wa.headgear_effects."}}, Doc: "rAthena's hateffect. It shows nothing yet."},
 			{Name: "get_skill_level", Params: []Param{{"skill", "integer", "A skill from skills.id."}}, Returns: "integer", Doc: "The level of a skill the player has, or 0, as getskilllv.", Permission: "game.read"},
@@ -591,7 +607,7 @@ var Classes = []Class{
 			{"state", "wa.MonsterState", "Its skill state, in rAthena's words."},
 			{"master", "wa.Player|wa.Monster|nil", "The unit that summoned it as a slave, or nil."},
 		},
-		Methods: append([]Func{showEffect("monster"), findNearby, existsMethod,
+		Methods: append([]Func{showEffect("monster"), showSkillEffect("monster"), findNearby, existsMethod,
 			{Name: "set_target", Params: []Param{{"target", "wa.Player|wa.Monster|wa.Npc", ""}}, Returns: "boolean",
 				Doc: "The monster takes the target and chases it to attack, as unitattack. Returns false when it cannot target it."},
 			{Name: "clear_target", Doc: "The monster drops its target and goes idle, as mob_unlocktarget."},
@@ -619,9 +635,10 @@ var Classes = []Class{
 		},
 		Methods: append([]Func{
 			{Name: "show_emotion", Params: []Param{{"emotion", "integer", "An emotion from wa.emotions."}}, Doc: "Shows an emotion over the NPC, as emotion."},
-			{Name: "say_aloud", Params: []Param{{"text", "string", ""}}, Doc: "Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it."},
-			{Name: "show_quest_icon", Params: []Param{playerParam, {"icon", "wa.QuestIcon?", "nil removes the icon."}},
-				Doc: "Shows an icon over the NPC to one player, as showevent. It stays while the player is on the map."},
+			{Name: "say_aloud", Params: []Param{{"text", "string", "1 to 255 bytes. Players see the NPC's name before it."}, {"options", "wa.SayAloudOptions?", ""}},
+				Doc: "Says a line as the NPC, as npctalk (script.cpp 16193): by default to every player who sees the NPC, as AREA. The to option sends it to the NPC's map, the world, or one player, as bc_map, bc_all and bc_self. A line from an NPC that a player does not see shows with the NPC's name and no speaker. An NPC without a map says nothing to its area or map. Another mod's NPC needs npcs.control."},
+			{Name: "show_quest_icon", Params: []Param{playerParam, {"icon", "wa.QuestIcon?", "nil removes the icon."}, {"options", "wa.ShowQuestIconOptions?", ""}},
+				Doc: "Shows an icon over the NPC to one player, as showevent. It stays while the player is on the map. daily_quest, job_quest and jumping_poring remove the icon, as showevent turns them into QTYPE_NONE."},
 			{Name: "show", Doc: "Shows the NPC, as enablenpc: it shows, takes clicks, and its touch area works again. A player who stands in the area gets the touch event, as npc_enable_target (npc.cpp 1100). It does not uncloak the NPC. Another mod's NPC needs npcs.control."},
 			{Name: "hide", Doc: "Disables the NPC, as disablenpc: no view, no click, no touch, and its player events and events with a player do not run. npc:fire_event without a player still runs its handlers, as donpcevent. Another mod's NPC needs npcs.control."},
 			{Name: "set_hidden", Params: []Param{{"hidden", "boolean", ""}}, Doc: "Hides or shows the NPC, as hideonnpc and hideoffnpc: hidden, it does not show and refuses clicks, but its touch area works. Another mod's NPC needs npcs.control."},
@@ -631,7 +648,26 @@ var Classes = []Class{
 			{Name: "remove", Doc: "Removes the NPC until the server restarts, as unloadnpc: it vanishes, its context ends after the current step, and its NPC variables go. Another mod's NPC needs npcs.control."},
 			{Name: "fire_event", Params: []Param{{"name", "string", "An event label, such as OnEnable, without regard to case."}, {"options", "wa.FireEventOptions?", ""}}, Returns: "boolean",
 				Doc: "Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; true for an NPC whose zone has not started its scripts. Another mod's NPC needs npcs.control."},
-			showEffect("NPC"), findNearby, existsMethod,
+			{Name: "show_effect", Params: []Param{{"effect", "integer", "An effect from wa.effects."}, {"options", "wa.EffectOptions?", ""}},
+				Doc: "Plays an effect on the NPC, as specialeffect: for everyone who sees the NPC, or as the to option says. Another mod's NPC needs npcs.control."},
+			{Name: "remove_effect", Params: []Param{{"effect", "integer", "An effect from wa.effects."}}, Doc: "Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. Another mod's NPC needs npcs.control."},
+			{Name: "set_title", Params: []Param{{"text", "string", "At most 23 bytes. \"\" removes the title."}}, Doc: "Shows a title with the NPC's name, as setunittitle. Another mod's NPC needs npcs.control."},
+			{Name: "set_display_name", Params: []Param{{"name", "string", "1 to 50 bytes."}}, Doc: "Changes the name players see, as setnpcdisplay. npc.name reads it. Another mod's NPC needs npcs.control."},
+			{Name: "set_sprite", Params: []Param{{"sprite", "integer", "An NPC sprite, a monster ID or a job ID, as rAthena takes any class."}}, Doc: "Changes the NPC's view, as setnpcdisplay's class and classchange: players who see the NPC see it again with the new view. A job ID shows a character with the look of npc:set_look. Another mod's NPC needs npcs.control."},
+			{Name: "set_look", Params: []Param{{"look", "wa.NpcLook", "The fields to change."}}, Doc: "Changes the NPC's view and the look of a job view, as setunitdata with UNPC_CLASS, UNPC_HAIRSTYLE and the other looks. Another mod's NPC needs npcs.control."},
+			{Name: "move_to", Params: []Param{{"x", "integer", ""}, {"y", "integer", ""}}, Doc: "Moves the NPC to a cell at once, as movenpc: a cell past the map's edge is the edge's, and the cell need not be walkable. Players near the old cell see it go, and players near the new one see it come. Its touch area moves with it. Another mod's NPC needs npcs.control."},
+			{Name: "walk_to", Params: []Param{{"x", "integer", ""}, {"y", "integer", ""}}, Returns: "boolean",
+				Doc: "The NPC walks to a cell at its speed, as npcwalkto and unitwalk. Returns false, and stays, when no walk reaches the cell. The players it walks into touch it, as unit_walktoxy_ontouch. An NPC of another map returns true, and its zone checks the walk. Another mod's NPC needs npcs.control."},
+			{Name: "set_speed", Params: []Param{{"milliseconds", "integer", "20 to 1000: the time to walk one cell. NPCs start at 200."}}, Doc: "Sets the NPC's walk speed, as npcspeed. A walk takes it from its next step. Another mod's NPC needs npcs.control."},
+			{Name: "stop", Doc: "Stops the NPC's walk, as npcstop: past half its step it finishes the cell, then it stands. Another mod's NPC needs npcs.control."},
+			{Name: "show_progress", Params: []Param{{"seconds", "integer", "0 to 600."}, {"options", "wa.ProgressOptions?", ""}},
+				Doc: "Shows a progress bar over the NPC to everyone who sees it, and waits until it is full, as progressbar_npc. It runs only in a conversation's handler, whose player cannot act while it waits. Players who come into view see the time left. Another mod's NPC needs npcs.control."},
+			{Name: "use_skill", Params: []Param{{"skill", "integer", "From skills.id."}, {"level", "integer", "1 to 100."}, {"target", "wa.Player|wa.Monster|wa.Npc", "The target, or its cell for a ground skill."}, {"options", "wa.NpcSkillOptions?", ""}}, Returns: "boolean",
+				Doc: "The NPC casts a skill on the target at once, with no range check, as npcskill (script.cpp 23286): with every stat at the stat option and the level of npc_level, as status_calc_npc. Returns false when the cast does not start. The NPC must be on the context's map. Another mod's NPC needs npcs.control."},
+			{Name: "play_sound", Params: []Param{{"file", "string", "A sound name of the assets, without sound/, such as effect/ef_hit1."}, {"options", "wa.NpcSoundOptions?", ""}}, Doc: "Plays a sound to the players who see the NPC, from the NPC, or to every player of its map, as soundeffectall. Another mod's NPC needs npcs.control."},
+			{Name: "add_quest_icon", Params: []Param{{"icon", "wa.QuestIcon", ""}, {"options", "wa.QuestIconOptions?", ""}},
+				Doc: "Adds a quest icon to the NPC, as questinfo (script.cpp 20949). Each player of the map sees the first icon of the NPC whose condition holds, and none when none holds. The icons show again for a player at map entry, on an item gained or lost, a level or job change, a quest added, completed, removed or changed, a kill counted, and player:refresh_quest_icons, as pc_show_questinfo, at the end of that step. The NPC must be on the context's map. Another mod's NPC needs npcs.control."},
+			showSkillEffect("NPC"), findNearby, existsMethod,
 		}, statusMethods...),
 	},
 	{
@@ -967,6 +1003,69 @@ var Classes = []Class{
 		Fields: []Field{
 			{"player", "wa.Player?", "Runs the event for the player, as doevent. It must be on the NPC's map."},
 		},
+	},
+	{
+		Name: "wa.SayAloudOptions", Doc: "The options of npc:say_aloud and player:say_aloud (review decision 58).",
+		Fields: []Field{
+			{"to", `"area"|"map"|"world"|wa.Player|nil`, "Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self)."},
+			{"color", "integer?", "0xRRGGBB, as npctalk's color. The chat's own color by default. NPC lines only."},
+		},
+	},
+	{
+		Name: "wa.EffectOptions", Doc: "The options of npc:show_effect and player:show_effect.",
+		Fields: []Field{
+			{"to", `"area"|"map"|wa.Player|nil`, "Who sees it: the players who see the entity (AREA, the default), every player of its map who sees it (ALL_SAMEMAP), or one player (SELF)."},
+		},
+	},
+	{
+		Name: "wa.NpcLook", Doc: "The fields of npc:set_look, as setunitdata's UNPC_ data. Each is optional. The look shows when the sprite is a job.",
+		Fields: []Field{
+			{"sprite", "integer?", "UNPC_CLASS: an NPC sprite, a monster ID or a job ID."},
+			{"hair_style", "integer?", "UNPC_HAIRSTYLE."},
+			{"hair_color", "integer?", "UNPC_HAIRCOLOR."},
+			{"cloth_color", "integer?", "UNPC_CLOTHCOLOR."},
+			{"head_top", "integer?", "UNPC_HEADTOP: a headgear's view."},
+			{"head_middle", "integer?", "UNPC_HEADMIDDLE."},
+			{"head_bottom", "integer?", "UNPC_HEADBOTTOM."},
+			{"sex", `"male"|"female"|nil`, "UNPC_SEX."},
+		},
+	},
+	{
+		Name: "wa.ProgressOptions", Doc: "The options of npc:show_progress.",
+		Fields: []Field{{"color", "integer?", "0xRRGGBB, black by default, as progressbar_npc reads its color with strtol."}},
+	},
+	{
+		Name: "wa.NpcSkillOptions", Doc: "The options of npc:use_skill.",
+		Fields: []Field{
+			{"stat", "integer?", "0 to 130: every stat of the NPC, as npcskill's stat point. The last call's, or 1, by default."},
+			{"npc_level", "integer?", "0 to 275: the NPC's level. The last call's, or 1, by default."},
+		},
+	},
+	{
+		Name: "wa.SoundOptions", Doc: "The options of player:play_sound and maps.play_sound.",
+		Fields: []Field{{"repeat", "boolean?", "Plays the sound again and again, as type 1."}},
+	},
+	{
+		Name: "wa.NpcSoundOptions", Doc: "The options of npc:play_sound.",
+		Fields: []Field{
+			{"to", `"area"|"map"|nil`, "The players who see the NPC (the default), or every player of its map."},
+			{"repeat", "boolean?", "Plays the sound again and again, as type 1."},
+		},
+	},
+	{
+		Name: "wa.MessageOptions", Doc: "The options of player:send_message.",
+		Fields: []Field{{"color", "integer?", "0xRRGGBB, as dispbottom's color. The server line's own color by default."}},
+	},
+	{
+		Name: "wa.QuestIconOptions", Doc: "The options of npc:add_quest_icon.",
+		Fields: []Field{
+			{"mark", "wa.QuestMark?", "The NPC's minimap mark, as questinfo's QMARK_ color. None by default."},
+			{"condition", "(fun(player: wa.Player): boolean)?", "Whether the player sees the icon, as questinfo's condition. It only reads, as a hook: calls that change the game raise an error, and a condition that fails counts as false. Always by default."},
+		},
+	},
+	{
+		Name: "wa.ShowQuestIconOptions", Doc: "The options of npc:show_quest_icon.",
+		Fields: []Field{{"mark", "wa.QuestMark?", "The NPC's minimap mark, as showevent's color. None by default."}},
 	},
 	{
 		Name: "wa.EventHandle", Handle: "event handle", Doc: "What events.on returns.",
@@ -1617,6 +1716,12 @@ var findNearby = Func{Name: "find_nearby", Params: []Param{{"query", "wa.EntityQ
 
 var existsMethod = Func{Name: "exists", Returns: "boolean", Doc: "False once the entity is removed, has logged out, or has left the zone. It never raises an error."}
 
+// showSkillEffect is show_skill_effect of an entity handle.
+func showSkillEffect(who string) Func {
+	return Func{Name: "show_skill_effect", Params: []Param{{"skill", "integer", "From skills.id."}, {"level", "integer", "0 to 100."}},
+		Doc: "Shows a skill's effect on the " + who + " to everyone who sees it, as skilleffect: a ground skill's on its cell, a support skill's as used on itself, and an attack's as a hit for 0. Nothing else happens."}
+}
+
 // showEffect is show_effect of an entity handle other than a player's.
 func showEffect(who string) Func {
 	return Func{Name: "show_effect", Params: []Param{{"effect", "integer", "An effect from wa.effects."}}, Doc: "Plays an effect on the " + who + " for everyone near, as specialeffect."}
@@ -1745,7 +1850,9 @@ func Aliases() []Alias {
 		{Name: "wa.HookName", Values: []string{"drop_rate", "experience", "status_chance", "status_duration", "skill_damage", "cast_time", "skill_cost", "cast_allowed", "monster_target", "item_roll", "chat", "trade", "vend", "buying_store_sale", "mail", "spawn_table"}, Doc: "A hook name of wa.hooks."},
 		{Name: "wa.Bound", Values: []string{"account", "character", "party", "guild"}, Doc: "Who a bound copy is bound to."},
 		{Name: "wa.ExpandableLimit", Values: rules.ExpandableLimits, Doc: "A limit that one player holds, which player:expand changes."},
-		{Name: "wa.QuestIcon", Values: []string{"quest", "quest_question", "job", "job_question", "event", "event_question", "warg", "warg_face"}, Doc: "An icon of npc:show_quest_icon, as rAthena's QTYPE_ values 0 to 6 and 8: ! and ? marks for quests, jobs and events, a warg, and a warg's face."},
+		{Name: "wa.QuestIcon", Values: []string{"quest", "quest_question", "job", "job_question", "event", "event_question", "warg", "click_me", "daily_quest", "warg_face", "event3", "job_quest", "jumping_poring"}, Doc: "A quest icon, as rAthena's QTYPE_ values 0 to 10: ! and ? marks for quests, jobs and events, then QTYPE_WARG or QTYPE_CLICKME (6), QTYPE_DAILYQUEST (7), QTYPE_WARG2 or QTYPE_EVENT3 (8), QTYPE_JOBQUEST (9) and QTYPE_JUMPING_PORING (10). Clients of PACKETVER 20170315 and later show 6 and 8 as click_me and event3."},
+		{Name: "wa.QuestMark", Values: []string{"yellow", "green", "purple"}, Doc: "A minimap mark of a quest icon, as rAthena's QMARK_ colors."},
+		{Name: "wa.DigitKind", Values: []string{"show", "count_up", "count_down", "count_down_to_zero"}, Doc: "A kind of player:show_digits, showdigit's types 0 to 3."},
 		{Name: "wa.MonsterState", Values: []string{"idle", "walk", "loot", "dead", "attack", "angry", "chase", "follow"}, Doc: "A monster's skill state, in the words of rAthena's mob_skill_db."},
 		{Name: "wa.Weekday", Values: []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, Doc: "A day of the week."},
 	}

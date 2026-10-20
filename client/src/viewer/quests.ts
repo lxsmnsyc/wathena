@@ -158,7 +158,7 @@ export function questGroups(log: readonly QuestView[]): {
 export interface QuestIconMark {
   /** The text of the badge, such as "!" or "?". */
   mark: string;
-  /** quest, job, event or warg. */
+  /** quest, job, event, daily or warg. */
   kind: string;
 }
 
@@ -172,6 +172,13 @@ const ICON_MARKS: Readonly<Record<string, QuestIconMark>> = {
   event_question: { mark: '?', kind: 'event' },
   warg: { mark: 'W', kind: 'warg' },
   warg_face: { mark: 'W', kind: 'warg' },
+  // QTYPE_CLICKME and QTYPE_EVENT3 share warg's values, and the clients
+  // since 20170315 show them in their place (review decision 58).
+  click_me: { mark: '!', kind: 'event' },
+  daily_quest: { mark: '!', kind: 'daily' },
+  event3: { mark: '?', kind: 'event' },
+  job_quest: { mark: '!', kind: 'job' },
+  jumping_poring: { mark: 'P', kind: 'event' },
 };
 
 /** How an icon name shows. A name the client does not know shows as a quest "!". */
@@ -218,6 +225,12 @@ export class QuestWindow {
   /** Opens or closes the window. */
   toggle(): void {
     this.root.hidden = !this.root.hidden;
+    this.render();
+  }
+
+  /** Opens the window, as rAthena's open_quest_ui. */
+  show(): void {
+    this.root.hidden = false;
     this.render();
   }
 

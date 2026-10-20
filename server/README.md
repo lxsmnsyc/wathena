@@ -1259,6 +1259,16 @@ NPCs across zones ([decision 0062](../docs/decisions/0062-npc-api-group-1.md), r
 - A disabled NPC (`npc:hide()`) has no view, click or touch, and hears no player events or events with a player. A hidden one keeps its touch area. A cloak hides an NPC from one player or from all, and monsters do not touch a cloaked NPC.
 - A monster that walks into an NPC's touch area runs the NPC's `monster_touch` handlers, as rAthena's `OnTouchNPC`.
 
+NPC presentation and quest icons ([decision 0063](../docs/decisions/0063-npc-api-group-2.md), review decision 58, mods/README.md, "Presentation" and "Quest icons"):
+
+- Who gets a line, an effect or a sound follows rAthena's send targets: the players who see the entity (`AREA`), every player of the zone (`ALL_SAMEMAP`), every player of every zone (`ALL_CLIENT`), or one player (`SELF`). A player's own line uses local chat's range, as `AREA_CHAT_WOC`.
+- A change of an NPC of another zone, and a line, effect or sound of it, goes to the NPC's zone as a message. These messages do not start the zone's NPC scripts. A line to every player goes to every zone the world lists, and music, sounds and minimap marks of a map go to that map's zone.
+- An NPC's view, name or title change makes it appear again to the players who see it, as `unit_refresh`. `EntityAppear` carries the title, and `Look.npc_view` says whether the body is an NPC sprite, a monster or a job, as `status_set_viewdata` checks a job, then a monster.
+- NPCs walk at 200 ms a cell until `npc:set_speed` changes it. A walking NPC with a touch area touches the players it walks into. `npc:stop` finishes a step past its half, as `npcstop`'s `USW_MOVE_FULL_CELL`. `npc:move_to` caps the cell to the map and shows the NPC again at the new cell. The world's directory follows the NPC's name and cell.
+- `npc:use_skill` gives the NPC the status of `status_calc_npc` and casts with no range check and no cast time of its own.
+- `npc:show_progress` keeps the bar's end, so a player who comes into view sees the time left.
+- Quest icons follow `pc_show_questinfo`: a player whose items, levels, job or quests changed, or who entered the map, gets each NPC's first icon whose condition holds at the end of the step. Only a change is sent.
+
 To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing. The sample mods need their permissions approved, in a config file such as:
 
 ```yaml

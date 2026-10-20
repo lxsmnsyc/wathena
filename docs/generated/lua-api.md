@@ -401,6 +401,46 @@ Permission: `game.read`.
 |---|---|---|
 | `id` | `integer` | An account ID, or a character ID, as player.account_id and player.character_id. |
 
+#### `maps.play_music(map, file)`
+
+Plays background music to every player of a map, as playBGMall with a map. The map's own music comes back with each player's next map change.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `file` | `string` | A music name of the assets, without music/, such as 08. |
+
+#### `maps.play_sound(map, file, options?)`
+
+Plays a sound to every player of a map, as soundeffectall with a map.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `file` | `string` | A sound name of the assets, without sound/. |
+| `options` | `wa.SoundOptions?` |  |
+
+#### `maps.mark_minimap(map, id, x, y, color?)`
+
+Marks a cell on the minimap of every player of a map, as viewpointmap. A mark with the same ID replaces it. Players who come later do not see it.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `id` | `integer` |  |
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+| `color` | `integer?` | 0xRRGGBB, white by default. |
+
+#### `maps.unmark_minimap(map, id)`
+
+Removes a minimap mark from every player of a map, as viewpointmap with type 2.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map name, such as prontera. |
+| `id` | `integer` |  |
+
 ### wa.world
 
 ```lua
@@ -1325,13 +1365,14 @@ A player. Each access looks the player up again. A handle to a player who left t
 | `base_con` | `integer` | Allocated points. 0 until trait stats exist. |
 | `base_crt` | `integer` | Allocated points. 0 until trait stats exist. |
 
-#### `player:send_message(text)`
+#### `player:send_message(text, options?)`
 
-Shows a line in the player's chat log, as CHAT_CHANNEL_SYSTEM.
+Shows a line in the player's chat log, as CHAT_CHANNEL_SYSTEM, as dispbottom.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `text` | `string` | 1 to 255 bytes. |
+| `options` | `wa.MessageOptions?` |  |
 
 #### `player:give_item(item, amount?, options?) → boolean`
 
@@ -1535,13 +1576,86 @@ Permission: `player.warp`.
 | `x` | `integer` |  |
 | `y` | `integer` |  |
 
-#### `player:show_effect(effect)`
+#### `player:show_effect(effect, options?)`
 
-Plays an effect on the player for everyone near, as specialeffect2.
+Plays an effect on the player, as specialeffect2: for everyone who sees the player, or as the to option says (review decision 58).
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `effect` | `integer` | An effect from wa.effects. |
+| `options` | `wa.EffectOptions?` |  |
+
+#### `player:remove_effect(effect)`
+
+Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `effect` | `integer` | An effect from wa.effects. |
+
+#### `player:say_aloud(text, options?)`
+
+Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself is bc_self: only the player hears it. The chat filter and the chat hooks do not see it.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `text` | `string` | 1 to 255 bytes. Players see the player's name before it. |
+| `options` | `wa.SayAloudOptions?` | Only to: a player's line has no color. |
+
+#### `player:show_emotion(emotion)`
+
+Shows an emotion over the player to everyone who sees it, as emotion on a player's game ID.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `emotion` | `integer` | An emotion from wa.emotions. |
+
+#### `player:play_sound(file, options?)`
+
+Plays a sound to the player alone, as soundeffect.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `file` | `string` | A sound name of the assets, without sound/, such as effect/ef_hit1. |
+| `options` | `wa.SoundOptions?` |  |
+
+#### `player:play_music(file)`
+
+Plays background music to the player, as playBGM. The map's own music comes back with the next map change.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `file` | `string` | A music name of the assets, without music/, such as 08. |
+
+#### `player:show_digits(value, kind?)`
+
+Shows a digital clock at the top of the player's screen, as showdigit: show shows the value for 5 seconds, count_up counts up from the value, count_down counts down from it past 0, and count_down_to_zero counts down from at most 99 and stops at 0.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `value` | `integer` | Seconds. |
+| `kind` | `wa.DigitKind?` | show by default. |
+
+#### `player:open_quest_log(quest)`
+
+Opens the player's quest log window, as open_quest_ui.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `quest` | `integer\|string\|nil` | A quest of data/quests.yml to show, or nil. The player need not have it. |
+
+#### `player:refresh_quest_icons()`
+
+Checks the conditions of the quest icons of the NPCs of the player's map again, as questinfo_refresh. The icons change at the end of the current step.
+
+#### `player:show_skill_effect(skill, level)`
+
+Shows a skill's effect on the player to everyone who sees it, as skilleffect: a ground skill's on its cell, a support skill's as used on itself, and an attack's as a hit for 0. Nothing else happens.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | From skills.id. |
+| `level` | `integer` | 0 to 100. |
 
 #### `player:find_nearby(query) → (wa.Player|wa.Monster|wa.Npc)[]`
 
@@ -1933,6 +2047,15 @@ Plays an effect on the monster for everyone near, as specialeffect.
 |---|---|---|
 | `effect` | `integer` | An effect from wa.effects. |
 
+#### `monster:show_skill_effect(skill, level)`
+
+Shows a skill's effect on the monster to everyone who sees it, as skilleffect: a ground skill's on its cell, a support skill's as used on itself, and an attack's as a hit for 0. Nothing else happens.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | From skills.id. |
+| `level` | `integer` | 0 to 100. |
+
 #### `monster:find_nearby(query) → (wa.Player|wa.Monster|wa.Npc)[]`
 
 maps.find_entities with around set to the entity.
@@ -2057,22 +2180,24 @@ Shows an emotion over the NPC, as emotion.
 |---|---|---|
 | `emotion` | `integer` | An emotion from wa.emotions. |
 
-#### `npc:say_aloud(text)`
+#### `npc:say_aloud(text, options?)`
 
-Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it.
+Says a line as the NPC, as npctalk (script.cpp 16193): by default to every player who sees the NPC, as AREA. The to option sends it to the NPC's map, the world, or one player, as bc_map, bc_all and bc_self. A line from an NPC that a player does not see shows with the NPC's name and no speaker. An NPC without a map says nothing to its area or map. Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `text` | `string` |  |
+| `text` | `string` | 1 to 255 bytes. Players see the NPC's name before it. |
+| `options` | `wa.SayAloudOptions?` |  |
 
-#### `npc:show_quest_icon(player, icon?)`
+#### `npc:show_quest_icon(player, icon?, options?)`
 
-Shows an icon over the NPC to one player, as showevent. It stays while the player is on the map.
+Shows an icon over the NPC to one player, as showevent. It stays while the player is on the map. daily_quest, job_quest and jumping_poring remove the icon, as showevent turns them into QTYPE_NONE.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
 | `icon` | `wa.QuestIcon?` | nil removes the icon. |
+| `options` | `wa.ShowQuestIconOptions?` |  |
 
 #### `npc:show()`
 
@@ -2122,13 +2247,131 @@ Sends the event to the NPC: its npc_event handlers of the label run after the cu
 | `name` | `string` | An event label, such as OnEnable, without regard to case. |
 | `options` | `wa.FireEventOptions?` |  |
 
-#### `npc:show_effect(effect)`
+#### `npc:show_effect(effect, options?)`
 
-Plays an effect on the NPC for everyone near, as specialeffect.
+Plays an effect on the NPC, as specialeffect: for everyone who sees the NPC, or as the to option says. Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `effect` | `integer` | An effect from wa.effects. |
+| `options` | `wa.EffectOptions?` |  |
+
+#### `npc:remove_effect(effect)`
+
+Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `effect` | `integer` | An effect from wa.effects. |
+
+#### `npc:set_title(text)`
+
+Shows a title with the NPC's name, as setunittitle. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `text` | `string` | At most 23 bytes. "" removes the title. |
+
+#### `npc:set_display_name(name)`
+
+Changes the name players see, as setnpcdisplay. npc.name reads it. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 50 bytes. |
+
+#### `npc:set_sprite(sprite)`
+
+Changes the NPC's view, as setnpcdisplay's class and classchange: players who see the NPC see it again with the new view. A job ID shows a character with the look of npc:set_look. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `sprite` | `integer` | An NPC sprite, a monster ID or a job ID, as rAthena takes any class. |
+
+#### `npc:set_look(look)`
+
+Changes the NPC's view and the look of a job view, as setunitdata with UNPC_CLASS, UNPC_HAIRSTYLE and the other looks. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `look` | `wa.NpcLook` | The fields to change. |
+
+#### `npc:move_to(x, y)`
+
+Moves the NPC to a cell at once, as movenpc: a cell past the map's edge is the edge's, and the cell need not be walkable. Players near the old cell see it go, and players near the new one see it come. Its touch area moves with it. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+
+#### `npc:walk_to(x, y) → boolean`
+
+The NPC walks to a cell at its speed, as npcwalkto and unitwalk. Returns false, and stays, when no walk reaches the cell. The players it walks into touch it, as unit_walktoxy_ontouch. An NPC of another map returns true, and its zone checks the walk. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+
+#### `npc:set_speed(milliseconds)`
+
+Sets the NPC's walk speed, as npcspeed. A walk takes it from its next step. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `milliseconds` | `integer` | 20 to 1000: the time to walk one cell. NPCs start at 200. |
+
+#### `npc:stop()`
+
+Stops the NPC's walk, as npcstop: past half its step it finishes the cell, then it stands. Another mod's NPC needs npcs.control.
+
+#### `npc:show_progress(seconds, options?)`
+
+Shows a progress bar over the NPC to everyone who sees it, and waits until it is full, as progressbar_npc. It runs only in a conversation's handler, whose player cannot act while it waits. Players who come into view see the time left. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `seconds` | `integer` | 0 to 600. |
+| `options` | `wa.ProgressOptions?` |  |
+
+#### `npc:use_skill(skill, level, target, options?) → boolean`
+
+The NPC casts a skill on the target at once, with no range check, as npcskill (script.cpp 23286): with every stat at the stat option and the level of npc_level, as status_calc_npc. Returns false when the cast does not start. The NPC must be on the context's map. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | From skills.id. |
+| `level` | `integer` | 1 to 100. |
+| `target` | `wa.Player\|wa.Monster\|wa.Npc` | The target, or its cell for a ground skill. |
+| `options` | `wa.NpcSkillOptions?` |  |
+
+#### `npc:play_sound(file, options?)`
+
+Plays a sound to the players who see the NPC, from the NPC, or to every player of its map, as soundeffectall. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `file` | `string` | A sound name of the assets, without sound/, such as effect/ef_hit1. |
+| `options` | `wa.NpcSoundOptions?` |  |
+
+#### `npc:add_quest_icon(icon, options?)`
+
+Adds a quest icon to the NPC, as questinfo (script.cpp 20949). Each player of the map sees the first icon of the NPC whose condition holds, and none when none holds. The icons show again for a player at map entry, on an item gained or lost, a level or job change, a quest added, completed, removed or changed, a kill counted, and player:refresh_quest_icons, as pc_show_questinfo, at the end of that step. The NPC must be on the context's map. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `icon` | `wa.QuestIcon` |  |
+| `options` | `wa.QuestIconOptions?` |  |
+
+#### `npc:show_skill_effect(skill, level)`
+
+Shows a skill's effect on the NPC to everyone who sees it, as skilleffect: a ground skill's on its cell, a support skill's as used on itself, and an attack's as a hit for 0. Nothing else happens.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `skill` | `integer` | From skills.id. |
+| `level` | `integer` | 0 to 100. |
 
 #### `npc:find_nearby(query) → (wa.Player|wa.Monster|wa.Npc)[]`
 
@@ -2954,6 +3197,97 @@ The options of npc:fire_event.
 | Field | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player?` | Runs the event for the player, as doevent. It must be on the NPC's map. |
+
+### wa.SayAloudOptions
+
+The options of npc:say_aloud and player:say_aloud (review decision 58).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `to` | `"area"\|"map"\|"world"\|wa.Player\|nil` | Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self). |
+| `color` | `integer?` | 0xRRGGBB, as npctalk's color. The chat's own color by default. NPC lines only. |
+
+### wa.EffectOptions
+
+The options of npc:show_effect and player:show_effect.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `to` | `"area"\|"map"\|wa.Player\|nil` | Who sees it: the players who see the entity (AREA, the default), every player of its map who sees it (ALL_SAMEMAP), or one player (SELF). |
+
+### wa.NpcLook
+
+The fields of npc:set_look, as setunitdata's UNPC_ data. Each is optional. The look shows when the sprite is a job.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `sprite` | `integer?` | UNPC_CLASS: an NPC sprite, a monster ID or a job ID. |
+| `hair_style` | `integer?` | UNPC_HAIRSTYLE. |
+| `hair_color` | `integer?` | UNPC_HAIRCOLOR. |
+| `cloth_color` | `integer?` | UNPC_CLOTHCOLOR. |
+| `head_top` | `integer?` | UNPC_HEADTOP: a headgear's view. |
+| `head_middle` | `integer?` | UNPC_HEADMIDDLE. |
+| `head_bottom` | `integer?` | UNPC_HEADBOTTOM. |
+| `sex` | `"male"\|"female"\|nil` | UNPC_SEX. |
+
+### wa.ProgressOptions
+
+The options of npc:show_progress.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `color` | `integer?` | 0xRRGGBB, black by default, as progressbar_npc reads its color with strtol. |
+
+### wa.NpcSkillOptions
+
+The options of npc:use_skill.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `stat` | `integer?` | 0 to 130: every stat of the NPC, as npcskill's stat point. The last call's, or 1, by default. |
+| `npc_level` | `integer?` | 0 to 275: the NPC's level. The last call's, or 1, by default. |
+
+### wa.SoundOptions
+
+The options of player:play_sound and maps.play_sound.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `repeat` | `boolean?` | Plays the sound again and again, as type 1. |
+
+### wa.NpcSoundOptions
+
+The options of npc:play_sound.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `to` | `"area"\|"map"\|nil` | The players who see the NPC (the default), or every player of its map. |
+| `repeat` | `boolean?` | Plays the sound again and again, as type 1. |
+
+### wa.MessageOptions
+
+The options of player:send_message.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `color` | `integer?` | 0xRRGGBB, as dispbottom's color. The server line's own color by default. |
+
+### wa.QuestIconOptions
+
+The options of npc:add_quest_icon.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `mark` | `wa.QuestMark?` | The NPC's minimap mark, as questinfo's QMARK_ color. None by default. |
+| `condition` | `(fun(player: wa.Player): boolean)?` | Whether the player sees the icon, as questinfo's condition. It only reads, as a hook: calls that change the game raise an error, and a condition that fails counts as false. Always by default. |
+
+### wa.ShowQuestIconOptions
+
+The options of npc:show_quest_icon.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `mark` | `wa.QuestMark?` | The NPC's minimap mark, as showevent's color. None by default. |
 
 ### wa.EventHandle
 
@@ -4465,9 +4799,21 @@ A limit that one player holds, which player:expand changes.
 
 ### wa.QuestIcon
 
-An icon of npc:show_quest_icon, as rAthena's QTYPE_ values 0 to 6 and 8: ! and ? marks for quests, jobs and events, a warg, and a warg's face.
+A quest icon, as rAthena's QTYPE_ values 0 to 10: ! and ? marks for quests, jobs and events, then QTYPE_WARG or QTYPE_CLICKME (6), QTYPE_DAILYQUEST (7), QTYPE_WARG2 or QTYPE_EVENT3 (8), QTYPE_JOBQUEST (9) and QTYPE_JUMPING_PORING (10). Clients of PACKETVER 20170315 and later show 6 and 8 as click_me and event3.
 
-`quest`, `quest_question`, `job`, `job_question`, `event`, `event_question`, `warg`, `warg_face`
+`quest`, `quest_question`, `job`, `job_question`, `event`, `event_question`, `warg`, `click_me`, `daily_quest`, `warg_face`, `event3`, `job_quest`, `jumping_poring`
+
+### wa.QuestMark
+
+A minimap mark of a quest icon, as rAthena's QMARK_ colors.
+
+`yellow`, `green`, `purple`
+
+### wa.DigitKind
+
+A kind of player:show_digits, showdigit's types 0 to 3.
+
+`show`, `count_up`, `count_down`, `count_down_to_zero`
 
 ### wa.MonsterState
 

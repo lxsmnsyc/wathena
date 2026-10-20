@@ -116,6 +116,12 @@ message Event {
     QuestUpdate quest_update = 104;
     QuestRemove quest_remove = 105;
     QuestIcon quest_icon = 106;
+    EffectRemove effect_remove = 107;
+    NpcProgressBar npc_progress_bar = 108;
+    SoundPlay sound = 109;
+    MusicPlay music = 110;
+    DigitsShow digits = 111;
+    QuestLogOpen quest_log_open = 112;
   }
 }
 
@@ -172,14 +178,23 @@ message QuestRemove {
 }
 
 // QuestIcon shows an icon over an NPC to this player alone, as rAthena's
-// showevent. icon is a name of npc:show_quest_icon, such as quest or
-// quest_question, or empty to remove the icon. The icon stays while the
-// player is on the map, and shows again when the NPC comes back into
-// view.
+// showevent and questinfo (clif_quest_show_event). icon is a name of
+// wa.QuestIcon, such as quest or quest_question, or empty to remove the
+// icon. The icon stays while the player is on the map, and shows again
+// when the NPC comes back into view.
 message QuestIcon {
   // npc is the NPC's entity ID on this connection.
   uint32 npc = 1;
   string icon = 2;
+  // mark is the NPC's minimap mark, as rAthena's QMARK_ colors: yellow,
+  // green or purple, or empty for none.
+  string mark = 3;
+}
+
+// QuestLogOpen opens the quest log window, as rAthena's open_quest_ui.
+// quest is a quest of the log to show, or 0 for none.
+message QuestLogOpen {
+  uint32 quest = 1;
 }
 
 // WorldMap is the part of a procedural world's map graph that the
@@ -288,6 +303,9 @@ message EntityAppear {
   SkillUnit skill_unit = 12;
   // guild is a player's guild, shown with its name, or unset.
   GuildBadge guild = 13;
+  // title is an NPC's title, shown with its name, as rAthena's
+  // setunittitle, or empty.
+  string title = 14;
 }
 
 // GuildBadge is what others see of a player's guild, as clif_name's
@@ -360,6 +378,18 @@ message Look {
   // bits still show the core record each acts as.
   uint32 companion = 13;
   uint32 mount = 14;
+  // npc_view is how an NPC's body shows, as rAthena allows any class as
+  // an NPC's view: an NPC sprite, a monster's sprite, or a character of
+  // the job in body, with the look's sex, hair, colors and headgear.
+  NpcView npc_view = 15;
+}
+
+// NpcView is what an NPC's look.body names.
+enum NpcView {
+  // UNSPECIFIED is an NPC sprite.
+  NPC_VIEW_UNSPECIFIED = 0;
+  NPC_VIEW_MONSTER = 1;
+  NPC_VIEW_JOB = 2;
 }
 
 message EntityVanish {
@@ -624,8 +654,10 @@ message ChatMessage {
   uint32 from = 2;
   string from_name = 3;
   string text = 4;
-  // color is the text's color as 0xRRGGBB for an announcement or a
-  // monster's chat line, or 0 for the channel's own color. A monster's
+  // color is the text's color as 0xRRGGBB for an announcement, a
+  // monster's chat line, an NPC's line with a color (npctalk) or a
+  // server line with a color (dispbottom), or 0 for the channel's own
+  // color. A monster's
   // line is local chat in its skills entry's chat_color. A channel's
   // line has the channel's color.
   uint32 color = 5;
@@ -864,6 +896,16 @@ message NpcProgress {
   uint32 color = 2;
 }
 
+// NpcProgressBar shows a progress bar over an NPC for duration_ms, as
+// rAthena's progressbar_npc. A player who comes into view while it runs
+// gets the time left.
+message NpcProgressBar {
+  uint32 npc = 1;
+  uint32 duration_ms = 2;
+  // color is 0xRRGGBB.
+  uint32 color = 3;
+}
+
 // Emotion shows an emotion icon over an entity, as rAthena's emotion.
 // emotion is an ET_ value, from 0, which is the action of the client's
 // emotion sprite.
@@ -972,6 +1014,52 @@ message EffectPlay {
     uint32 entity = 2;
     Cell cell = 3;
   }
+}
+
+// EffectRemove stops an effect that plays on an entity, as rAthena's
+// removespecialeffect.
+message EffectRemove {
+  uint32 entity = 1;
+  uint32 effect_id = 2;
+}
+
+// SoundPlay plays a sound, as rAthena's soundeffect and soundeffectall.
+// name is a sound asset, such as sound/effect/ef_hit1. entity is the
+// entity it comes from, which places it, or 0 for the player itself.
+message SoundPlay {
+  string name = 1;
+  // repeat plays it again and again, as type 1.
+  bool repeat = 2;
+  uint32 entity = 3;
+}
+
+// MusicPlay changes the background music, as rAthena's playBGM. name is
+// a music asset, such as music/08. The map's own music comes back with
+// the next map change.
+message MusicPlay {
+  string name = 1;
+}
+
+// DigitsShow shows a digital clock at the top of the screen, as rAthena's
+// showdigit (clif_showdigit).
+message DigitsShow {
+  DigitsKind kind = 1;
+  // value is in seconds, as clif_showdigit sends it: COUNT_UP and
+  // COUNT_DOWN start at -value, so their value is 0 or less.
+  sint32 value = 2;
+}
+
+// DigitsKind is showdigit's type.
+enum DigitsKind {
+  // UNSPECIFIED shows value for 5 seconds (type 0).
+  DIGITS_KIND_UNSPECIFIED = 0;
+  // COUNT_UP counts up from -value, once a second (type 1).
+  DIGITS_KIND_COUNT_UP = 1;
+  // COUNT_DOWN counts down from -value, once a second, past 0 (type 2).
+  DIGITS_KIND_COUNT_DOWN = 2;
+  // COUNT_DOWN_TO_ZERO counts down from value, at most 99, and stops at
+  // 0 (type 3).
+  DIGITS_KIND_COUNT_DOWN_TO_ZERO = 3;
 }
 
 // ItemTaken shows an entity picking up a ground item.

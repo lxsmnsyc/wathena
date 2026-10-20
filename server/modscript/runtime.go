@@ -210,6 +210,11 @@ type Runtime struct {
 	conversations map[int64]*Conversation
 	// closed is the error a closed conversation raises.
 	closed string
+	// talking is the conversation whose thread runs now, or nil.
+	talking *Conversation
+	// questIcons are the quest icons of npc:add_quest_icon, by NPC
+	// handle, in the order they were added (present.go).
+	questIcons map[int64][]*questIcon
 	// variables are the declared variables, by handle ID. declared maps
 	// "<mod> <scope> <name>" to the type and handle, so a name keeps one
 	// type and one handle. modVariables counts each mod's declarations.
@@ -292,6 +297,9 @@ type Context struct {
 	// npc is the NPC handle of an NPC context, and npcRef its NPC.
 	npc    int64
 	npcRef *NPC
+	// questIcons are the quest icons that npc:add_quest_icon added in
+	// the context (present.go).
+	questIcons []*questIcon
 	// conversations are those that run in an NPC context. retiring is
 	// set when the context ended while some still run: its handlers and
 	// timers are gone, and it ends with the last conversation.
@@ -490,7 +498,10 @@ func (r *Runtime) init() error {
 		{"constants", r.constantsTable},
 		{"npc_field", r.npcField},
 		{"npc_emotion", r.npcEmotion},
-		{"npc_say", r.npcSay},
+		{"npc_present", r.npcPresent},
+		{"player_present", r.playerPresent},
+		{"maps_present", r.mapsPresent},
+		{"entity_skill_effect", r.entitySkillEffect},
 		{"npc_control", r.npcControl},
 		{"npc_is_cloaked", r.npcIsCloaked},
 		{"npc_fire_event", r.npcFireEvent},
@@ -838,6 +849,7 @@ func (r *Runtime) end(c *Context) {
 			h.ReleaseChannels(c.ID)
 		}
 	}
+	r.dropQuestIcons(c)
 	if r.contexts[c.Mod] == c {
 		delete(r.contexts, c.Mod)
 	}

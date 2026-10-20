@@ -194,9 +194,9 @@ func (b *body) questRead(name string, args []Expr) (val, error) {
 // errNotQuest is questRead's answer for another function.
 var errNotQuest = fmt.Errorf("not a quest read")
 
-// showevent converts showevent <icon>{,<mark color>{,<char id>}}. A mark
-// color other than QMARK_NONE does not convert, since the API has no
-// minimap mark for it.
+// showevent converts showevent <icon>{,<mark color>{,<char id>}}
+// (script.cpp 21170). The mark is the NPC's minimap mark (review
+// decision 58, area B6).
 func (b *body) showevent(args []Expr) error {
 	const name = "showevent"
 	if len(args) == 0 || len(args) > 3 {
@@ -205,14 +205,16 @@ func (b *body) showevent(args []Expr) error {
 	if err := b.questPlayer(name, args, 2); err != nil {
 		return err
 	}
+	mark := ""
 	if len(args) >= 2 {
 		c, err := b.expr(args[1])
 		if err != nil {
 			return err
 		}
-		if c.static == nil || *c.static != 0 {
-			return unsupported(name, "a minimap mark color, which the API does not show")
+		if c.static == nil {
+			return unsupported(name, "a computed mark color")
 		}
+		mark = questMarks[*c.static]
 	}
 	icon, err := b.expr(args[0])
 	if err != nil {
@@ -221,11 +223,16 @@ func (b *body) showevent(args []Expr) error {
 	if icon.static == nil {
 		return unsupported(name, "a computed icon")
 	}
-	if n, ok := questIcons[*icon.static]; ok {
-		b.line("npc:show_quest_icon(player, %s)", luaString(n))
+	n, ok := questIcons[*icon.static]
+	code := "nil"
+	if ok {
+		code = luaString(n)
+	}
+	if mark != "" {
+		b.line("npc:show_quest_icon(player, %s, { mark = %s })", code, luaString(mark))
 		return nil
 	}
-	b.line("npc:show_quest_icon(player, nil)")
+	b.line("npc:show_quest_icon(player, %s)", code)
 	return nil
 }
 

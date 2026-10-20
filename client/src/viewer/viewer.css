@@ -421,7 +421,8 @@ body {
   background: rgb(0 0 0 / 70%);
   color: #fff;
   font-size: 12px;
-  white-space: nowrap;
+  white-space: pre;
+  text-align: center;
   pointer-events: none;
   unicode-bidi: isolate;
 }
@@ -1497,6 +1498,47 @@ body {
   border-color: #2a2a2a;
   background: #c8c8c8;
   color: #202020;
+}
+
+.quest-icon.kind-daily {
+  border-color: #1c4f8a;
+  background: #8cc4ff;
+  color: #10233a;
+}
+
+.npc-progress {
+  position: fixed;
+  width: 80px;
+  height: 8px;
+  transform: translate(-50%, -100%);
+  border: 1px solid #000;
+  background: rgb(0 0 0 / 50%);
+  pointer-events: none;
+}
+
+.npc-progress[hidden] {
+  display: none;
+}
+
+.npc-progress div {
+  height: 100%;
+}
+
+#digits {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 60%);
+  color: #fff;
+  font: bold 20px monospace;
+  pointer-events: none;
+}
+
+#digits[hidden] {
+  display: none;
 }
 
 .quest-icon[hidden] {

@@ -168,9 +168,14 @@ type Player struct {
 	visited []string
 	memos   []character.Memo
 	// quests are the character's quest log, and questIcons the icons
-	// scripts showed it over NPCs of this map (quests.go).
-	quests     []character.Quest
-	questIcons map[*entity]string
+	// scripts showed it over NPCs of this map (quests.go). questInfo is
+	// what npc:add_quest_icon showed it, as rAthena's qi_display, and
+	// questInfoDirty asks for its check at the end of the step
+	// (npcpresent.go).
+	quests         []character.Quest
+	questIcons     map[*entity]questIconShown
+	questInfo      map[*entity]questIconShown
+	questInfoDirty bool
 	// prevend is the most lines of the vending setup the Vending skill
 	// opened, or 0; vend is the player's open shop. buySetup is the
 	// slots of the buying store setup, or 0; buying is the open store.
@@ -704,6 +709,9 @@ type Zone struct {
 	touchNPCs []*entity
 	// emotions are this tick's emotions over NPCs and monsters.
 	emotions []npcEmotion
+	// questInfoNPCs are the NPCs that npc:add_quest_icon gave icons, in
+	// the order they got them, as rAthena's map qi_npc (npcpresent.go).
+	questInfoNPCs []*entity
 	// prevThink is when the monster AI last ran.
 	prevThink int64
 
@@ -1057,6 +1065,9 @@ func (z *Zone) join(p *Player) joinResult {
 	// Points on a map that was removed move to its town (decision 0045).
 	z.relocate(p, z.Moved)
 	p.quests, p.questIcons = slices.Clone(c.Quests), nil
+	// pc_show_questinfo_reinit and pc_show_questinfo at map entry
+	// (clif.cpp 11187).
+	p.questInfo, p.questInfoDirty = nil, true
 	z.restoreCompanions(p, c)
 	p.Look = Look{Job: uint32(viewJob(z.lookJob(c.Job), bodyOptions(p))), Sex: c.Sex(), Hair: uint32(c.Hair), HairColor: uint32(c.HairColor)} // #nosec G115 -- IDs from the data tables, which the database keeps at 0 or more.
 	x, y := c.X, c.Y
@@ -1549,6 +1560,10 @@ func (z *Zone) stepAt(now int64) {
 				z.mobStepped(e)
 				z.monsterTouched(e)
 			}
+			if e.npc != nil {
+				// A walking NPC's touch area moves with it (npcpresent.go).
+				z.npcStepped(e)
+			}
 			// unit_walktoxy_timer touches the warp on each cell a
 			// player enters. A warp that takes the player ends the
 			// walk. Otherwise the player steps into and out of NPCs'
@@ -1606,6 +1621,9 @@ func (z *Zone) stepAt(now int64) {
 		z.runSchedules()
 		z.runScripts()
 	}
+	// pc_show_questinfo for the players whose items, levels, jobs or
+	// quests changed this step (npcpresent.go).
+	z.refreshQuestInfo()
 	// Changes that no script's call made, such as a timer's bonuses that
 	// end, are computed here.
 	z.flushStats()
@@ -1772,8 +1790,11 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 					if len(e.path) > 0 {
 						events = append(events, z.move(id, e))
 					}
-					if icon := p.questIcons[e]; icon != "" {
-						events = append(events, questIconEvent(id, icon))
+					if icon, ok := p.questIcons[e]; ok {
+						events = append(events, questIconEvent(id, icon.icon, icon.mark))
+					}
+					if e.npc != nil {
+						events = append(events, z.npcBarEvents(id, e)...)
 					}
 					if e.player != nil && e.player.hasStore() {
 						events = append(events, entityShop(id, e.player))
@@ -1785,6 +1806,15 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 				}
 				if known && e.lookChanged && e.player != nil {
 					events = append(events, lookChange(id, e.player))
+				}
+				if known && e.lookChanged && e.npc != nil && (e != me || !p.fresh) {
+					// unit_refresh: the NPC appears again with its new view,
+					// name or title (npcpresent.go).
+					events = append(events, z.appear(id, e))
+					if len(e.path) > 0 {
+						events = append(events, z.move(id, e))
+					}
+					events = append(events, z.npcBarEvents(id, e)...)
 				}
 				if known && e.guildChanged && e.player != nil {
 					events = append(events, entityGuild(id, e.player))

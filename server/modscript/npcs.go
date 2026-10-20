@@ -339,10 +339,12 @@ func (r *Runtime) CloseConversation(conv *Conversation) {
 }
 
 func (r *Runtime) resume(conv *Conversation, args ...script.Value) {
-	prev := r.current
+	prev, prevTalk := r.current, r.talking
 	r.setCurrent(conv.ctx)
+	r.talking = conv
 	_, done, err := conv.thread.Resume(args...)
 	r.setCurrent(prev)
+	r.talking = prevTalk
 	if err != nil {
 		r.afterError()
 		if !strings.Contains(err.Error(), r.closed) {
@@ -622,25 +624,6 @@ func (r *Runtime) npcEmotion(c *script.Call) error {
 		return errors.New("npc:show_emotion: want an emotion from wa.emotions")
 	}
 	return h.NPCEmotion(id, e)
-}
-
-func (r *Runtime) npcSay(c *script.Call) error {
-	h, err := r.npcHost()
-	if err != nil {
-		return err
-	}
-	id, err := npcID(c)
-	if err != nil {
-		return err
-	}
-	if err := r.mutating("npc:say_aloud"); err != nil {
-		return err
-	}
-	text, ok := c.Arg(1).AsString()
-	if !ok || text == "" || len(text) > MaxMessage || !utf8.ValidString(text) {
-		return fmt.Errorf("npc:say_aloud: the text must be 1 to %d bytes", MaxMessage)
-	}
-	return h.NPCSay(id, text)
 }
 
 // Conversations returns how many conversations have not ended, for

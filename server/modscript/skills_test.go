@@ -251,7 +251,7 @@ return function()
   events.on("cast", function(cast)
     local function try(f)
       local ok, err = pcall(f)
-      cast.caster:send_message(tostring(err):gsub("^.-:%d+: ", ""))
+      cast.caster:send_message((tostring(err):gsub("^.-:%d+: ", "")))
     end
     try(function() cast:deal_damage(nil) end)
     try(function() cast:deal_damage(cast.caster, { power = 1 }) end)
@@ -444,7 +444,7 @@ return function()
     maps.find_entities { around = player, radius = 2, shape = "circle", sort = "lowest_hp" }
     local function try(q)
       local ok, err = pcall(maps.find_entities, q)
-      player:send_message(tostring(err):gsub("^.-:%d+: ", ""))
+      player:send_message((tostring(err):gsub("^.-:%d+: ", "")))
     end
     try { radius = 5 }
     try { x = 1, y = 1, radius = 2, cells = { { 1, 1 } } }
@@ -463,7 +463,7 @@ return function()
     try { line = { from = { 1, 1 } } }
     try { x = 1, y = 1, radius = 2, limit = 0 }
     local ok, err = pcall(function() return player:find_nearby { x = 1, radius = 2 } end)
-    player:send_message(tostring(err):gsub("^.-:%d+: ", ""))
+    player:send_message((tostring(err):gsub("^.-:%d+: ", "")))
   end)
 end`))
 	r.Fire("login", Player(1))
@@ -528,7 +528,7 @@ local maps = require "wa.maps"
 return function()
   events.on("login", function(player)
     local ok, err = pcall(maps.find_entities, { x = 1, y = 1, radius = 1 })
-    player:send_message(tostring(err):gsub("^.-:%d+: ", ""))
+    player:send_message((tostring(err):gsub("^.-:%d+: ", "")))
   end)
 end`))
 	r.Fire("login", Player(1))

@@ -171,6 +171,16 @@ type npc struct {
 	cloakFor               map[int64]bool
 	removed, floating      bool
 	entry                  *npcEntry
+	// The presentation of review decision 58, area B5 (npcpresent.go):
+	// the title of setunittitle, the look of a job view (setunitdata's
+	// UNPC_ looks), the end and color of progressbar_npc's bar in zone
+	// milliseconds, and the level and stat of npcskill.
+	title      string
+	look       npcLook
+	barEnd     int64
+	barColor   uint32
+	skillLevel int
+	skillStat  int
 }
 
 // SetNPCs places NPCs on the map. It replaces the NPCs set before. Call
@@ -184,7 +194,8 @@ func (z *Zone) SetNPCs(npcs []NPC) {
 	z.npcHandles = map[int64]*entity{}
 	z.touchNPCs = nil
 	for i, n := range npcs {
-		e := &entity{npc: &npc{NPC: n, handle: int64(i + 1), floating: n.Floating}, x: n.X, y: n.Y, dir: n.Direction}
+		e := &entity{npc: &npc{NPC: n, handle: int64(i + 1), floating: n.Floating, skillLevel: 1, skillStat: 1}, x: n.X, y: n.Y, dir: n.Direction,
+			speed: defaultNPCSpeed}
 		switch n.State {
 		case "disabled":
 			e.npc.invisible, e.npc.hide = true, true
@@ -206,14 +217,17 @@ func (z *Zone) SetNPCs(npcs []NPC) {
 }
 
 func (z *Zone) npcAppear(id uint32, e *entity) *wathenav1.Event {
+	n := e.npc
 	return wathenav1.Event_builder{Appear: wathenav1.EntityAppear_builder{
-		Id:   id,
-		Kind: wathenav1.EntityKind_ENTITY_KIND_NPC,
-		X:    uint32(e.x),   // #nosec G115 -- map cells are at most 1024.
-		Y:    uint32(e.y),   // #nosec G115 -- as above.
-		Dir:  uint32(e.dir), // #nosec G115 -- 0 to 7.
-		Look: wathenav1.Look_builder{Body: e.npc.Sprite}.Build(),
-		Name: e.npc.DisplayName,
+		Id:     id,
+		Kind:   wathenav1.EntityKind_ENTITY_KIND_NPC,
+		X:      uint32(e.x),   // #nosec G115 -- map cells are at most 1024.
+		Y:      uint32(e.y),   // #nosec G115 -- as above.
+		Dir:    uint32(e.dir), // #nosec G115 -- 0 to 7.
+		Look:   z.npcLookMessage(n),
+		Name:   n.DisplayName,
+		Title:  n.title,
+		WalkMs: uint32(max(e.speed, 0)), // #nosec G115 -- 20 to 1000.
 	}.Build()}.Build()
 }
 

@@ -47,6 +47,29 @@ func Calc(d *Def, renewal bool) battle.Status {
 	return s
 }
 
+// NPCStatus is status_calc_npc_ with SCO_FIRST (status.cpp): an NPC that
+// npcskill gives a status has 1 HP and SP, the neutral element at level
+// 1, the demi-human race, the normal class, the small size of a new
+// npc_data and a range of 1 + size, every stat at stat, and the level,
+// and status_calc_misc fills the rest as for a monster without Attack2.
+func NPCStatus(level, stat int, renewal bool) battle.Status {
+	s := battle.Status{
+		Level: level,
+		MaxHP: 1,
+		MaxSP: 1,
+		Str:   stat, Agi: stat, Vit: stat, Int: stat, Dex: stat, Luk: stat,
+		Mode:  ModeCanMove | ModeCanAttack,
+		EleLv: 1,
+		Race:  raceDemihuman,
+		RHW:   battle.Weapon{Range: 1},
+	}
+	calcMisc(&s, level, 0, renewal)
+	return s
+}
+
+// raceDemihuman is RC_DEMIHUMAN.
+const raceDemihuman = 7
+
 // EmperiumID is MOBID_EMPERIUM.
 const EmperiumID = 1288
 

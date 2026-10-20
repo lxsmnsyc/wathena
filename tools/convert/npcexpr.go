@@ -1001,6 +1001,9 @@ func (b *body) call(e *Call) (val, error) {
 	if v, ok, err := b.guildRead(name, args); ok {
 		return done(v, err)
 	}
+	if v, ok, err := b.presentRead(name, args); ok {
+		return done(v, err)
+	}
 	if v, ok, err := b.storageRead(name, args); ok {
 		return done(v, err)
 	}
@@ -1072,24 +1075,6 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return unsupported(name, "position %d", *pos.static)
 		}
 		b.line("conversation:show_image(%s, %q)", img.asText(), where)
-	case "emotion":
-		if len(args) != 1 {
-			return unsupported(name, "on a player or another NPC")
-		}
-		e, err := b.constant(args[0], "emotions")
-		if err != nil {
-			return err
-		}
-		b.line("npc:show_emotion(%s)", e)
-	case "npctalk":
-		if len(args) != 1 {
-			return unsupported(name, "as another NPC")
-		}
-		v, err := b.expr(args[0])
-		if err != nil {
-			return err
-		}
-		b.line("npc:say_aloud(%s)", v.asText())
 	case "select", "prompt":
 		opts, _, err := b.menuOptions(args)
 		if err != nil {
@@ -1108,6 +1093,12 @@ func (b *body) commandErr(name string, args []Expr) error {
 		v, err := b.expr(args[0])
 		if err != nil {
 			return err
+		}
+		if b.n.inEvent {
+			// An event label may run without a player, as donpcevent runs
+			// it: its wait has no conversation then (R.sleep).
+			b.line("R.sleep(conversation, %s)", v.asInt())
+			break
 		}
 		b.line("conversation:wait(%s)", v.asInt())
 	case "progressbar":
@@ -1218,15 +1209,6 @@ func (b *body) commandErr(name string, args []Expr) error {
 		}
 		method := map[string]string{"getitem": "give_item", "delitem": "take_item"}[name]
 		b.giveTake(name, method, it, n, "")
-	case "specialeffect2":
-		if len(args) != 1 {
-			return unsupported(name, "on another character")
-		}
-		e, err := b.constant(args[0], "effects")
-		if err != nil {
-			return err
-		}
-		b.line("player:show_effect(%s)", e)
 	case "sc_start", "sc_start2", "sc_start4":
 		return b.scStart(name, args)
 	case "sc_end":
@@ -1262,12 +1244,32 @@ func (b *body) commandErr(name string, args []Expr) error {
 			}
 			text = args[1:]
 		}
-		if len(text) != 1 {
-			return unsupported(name, "with a color")
+		if name == "dispbottom" && len(text) == 3 {
+			// dispbottom's character ID: only the attached player's.
+			who, err := b.expr(text[2])
+			if err != nil {
+				return err
+			}
+			if !isPlayerID(who) {
+				return unsupported(name, "to another character")
+			}
+			text = text[:2]
+		}
+		if len(text) < 1 || len(text) > 2 || name == "message" && len(text) != 1 {
+			return unsupported(name, "arguments")
 		}
 		v, err := b.expr(text[0])
 		if err != nil {
 			return err
+		}
+		if len(text) == 2 {
+			// dispbottom's color (review decision 58).
+			c, err := b.expr(text[1])
+			if err != nil {
+				return err
+			}
+			b.line("player:send_message(%s, { color = %s })", v.asText(), c.asInt())
+			break
 		}
 		b.line("player:send_message(%s)", v.asText())
 	case "viewpoint":
@@ -1424,6 +1426,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		if ok, err := b.shopCommand(name, args); ok {
+			return err
+		}
+		if ok, err := b.presentCommand(name, args); ok {
 			return err
 		}
 		if ok, err := b.questCommand(name, args); ok {
