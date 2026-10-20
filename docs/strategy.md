@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred. On 2026-10-20, decision 0054 explained and fixed the extra Jellopy of the restore duplication test, closed L34, and made the Lua wall-clock limit a 30-second backstop.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred. On 2026-10-20, decision 0054 explained and fixed the extra Jellopy of the restore duplication test, closed L34, and made the Lua wall-clock limit a 30-second backstop. The same day, decision 0062 built group 1 of the NPC API of review decision 58: lookups, NPC visibility, events between NPCs across zones, NPCs without a map, and NPC and temporary server variables.
 
 Done:
 
@@ -198,6 +198,12 @@ Done:
   - NPC timers over `timers.after`, equipment reads, `specialeffect` on the NPC itself, string, array and number functions, `getmapxy`, `getd` and `setd`.
   - renewal places 3,458 of 7,067 script NPCs, up from 2,938, and 6,700 of 14,865 lines with duplicates, up from 4,700.
   - pre-renewal places 2,061 of 3,754 script NPCs, up from 1,906, and 4,399 of 8,205 lines, up from 2,906.
+- NPC API group 1 (section 14.2a), on 2026-10-20: review decision 58's areas B1 to B4, lookups, NPC visibility and state, events between NPCs and NPCs without a map, and variables ([decision 0062](decisions/0062-npc-api-group-1.md), proposal 0002, next step 41):
+  - An event or a view change of an NPC of another zone is a message to that zone, which runs after the current step, in the order sent. NPC variables and `$@` variables live in memory that every zone shares, and are not saved.
+  - The converter maps every `On` label to an `npc_event` handler, and converts `donpcevent`, `doevent`, the view commands, `getvariableofnpc`, `$@` variables and NPCs without a map. `atcommand` and `setbattleflag` are refused.
+  - renewal places 4,560 of 7,067 script NPCs, up from 3,458, and 9,617 of 14,865 lines with duplicates, up from 6,700.
+  - pre-renewal places 2,827 of 3,754 script NPCs, up from 2,061, and 6,460 of 8,205 lines, up from 4,399.
+  - Groups B5 to B10 come later.
 
 Open review items:
 
@@ -211,6 +217,7 @@ Open review items:
 - Decision 0050's review items: whether to document 500 players, the slowdown of 1,000 players in one town, and a way to place load test bots without a database URL.
 - The security review's items, in proposal 0002, next step 37: review decision 54 settled and built the four first items. Left: a reauth with a passkey without user verification, and when to remove `staff.owners` by name.
 - The converter review of review decision 32: the script commands that need new API, listed in next steps 11 to 16, ordered by how many core scripts each blocks.
+- Decision 0062's details to review: player events of NPCs on every map, which need player handles across zones, the return values of `fire_event` and `fire_npc_event` for zones that have not started, and broadcasts that start zones.
 
 Known issues:
 

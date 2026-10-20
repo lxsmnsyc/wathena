@@ -6,10 +6,10 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 6982 of 15337 NPC lines are placed, duplicates too: 282 shops and 6700 of 14865 script NPCs.
-- 272 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
-- 54 of 55 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
-- 277 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
+- 9899 of 15337 NPC lines are placed, duplicates too: 282 shops and 9617 of 14865 script NPCs.
+- 352 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
+- 55 of 55 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
+- 401 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
 - Pre-renewal classic is experimental until `core.ruleset.pre_renewal` matches rAthena's pre-renewal (phase 10 item 1). `waserver` warns at start.
 
 ## Folders
@@ -18,18 +18,18 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 
 | Folder | Lines | Placed | Not placed |
 |---|---:|---:|---:|
-| airports | 63 | 55 | 8 |
-| cities | 947 | 831 | 116 |
-| events | 150 | 110 | 40 |
-| guides | 95 | 91 | 4 |
+| airports | 63 | 62 | 1 |
+| cities | 947 | 887 | 60 |
+| events | 150 | 120 | 30 |
+| guides | 95 | 92 | 3 |
 | guild3 | 10 | 0 | 10 |
 | instances | 671 | 4 | 667 |
-| jobs | 1804 | 572 | 1232 |
-| kafras | 97 | 87 | 10 |
-| merchants | 690 | 263 | 427 |
-| other | 3466 | 1931 | 1535 |
-| quests | 6622 | 2574 | 4048 |
-| warps | 250 | 182 | 68 |
+| jobs | 1804 | 1248 | 556 |
+| kafras | 97 | 97 | 0 |
+| merchants | 690 | 279 | 411 |
+| other | 3466 | 2577 | 889 |
+| quests | 6622 | 4034 | 2588 |
+| warps | 250 | 217 | 33 |
 
 The extract leaves out the script NPCs of these folders, so none of them load:
 
@@ -45,45 +45,45 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 
 ## What blocks the rest
 
-3609 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+2510 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|
-| event onenable | 484 | event onenable |
-| questinfo | 396 | questinfo |
-| parameter MaxWeight | 237 | parameter MaxWeight |
-| npctalk | 210 | npctalk: as another NPC |
-| emotion | 193 | emotion: on a player or another NPC |
-| donpcevent | 153 | donpcevent |
-| getexp | 138 | getexp |
-| disablenpc | 136 | disablenpc |
-| event ondisable | 119 | event ondisable |
-| floating | 105 | floating: a script NPC without a map runs only through events |
-| cloakonnpc | 100 | cloakonnpc |
-| variables | 99 | variables: $@god_check1 is a temporary server variable |
-| cloakoffnpcself | 84 | cloakoffnpcself |
-| disable_items | 82 | disable_items |
-| event oncommandon | 79 | event oncommandon |
-| sprite | 64 | sprite: -1 is not an NPC sprite |
-| setunittitle | 51 | setunittitle |
-| event onreset | 50 | event onreset |
-| strnpcinfo | 45 | strnpcinfo: other than the name and the map |
-| enablenpc | 42 | enablenpc |
-| parameter SkillPoint | 39 | parameter SkillPoint |
-| setpcblock | 37 | setpcblock |
+| npctalk | 373 | npctalk: as another NPC |
+| parameter MaxWeight | 270 | parameter MaxWeight |
+| emotion | 257 | emotion: on a player or another NPC |
+| getexp | 218 | getexp |
+| killmonster | 135 | killmonster: the API cannot remove spawned monsters |
+| monster | 122 | monster: on another map |
+| questinfo | 107 | questinfo |
+| disable_items | 93 | disable_items |
+| sprite | 78 | sprite: 1053 is not an NPC sprite |
+| setpcblock | 61 | setpcblock |
+| specialeffect | 44 | specialeffect: on another NPC |
+| unittalk | 41 | unittalk |
+| parameter SkillPoint | 40 | parameter SkillPoint |
+| mapwarp | 37 | mapwarp |
+| navigateto | 36 | navigateto |
 | eaclass | 35 | eaclass |
-| hideonnpc | 32 | hideonnpc |
-| event onstart | 31 | event onstart |
-| event ontouchnpc | 25 | event ontouchnpc |
-| gettime | 25 | gettime |
-| state | 25 | state: the NPC starts cloaked, and needs events to show |
-| event onstartarena | 22 | event onstartarena |
-| soundeffect | 21 | soundeffect |
+| gettime | 32 | gettime |
+| waitingroom | 31 | waitingroom |
+| soundeffect | 30 | soundeffect |
+| setnpcdisplay | 25 | setnpcdisplay |
+| areamonster | 24 | areamonster |
+| killmonsterall | 22 | killmonsterall |
+| makeitem | 22 | makeitem |
+| getpartnerid | 20 | getpartnerid |
+| npcskill | 20 | npcskill |
+| variables | 18 | variables: $@3rdgc_room02 is not a valid name |
+| soundeffectall | 17 | soundeffectall |
+| getbattleflag | 15 | getbattleflag |
+| areawarp | 12 | areawarp |
+| getnpcid | 11 | getnpcid |
 
-- `event <label>` is a label that no wAthena event runs, such as `OnEnable`.
+- `event <label>` is a label that rAthena runs on its own, such as `OnPCLogoutEvent` or `OnAgitStart`. Every other label converts to an `npc_event` handler (review decision 58).
 - `parameter <name>` reads or changes a player parameter that does not convert, such as `MaxWeight`.
-- `floating` is a script NPC without a map, which runs only through events. `instance` is an NPC on an instance map. `sprite` is a view that is not an NPC sprite. `state` is an NPC that starts hidden or disabled.
-- The NPC-to-NPC commands (`donpcevent`, `OnEnable` and `OnDisable`, enable and disable, cloaking and hiding, `getvariableofnpc`) block 1197 of these scripts. They stay in phase 10 with the converter review of review decision 32 (review decision 56).
+- `floating` is a script NPC without a map whose script does nothing. Other NPCs without a map are placed, and run in the start map's zone (review decision 58). `instance` is an NPC on an instance map. `sprite` is a view that is not an NPC sprite.
+- The NPC-to-NPC commands (`donpcevent`, `doevent`, enable and disable, cloaking and hiding, `getvariableofnpc`, `unloadnpc`) convert since review decision 58. The forms that do not, such as `doevent` to an NPC on another map, block 4 of these scripts.
 
 ## Systems not built
 

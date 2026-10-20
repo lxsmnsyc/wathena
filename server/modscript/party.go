@@ -32,6 +32,9 @@ type PartyHost interface {
 	PartyMembers(party int64) ([]int64, error)
 	// PartyMemberNames are every member's name, in slot order.
 	PartyMemberNames(party int64) ([]string, error)
+	// PartyMemberList is every member, online or not, in slot order
+	// (review decision 58).
+	PartyMemberList(party int64) ([]PartyMember, error)
 	// CreateParty makes a party for a leader and returns its ID, or 0
 	// when the name is taken or the leader has a party.
 	CreateParty(leader int64, name string) (int64, error)
@@ -52,6 +55,14 @@ type PartyHost interface {
 	// and FriendNames the names on a player's list.
 	IsFriend(player, other int64) (bool, error)
 	FriendNames(player int64) ([]string, error)
+}
+
+// PartyMember is one member of party:get_member_list, as rAthena's
+// getpartymember types 0 to 2 read it.
+type PartyMember struct {
+	Name                   string
+	CharacterID, AccountID int64
+	Online                 bool
 }
 
 // PartyEvent is a party_join, party_leave or party_change event.
@@ -155,6 +166,21 @@ func (r *Runtime) partyCall(c *script.Call) error {
 		vals := make([]script.Value, len(ids))
 		for i, n := range ids {
 			vals[i] = script.Int(n)
+		}
+		c.Return(script.List(vals...))
+		return nil
+	case "get_member_list":
+		if err := r.need(what, "game.read"); err != nil {
+			return err
+		}
+		list, err := h.PartyMemberList(id)
+		if err != nil {
+			return err
+		}
+		vals := make([]script.Value, len(list))
+		for i, m := range list {
+			vals[i] = script.NewTable(script.KV("name", script.String(m.Name)), script.KV("character_id", script.Int(m.CharacterID)),
+				script.KV("account_id", script.Int(m.AccountID)), script.KV("online", script.Bool(m.Online)))
 		}
 		c.Return(script.List(vals...))
 		return nil

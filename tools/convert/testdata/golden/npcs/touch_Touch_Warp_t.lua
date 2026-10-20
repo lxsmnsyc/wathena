@@ -7,6 +7,7 @@
 --   	end;
 --   }
 local context = require "wa.context"
+local events = require "wa.events"
 
 local R = require "core.lib.rathena"
 
@@ -19,5 +20,6 @@ return function()
       do return end
     end)
   end
+  events.on("npc_event", function(event) event_ontouch_(event.player, event.conversation) end, { name = "OnTouch_" })
   R.touch_one(event_ontouch_)
 end

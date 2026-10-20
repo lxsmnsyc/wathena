@@ -45,13 +45,20 @@ func TestPartyCommandsConvert(t *testing.T) {
 		{`{ if (is_party_leader(getcharid(1))) end; end; }`, []string{"(player.party ~= nil and player.party.leader_name == player.name)"}},
 		{`{ if (is_party_leader(.@p)) end; end; }`, []string{`(R.party_field(parties.get(p), "leader_name", "") == player.name)`}},
 		{`{ getpartymember getcharid(1); .@n = $@partymembercount; mes $@partymembername$[1]; end; }`, []string{
-			"party_member_names_1, party_member_count_2 = R.party_members(player.party)",
-			"n = party_member_count_2", `conversation:say((party_member_names_1[1] or ""))`,
+			"party_member_names_2, party_member_count_1 = R.party_members(player.party)",
+			"n = party_member_count_1", `conversation:say((party_member_names_2[1] or ""))`,
 		}},
 		{`{ getpartymember(.@p, 0); .@n = getarraysize($@partymembername$); end; }`, []string{
-			"R.party_members(parties.get(p))", "n = party_member_count_2",
+			"R.party_members(parties.get(p))", "n = party_member_count_1",
 		}},
-		{`{ .@n = getpartymember(getcharid(1)); end; }`, []string{"n = party_member_count_2"}},
+		{`{ .@n = getpartymember(getcharid(1)); end; }`, []string{"n = party_member_count_1"}},
+		// Types 1 and 2 read party:get_member_list (review decision 58).
+		{`{ getpartymember getcharid(1),1; mes "" + $@partymembercid[0]; end; }`, []string{
+			`party_member_cids_2, party_member_count_1 = R.party_members(player.party, "character_id")`, "(party_member_cids_2[0] or 0)",
+		}},
+		{`{ getpartymember getcharid(1),2; .@n = getarraysize($@partymemberaid); end; }`, []string{
+			`R.party_members(player.party, "account_id")`, "n = party_member_count_1",
+		}},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		lua, err := n.npcScript()
@@ -77,14 +84,12 @@ func TestPartyCommandsConvert(t *testing.T) {
 		{`{ party_changeleader .@p,150001; end; }`, "party_changeleader: another character"},
 		{`{ party_changeoption .@p,.@o,1; end; }`, "party_changeoption: a computed option"},
 		{`{ party_changeoption .@p,3,1; end; }`, "party_changeoption: an option other than 0, 1 and 2"},
-		{`{ getpartymember getcharid(1),1; end; }`, "getpartymember: type 1, character IDs, which the party API does not give"},
-		{`{ getpartymember getcharid(1),2; end; }`, "getpartymember: type 2, account IDs, which the party API does not give"},
 		{`{ getpartymember getcharid(1),0,.@names$; end; }`, "getpartymember: into an array of the script's own"},
 		{`{ mes $@partymembername$[0]; end; }`, "outside a function that calls getpartymember"},
 		{`{ mes getpartyleader(getcharid(1),1); end; }`, "getpartyleader: the leader's account ID (type 1), which the party API has only while the leader is online"},
 		{`{ mes getpartyleader(getcharid(1),3); end; }`, "getpartyleader: the leader's job (type 3)"},
 		{`{ mes getpartyleader(getcharid(1),4); end; }`, "getpartyleader: the leader's map (type 4)"},
-		{`{ .@p = getcharid(1,"Bob"); end; }`, "getcharid: of another character"},
+		{`{ .@p = getcharid(1,"Bob"); end; }`, "getcharid: of another character, other than its character and account IDs"},
 		{`{ .@g = getcharid(4); end; }`, "getcharid: battlegrounds, clans and other IDs"},
 		{`{ warpparty "prontera",150,150,getcharid(1); end; }`, "warpparty: the party API cannot warp a party"},
 	} {

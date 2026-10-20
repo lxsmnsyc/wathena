@@ -142,7 +142,17 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	var kfilter *skillFilter
 	var cfilter *chatFilter
 	var tfilter *tradeFilter
-	if opts := c.Arg(2); !opts.IsNil() {
+	var label string
+	if name == "npc_event" {
+		// The label is required: { name = "OnEnable" }, without case.
+		t, ok := c.Arg(2).AsTable()
+		if !ok || len(t.Fields) != 1 {
+			return errors.New(`events.on("npc_event"): want the options { name = "OnEnable" }, the event label`)
+		}
+		if label, err = checkLabel(`events.on("npc_event")`, t.Get("name")); err != nil {
+			return err
+		}
+	} else if opts := c.Arg(2); !opts.IsNil() {
 		var err error
 		switch {
 		case name == "death":
@@ -156,7 +166,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 		case name == "trade":
 			tfilter, err = readTradeFilter(opts)
 		default:
-			return fmt.Errorf("events.on(%q): only the death, status, skill_used, chat and trade events take options", name)
+			return fmt.Errorf("events.on(%q): only the death, status, skill_used, chat, trade and npc_event events take options", name)
 		}
 		if err != nil {
 			return err
@@ -169,10 +179,11 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter, skill: kfilter, chat: cfilter, trade: tfilter}
+	h := &handler{id: r.newID(), event: name, ctx: ctx, fn: ref, death: filter, status: sfilter, skill: kfilter, chat: cfilter, trade: tfilter, label: label}
 	ctx.handlers = append(ctx.handlers, h)
 	r.handlers[name] = append(r.handlers[name], h)
 	r.byID[h.id] = h
+	r.labelChanged(h, true)
 	c.Return(script.Int(h.id))
 	return nil
 }

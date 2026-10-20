@@ -467,6 +467,9 @@ func runAll(name string, args []string) error {
 		return fmt.Errorf("server variables: %w", err)
 	}
 	loaded.zone.Server = serverVars
+	// Temporary server variables and NPC variables are shared too, and
+	// never saved (review decision 58).
+	loaded.zone.Temporary = variables.NewTemporary()
 	// The variables are written until the server stops. A return before
 	// it serves ends ctx first, so the wait cannot block the return.
 	defer background(ctx, stop, serverVars.Run)()
@@ -569,8 +572,14 @@ func runAll(name string, args []string) error {
 	monsters, warpCount, npcCount := 0, 0, 0
 	for i, n := range names {
 		id := strings.TrimPrefix(n, "map/")
-		zones[i] = newZone(n, grids[i], spawns[id], warps[n], loaded.npcs[n])
-		npcCount += len(loaded.npcs[n])
+		npcs := loaded.npcs[n]
+		if n == name {
+			// NPCs without a map run in the start map's zone, as world
+			// events without one (review decision 58).
+			npcs = append(slices.Clone(npcs), loaded.npcs[""]...)
+		}
+		zones[i] = newZone(n, grids[i], spawns[id], warps[n], npcs)
+		npcCount += len(npcs)
 		monsters += count(spawns[id])
 		warpCount += len(warps[n])
 	}

@@ -93,6 +93,19 @@ func (h scriptHost) PartyMemberNames(id int64) ([]string, error) {
 	return in.Members, nil
 }
 
+// PartyMemberList is every member with its IDs, as getpartymember.
+func (h scriptHost) PartyMemberList(id int64) ([]modscript.PartyMember, error) {
+	in, err := h.partyInfo(id)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]modscript.PartyMember, len(in.Roster))
+	for i, m := range in.Roster {
+		out[i] = modscript.PartyMember{Name: m.Name, CharacterID: m.CharID, AccountID: m.AccountID, Online: m.Online}
+	}
+	return out, nil
+}
+
 // CreateParty makes a party for a leader, as party_create.
 func (h scriptHost) CreateParty(leader int64, name string) (int64, error) {
 	p, err := h.socialPlayer(leader)

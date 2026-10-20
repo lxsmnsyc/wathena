@@ -56,6 +56,10 @@ type Mods struct {
 	// Server holds the server variables. Without it, server variables
 	// raise an error.
 	Server *variables.Server
+	// Temporary holds the temporary server variables and NPC variables
+	// that every zone shares (review decision 58). Without it, each zone
+	// keeps its own.
+	Temporary *variables.Temporary
 	// Testing gives the Lua state wa.testing, and starts the mods' entry
 	// scripts when a Headless zone gets its map. Only wactl mod test
 	// sets it.
@@ -138,6 +142,16 @@ type NPC struct {
 	Service string
 	// Touch is the NPC's touch area, or nil (touch.go).
 	Touch *TouchArea
+	// State is how the NPC starts: "" or shown, disabled, hidden or
+	// cloaked, as rAthena's script(DISABLED), (HIDDEN) and (CLOAKED)
+	// lines (review decision 58).
+	State string
+	// NoSprite is an NPC without a view, as rAthena's view -1: players
+	// cannot see or click it, and its events and touch area work.
+	NoSprite bool
+	// Floating is an NPC without a map, which runs only through events,
+	// in the start map's zone. It has no place.
+	Floating bool
 }
 
 type npc struct {
@@ -148,6 +162,15 @@ type npc struct {
 	script *modscript.NPC
 	// hint is the typed run of a hint NPC (autoevents.go), or 0.
 	hint int64
+	// The view state (npcworld.go): invisible after disablenpc, hide
+	// and cloak as OPTION_HIDE and OPTION_CLOAK, and cloakFor the
+	// characters for whom the cloak is the opposite. removed is set by
+	// unloadnpc, and floating for an NPC without a map. entry is the
+	// NPC's entry in the world's directory, or nil.
+	invisible, hide, cloak bool
+	cloakFor               map[int64]bool
+	removed, floating      bool
+	entry                  *npcEntry
 }
 
 // SetNPCs places NPCs on the map. It replaces the NPCs set before. Call
@@ -161,9 +184,21 @@ func (z *Zone) SetNPCs(npcs []NPC) {
 	z.npcHandles = map[int64]*entity{}
 	z.touchNPCs = nil
 	for i, n := range npcs {
-		e := &entity{npc: &npc{NPC: n, handle: int64(i + 1)}, x: n.X, y: n.Y, dir: n.Direction}
-		z.entities.add(e)
+		e := &entity{npc: &npc{NPC: n, handle: int64(i + 1), floating: n.Floating}, x: n.X, y: n.Y, dir: n.Direction}
+		switch n.State {
+		case "disabled":
+			e.npc.invisible, e.npc.hide = true, true
+		case "hidden":
+			e.npc.hide = true
+		case "cloaked":
+			e.npc.cloak = true
+		}
 		z.npcHandles[e.npc.handle] = e
+		if n.Floating {
+			// An NPC without a map has no place on this one.
+			continue
+		}
+		z.entities.add(e)
 		if n.Touch != nil && n.Script != "" {
 			z.touchNPCs = append(z.touchNPCs, e)
 		}
@@ -211,6 +246,8 @@ type scriptEvent struct {
 	// touch is set for an NPC's touch and untouch events, which run
 	// with Touch.
 	touch *touchEvent
+	// monsterTouch is set for an NPC's monster_touch event.
+	monsterTouch *monsterTouch
 }
 
 // startScripts makes the zone's Lua state and runs the mods' entry
@@ -225,6 +262,14 @@ func (z *Zone) startScripts() {
 	for _, sc := range z.modScripts() {
 		if len(sc.Entries) > 0 {
 			z.itemScripts()
+			break
+		}
+	}
+	// NPCs without a map start with the zone: they listen for the
+	// events of the world from the start, as rAthena loads every NPC.
+	for _, e := range z.npcHandles {
+		if e.npc.floating && e.npc.Script != "" {
+			z.startNPCs()
 			return
 		}
 	}
@@ -263,7 +308,8 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 	}
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
 		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location, Rules: z.worldRules(),
-		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places, Atlas: z.Mods.Atlas, Quests: z.Mods.Quests}
+		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places, Atlas: z.Mods.Atlas, Quests: z.Mods.Quests,
+		Temporary: z.Mods.Temporary, NPCLabels: z.npcLabel}
 	// The job tables are read at each call: a headless zone gets them
 	// after its Lua state is made.
 	opts.Jobs = zoneJobs{z}
@@ -294,46 +340,63 @@ func (z *Zone) scriptEventFor(name string, args ...modscript.Arg) {
 }
 
 // runScripts runs the queued events' handlers. Handlers may queue more
-// events, which run in the same call.
+// events, which run in the same call. Then the NPC messages run, those
+// that this zone's handlers sent too, as rAthena's donpcevent runs its
+// label after the current one (review decision 58). A zone runs at most
+// npcRounds batches of them here, and the rest at its next pass.
 func (z *Zone) runScripts() {
 	z.flushDeferred()
-	for len(z.scriptEvents) > 0 {
-		ev := z.scriptEvents[0]
-		z.scriptEvents = z.scriptEvents[1:]
-		switch {
-		case z.scripts == nil:
-		case ev.monster != nil:
-			z.runMonsterScript(ev.monster)
-		case ev.death != nil:
-			z.scripts.FireDeath(*ev.death)
-		case ev.status != nil:
-			z.scripts.FireStatus(ev.name, *ev.status)
-		case ev.chat != nil:
-			z.scripts.FireChat(*ev.chat)
-		case ev.trade != nil:
-			z.scripts.FireTrade(*ev.trade)
-		case ev.sale != nil:
-			z.scripts.FireSale(ev.name, *ev.sale)
-		case ev.party != nil:
-			z.scripts.FireParty(*ev.party)
-		case ev.guild != nil:
-			z.scripts.FireGuild(*ev.guild)
-		case ev.quest != nil:
-			z.scripts.FireQuest(*ev.quest)
-		case ev.touch != nil:
-			z.runTouch(ev.touch)
-		default:
-			z.scripts.Fire(ev.name, ev.args...)
-		}
-		for _, h := range ev.release {
-			if e := z.monsterHandles[h]; e != nil && e.monster != nil {
-				e.monster.handle = 0
+	for round := 0; ; round++ {
+		for len(z.scriptEvents) > 0 {
+			ev := z.scriptEvents[0]
+			z.scriptEvents = z.scriptEvents[1:]
+			switch {
+			case z.scripts == nil:
+			case ev.monster != nil:
+				z.runMonsterScript(ev.monster)
+			case ev.death != nil:
+				z.scripts.FireDeath(*ev.death)
+			case ev.status != nil:
+				z.scripts.FireStatus(ev.name, *ev.status)
+			case ev.chat != nil:
+				z.scripts.FireChat(*ev.chat)
+			case ev.trade != nil:
+				z.scripts.FireTrade(*ev.trade)
+			case ev.sale != nil:
+				z.scripts.FireSale(ev.name, *ev.sale)
+			case ev.party != nil:
+				z.scripts.FireParty(*ev.party)
+			case ev.guild != nil:
+				z.scripts.FireGuild(*ev.guild)
+			case ev.quest != nil:
+				z.scripts.FireQuest(*ev.quest)
+			case ev.touch != nil:
+				z.runTouch(ev.touch)
+			case ev.monsterTouch != nil:
+				z.runMonsterTouch(ev.monsterTouch)
+			default:
+				z.scripts.Fire(ev.name, ev.args...)
 			}
-			delete(z.monsterHandles, h)
+			for _, h := range ev.release {
+				if e := z.monsterHandles[h]; e != nil && e.monster != nil {
+					e.monster.handle = 0
+				}
+				delete(z.monsterHandles, h)
+			}
 		}
+		if round == npcRounds || z.npcMessages() == 0 {
+			break
+		}
+		z.flushDeferred()
 	}
 	z.scriptEvents = z.scriptEvents[:0]
+	if z.npcIn.pending() {
+		z.npcIn.signal()
+	}
 }
+
+// npcRounds is the most batches of NPC messages one runScripts runs.
+const npcRounds = 4
 
 // ReloadMod loads a mod's scripts again in the zone, from a new
 // snapshot. The mod's old context ends first, which removes its handlers

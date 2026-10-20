@@ -305,7 +305,7 @@ func TestItemEventNames(t *testing.T) {
 		"damage": "", "skill_used": "", "use": "", "unequip": "",
 		"attack":    `there is no event "attack"`,
 		"hit_taken": `there is no event "hit_taken"`,
-		"login":     `"login" is an event of mod and event contexts`,
+		"login":     `"login" is an event of mod and npc and event contexts`,
 	} {
 		h := newHost()
 		r := newItemRuntime(t, h, "scripts/items/x.lua", `

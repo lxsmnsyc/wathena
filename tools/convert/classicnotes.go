@@ -14,13 +14,12 @@ const ClassicNotesPath = "docs/generated/classic-coverage.md"
 // rest shows.
 const classicTopReasons = 30
 
-// npcToNPC are the reasons of the NPC-to-NPC commands, which stay in
-// phase 10 with the converter review of review decision 32 (review
-// decision 56).
+// npcToNPC are the reasons of the NPC-to-NPC commands, which convert
+// since review decision 58, except some forms.
 var npcToNPC = map[string]bool{
-	"donpcevent": true, "event onenable": true, "event ondisable": true, "enablenpc": true, "disablenpc": true,
+	"donpcevent": true, "doevent": true, "cmdothernpc": true, "enablenpc": true, "disablenpc": true,
 	"cloakonnpc": true, "cloakoffnpc": true, "cloakonnpcself": true, "cloakoffnpcself": true,
-	"hideonnpc": true, "hideoffnpc": true, "getvariableofnpc": true,
+	"hideonnpc": true, "hideoffnpc": true, "getvariableofnpc": true, "isnpccloaked": true, "unloadnpc": true,
 }
 
 // blockReason is the reason a script NPC is not placed, for the release
@@ -148,10 +147,10 @@ func (r *NPCResult) ClassicNotes() string {
 		fmt.Fprintf(&b, "| %s | %d | %s |\n", escapeCell(x.k), x.v, escapeCell(mostCommon(details[x.k])))
 	}
 	b.WriteString("\n")
-	b.WriteString("- `event <label>` is a label that no wAthena event runs, such as `OnEnable`.\n")
+	b.WriteString("- `event <label>` is a label that rAthena runs on its own, such as `OnPCLogoutEvent` or `OnAgitStart`. Every other label converts to an `npc_event` handler (review decision 58).\n")
 	b.WriteString("- `parameter <name>` reads or changes a player parameter that does not convert, such as `MaxWeight`.\n")
-	b.WriteString("- `floating` is a script NPC without a map, which runs only through events. `instance` is an NPC on an instance map. `sprite` is a view that is not an NPC sprite. `state` is an NPC that starts hidden or disabled.\n")
-	fmt.Fprintf(&b, "- The NPC-to-NPC commands (`donpcevent`, `OnEnable` and `OnDisable`, enable and disable, cloaking and hiding, `getvariableofnpc`) block %d of these scripts. They stay in phase 10 with the converter review of review decision 32 (review decision 56).\n\n", toNPC)
+	b.WriteString("- `floating` is a script NPC without a map whose script does nothing. Other NPCs without a map are placed, and run in the start map's zone (review decision 58). `instance` is an NPC on an instance map. `sprite` is a view that is not an NPC sprite.\n")
+	fmt.Fprintf(&b, "- The NPC-to-NPC commands (`donpcevent`, `doevent`, enable and disable, cloaking and hiding, `getvariableofnpc`, `unloadnpc`) convert since review decision 58. The forms that do not, such as `doevent` to an NPC on another map, block %d of these scripts.\n\n", toNPC)
 
 	b.WriteString("## Systems not built\n\n")
 	b.WriteString("These systems are not in the first release, so their NPCs do not load. They are in phase 10.\n\n")

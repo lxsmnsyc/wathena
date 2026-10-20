@@ -27,7 +27,14 @@ local R = require "core.lib.rathena"
 
 return function()
   local npc = context:get_instance()
-  local event_onclock0000, event_onhour06, event_onminute30, event_onsat2200
+  local event_oninit, event_onclock0000, event_onhour06, event_onminute30, event_onsat2200
+  event_oninit = function(player, conversation)
+    R.run(function()
+      ::onclock0000::
+      world.announce("Midnight or start")
+      do return end
+    end)
+  end
   event_onclock0000 = function(player, conversation)
     R.run(function()
       world.announce("Midnight or start")
@@ -52,6 +59,11 @@ return function()
       do return end
     end)
   end
+  events.on("npc_event", function(event) event_oninit(event.player, event.conversation) end, { name = "OnInit" })
+  events.on("npc_event", function(event) event_onclock0000(event.player, event.conversation) end, { name = "OnClock0000" })
+  events.on("npc_event", function(event) event_onhour06(event.player, event.conversation) end, { name = "OnHour06" })
+  events.on("npc_event", function(event) event_onminute30(event.player, event.conversation) end, { name = "OnMinute30" })
+  events.on("npc_event", function(event) event_onsat2200(event.player, event.conversation) end, { name = "OnSat2200" })
   schedules.daily("00:00", event_onclock0000)
   schedules.daily("06:00", event_onhour06)
   schedules.hourly(30, event_onminute30)
@@ -62,9 +74,5 @@ return function()
       do return end
     end)
   end)
-  R.run(function()
-    ::onclock0000::
-    world.announce("Midnight or start")
-    do return end
-  end)
+  event_oninit()
 end

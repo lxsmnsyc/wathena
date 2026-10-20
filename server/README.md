@@ -1247,6 +1247,17 @@ Quests follow rAthena's `quest.cpp` (proposal 0002, review decision 45, [decisio
 - A `touch` handler runs in a conversation with the player, so it may show a dialog (review decision 56). A touch while the player talks waits until the conversation ends, as rAthena's event queue: at most 2 wait, and the first runs 100 ms after the end, if the player is still in the area. A warp that a touch or untouch handler asks for happens once the handler ran or paused.
 - The save point is kept in the `characters` table. A dead character is saved at its save point, and a player who dies goes back there.
 - Character and account variables of `wa.variables` save with the character. Server variables save right after they change, and again when the server stops. Without a database they live in memory.
+- Temporary server variables (`$@`) and NPC variables live in memory that every zone shares, as server variables do, and are never saved (review decision 58).
+
+NPCs across zones ([decision 0062](../docs/decisions/0062-npc-api-group-1.md), review decision 58, mods/README.md, "NPCs of the world"):
+
+- The world keeps a directory of every zone's NPCs: their zone and handle, names and cell, a copy of their view state, and the event labels their handlers listen to. `world.New`, `Add`, `Swap` and `Remove` keep it, and zones read it under its lock.
+- A script reaches an NPC of another zone through a handle of its own zone. Its fields come from the directory. Its view changes and events go to the NPC's zone as messages.
+- Each zone has an inbox of NPC messages, which other zones post to without waiting. The zone runs them with its script events, after the step that sent them: at most 4 rounds of 4,096 messages per pass, and the rest at the next pass. A full inbox of 65,536 messages drops a message with a warning.
+- A message starts the NPC scripts of a zone that has not started them. A zone counts as started for the directory once its NPCs have registered their labels.
+- NPCs without a map run in the start map's zone, which starts their scripts with the zone. They have no view, no click and no touch.
+- A disabled NPC (`npc:hide()`) has no view, click or touch, and hears no player events or events with a player. A hidden one keeps its touch area. A cloak hides an NPC from one player or from all, and monsters do not touch a cloaked NPC.
+- A monster that walks into an NPC's touch area runs the NPC's `monster_touch` handlers, as rAthena's `OnTouchNPC`.
 
 To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing. The sample mods need their permissions approved, in a config file such as:
 

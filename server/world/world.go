@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/lxsmnsyc/wathena/server/character"
@@ -33,6 +34,9 @@ type World struct {
 	running bool
 	stops   map[*zone.Zone]context.CancelFunc
 	retired []*zone.Zone
+	// npcs lists every zone's NPCs, which scripts reach across zones
+	// (review decision 58).
+	npcs *zone.NPCDirectory
 }
 
 // New makes a world of zones. start is the asset name of the map where
@@ -40,13 +44,24 @@ type World struct {
 // enter. Each zone's World is set to the new world, so its warps reach
 // the others.
 func New(start string, zones ...*zone.Zone) (*World, error) {
-	w := &World{zones: map[string]*zone.Zone{}, stopped: make(chan struct{}), stops: map[*zone.Zone]context.CancelFunc{}}
+	w := &World{zones: map[string]*zone.Zone{}, stopped: make(chan struct{}), stops: map[*zone.Zone]context.CancelFunc{},
+		npcs: zone.NewNPCDirectory()}
 	for _, z := range zones {
 		if w.zones[z.Map] != nil {
 			return nil, fmt.Errorf("world: map %s is listed twice", z.Map)
 		}
 		w.zones[z.Map] = z
 		z.World = w
+	}
+	// The start map's NPCs come first, so a name two zones have finds
+	// the start map's, then the others by map name.
+	if s := w.zones[start]; s != nil {
+		w.npcs.AddZone(s)
+	}
+	for _, z := range w.sorted() {
+		if z.Map != start {
+			w.npcs.AddZone(z)
+		}
 	}
 	w.start = w.zones[start]
 	if w.start == nil {
@@ -57,6 +72,17 @@ func New(start string, zones ...*zone.Zone) (*World, error) {
 		z.ShareHubs(w.start)
 	}
 	return w, nil
+}
+
+// NPCs is the world's directory of NPCs.
+func (w *World) NPCs() *zone.NPCDirectory { return w.npcs }
+
+// sorted is the zones by map name. The caller holds w.mu or runs before
+// the world does.
+func (w *World) sorted() []*zone.Zone {
+	out := slices.Collect(maps.Values(w.zones))
+	slices.SortFunc(out, func(a, b *zone.Zone) int { return strings.Compare(a.Map, b.Map) })
+	return out
 }
 
 // Zone returns the zone that runs a map, by asset name, or nil.
@@ -133,6 +159,7 @@ func (w *World) Add(z *zone.Zone) error {
 	z.World = w
 	z.ShareHubs(w.start)
 	w.zones[z.Map] = z
+	w.npcs.AddZone(z)
 	if w.running {
 		w.goZone(z)
 	}
@@ -149,6 +176,10 @@ func (w *World) Swap(z *zone.Zone) *zone.Zone {
 	z.World = w
 	z.ShareHubs(w.start)
 	w.zones[z.Map] = z
+	if old != nil {
+		w.npcs.RemoveZone(old)
+	}
+	w.npcs.AddZone(z)
 	if w.running {
 		w.goZone(z)
 	}
@@ -169,6 +200,7 @@ func (w *World) Remove(name string) *zone.Zone {
 		return nil
 	}
 	delete(w.zones, name)
+	w.npcs.RemoveZone(z)
 	w.retired = append(w.retired, z)
 	return z
 }

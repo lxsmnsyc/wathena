@@ -668,10 +668,7 @@ func (b *body) arrayTable(name string, e Expr) (string, error) {
 	if v.array {
 		return fmt.Sprintf("R.load(%s, %s)", v.local, v.owner()), nil
 	}
-	if v.scope == "server" {
-		return "{ [0] = " + v.local + ":get() }", nil
-	}
-	return "{ [0] = " + v.local + ":get(player) }", nil
+	return "{ [0] = " + v.get() + " }", nil
 }
 
 // npcshopupdate converts npcshopupdate "<shop>",<item>,<price>{,<stock>}:

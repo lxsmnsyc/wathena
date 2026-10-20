@@ -18,4 +18,16 @@ function world.announce(text) end
 ---@return wa.Shop?
 function world.get_shop(name) end
 
+---An NPC of any map, or one without a map, as rAthena's npc_name2id (review decision 58). nil when there is none, or it was removed. A handle of an NPC of another map reads its fields, and its changes and events run in that NPC's zone after the current step. Its other methods raise an error there.
+---
+---Needs the permission `game.read`.
+---@param name string An NPC of data/npcs.yml: a full record name, such as core:Guard#1, or a plain name, which is the calling mod's record, then core's. Case counts.
+---@return wa.Npc?
+function world.get_npc(name) end
+
+---Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent "::OnX" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs.
+---@param name string An event label, such as OnEnable, without regard to case.
+---@return integer
+function world.fire_npc_event(name) end
+
 return world

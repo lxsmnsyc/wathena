@@ -691,6 +691,66 @@ new_npc, npc_ids = handle_type("npc", {
 		end
 		return (call(H.npc_show_quest_icon, npc_ids[self], id, icon))
 	end,
+	-- Visibility and state (review decision 58): rAthena's enablenpc,
+	-- disablenpc, hideonnpc, hideoffnpc, the cloak commands, isnpccloaked
+	-- and unloadnpc.
+	show = function(self)
+		call(H.npc_control, npc_ids[self], "show")
+	end,
+	hide = function(self)
+		call(H.npc_control, npc_ids[self], "hide")
+	end,
+	set_hidden = function(self, hidden)
+		if type(hidden) ~= "boolean" then
+			error("npc:set_hidden: want true or false", 2)
+		end
+		call(H.npc_control, npc_ids[self], "set_hidden", hidden)
+	end,
+	set_cloaked = function(self, cloaked, player)
+		if type(cloaked) ~= "boolean" then
+			error("npc:set_cloaked: want true or false, and a player or nothing", 2)
+		end
+		local id
+		if player ~= nil then
+			id = player_ids[player]
+			if id == nil then
+				error("npc:set_cloaked: want a player handle, or nothing for every player", 2)
+			end
+		end
+		call(H.npc_control, npc_ids[self], "set_cloaked", cloaked, id)
+	end,
+	is_cloaked = function(self, player)
+		local id
+		if player ~= nil then
+			id = player_ids[player]
+			if id == nil then
+				error("npc:is_cloaked: want a player handle, or nothing", 2)
+			end
+		end
+		return (call(H.npc_is_cloaked, npc_ids[self], id))
+	end,
+	remove = function(self)
+		call(H.npc_control, npc_ids[self], "remove")
+	end,
+	-- Events between NPCs: donpcevent, and doevent with a player.
+	fire_event = function(self, name, options)
+		local id
+		if options ~= nil then
+			if type(options) ~= "table" then
+				error("npc:fire_event: the options must be a table, such as { player = player }", 2)
+			end
+			for k, v in pairs(options) do
+				if k ~= "player" then
+					error("npc:fire_event: there is no option " .. tostring(k) .. "; the option is player", 2)
+				end
+				id = player_ids[v]
+				if id == nil then
+					error("npc:fire_event: player must be a player handle", 2)
+				end
+			end
+		end
+		return (call(H.npc_fire_event, npc_ids[self], name, id))
+	end,
 }, function(id, key)
 	local ok, value = pcall(H.npc_field, id, key)
 	if not ok then
@@ -1143,6 +1203,24 @@ api["wa.maps"] = readonly("wa.maps", {
 		check(type(map) == "string", "maps.get_display_name: the map must be a map ID, such as gen:town:t7")
 		return (call(H.maps_display_name, map))
 	end,
+	-- Players by name or ID (review decision 58). A handle acts in its
+	-- zone, so only a player of this map is found.
+	find_player = function(name)
+		check(type(name) == "string", "maps.find_player: want a character name")
+		local id = call(H.maps_find_player, name)
+		if id == nil then
+			return nil
+		end
+		return new_player(id)
+	end,
+	find_player_by_id = function(id)
+		check(math_type(id) == "integer", "maps.find_player_by_id: want a character or account ID")
+		local p = call(H.maps_find_player_by_id, id)
+		if p == nil then
+			return nil
+		end
+		return new_player(p)
+	end,
 })
 
 -- Shops of data/npcs.yml (review decision 30). A shop handle names the
@@ -1184,6 +1262,19 @@ world_module = readonly("wa.world", {
 		return (call(H.announce, nil, text))
 	end,
 	get_shop = get_shop,
+	-- NPCs of any zone (review decision 58).
+	get_npc = function(name)
+		check(type(name) == "string", "world.get_npc: want an NPC's record name of data/npcs.yml")
+		local id = call(H.world_get_npc, name)
+		if id == nil then
+			return nil
+		end
+		return new_npc(id)
+	end,
+	fire_npc_event = function(name)
+		check(type(name) == "string", "world.fire_npc_event: want an event label, such as OnEnable")
+		return (call(H.world_fire_npc_event, name))
+	end,
 })
 api["wa.world"] = world_module
 
@@ -1239,6 +1330,9 @@ new_party, party_ids = handle_type("party", {
 	end,
 	get_member_names = function(self)
 		return (call(H.party_call, "get_member_names", party_ids[self]))
+	end,
+	get_member_list = function(self)
+		return (call(H.party_call, "get_member_list", party_ids[self]))
 	end,
 	add = function(self, player)
 		local id = player_ids[player]
@@ -1721,15 +1815,33 @@ new_server_variable, server_variable_ids = handle_type("server variable", {
 	end,
 })
 
+-- NPC variables (review decision 58): rAthena's .x, one value per NPC,
+-- which every zone reads. They are not saved.
+local npc_variable_ids
+local new_npc_variable
+new_npc_variable, npc_variable_ids = handle_type("npc variable", {
+	get = function(self, npc)
+		return (call(H.variable_get, npc_variable_ids[self], npc_ids[npc]))
+	end,
+	set = function(self, npc, value)
+		return (call(H.variable_set, npc_variable_ids[self], npc_ids[npc], value))
+	end,
+	add = function(self, npc, amount)
+		return (call(H.variable_add, npc_variable_ids[self], npc_ids[npc], amount))
+	end,
+})
+
 local variable_api = {}
-for _, scope in ipairs({ "character", "character_temporary", "account", "server", "instance" }) do
+for _, scope in ipairs({ "character", "character_temporary", "account", "server", "server_temporary", "npc", "instance" }) do
 	for _, kind in ipairs({ "integer", "boolean", "string", "table" }) do
 		local what = "variables." .. scope .. "_" .. kind
 		variable_api[scope .. "_" .. kind] = function(name)
 			check(type(name) == "string", what .. ": the name must be a string")
 			local id = call(H.variables_declare, scope, kind, name)
-			if scope == "server" then
+			if scope == "server" or scope == "server_temporary" then
 				return new_server_variable(id)
+			elseif scope == "npc" then
+				return new_npc_variable(id)
 			end
 			return new_variable(id)
 		end
@@ -3188,6 +3300,21 @@ function R.converse(player_id, conversation_id, ...)
 	local c = new_conversation(conversation_id)
 	for i = 1, select("#", ...) do
 		(select(i, ...))(p, c)
+	end
+end
+
+-- npc_event runs an NPC's npc_event handlers of a label with the event
+-- object: in a conversation's thread when a player is attached, as
+-- doevent, or without one, as donpcevent (review decision 58).
+function R.npc_event(label, player_id, conversation_id, ...)
+	local fields = { name = label }
+	if player_id ~= nil then
+		fields.player = new_player(player_id)
+		fields.conversation = new_conversation(conversation_id)
+	end
+	local event = readonly("npc event", fields)
+	for i = 1, select("#", ...) do
+		(select(i, ...))(event)
 	end
 end
 

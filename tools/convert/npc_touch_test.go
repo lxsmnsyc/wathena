@@ -39,7 +39,7 @@ OnTouch:
 	"Touch Func#t": `{ end; OnTouch_: callfunc "F_TouchTalk"; end; }`,
 	// A function without one too.
 	"Touch Quiet#t": `{ end; OnTouch_: callfunc "F_TouchQuiet"; end; }`,
-	// An NPC without a sprite still has its area: HIDDEN_NPC.
+	// An NPC without a sprite still has its area: sprite: none.
 	"Touch Hidden#t": `{ end; OnTouch: npctalk "boo"; end; }`,
 	// A span of -1 has no area, so the record has no touch field.
 	"Touch No Span#t": `{ end; OnTouch: npctalk "never"; end; }`,
@@ -99,7 +99,7 @@ func TestNPCTouchConvert(t *testing.T) {
 		"Touch Talk#t":    {"", `touch: {x_span: 1, y_span: 1}}`},
 		"Touch Func#t":    {"", `touch: {x_span: 1, y_span: 1}}`},
 		"Touch Quiet#t":   {"", `touch: {x_span: 1, y_span: 1}}`},
-		"Touch Hidden#t":  {"", `sprite: HIDDEN_NPC, display_name: Touch Hidden, script: scripts/npcs/Touch_Hidden_t.lua, touch: {x_span: 1, y_span: 1}}`},
+		"Touch Hidden#t":  {"", `sprite: none, display_name: Touch Hidden, script: scripts/npcs/Touch_Hidden_t.lua, touch: {x_span: 1, y_span: 1}}`},
 		"Touch No Span#t": {"", `script: scripts/npcs/Touch_No_Span_t.lua}`},
 	}
 	for _, n := range res.NPCs {
@@ -131,7 +131,9 @@ func TestNPCTouchConvert(t *testing.T) {
 		if !strings.Contains(n.Lua, wantLine) {
 			t.Errorf("%s: no %q in\n%s", name, wantLine, n.Lua)
 		}
-		if name == "Touch Both#t" && strings.Contains(n.Lua, "event_ontouch =") {
+		// OnTouch beside OnTouch_ runs only as an npc_event, as rAthena
+		// runs only OnTouch_ for a touch (review decision 58).
+		if name == "Touch Both#t" && strings.Contains(n.Lua, `events.on("touch", event_ontouch)`) {
 			t.Errorf("%s: OnTouch converted beside OnTouch_:\n%s", name, n.Lua)
 		}
 		if n.TouchDialog != (name == "Touch Talk#t" || name == "Touch Func#t") {

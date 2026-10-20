@@ -50,6 +50,9 @@ type touchEvent struct {
 	npc     *entity
 	player  *Player
 	untouch bool
+	// label is set for an NPC event with a player (doevent), which waits
+	// in the same queue (npcworld.go).
+	label string
 }
 
 // touches reports whether an NPC's touch area holds a cell.
@@ -77,7 +80,7 @@ func (z *Zone) touchAreas(p *Player) {
 	clear(p.touching[len(kept):])
 	p.touching = kept
 	for _, n := range z.touchNPCs {
-		if n.npc.touches(n, e.x, e.y) && z.entities.has(n) && !slices.Contains(p.touching, n) {
+		if n.npc.touches(n, e.x, e.y) && z.entities.has(n) && n.npc.touchableBy(p) && !slices.Contains(p.touching, n) {
 			p.touching = append(p.touching, n)
 			z.queueTouch(n, p, false)
 		}
@@ -159,6 +162,10 @@ func (z *Zone) queuedTouches() {
 		t := p.touchQueue[0]
 		p.touchQueue[0] = nil
 		p.touchQueue = p.touchQueue[1:]
+		if t.label != "" {
+			z.runNPCEvent(t)
+			continue
+		}
 		z.runTouch(t)
 	}
 }

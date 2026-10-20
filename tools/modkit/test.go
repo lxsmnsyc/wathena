@@ -246,7 +246,9 @@ func (w *testWorld) bind(name string) error {
 		}
 		return nil
 	}
-	npcs := w.l.NPCs[asset]
+	// A test world's one map is its start map, where the NPCs without a
+	// map run (review decision 58).
+	npcs := append(slices.Clone(w.l.NPCs[asset]), w.l.NPCs[""]...)
 	warps := w.env.Warps[asset]
 	var grid *path.Grid
 	if gen.IsGenerated(name) {

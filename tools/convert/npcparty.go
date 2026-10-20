@@ -319,18 +319,19 @@ func (b *body) partyField(e Expr, field, def string) (val, error) {
 }
 
 // getpartymember converts getpartymember <party id>{,<type>}. rAthena
-// sets $@partymembername$[] to every member's name and $@partymembercount
-// to their count, and returns the count. These become locals of the
-// function, which reads of the two variables after it use. It returns
-// the count's local.
-//   - Type 1, character IDs, and type 2, account IDs, do not convert. The
-//     party API gives names only.
+// sets $@partymembername$[] to every member's name, $@partymembercid[]
+// to their character IDs for type 1, or $@partymemberaid[] to their
+// account IDs for type 2, and $@partymembercount to their count, and
+// returns the count. These become locals of the function, which reads of
+// the variables after it use. It returns the count's local. Types 1 and
+// 2 read party:get_member_list (review decision 58).
 //   - An array argument of the script's own does not convert.
 func (b *body) getpartymember(args []Expr) (string, error) {
 	const name = "getpartymember"
 	if len(args) < 1 || len(args) > 3 {
 		return "", unsupported(name, "arguments")
 	}
+	field := "name"
 	if len(args) >= 2 {
 		t, err := b.expr(args[1])
 		if err != nil {
@@ -340,9 +341,9 @@ func (b *body) getpartymember(args []Expr) (string, error) {
 		case t.static == nil:
 			return "", unsupported(name, "a computed type")
 		case *t.static == 1:
-			return "", unsupported(name, "type 1, character IDs, which the party API does not give")
+			field = "character_id"
 		case *t.static == 2:
-			return "", unsupported(name, "type 2, account IDs, which the party API does not give")
+			field = "account_id"
 		}
 	}
 	if len(args) == 3 {
@@ -352,11 +353,24 @@ func (b *body) getpartymember(args []Expr) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if b.partyNames == "" {
-		b.partyNames = b.hide("party_member_names")
+	if b.partyCount == "" {
 		b.partyCount = b.hide("party_member_count")
 	}
-	b.line("%s, %s = R.party_members(%s)", b.partyNames, b.partyCount, p)
+	list := &b.partyNames
+	switch field {
+	case "character_id":
+		list = &b.partyCIDs
+	case "account_id":
+		list = &b.partyAIDs
+	}
+	if *list == "" {
+		*list = b.hide("party_member_" + map[string]string{"name": "names", "character_id": "cids", "account_id": "aids"}[field])
+	}
+	if field == "name" {
+		b.line("%s, %s = R.party_members(%s)", *list, b.partyCount, p)
+	} else {
+		b.line("%s, %s = R.party_members(%s, %s)", *list, b.partyCount, p, luaString(field))
+	}
 	return b.partyCount, nil
 }
 
@@ -365,10 +379,12 @@ func (b *body) getpartymember(args []Expr) (string, error) {
 // ok is false for other variables.
 func (b *body) partyMemberVar(name, idx string, size bool) (v val, ok bool, err error) {
 	key := strings.ToLower(name)
-	if key != "$@partymembercount" && key != "$@partymembername$" {
+	list := map[string]string{"$@partymembername$": b.partyNames, "$@partymembercid": b.partyCIDs, "$@partymemberaid": b.partyAIDs}
+	l, isList := list[key]
+	if key != "$@partymembercount" && !isList {
 		return val{}, false, nil
 	}
-	if b.partyNames == "" {
+	if b.partyCount == "" || isList && l == "" {
 		return val{}, true, unsupported("variables", "%s outside a function that calls getpartymember", name)
 	}
 	switch {
@@ -376,6 +392,8 @@ func (b *body) partyMemberVar(name, idx string, size bool) (v val, ok bool, err 
 		return val{}, true, unsupported("variables", "the size of %s", name)
 	case size, key == "$@partymembercount":
 		return val{code: b.partyCount, t: tInt}, true, nil
+	case key == "$@partymembername$":
+		return val{code: fmt.Sprintf("(%s[%s] or \"\")", l, idx), t: tStr}, true, nil
 	}
-	return val{code: fmt.Sprintf("(%s[%s] or \"\")", b.partyNames, idx), t: tStr}, true, nil
+	return val{code: fmt.Sprintf("(%s[%s] or 0)", l, idx), t: tInt}, true, nil
 }

@@ -249,6 +249,7 @@ Each limit has a range:
 | `guild.manage` | Needs the owner's approval. It makes guilds and changes their members, master, notice and exp, and breaks them up (review decision 28). |
 | `mail.send`, `currencies.modify`, `shops.modify` | Needs the owner's approval. They send mail with items and zeny, change another mod's currencies, core's too, and change shops (review decision 30). |
 | `events.control` | Needs the owner's approval. It starts and stops world events at any time with `wa.world_events` (review decision 31). |
+| `npcs.control` | Needs the owner's approval. It shows, hides, cloaks and removes other mods' NPCs, core's too, and sends them events ("NPCs of the world" below, review decision 58). A mod's own NPCs need no permission. |
 | `player.expand_limits` | Needs the owner's approval. It raises and lowers a player's inventory, cart and storage slots with `player:expand`, within the ruleset's limits (review decision 32). |
 | `spawns.modify` | Needs the owner's approval. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
 | `world.generate` | Needs the owner's approval. It adds generation layers and quest templates with `wa.generation`, which add places, objects, bosses and quests to a new procedural world (review decision 46). |
@@ -366,6 +367,9 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 - `discount: false` keeps Discount and Compulsion Discount from lowering the shop's zeny prices, as rAthena's `shop` line with `no`. It is on by default, as in rAthena. Items and currencies are never discounted. In the list form, `discount` goes beside `shop`.
 - A record with `shop` and no `map` is a shop that only scripts open, with `player:open_shop`.
 - `touch: {x_span, y_span}` gives the NPC a touch area: the cells within `x_span` and `y_span` of its cell, each 0 to 100, as rAthena's `OnTouch` area (review decision 55). It needs a `script`, whose `touch` and `untouch` handlers run ("NPC scripts" below).
+- `state` is how the NPC starts, as rAthena's `script(DISABLED)`, `(HIDDEN)` and `(CLOAKED)` lines (review decision 58): `disabled`, `hidden` or `cloaked`. A script shows it later ("Visibility and state" below).
+- `sprite: none` is an NPC without a view, as rAthena's view -1: players cannot see or click it, and its events and touch area work.
+- A record with `script` and no `map` or `place` is an NPC without a map, as rAthena's floating NPCs (review decision 58). It runs only through events, schedules and timers, in the zone of the world's start map. It takes `display_name`, and no `x`, `y`, `direction`, `sprite`, `touch` or `state`.
 
 ```yaml
 - name: Tool Dealer#prt1
@@ -400,6 +404,20 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
   sprite: WARPNPC
   script: scripts/npc/old_gate.lua
   touch: {x_span: 1, y_span: 1}
+```
+
+```yaml
+# A door that opens when a lever sends it an event, and an NPC without a
+# map that keeps the world's count.
+- name: Vault Door
+  map: prontera
+  x: 140
+  y: 60
+  sprite: 4_F_KAFRA1
+  state: disabled
+  script: scripts/npc/vault_door.lua
+- name: Vault Counter
+  script: scripts/npc/vault_counter.lua
 ```
 
 ```yaml
@@ -1221,14 +1239,16 @@ end
 
 | Event | Handler arguments | When |
 |---|---|---|
-| `login` | `player` | A player logs in, in the zone it enters. |
-| `logout` | `player` | A player logs out, before it leaves. |
-| `map_enter` | `player` | A player enters the zone: at login and after a warp. |
+| `login` | `player` | A player logs in, in the zone it enters. Mod, NPC and event contexts. An NPC hears the players of its own map, as `OnPCLoginEvent`, unless it is disabled. |
+| `logout` | `player` | A player logs out, before it leaves. Mod, NPC and event contexts, as `login`. |
+| `map_enter` | `player` | A player enters the zone: at login and after a warp. Mod, NPC and event contexts, as `login`. |
 | `death` | `death` | A player or a monster died on the context's map ("Death" below). Mod, NPC and event contexts. |
-| `base_level_up` | `player` | The player gained a base level. |
-| `job_level_up` | `player` | The player gained a job level. |
+| `base_level_up` | `player` | The player gained a base level. Mod, NPC and event contexts, as `login`. |
+| `job_level_up` | `player` | The player gained a job level. Mod, NPC and event contexts, as `login`. |
 | `job_change` | `change` | The player changed jobs: `change` is `{ player, from, to }`. It fires after the new job's stats and skills are set ("Jobs" above). Mod and event contexts. |
 | `click` | `player`, `conversation` | NPC contexts only: a player talks to the NPC ("NPC scripts" below). |
+| `npc_event` | `event` | NPC contexts only: an event of the label in the options was sent to the NPC ("Events between NPCs" below). |
+| `monster_touch` | `monster` | NPC contexts only: a monster walked into the NPC's touch area, as `OnTouchNPC`. |
 | `status_start`, `status_end`, `status_tick` | `event` | A status started, ended or ticked on the context's map ("Status effects" below). Mod and event contexts. |
 | `skill_used` | `use` | A skill took effect on the context's map, after its cast time ("Skills" below). Mod, event and item contexts. |
 | `chat` | `message` | A player on the context's map said a line, after it went out ("Chat" below). Mod, NPC and event contexts. |
@@ -1295,7 +1315,7 @@ Handlers get players as read-only handles. Each access looks the player up again
 
 ### NPC scripts
 
-An NPC's entry script runs its setup function once for each placed NPC that names it, in an NPC context. The NPC is `context:get_instance()`. Locals of the setup function belong to that NPC, as rAthena's `.variables`. A zone starts its NPCs' scripts when the first player enters it.
+An NPC's entry script runs its setup function once for each placed NPC that names it, in an NPC context. The NPC is `context:get_instance()`. Locals of the setup function belong to that NPC, as rAthena's `.variables`. A zone starts its NPCs' scripts when the first player enters it, or when an NPC message reaches it. The start map's zone starts them at once when it has NPCs without a map.
 
 ```lua
 local events = require "wa.events"
@@ -1373,6 +1393,62 @@ end
 - A warp asked for in a `touch` or `untouch` handler happens once the handler ran or paused, as in a conversation.
 - Touch handlers run as a click does, so a mod over its CPU budget still runs them.
 - Converted `OnTouch_` labels run for one player at a time, and not for a hiding or dead player, through `R.touch_one` in `scripts/lib/rathena.lua` ("Core's NPCs" below).
+- `monster_touch` runs when a monster walks into the area, as rAthena's `OnTouchNPC`: once, until the monster steps out of every touch area or into another NPC's. A disabled or cloaked NPC hears none.
+
+#### NPCs of the world
+
+`world.get_npc(name)` finds an NPC of any map, or one without a map, as rAthena's `npc_name2id` (review decision 58). A plain name is the mod's record, then core's, and `mod:Name` another mod's. Case counts. It returns nil for an NPC that does not exist or was removed. It needs `game.read`.
+
+- Each zone runs its own NPCs. A handle of an NPC of another map reads its fields: `name`, `full_name`, `hidden_name`, `unique_name`, `map`, `x`, `y` and `state`.
+- Its view changes and events go to its zone as a message, and run there after the current step. Messages from one zone arrive in the order sent.
+- Its other methods, such as `npc:say_aloud`, raise "the NPC is on another map".
+- A message starts the NPC scripts of a zone that has not started them, so the NPCs of a map nobody visited still get their events.
+- `npc.full_name` is the name with its `#` part, as `strnpcinfo(0)`: `name`, then `#` and `hidden_name` when the record's name has a `#` part. `unique_name` is the record's name without the mod's ID, as `strnpcinfo(3)`. `map` is "" for an NPC without a map.
+- `maps.find_player(name)` and `maps.find_player_by_id(id)` find an online player of the context's map, by name, or by account ID and else character ID. A player on another map is nil: a player handle acts in its own zone.
+
+#### Visibility and state
+
+These methods are rAthena's `enablenpc` and its aliases (`npc_enable_target`). A mod's own NPCs need no permission. Another mod's need `npcs.control`.
+
+| Method | rAthena | Meaning |
+|---|---|---|
+| `npc:show()` | `enablenpc` | The NPC shows, takes clicks, and its touch area works again. A player who stands in the area gets the touch event. It does not uncloak the NPC. |
+| `npc:hide()` | `disablenpc` | No view, no click, no touch, and its player events and events with a player do not run. `npc:fire_event` without a player still runs it. |
+| `npc:set_hidden(hidden)` | `hideonnpc`, `hideoffnpc` | Hidden, the NPC does not show and refuses clicks, but its touch area works. |
+| `npc:set_cloaked(cloaked, player?)` | `cloakonnpc`, `cloakoffnpc`, and the `self` forms with a player | Cloaked, the NPC does not show and has no touch for that player, and monsters do not touch it. Without a player it is for everyone, and it ends the single players' cloaks on the NPC's map. |
+| `npc:is_cloaked(player?)` | `isnpccloaked` | Whether the NPC is cloaked for the player, or for everyone. Needs `game.read`. |
+| `npc:remove()` | `unloadnpc` | The NPC is gone until the server restarts. Its context ends after the current step, and its NPC variables go. |
+
+- `npc.state` is `"disabled"` after `hide`, `"hidden"` after `set_hidden(true)`, and `"shown"` otherwise. Cloaking is apart.
+- A cloak for one player stays with the character while it is on another map, as rAthena's list on the player.
+
+#### Events between NPCs
+
+```lua
+local context = require "wa.context"
+local events = require "wa.events"
+local world = require "wa.world"
+
+-- The door's script.
+return function()
+  local door = context:get_instance()
+  events.on("npc_event", function(event)
+    door:show()
+  end, { name = "OnOpen" })
+end
+
+-- The lever's click handler.
+events.on("click", function(player, conversation)
+  world.get_npc("Vault Door"):fire_event("OnOpen")
+end)
+```
+
+- `events.on("npc_event", handler, { name = "OnOpen" })` listens to one label, without regard to case. The handler gets `event`: `name` (in lower case), `player`, and `conversation`.
+- `npc:fire_event(name)` is rAthena's `donpcevent`: the handlers run with no player, also on a disabled NPC. It returns whether the NPC has a handler of the label, as far as the world knows: true for an NPC whose zone has not started its scripts.
+- `npc:fire_event(name, { player = player })` is `doevent`: the handlers run in a conversation with the player, which waits while the player talks to an NPC, as a touch does. They do not run on a disabled NPC. The player must be on the NPC's map.
+- `world.fire_npc_event(name)` is `donpcevent "::OnX"`: every NPC with the label, on every map, with no player. It returns how many NPCs have one, of the zones that started their scripts. Without `npcs.control` it reaches the mod's own NPCs only.
+- Events run after the current step: in the same zone once the script's call returned, in another zone when that zone runs its messages. An NPC that sends events to itself in a loop runs at most 4 rounds of 4,096 messages per pass of its zone.
+- An NPC without a map runs in the start map's zone, as a world event without a map. It has no view, no click and no touch.
 
 ### Saved variables: wa.variables
 
@@ -1395,17 +1471,19 @@ return function()
 end
 ```
 
-- Scopes: `character`, `character_temporary`, `account`, `server`, and `instance`, which raises an error until instances exist. Types: `integer`, `boolean`, `string`, and `table`.
+- Scopes: `character`, `character_temporary`, `account`, `server`, `server_temporary`, `npc`, and `instance`, which raises an error until instances exist. Types: `integer`, `boolean`, `string`, and `table`.
+- `server_temporary` is one value for the world that is not saved, as rAthena's `$@` variables (review decision 58). It is lost when the server stops.
+- `npc` is one value per NPC, which every zone reads, as rAthena's `.x` variables that `getvariableofnpc` reaches (review decision 58). `get(npc)`, `set(npc, value)` and `add(npc, amount)` take an NPC handle of any map. They are not saved, and an NPC's go when it is removed.
 - A declaration names a variable of the running mod. Two mods can use the same name. One mod declares a name with one type.
-- `get(player)` and `set(player, value)`, or `get()` and `set(value)` for a server variable. `add(player, amount)` changes an integer in one step and returns the new value.
+- `get(player)` and `set(player, value)`, or `get()` and `set(value)` for a server variable, temporary or not. `add(player, amount)` changes an integer in one step and returns the new value.
 - Defaults: 0, false, "", and nil for a table. Setting nil, or the default, removes the stored value.
 - A string is at most 4,096 bytes. A table holds numbers, booleans, strings and tables, with keys that are all strings, or 1 to n, and is at most 64 KB as JSON. `get` returns a copy.
 - Names are 1 to 64 letters, digits and `_`, not starting with a digit.
 - Character and account variables are saved with the character, in the same transaction. Two characters of one account that change the same account variable at once: the last save wins.
 - Without a database, variables live in memory until the server stops.
 - Declaring needs `storage.mod`, which every mod has.
-- A mod declares at most 256 variables over every scope. Declaring the same variable again, such as in a handler, gives the same handle and does not count.
-- A mod's values on one player take at most 1 MiB as JSON: its character and account variables together, and its temporary ones apart. Its server variables take at most 256 values and 1 MiB. A `set` past a limit raises an error that names it.
+- A mod declares at most 256 variables over every scope. Declaring the same variable again, such as in a handler, gives the same handle and does not count. Core has no such limit (review decision 58).
+- A mod's values on one player take at most 1 MiB as JSON: its character and account variables together, and its temporary ones apart. Its server variables take at most 256 values and 1 MiB, and its temporary server and NPC variables together the same again. Core has no limit on the count. A `set` past a limit raises an error that names it.
 
 ### Shops, save points and announcements
 
@@ -1562,6 +1640,7 @@ end
 |---|---|---|
 | `party:get_members()` | `game.read` | The online members on this map, in slot order. |
 | `party:get_member_names()` | `game.read` | Every member's name, online or not. |
+| `party:get_member_list()` | `game.read` | Every member, online or not, as `{ name, character_id, account_id, online }`, as `getpartymember` types 0 to 2 (review decision 58). |
 | `parties.create(leader, name)` | `party.manage` | Makes a party, as `party_create`. Returns nil when the name is taken or the leader has a party. |
 | `party:add(player)`, `party:remove(player)` | `party.manage` | As `party_addmember` and `party_delmember`. They return false when nothing changed. Removing the leader breaks the party up. |
 | `party:set_leader(player)` | `party.manage` | As `party_changeleader`: the player must be an online member. |
@@ -2713,7 +2792,9 @@ go run ./tools/wactl convert npcs --mode renewal --out /tmp/core-npcs
 The extract keeps the script NPCs of the folders the first release needs, and of rAthena's `quests`, `warps` and `events` folders in part files of `npcs.json`, each below 2 MB (review decision 55). What converts loads. What does not is listed in the coverage report, by folder, by command and by file.
 
 - `OnTouch` becomes an `events.on("touch", ...)` handler, and `OnTouch_` a handler through `R.touch_one`: one player at a time, not a hiding or dead player, and the next player in the area when that one leaves, as `npc_touchnext_areanpc`. When a script has both, `OnTouch_` wins, as in rAthena.
-- The line's span becomes the record's `touch` field. A line without a span gets no touch area. A line without a sprite (-1) that has a touch area gets the sprite `HIDDEN_NPC`, which shows nothing.
+- The line's span becomes the record's `touch` field. A line without a span gets no touch area. A line without a sprite (-1) gets `sprite: none`: no view and no click, events and touch only (review decision 58).
+- The NPC-to-NPC commands convert onto review decision 58's API: every `On` label is an `npc_event` handler, `donpcevent` and `doevent` fire them, enable, disable, hide and cloak change the view, and `getvariableofnpc` reads NPC variables, which every zone shares. `$@` variables are temporary server variables. A script NPC without a map is placed without one and runs in the start map's zone, and a line that starts disabled, hidden or cloaked gets `state` (tools/convert/README.md).
+- `atcommand` and `setbattleflag` do not convert, on purpose (review decision 58).
 - An `OnTouch` or `OnTouch_` label with a dialog converts: it talks in the touch's conversation (review decision 56).
 - `R.touch_one` with a dialog does not run for the next player already in the area when the first one leaves, since that player has no conversation. It runs for the next player who comes in. rAthena shows the dialog to the player already in the area.
 - `percentheal` with a negative amount converts to `player:heal_percent`, which takes HP and SP. So every Kafra converts fully, Niflheim's too.

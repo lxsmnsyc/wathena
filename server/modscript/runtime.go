@@ -137,6 +137,13 @@ type Options struct {
 	// Quests are the quests of data/quests.yml (review decision 45).
 	// Without them every quest call raises an error.
 	Quests *quest.Table
+	// Temporary holds the values every zone shares and nobody saves:
+	// temporary server variables and NPC variables (review decision 58).
+	// Without it, the runtime keeps its own, which only its zone sees.
+	Temporary *variables.Temporary
+	// NPCLabels hears an NPC gain (add) or lose a handler of an event
+	// label, so the host knows which NPCs have one. It may be nil.
+	NPCLabels func(npc int64, label string, add bool)
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -164,7 +171,7 @@ type Runtime struct {
 	fns  struct {
 		loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref
 		loadTests, runCase, describe, runHooks, condition                         *script.Ref
-		statusBonuses, runGeneration                                              *script.Ref
+		statusBonuses, runGeneration, npcEvent                                    *script.Ref
 	}
 	nextID int64
 
@@ -253,6 +260,8 @@ type Runtime struct {
 	// owner of memory to give (budget.go). spent is the state's CPU count
 	// at the last charge. tick counts the ticks, and tickNow is the zone
 	// clock at the last one.
+	// temp is Options.Temporary, or the runtime's own.
+	temp      *variables.Temporary
 	budgets   map[string]*budget
 	nextOwner int
 	spent     int64
@@ -280,8 +289,9 @@ type Context struct {
 	bonuses []*Bonus
 	// player is the player of an item context: the user or the wearer.
 	player int64
-	// npc is the NPC handle of an NPC context.
-	npc int64
+	// npc is the NPC handle of an NPC context, and npcRef its NPC.
+	npc    int64
+	npcRef *NPC
 	// conversations are those that run in an NPC context. retiring is
 	// set when the context ended while some still run: its handlers and
 	// timers are gone, and it ends with the last conversation.
@@ -316,6 +326,8 @@ type handler struct {
 	skill  *skillFilter
 	chat   *chatFilter
 	trade  *tradeFilter
+	// label is the event label of an npc_event handler, in lower case.
+	label string
 }
 
 type timer struct {
@@ -347,6 +359,10 @@ func New(opts Options, mods []*mod.Scripts) (*Runtime, error) {
 		skillCtxs: map[int64]*Context{}, skillEntries: map[int64]string{}, passives: map[passiveKey]*passive{},
 		monsterCtxs: map[int64]*Context{},
 		budgets:     map[string]*budget{}, nextOwner: 1,
+		temp: opts.Temporary,
+	}
+	if r.temp == nil {
+		r.temp = variables.NewTemporary()
 	}
 	// Each owner of memory has its limit: core CoreMemory and each mod
 	// its budget's. Without a limit in Options, the state has none of its
@@ -475,6 +491,13 @@ func (r *Runtime) init() error {
 		{"npc_field", r.npcField},
 		{"npc_emotion", r.npcEmotion},
 		{"npc_say", r.npcSay},
+		{"npc_control", r.npcControl},
+		{"npc_is_cloaked", r.npcIsCloaked},
+		{"npc_fire_event", r.npcFireEvent},
+		{"world_get_npc", r.worldGetNPC},
+		{"world_fire_npc_event", r.worldFireNPCEvent},
+		{"maps_find_player", r.mapsFindPlayer},
+		{"maps_find_player_by_id", r.mapsFindPlayerByID},
 		{"conversation_say", r.conversationSay},
 		{"conversation_next", r.conversationNext},
 		{"conversation_choose", r.conversationChoose},
@@ -619,6 +642,7 @@ func (r *Runtime) init() error {
 		{"check_condition", &r.fns.condition},
 		{"status_bonuses", &r.fns.statusBonuses},
 		{"run_generation", &r.fns.runGeneration},
+		{"npc_event", &r.fns.npcEvent},
 	} {
 		ref, err := r.s.Keep(tab.Get(f.name))
 		if err != nil {
@@ -824,6 +848,7 @@ func (r *Runtime) removeHandler(h *handler) {
 		return
 	}
 	h.removed = true
+	r.labelChanged(h, false)
 	h.fn.Release()
 	delete(r.byID, h.id)
 	list := r.handlers[h.event]
@@ -925,7 +950,7 @@ func (r *Runtime) Fire(event string, args ...Arg) {
 	list = slices.Clone(list)
 	vals := make([]script.Value, 0, 1+2*len(args))
 	for _, h := range list {
-		if h.removed || h.ctx.ended || r.off(h.ctx) {
+		if h.removed || h.ctx.ended || r.off(h.ctx) || skipsDisabled(h, event) {
 			continue
 		}
 		vals = append(vals[:0], h.fn.Value())
@@ -1022,12 +1047,16 @@ const (
 // Events lists every event name and the context kinds that can listen
 // to it.
 var Events = map[string][]string{
-	"login":         {KindMod, KindEvent},
-	"logout":        {KindMod, KindEvent},
-	"map_enter":     {KindMod, KindEvent},
+	// The player events hear the players of the context's map. NPC
+	// contexts hear them too (review decision 58), as rAthena's
+	// OnPCLoginEvent, OnPCLogoutEvent, OnPCLoadMapEvent,
+	// OnPCBaseLvUpEvent and OnPCJobLvUpEvent (script.cpp 266 to 270).
+	"login":         {KindMod, KindNPC, KindEvent},
+	"logout":        {KindMod, KindNPC, KindEvent},
+	"map_enter":     {KindMod, KindNPC, KindEvent},
 	"death":         {KindMod, KindNPC, KindEvent},
-	"base_level_up": {KindMod, KindEvent},
-	"job_level_up":  {KindMod, KindEvent},
+	"base_level_up": {KindMod, KindNPC, KindEvent},
+	"job_level_up":  {KindMod, KindNPC, KindEvent},
 	// job_change follows a job change (review decision 24).
 	"job_change": {KindMod, KindEvent},
 	"click":      {KindNPC},
@@ -1035,8 +1064,13 @@ var Events = map[string][]string{
 	// NPC's touch area (review decision 55).
 	"touch":   {KindNPC},
 	"untouch": {KindNPC},
-	"use":     {KindItem},
-	"damage":  {KindItem},
+	// npc_event runs an NPC's named event, which npc:fire_event and
+	// world.fire_npc_event send (review decision 58). monster_touch runs
+	// when a monster walks into the NPC's touch area, as OnTouchNPC.
+	"npc_event":     {KindNPC},
+	"monster_touch": {KindNPC},
+	"use":           {KindItem},
+	"damage":        {KindItem},
 	// skill_used is an item event, and an event of mod and event
 	// contexts (review decision 18).
 	"skill_used": {KindItem, KindMod, KindEvent},

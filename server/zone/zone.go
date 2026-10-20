@@ -693,6 +693,12 @@ type Zone struct {
 	// their scripts run.
 	npcHandles  map[int64]*entity
 	npcsStarted bool
+	// npcIn gets the NPC messages of this zone and others, and
+	// remoteNPCs are the handles of NPCs of other zones, by handle, with
+	// remoteIDs the reverse (npcworld.go).
+	npcIn      npcInbox
+	remoteNPCs map[int64]*npcEntry
+	remoteIDs  map[*npcEntry]int64
 	// touchNPCs are the NPCs with a touch area and a script, in the
 	// order SetNPCs placed them (touch.go).
 	touchNPCs []*entity
@@ -806,6 +812,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		stopped:   make(chan struct{}),
 		Metrics:   &metrics.Zone{Name: mapName},
 	}
+	z.npcIn.wake = make(chan struct{}, 1)
 	z.spawn(spawns)
 	return z
 }
@@ -923,6 +930,9 @@ func (z *Zone) Run(ctx context.Context) {
 			z.safely("chat", func() { z.receiveChat(in) })
 		case in := <-z.socialIn:
 			z.safely("social", func() { z.receiveSocial(in) })
+		case <-z.npcIn.wake:
+			// NPC messages run with the script events at the top of the
+			// loop (runScripts).
 		case c := <-z.commands:
 			began := time.Now()
 			z.handleSafely(c)
@@ -1535,8 +1545,9 @@ func (z *Zone) stepAt(now int64) {
 			z.propertyWalkMoved(e, e.x-dx, e.y-dy)
 			if e.monster != nil && !e.dead {
 				// unit_walktoxy_timer: the monster's next step, or the end
-				// of its walk.
+				// of its walk, then the touch areas it walks into.
 				z.mobStepped(e)
+				z.monsterTouched(e)
 			}
 			// unit_walktoxy_timer touches the warp on each cell a
 			// player enters. A warp that takes the player ends the
@@ -1816,6 +1827,11 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 //     of, unless the viewer is a detector. A player's summon is not an
 //     enemy of players, so they still see it.
 func hiddenFrom(e, viewer *entity) bool {
+	if e.npc != nil && viewer.player != nil {
+		// An NPC that is disabled, hidden, cloaked for the viewer or
+		// without a view (npcworld.go).
+		return !e.npc.visibleTo(viewer.player)
+	}
 	if e == viewer || e.player == nil && e.monster == nil {
 		return false
 	}

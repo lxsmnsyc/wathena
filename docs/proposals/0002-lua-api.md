@@ -1606,3 +1606,13 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
      - A variable name that starts with a digit, such as `$2012_tegod_gloria`, needs a naming rule for `wa.variables`, and an assignment used as a value needs a rule for its order.
      - `OnInterIfInitOnce` runs once when the map server first reaches the character server, not at each script load as `OnInit` does. Its only script also needs `setbattleflag`, so it is left.
      - `strnpcinfo(0)` still converts to `npc.name`, which drops the `#` part. It needs the NPC's full name in the API.
+41. Build review decision 58, group 1: areas B1 to B4 of [0002b](0002b-npc-api.md), lookups, NPC visibility and state, events between NPCs and NPCs without a map, and variables. Done on 2026-10-20 ([decision 0062](../decisions/0062-npc-api-group-1.md)). Groups B5 to B10 come later.
+   - API: `world.get_npc`, `world.fire_npc_event`, `maps.find_player`, `maps.find_player_by_id`, `party:get_member_list`, the `wa.Npc` fields `full_name`, `hidden_name`, `unique_name` and `state`, the NPC methods `show`, `hide`, `set_hidden`, `set_cloaked`, `is_cloaked`, `remove` and `fire_event`, the events `npc_event` and `monster_touch`, the player events in NPC contexts, `variables.npc_*` and `variables.server_temporary_*`, and the permission `npcs.control`.
+   - Data: `data/npcs.yml` takes `state`, `sprite: none`, and script records without a map, which run in the start map's zone.
+   - Across zones: an NPC event or a view change of another zone's NPC is a message to that zone's inbox, which runs after the current step, in the order sent. NPC and temporary server variables live in memory that every zone shares. Core has no variable count limit.
+   - Converter: every `On` label is an `npc_event` handler, and the NPC-to-NPC commands, `$@` variables and `getvariableofnpc` convert. `atcommand` and `setbattleflag` are refused. renewal places 4,560 of 7,067 script NPCs, up from 3,458, and 9,617 of 14,865 lines with duplicates, up from 6,700. pre-renewal places 2,827 of 3,754, up from 2,061, and 6,460 of 8,205, up from 4,399.
+   - Details to review, in decision 0062:
+     - The player events hear only the NPC's map, so the converter refuses `OnPCLoginEvent` and the other labels of every map. `maps.find_player` finds only the context's map.
+     - `fire_event` and `fire_npc_event` count a zone that has not started its scripts as handled.
+     - A broadcast starts the NPC scripts of every zone that has not started them.
+     - Commands of B1 to B4 left for later groups: `getnpcid`, `mobcount` of another NPC's label, `awake`, `attachrid`, and `sc_start2` on another character.

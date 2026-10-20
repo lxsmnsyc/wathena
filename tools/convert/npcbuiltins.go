@@ -645,13 +645,12 @@ type dynamicVar struct {
 
 // dynamicName reads a computed getd or setd name. It converts when the
 // text starts with a fixed string that fixes the scope: no prefix (a
-// character variable), @, # or ##, or $. R.getd and R.setd read the
+// character variable), @, # or ##, $, or $@. R.getd and R.setd read the
 // rest of the name, its $ and its index when the script runs, as getd
 // does. These do not convert:
 //   - .@ and . variables, which are Lua locals with names fixed when the
 //     script converts.
-//   - $@ and ' variables, which need temporary server and instance
-//     variables.
+//   - ' variables, which need instance variables.
 //   - A start that a currency's variable, a parameter, a constant or a
 //     skill also starts with: getd would read those, not a variable.
 func (b *body) dynamicName(what string, e Expr) (*dynamicVar, error) {
@@ -676,12 +675,11 @@ func (b *body) dynamicName(what string, e Expr) (*dynamicVar, error) {
 	if rest == "" || !variableRef.MatchString(rest[:1]) {
 		return nil, unsupported(what, "a name whose fixed start does not fix its scope")
 	}
-	scope := map[string]string{"": "character", "@": "character_temporary", "#": "account", "##": "account", "$": "server"}[prefix]
+	scope := map[string]string{"": "character", "@": "character_temporary", "#": "account", "##": "account", "$": "server",
+		"$@": "server_temporary"}[prefix]
 	switch prefix {
 	case ".@", ".":
 		return nil, unsupported(what, "a computed name of a .@ or . variable, which are Lua locals")
-	case "$@":
-		return nil, unsupported("variables", "%s... is a temporary server variable", text)
 	case "'":
 		return nil, unsupported("variables", "%s... is an instance variable", text)
 	}

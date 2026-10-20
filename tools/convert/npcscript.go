@@ -498,9 +498,13 @@ func checkGotos(b *body) error {
 
 // npcScript converts an NPC's script into its entry script. It returns
 // "" for a script that does nothing. Its setup function does this:
-//   - It makes a local function for each event label that a schedule
-//     or a monster's death runs. The function runs with the player that
-//     killed the monster, or with no player.
+//   - It makes a local function for each event label. The function runs
+//     with the player of the event, such as the player that killed a
+//     monster, or with no player.
+//   - Each label is an npc_event handler, which npc:fire_event and
+//     world.fire_npc_event run, as rAthena's ev_db lists every label
+//     that starts with On (review decision 58). OnTouchNPC is the
+//     monster_touch handler too.
 //   - It adds the schedules of clock labels, the touch handler of
 //     OnTouch or OnTouch_, and the click handler.
 //   - It runs OnInit last, so an end there does not skip the rest.
@@ -511,10 +515,18 @@ func (n *npcConv) npcScript() (string, error) {
 	}
 	click, events, order := segments(stmts.Stmts)
 	n.prepare(stmts.Stmts)
+	// The labels as the script writes them, for npc_event's name.
+	labels := map[string]string{}
+	for _, st := range stmts.Stmts {
+		if l, ok := st.(*Label); ok && strings.HasPrefix(l.Name, "On") {
+			if _, seen := labels[strings.ToLower(l.Name)]; !seen {
+				labels[strings.ToLower(l.Name)] = l.Name
+			}
+		}
+	}
 	for _, e := range order {
 		n.eventLabels[e] = true
 	}
-	mobEvents := n.mobEvents(stmts.Stmts)
 	n.timerLabels = timerLabels(stmts.Stmts)
 	timed := map[string]bool{}
 	for _, l := range n.timerLabels {
@@ -530,31 +542,23 @@ func (n *npcConv) npcScript() (string, error) {
 		}
 	}
 	for _, e := range order {
-		if e == "oninit" || e == "ontouch" && touch == "ontouch_" {
-			continue
-		}
-		if e == touch || timed[e] {
-			n.eventFn(e)
-			continue
+		if err := labelError(e); err != nil {
+			return "", err
 		}
 		format, ok, err := clockSchedule(e)
 		switch {
 		case ok && err == nil:
 			schedules[e] = format
-			n.eventFn(e)
-		case mobEvents[e]:
-			// The function comes when the monster command converts.
 		case err != nil:
 			return "", err
-		default:
-			return "", unsupported("event "+e, "")
 		}
+		// OnInit, the touch and timer labels, the labels of monsters'
+		// deaths and every other label: each is an event function, which
+		// npc_event runs too.
+		n.eventFn(e)
 	}
-	var setup []string
-	if len(events["oninit"]) > 0 {
-		if setup, err = n.writeBody(events["oninit"], 2, true, false); err != nil {
-			return "", err
-		}
+	if len(n.eventOrder) > 150 {
+		return "", unsupported("script", "more than 150 event labels")
 	}
 	var handler []string
 	if !emptyScript(click) {
@@ -567,15 +571,20 @@ func (n *npcConv) npcScript() (string, error) {
 	// A body may name more labels, with a monster command.
 	for i := 0; i < len(n.eventOrder); i++ {
 		e := n.eventOrder[i]
-		if e == touch {
+		if e == touch || e == "oninit" {
 			n.bodyCalls = map[string]bool{}
 		}
 		bodies[e], err = n.writeBody(events[e], 3, true, false)
-		if e == touch {
+		if e == touch || e == "oninit" {
 			calls := n.bodyCalls
 			n.bodyCalls = nil
-			if err == nil {
+			if err == nil && e == touch {
 				touchDialog = n.touchHasDialog(bodies[e], calls)
+			}
+			if err == nil && e == "oninit" && n.touchHasDialog(bodies[e], calls) {
+				// OnInit runs at the setup, with no player: a wait or a
+				// dialog there has no conversation.
+				err = unsupported("event oninit", "it waits or shows a dialog, and OnInit runs without a player")
 			}
 		}
 		if err != nil {
@@ -584,7 +593,7 @@ func (n *npcConv) npcScript() (string, error) {
 		n.ok("event " + e)
 	}
 	n.touch, n.touchDialog = touch != "", touchDialog
-	if len(handler) == 0 && len(setup) == 0 && len(n.eventOrder) == 0 {
+	if len(handler) == 0 && len(n.eventOrder) == 0 {
 		return "", nil
 	}
 	f := n.file
@@ -631,6 +640,21 @@ func (n *npcConv) npcScript() (string, error) {
 	if timer {
 		f.line("%s", n.timerSetup())
 	}
+	if len(n.eventOrder) > 0 {
+		f.need("events")
+	}
+	for _, e := range n.eventOrder {
+		name := labels[e]
+		if name == "" {
+			name = e
+		}
+		f.line(`events.on("npc_event", function(event) %s(event.player, event.conversation) end, { name = %s })`, n.eventFns[e], luaString(name))
+		if e == "ontouchnpc" {
+			// OnTouchNPC runs with the monster attached in rAthena, which a
+			// converted script cannot read.
+			f.line(`events.on("monster_touch", function() %s() end)`, n.eventFns[e])
+		}
+	}
 	for _, e := range order {
 		if format, ok := schedules[e]; ok {
 			f.need("schedules")
@@ -658,14 +682,8 @@ func (n *npcConv) npcScript() (string, error) {
 		f.line("  end)")
 		f.line("end)")
 	}
-	if len(setup) > 0 {
-		f.line("R.run(function()")
-		f.indent = 0
-		for _, l := range setup {
-			f.line("%s", l)
-		}
-		f.indent = 1
-		f.line("end)")
+	if fn, ok := n.eventFns["oninit"]; ok {
+		f.line("%s()", fn)
 	}
 	f.indent = 0
 	f.line("end")

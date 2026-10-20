@@ -29,7 +29,15 @@ local PORING = monsters.id "PORING"
 
 return function()
   local npc = context:get_instance()
-  local event_onmymobdead, event_onother
+  local event_oninit, event_onmymobdead, event_onother
+  event_oninit = function(player, conversation)
+    R.run(function()
+      R.monster(npc, "prontera", 0, 0, PORING, 2, "onmymobdead", event_onmymobdead)
+      R.monster(npc, "prontera", 150, 160, PORING, 1, "onmymobdead", event_onmymobdead)
+      R.monster(npc, "prontera", 150, 160, PORING, 1)
+      do return end
+    end)
+  end
   event_onmymobdead = function(player, conversation)
     R.run(function()
       if (R.mobcount(npc, "prontera", "onmymobdead") < 1) then
@@ -45,16 +53,14 @@ return function()
       do return end
     end)
   end
+  events.on("npc_event", function(event) event_oninit(event.player, event.conversation) end, { name = "OnInit" })
+  events.on("npc_event", function(event) event_onmymobdead(event.player, event.conversation) end, { name = "OnMyMobDead" })
+  events.on("npc_event", function(event) event_onother(event.player, event.conversation) end, { name = "OnOther" })
   events.on("click", function(player, conversation)
     R.run(function()
       conversation:say("[Mobs]", "There are " .. R.mobcount(npc, "prontera", "onmymobdead") .. " left.")
       do return end
     end)
   end)
-  R.run(function()
-    R.monster(npc, "prontera", 0, 0, PORING, 2, "onmymobdead", event_onmymobdead)
-    R.monster(npc, "prontera", 150, 160, PORING, 1, "onmymobdead", event_onmymobdead)
-    R.monster(npc, "prontera", 150, 160, PORING, 1)
-    do return end
-  end)
+  event_oninit()
 end

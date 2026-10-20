@@ -25,12 +25,17 @@ type Store interface {
 	SetServerVariable(ctx context.Context, k Key, value string) error
 }
 
+// Core is core's mod ID, which the count limits leave out.
+const Core = "core"
+
 // RetryDelay is the wait before a failed write runs again.
 const RetryDelay = 5 * time.Second
 
 // Limits of one mod's server variables (review decision 52).
 const (
-	// MaxModValues is the most server variables one mod may hold.
+	// MaxModValues is the most server variables one mod may hold. Core
+	// has no such limit (review decision 58): its converted NPCs share
+	// one mod.
 	MaxModValues = 256
 	// MaxModBytes is the most bytes of JSON one mod's server variables
 	// may hold together.
@@ -99,7 +104,7 @@ func (s *Server) put(k Key, value string) error {
 	if value != "" {
 		count++
 		bytes += len(value)
-		if !had && count > MaxModValues {
+		if !had && count > MaxModValues && k.Mod != Core {
 			return fmt.Errorf("%s holds %d server variables, the most a mod may", k.Mod, MaxModValues)
 		}
 		if len(value) > len(old) && bytes > MaxModBytes {

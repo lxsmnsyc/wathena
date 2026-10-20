@@ -40,7 +40,52 @@ type npcHost struct {
 	effects []string
 	// rolls counts the random numbers it gave.
 	rolls int64
+	// byName are the placed NPCs' handles by record name, and fired the
+	// events scripts sent, which the test runs after each step (review
+	// decision 58). controls are the view changes, as "<id> <op> <on>
+	// <player>".
+	byName   map[string]int64
+	fired    []firedEvent
+	controls []string
 }
+
+// firedEvent is an event a script sent to an NPC, or to every NPC with
+// the label when npc is 0.
+type firedEvent struct {
+	npc    int64
+	label  string
+	player int64
+}
+
+// The NPC calls of review decision 58: NPCs are found by record name,
+// view changes are counted, and events wait for the test to run them.
+func (h *npcHost) FindNPC(name, _ string) (int64, bool) {
+	id, ok := h.byName[strings.TrimPrefix(name, "core:")]
+	return id, ok
+}
+func (h *npcHost) NPCMod(int64) (string, error) { return "core", nil }
+func (h *npcHost) NPCKey(id int64) (string, error) {
+	n := h.npcs[id]
+	if n == nil {
+		return "", fmt.Errorf("no NPC %d", id)
+	}
+	return "core:" + n.Name, nil
+}
+func (h *npcHost) ControlNPC(id int64, c modscript.NPCControl) error {
+	h.controls = append(h.controls, fmt.Sprintf("%d %s %t %d", id, c.Op, c.On, c.Player))
+	return nil
+}
+func (h *npcHost) NPCCloaked(int64, int64) (bool, error) { return false, nil }
+func (h *npcHost) FireNPCEvent(id int64, label string, player int64) (bool, error) {
+	h.fired = append(h.fired, firedEvent{id, label, player})
+	return true, nil
+}
+func (h *npcHost) BroadcastNPCEvent(label string, _ []string) (int, error) {
+	h.fired = append(h.fired, firedEvent{0, label, 0})
+	return 1, nil
+}
+func (h *npcHost) FindPlayer(name string) (int64, bool)  { return 1, name == "Tester" }
+func (h *npcHost) FindPlayerByID(id int64) (int64, bool) { return 1, id == 1 }
 
 func (h *npcHost) Now() int64 { return h.now }
 
@@ -210,6 +255,13 @@ func (h *npcHost) NPCField(id int64, field string) (script.Value, error) {
 	switch field {
 	case "name":
 		return script.String(displayName(n.Source)), nil
+	case "full_name", "unique_name":
+		return script.String(n.Source), nil
+	case "hidden_name":
+		_, hidden, _ := strings.Cut(n.Source, "#")
+		return script.String(hidden), nil
+	case "state":
+		return script.String("shown"), nil
 	case "map":
 		return script.String(n.Map), nil
 	case "x", "y":
@@ -305,7 +357,13 @@ func TestRunConvertedNPCs(t *testing.T) {
 			_ = r
 			logs := &logRecorder{}
 			h := &npcHost{testHost: base, npcs: map[int64]*NPC{}, steps: map[int64]modscript.Step{}, ended: map[int64]bool{},
-				vars: map[modscript.VariableKey]string{}, zeny: 1_000_000, market: marketHost{shops: coreShops(core)}}
+				vars: map[modscript.VariableKey]string{}, zeny: 1_000_000, market: marketHost{shops: coreShops(core)}, byName: map[string]int64{}}
+			for i, n := range core.NPCs.NPCs {
+				if n.Placed && n.Script != "" {
+					h.npcs[int64(i+1)] = n
+					h.byName[n.Name] = int64(i + 1)
+				}
+			}
 			// Each map runs its NPCs in a runtime of its own, as each
 			// zone does, so a mod's limits count per map.
 			var maps []string
@@ -321,8 +379,43 @@ func TestRunConvertedNPCs(t *testing.T) {
 			}
 			sc := coreScripts(t, core)
 			quests := coreQuests(t, core)
-			var started, clicks, steps, deaths, touches int
+			var started, clicks, steps, deaths, touches, fired int
+			// talk answers a conversation's steps, with the option pick of
+			// each menu, from 1, or the last for -1.
+			talk := func(rt *modscript.Runtime, conv *modscript.Conversation, pick int) {
+				for range 300 {
+					if conv == nil || conv.Done {
+						break
+					}
+					steps++
+					s := h.steps[conv.ID]
+					var answer script.Value
+					switch s.Kind {
+					case modscript.StepMenu:
+						var shown []int
+						for i, o := range s.Options {
+							if o != "" {
+								shown = append(shown, i+1)
+							}
+						}
+						k := pick
+						if k < 0 || k > len(shown) {
+							k = len(shown)
+						}
+						answer = script.Int(int64(shown[k-1]))
+					case modscript.StepNumber:
+						answer = script.Int(s.Min)
+					case modscript.StepText:
+						answer = script.String("abc")
+					}
+					rt.ResumeConversation(conv, answer)
+				}
+				if conv != nil && !conv.Done {
+					rt.CloseConversation(conv)
+				}
+			}
 			for _, m := range maps {
+				instances := map[int64]*modscript.NPC{}
 				rt, err := modscript.New(modscript.Options{Host: h, Mods: []string{"core"}, Constants: core.Constants, Jobs: h.jobs,
 					Log: slog.New(logs), Server: variables.NewServer(nil, nil), Quests: quests,
 					Clock: func() time.Time { return testClock }, Location: time.UTC}, sc)
@@ -338,7 +431,13 @@ func TestRunConvertedNPCs(t *testing.T) {
 						t.Errorf("%s: %v", n.Name, err)
 						continue
 					}
+					instances[id] = npc
 					started++
+					if n.Map == "" {
+						// An NPC without a map has no place: nobody touches or
+						// clicks it.
+						continue
+					}
 					if n.Touch {
 						// The player steps into the touch area and out
 						// again.
@@ -411,6 +510,43 @@ func TestRunConvertedNPCs(t *testing.T) {
 						rt.FireDeath(modscript.Death{Victim: id, VictimKind: "monster", Monster: int64(mob), Killer: 1, KillerKind: "player"})
 					}
 				}
+				// Each NPC's event labels run once with the player, then the
+				// events the scripts sent to NPCs of this map, a round at a
+				// time (review decision 58). The labels of an NPC without a
+				// map whose duplicates run its script are for the
+				// duplicates, and OnInit and the timer labels have their
+				// own runs.
+				for _, id := range npcIDs(instances) {
+					if n := h.npcs[id]; n.Map == "" && len(core.NPCs.conv.dups[n.Source]) > 0 {
+						continue
+					}
+					for _, label := range rt.NPCEventLabels(instances[id]) {
+						if label == "oninit" || strings.HasPrefix(label, "ontimer") {
+							continue
+						}
+						fired++
+						conv, _, _ := rt.FireNPCEvent(instances[id], label, 1)
+						talk(rt, conv, 1)
+					}
+				}
+				for range 3 {
+					queue := h.fired
+					h.fired = nil
+					for _, ev := range queue {
+						targets := []int64{ev.npc}
+						if ev.npc == 0 {
+							targets = npcIDs(instances)
+						}
+						for _, id := range targets {
+							if npc := instances[id]; npc != nil {
+								fired++
+								conv, _, _ := rt.FireNPCEvent(npc, ev.label, ev.player)
+								talk(rt, conv, 1)
+							}
+						}
+					}
+				}
+				h.fired = nil
 				rt.RunSchedules(testClock.Add(8 * 24 * time.Hour))
 				// Each NPC timer's labels run, a step of each chain at a
 				// time: a label arranges the next one when it runs.
@@ -421,20 +557,33 @@ func TestRunConvertedNPCs(t *testing.T) {
 			}
 			bad := 0
 			for _, m := range logs.msgs {
-				if strings.Contains(m, "which wAthena does not have yet") {
+				// A part that does not convert fails when reached, and the
+				// test host has no parties, which events now reach through
+				// temporary server variables.
+				if strings.Contains(m, "which wAthena does not have yet") || strings.Contains(m, "parties do not exist here") {
 					continue
 				}
 				bad++
-				if bad <= 20 {
+				if bad <= 400 {
 					t.Error(m)
 				}
 			}
-			t.Logf("%d NPCs started, %d touched, %d clicks, %d steps, %d monster deaths, %d errors", started, touches, clicks, steps, deaths, bad)
+			t.Logf("%d NPCs started, %d touched, %d clicks, %d steps, %d monster deaths, %d events, %d view changes, %d errors",
+				started, touches, clicks, steps, deaths, fired, len(h.controls), bad)
 		})
 	}
 }
 
 func sortedIDs(m map[int64]uint32) []int64 {
+	out := make([]int64, 0, len(m))
+	for id := range m {
+		out = append(out, id)
+	}
+	slices.Sort(out)
+	return out
+}
+
+func npcIDs(m map[int64]*modscript.NPC) []int64 {
 	out := make([]int64, 0, len(m))
 	for id := range m {
 		out = append(out, id)

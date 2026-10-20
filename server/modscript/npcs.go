@@ -132,6 +132,9 @@ type Conversation struct {
 	// Touch is set for the conversation of a touch, rather than a
 	// click.
 	Touch bool
+	// Event is the npc_event label of a conversation that an NPC event
+	// with a player started (review decision 58), or "".
+	Event string
 
 	ctx    *Context
 	thread *script.Thread
@@ -156,8 +159,12 @@ const (
 type NPC struct {
 	ID    int64
 	Entry string
-	ctx   *Context
-	rt    *Runtime
+	// Disabled is set while the zone has the NPC disabled, as rAthena's
+	// disablenpc: player events and events with a player skip it
+	// (npc_event_sub, npc.cpp 1767).
+	Disabled bool
+	ctx      *Context
+	rt       *Runtime
 }
 
 func (r *Runtime) npcHost() (NPCHost, error) {
@@ -191,7 +198,7 @@ func (r *Runtime) startNPC(n *NPC) error {
 		return err
 	}
 	sc := r.scripts[mod]
-	c := &Context{ID: r.newID(), Kind: KindNPC, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}, npc: n.ID}
+	c := &Context{ID: r.newID(), Kind: KindNPC, Mod: mod, grants: sc.Grants, timers: map[int64]*timer{}, npc: n.ID, npcRef: n}
 	c.Instance = script.NewTable(script.KV("npc", script.Int(n.ID)))
 	n.ctx = c
 	if err := r.runSetup(c, setup); err != nil {
@@ -240,23 +247,28 @@ func (r *Runtime) Click(n *NPC, player int64) (*Conversation, error) {
 	if len(vals) == 0 {
 		return nil, nil
 	}
-	return r.converse(n, c, player, false, vals)
+	return r.converse(n, c, player, "click", r.fns.converse, nil, vals)
 }
 
 // converse runs handlers in a new conversation's thread, with the
-// player and the conversation.
-func (r *Runtime) converse(n *NPC, c *Context, player int64, touch bool, vals []script.Value) (*Conversation, error) {
-	th, err := r.s.NewThread(r.fns.converse.Value())
+// player and the conversation. what is click, touch, or the npc_event
+// label for an NPC event. fn is the prelude function that runs them,
+// which gets pre, then the player and the conversation, then vals.
+func (r *Runtime) converse(n *NPC, c *Context, player int64, what string, fn *script.Ref, pre, vals []script.Value) (*Conversation, error) {
+	th, err := r.s.NewThread(fn.Value())
 	if err != nil {
 		return nil, err
 	}
-	conv := &Conversation{ID: r.newID(), Player: player, NPC: n.ID, Touch: touch, ctx: c, thread: th}
+	conv := &Conversation{ID: r.newID(), Player: player, NPC: n.ID, Touch: what == "touch", ctx: c, thread: th}
+	if label, ok := strings.CutPrefix(what, "npc_event "); ok {
+		conv.Event = label
+	}
 	if c.conversations == nil {
 		c.conversations = map[int64]*Conversation{}
 	}
 	c.conversations[conv.ID] = conv
 	r.conversations[conv.ID] = conv
-	args := append([]script.Value{script.Int(player), script.Int(conv.ID)}, vals...)
+	args := append(append(append([]script.Value{}, pre...), script.Int(player), script.Int(conv.ID)), vals...)
 	r.resume(conv, args...)
 	return conv, nil
 }
@@ -286,7 +298,7 @@ func (r *Runtime) Touch(n *NPC, event string, player int64) (*Conversation, erro
 		if len(vals) == 0 {
 			return nil, nil
 		}
-		return r.converse(n, c, player, true, vals)
+		return r.converse(n, c, player, "touch", r.fns.converse, nil, vals)
 	}
 	for _, h := range slices.Clone(r.handlers[event]) {
 		if h.ctx != c || h.removed || c.ended {
@@ -335,8 +347,11 @@ func (r *Runtime) resume(conv *Conversation, args ...script.Value) {
 		r.afterError()
 		if !strings.Contains(err.Error(), r.closed) {
 			what := "click"
-			if conv.Touch {
+			switch {
+			case conv.Touch:
 				what = "event touch"
+			case conv.Event != "":
+				what = "event npc_event " + conv.Event
 			}
 			r.failed(conv.ctx, what, err)
 		}

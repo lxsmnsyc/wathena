@@ -22,6 +22,8 @@
 ---| "click"
 ---| "touch"
 ---| "untouch"
+---| "npc_event"
+---| "monster_touch"
 ---| "use"
 ---| "damage"
 ---| "skill_used"
@@ -800,13 +802,17 @@ function wa_Monster:get_status(status) end
 ---@return wa.Status[]
 function wa_Monster:get_statuses() end
 
----An NPC: the instance of an NPC context.
+---An NPC: the instance of an NPC context, or what world.get_npc returns. A handle of an NPC of another map reads its fields, and its changes and events run in that NPC's zone after the current step. Its other methods raise an error there.
 ---@class wa.Npc
 ---@field kind "npc" The entity's kind.
----@field name string The name players see.
----@field map string
+---@field name string The name players see, as strnpcinfo(1).
+---@field full_name string The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the record's name has a # part (review decision 58).
+---@field hidden_name string The part after # of the record's name, or "", as strnpcinfo(2).
+---@field unique_name string The record's name without the mod's ID, as strnpcinfo(3). world.get_npc finds the NPC by it in the same mod.
+---@field map string The map's name, as strnpcinfo(4). "" for an NPC without a map, which runs in the start map's zone.
 ---@field x integer
 ---@field y integer
+---@field state "shown"|"hidden"|"disabled" disabled after npc:hide(), hidden after npc:set_hidden(true), shown otherwise. Cloaking is apart: npc:is_cloaked().
 local wa_Npc = {}
 
 ---Shows an emotion over the NPC, as emotion.
@@ -821,6 +827,37 @@ function wa_Npc:say_aloud(text) end
 ---@param player wa.Player A player handle.
 ---@param icon? wa.QuestIcon nil removes the icon.
 function wa_Npc:show_quest_icon(player, icon) end
+
+---Shows the NPC, as enablenpc: it shows, takes clicks, and its touch area works again. A player who stands in the area gets the touch event, as npc_enable_target (npc.cpp 1100). It does not uncloak the NPC. Another mod's NPC needs npcs.control.
+function wa_Npc:show() end
+
+---Disables the NPC, as disablenpc: no view, no click, no touch, and its player events and events with a player do not run. npc:fire_event without a player still runs its handlers, as donpcevent. Another mod's NPC needs npcs.control.
+function wa_Npc:hide() end
+
+---Hides or shows the NPC, as hideonnpc and hideoffnpc: hidden, it does not show and refuses clicks, but its touch area works. Another mod's NPC needs npcs.control.
+---@param hidden boolean
+function wa_Npc:set_hidden(hidden) end
+
+---Cloaks or uncloaks the NPC, as cloakonnpc and cloakoffnpc, or for one player, as cloakonnpcself and cloakoffnpcself. A cloaked NPC does not show to that player and has no touch for it, and monsters do not touch it. A change for everyone ends the changes for single players on the NPC's map, as npc_cloaked_sub. Another mod's NPC needs npcs.control.
+---@param cloaked boolean
+---@param player? wa.Player One player, or nil for everyone.
+function wa_Npc:set_cloaked(cloaked, player) end
+
+---Whether the NPC is cloaked for the player, or for everyone, as isnpccloaked.
+---
+---Needs the permission `game.read`.
+---@param player? wa.Player One player, or nil for everyone.
+---@return boolean
+function wa_Npc:is_cloaked(player) end
+
+---Removes the NPC until the server restarts, as unloadnpc: it vanishes, its context ends after the current step, and its NPC variables go. Another mod's NPC needs npcs.control.
+function wa_Npc:remove() end
+
+---Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; true for an NPC whose zone has not started its scripts. Another mod's NPC needs npcs.control.
+---@param name string An event label, such as OnEnable, without regard to case.
+---@param options? wa.FireEventOptions
+---@return boolean
+function wa_Npc:fire_event(name, options) end
 
 ---Plays an effect on the NPC for everyone near, as specialeffect.
 ---@param effect integer An effect from wa.effects.
@@ -1158,6 +1195,12 @@ function wa_Party:get_members() end
 ---@return string[]
 function wa_Party:get_member_names() end
 
+---Every member, online or not, in slot order, with its IDs, as getpartymember types 0 to 2 (review decision 58).
+---
+---Needs the permission `game.read`.
+---@return wa.PartyMember[]
+function wa_Party:get_member_list() end
+
 ---Puts the player in the party, as party_addmember. Returns false when the player has a party, the party is full, or a character of the same account is in it. The party_join event follows, with the reason "script".
 ---
 ---Needs the permission `party.manage`.
@@ -1189,6 +1232,14 @@ function wa_Party:set_options(options) end
 ---
 ---Needs the permission `party.manage`.
 function wa_Party:disband() end
+
+---One member of party:get_member_list.
+---@class wa.PartyMember
+---@field name string
+---@field character_id integer
+---@field account_id integer
+---@field online boolean
+local wa_PartyMember = {}
 
 ---A party's options, in party:set_options and the party_change event.
 ---@class wa.PartyOptions
@@ -1406,6 +1457,23 @@ local wa_ChatTestOptions = {}
 ---@field from string The speaker's name, or empty for a system line or a channel's own line.
 ---@field text string
 local wa_HeardLine = {}
+
+---The options of an npc_event handler (review decision 58).
+---@class wa.NpcEventOptions
+---@field name string The event label the handler runs for, such as OnEnable, without regard to case: 1 to 50 letters, digits and _.
+local wa_NpcEventOptions = {}
+
+---The object of the npc_event event.
+---@class wa.NpcEvent
+---@field name string The label, in lower case.
+---@field player wa.Player? The player of npc:fire_event's player option, or nil.
+---@field conversation wa.Conversation? The conversation with the player, or nil without one.
+local wa_NpcEvent = {}
+
+---The options of npc:fire_event.
+---@class wa.FireEventOptions
+---@field player wa.Player? Runs the event for the player, as doevent. It must be on the NPC's map.
+local wa_FireEventOptions = {}
 
 ---What events.on returns.
 ---@class wa.EventHandle
@@ -2263,7 +2331,7 @@ function wa_IntegerVariable:set(player, value) end
 ---@return integer
 function wa_IntegerVariable:add(player, amount) end
 
----A declared integer server variable.
+---A declared integer server variable, saved or temporary.
 ---@class wa.ServerIntegerVariable
 local wa_ServerIntegerVariable = {}
 
@@ -2280,6 +2348,26 @@ function wa_ServerIntegerVariable:set(value) end
 ---@return integer
 function wa_ServerIntegerVariable:add(amount) end
 
+---A declared integer NPC variable (review decision 58).
+---@class wa.NpcIntegerVariable
+local wa_NpcIntegerVariable = {}
+
+---The NPC's value, or the default.
+---@param npc wa.Npc An NPC handle, of any map.
+---@return integer
+function wa_NpcIntegerVariable:get(npc) end
+
+---Changes the NPC's value.
+---@param npc wa.Npc An NPC handle, of any map.
+---@param value integer
+function wa_NpcIntegerVariable:set(npc, value) end
+
+---Adds to the NPC's value in one step, and returns the new value.
+---@param npc wa.Npc An NPC handle, of any map.
+---@param amount integer
+---@return integer
+function wa_NpcIntegerVariable:add(npc, amount) end
+
 ---A declared boolean variable of a player.
 ---@class wa.BooleanVariable
 local wa_BooleanVariable = {}
@@ -2294,7 +2382,7 @@ function wa_BooleanVariable:get(player) end
 ---@param value boolean nil or the default removes the stored value.
 function wa_BooleanVariable:set(player, value) end
 
----A declared boolean server variable.
+---A declared boolean server variable, saved or temporary.
 ---@class wa.ServerBooleanVariable
 local wa_ServerBooleanVariable = {}
 
@@ -2305,6 +2393,20 @@ function wa_ServerBooleanVariable:get() end
 ---Changes the value.
 ---@param value boolean
 function wa_ServerBooleanVariable:set(value) end
+
+---A declared boolean NPC variable (review decision 58).
+---@class wa.NpcBooleanVariable
+local wa_NpcBooleanVariable = {}
+
+---The NPC's value, or the default.
+---@param npc wa.Npc An NPC handle, of any map.
+---@return boolean
+function wa_NpcBooleanVariable:get(npc) end
+
+---Changes the NPC's value.
+---@param npc wa.Npc An NPC handle, of any map.
+---@param value boolean
+function wa_NpcBooleanVariable:set(npc, value) end
 
 ---A declared string variable of a player.
 ---@class wa.StringVariable
@@ -2320,7 +2422,7 @@ function wa_StringVariable:get(player) end
 ---@param value string nil or the default removes the stored value.
 function wa_StringVariable:set(player, value) end
 
----A declared string server variable.
+---A declared string server variable, saved or temporary.
 ---@class wa.ServerStringVariable
 local wa_ServerStringVariable = {}
 
@@ -2331,6 +2433,20 @@ function wa_ServerStringVariable:get() end
 ---Changes the value.
 ---@param value string
 function wa_ServerStringVariable:set(value) end
+
+---A declared string NPC variable (review decision 58).
+---@class wa.NpcStringVariable
+local wa_NpcStringVariable = {}
+
+---The NPC's value, or the default.
+---@param npc wa.Npc An NPC handle, of any map.
+---@return string
+function wa_NpcStringVariable:get(npc) end
+
+---Changes the NPC's value.
+---@param npc wa.Npc An NPC handle, of any map.
+---@param value string
+function wa_NpcStringVariable:set(npc, value) end
 
 ---A declared table variable of a player.
 ---@class wa.TableVariable
@@ -2346,7 +2462,7 @@ function wa_TableVariable:get(player) end
 ---@param value? table nil or the default removes the stored value.
 function wa_TableVariable:set(player, value) end
 
----A declared table server variable.
+---A declared table server variable, saved or temporary.
 ---@class wa.ServerTableVariable
 local wa_ServerTableVariable = {}
 
@@ -2357,4 +2473,18 @@ function wa_ServerTableVariable:get() end
 ---Changes the value.
 ---@param value? table
 function wa_ServerTableVariable:set(value) end
+
+---A declared table NPC variable (review decision 58).
+---@class wa.NpcTableVariable
+local wa_NpcTableVariable = {}
+
+---The NPC's value, or the default.
+---@param npc wa.Npc An NPC handle, of any map.
+---@return table?
+function wa_NpcTableVariable:get(npc) end
+
+---Changes the NPC's value.
+---@param npc wa.Npc An NPC handle, of any map.
+---@param value? table
+function wa_NpcTableVariable:set(npc, value) end
 

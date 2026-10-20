@@ -163,11 +163,11 @@ func TestNPCEventsConvert(t *testing.T) {
 		"Bad Clock#t":      "event onclock2460: 2460 is not a valid time",
 		"Other Map#t":      "monster: on another map",
 		"Own Name#t":       "monster: a name of its own",
-		"Other NPC#t":      "event onmymobdead",
-		"Global Label#t":   "event onmymobdead",
+		"Other NPC#t":      "monster: an event label of another NPC (Someone)",
+		"Global Label#t":   "monster: a global event label (::OnMyMobDead)",
 		"No Label#t":       "monster: OnGone is not an event label of this NPC",
 		"Big Size#t":       "monster: a size other than the default",
-		"Kill Test#t":      "event onmymobdead",
+		"Kill Test#t":      "killmonster: the API cannot remove spawned monsters",
 		"Random Monster#t": "monster: -1 is not a monster, such as a random monster",
 	}
 	for _, n := range res.NPCs {

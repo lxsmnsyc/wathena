@@ -124,7 +124,7 @@ var Modules = []Module{
 			Name: "on",
 			Params: []Param{{"name", "wa.EventName", "The event's name. An unknown name, or an event of another context kind, raises an error."},
 				{"handler", "function", "Runs each time the event fires, in registration order."},
-				{"options", "wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|wa.ChatOptions|wa.TradeOptions|nil", "Only the death, status, skill_used, chat and trade events take options: they narrow which events run the handler."}},
+				{"options", "wa.DeathOptions|wa.StatusEventOptions|wa.SkillUsedOptions|wa.ChatOptions|wa.TradeOptions|wa.NpcEventOptions|nil", "Only the death, status, skill_used, chat, trade and npc_event events take options: they narrow which events run the handler. npc_event needs its options: the label."}},
 			Returns:    "wa.EventHandle",
 			Doc:        "Registers a handler for an event.",
 			Permission: "event.listen",
@@ -218,6 +218,10 @@ var Modules = []Module{
 				Doc: "The entities of an area of the context's map that pass every filter, sorted, and cut to the limit. Ties sort by kind, then by entity. A query with no area, two areas, or a field it does not know raises an error.", Permission: "game.read"},
 			{Name: "get_display_name", Params: []Param{{"map", "string", "A map ID, such as \"gen:town:t7\"."}}, Returns: "string?",
 				Doc: "The name players see for a map of the world layout (review decision 43), such as \"North Valheim Fields 2\". It changes when staff rename a town. nil for another map, and for every map of a classic world until locale files exist.", Permission: "game.read"},
+			{Name: "find_player", Params: []Param{{"name", "string", "A character name, matched exactly."}}, Returns: "wa.Player?",
+				Doc: "An online player of the context's map by name, as rAthena's map_nick2sd (review decision 58). nil for a player who is offline or on another map: a player handle acts in its own zone.", Permission: "game.read"},
+			{Name: "find_player_by_id", Params: []Param{{"id", "integer", "An account ID, or a character ID, as player.account_id and player.character_id."}}, Returns: "wa.Player?",
+				Doc: "An online player of the context's map by account ID, or else by character ID, as rAthena's convertpcinfo reads map_id2sd, then map_charid2sd (review decision 58). nil for a player who is offline or on another map.", Permission: "game.read"},
 		},
 	},
 	{
@@ -227,6 +231,10 @@ var Modules = []Module{
 			{Name: "announce", Params: []Param{{"text", "string", "At most 255 bytes."}}, Doc: "Shows a line to every player of the world, as announce. Players see the mod's ID with a mod's line.", Permission: "world.announce"},
 			{Name: "get_shop", Params: []Param{{"name", "string", "A shop of data/npcs.yml: a full record name, or a plain name, which is the calling mod's record, then core's."}}, Returns: "wa.Shop?",
 				Doc: "A shop's handle, or nil when there is none. world:get_shop(name), as review decision 30 writes it, works too.", Permission: "game.read"},
+			{Name: "get_npc", Params: []Param{{"name", "string", "An NPC of data/npcs.yml: a full record name, such as core:Guard#1, or a plain name, which is the calling mod's record, then core's. Case counts."}}, Returns: "wa.Npc?",
+				Doc: "An NPC of any map, or one without a map, as rAthena's npc_name2id (review decision 58). nil when there is none, or it was removed. A handle of an NPC of another map reads its fields, and its changes and events run in that NPC's zone after the current step. Its other methods raise an error there.", Permission: "game.read"},
+			{Name: "fire_npc_event", Params: []Param{{"name", "string", "An event label, such as OnEnable, without regard to case."}}, Returns: "integer",
+				Doc: "Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent \"::OnX\" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs."},
 		},
 	},
 	{
@@ -320,7 +328,7 @@ var Modules = []Module{
 	},
 	{
 		Name: "wa.variables", Local: "variables",
-		Doc:   "Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables.",
+		Doc:   "Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. Core has no such limit (review decision 58). A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables. Its server variables, and apart its temporary server and NPC variables, hold at most 256 values, which core does not have either.",
 		Funcs: variableFuncs(),
 	},
 	{
@@ -402,12 +410,17 @@ func variableFuncs() []Func {
 		{"character_temporary", "Kept until the character logs out."},
 		{"account", "Shared by the account's characters."},
 		{"server", "One value for the whole world, saved soon after a change."},
+		{"server_temporary", "One value for the whole world, not saved, as rAthena's $@ variables (review decision 58)."},
+		{"npc", "One value per NPC, which every zone reads, not saved, as rAthena's .x variables and getvariableofnpc (review decision 58)."},
 		{"instance", "Raises an error until instances exist."},
 	} {
 		for _, kind := range []string{"integer", "boolean", "string", "table"} {
 			class := "wa." + title(kind) + "Variable"
-			if scope.name == "server" {
+			switch scope.name {
+			case "server", "server_temporary":
 				class = "wa.Server" + title(kind) + "Variable"
+			case "npc":
+				class = "wa.Npc" + title(kind) + "Variable"
 			}
 			out = append(out, Func{
 				Name: scope.name + "_" + kind, Params: []Param{{"name", "string", "1 to 64 letters, digits and _, not starting with a digit."}},
@@ -592,19 +605,32 @@ var Classes = []Class{
 	},
 	{
 		Name: "wa.Npc", Handle: "npc",
-		Doc: "An NPC: the instance of an NPC context.",
+		Doc: "An NPC: the instance of an NPC context, or what world.get_npc returns. A handle of an NPC of another map reads its fields, and its changes and events run in that NPC's zone after the current step. Its other methods raise an error there.",
 		Fields: []Field{
 			{"kind", `"npc"`, "The entity's kind."},
-			{"name", "string", "The name players see."},
-			{"map", "string", ""},
+			{"name", "string", "The name players see, as strnpcinfo(1)."},
+			{"full_name", "string", "The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the record's name has a # part (review decision 58)."},
+			{"hidden_name", "string", "The part after # of the record's name, or \"\", as strnpcinfo(2)."},
+			{"unique_name", "string", "The record's name without the mod's ID, as strnpcinfo(3). world.get_npc finds the NPC by it in the same mod."},
+			{"map", "string", "The map's name, as strnpcinfo(4). \"\" for an NPC without a map, which runs in the start map's zone."},
 			{"x", "integer", ""},
 			{"y", "integer", ""},
+			{"state", `"shown"|"hidden"|"disabled"`, "disabled after npc:hide(), hidden after npc:set_hidden(true), shown otherwise. Cloaking is apart: npc:is_cloaked()."},
 		},
 		Methods: append([]Func{
 			{Name: "show_emotion", Params: []Param{{"emotion", "integer", "An emotion from wa.emotions."}}, Doc: "Shows an emotion over the NPC, as emotion."},
 			{Name: "say_aloud", Params: []Param{{"text", "string", ""}}, Doc: "Says a line of local chat as the NPC, as npctalk. Players within 9 cells hear it."},
 			{Name: "show_quest_icon", Params: []Param{playerParam, {"icon", "wa.QuestIcon?", "nil removes the icon."}},
 				Doc: "Shows an icon over the NPC to one player, as showevent. It stays while the player is on the map."},
+			{Name: "show", Doc: "Shows the NPC, as enablenpc: it shows, takes clicks, and its touch area works again. A player who stands in the area gets the touch event, as npc_enable_target (npc.cpp 1100). It does not uncloak the NPC. Another mod's NPC needs npcs.control."},
+			{Name: "hide", Doc: "Disables the NPC, as disablenpc: no view, no click, no touch, and its player events and events with a player do not run. npc:fire_event without a player still runs its handlers, as donpcevent. Another mod's NPC needs npcs.control."},
+			{Name: "set_hidden", Params: []Param{{"hidden", "boolean", ""}}, Doc: "Hides or shows the NPC, as hideonnpc and hideoffnpc: hidden, it does not show and refuses clicks, but its touch area works. Another mod's NPC needs npcs.control."},
+			{Name: "set_cloaked", Params: []Param{{"cloaked", "boolean", ""}, {"player", "wa.Player?", "One player, or nil for everyone."}},
+				Doc: "Cloaks or uncloaks the NPC, as cloakonnpc and cloakoffnpc, or for one player, as cloakonnpcself and cloakoffnpcself. A cloaked NPC does not show to that player and has no touch for it, and monsters do not touch it. A change for everyone ends the changes for single players on the NPC's map, as npc_cloaked_sub. Another mod's NPC needs npcs.control."},
+			{Name: "is_cloaked", Params: []Param{{"player", "wa.Player?", "One player, or nil for everyone."}}, Returns: "boolean", Doc: "Whether the NPC is cloaked for the player, or for everyone, as isnpccloaked.", Permission: "game.read"},
+			{Name: "remove", Doc: "Removes the NPC until the server restarts, as unloadnpc: it vanishes, its context ends after the current step, and its NPC variables go. Another mod's NPC needs npcs.control."},
+			{Name: "fire_event", Params: []Param{{"name", "string", "An event label, such as OnEnable, without regard to case."}, {"options", "wa.FireEventOptions?", ""}}, Returns: "boolean",
+				Doc: "Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; true for an NPC whose zone has not started its scripts. Another mod's NPC needs npcs.control."},
 			showEffect("NPC"), findNearby, existsMethod,
 		}, statusMethods...),
 	},
@@ -750,11 +776,21 @@ var Classes = []Class{
 		Methods: []Func{
 			{Name: "get_members", Returns: "wa.Player[]", Doc: "The online members on this map, in the party's slot order.", Permission: "game.read"},
 			{Name: "get_member_names", Returns: "string[]", Doc: "Every member's name, online or not, in slot order.", Permission: "game.read"},
+			{Name: "get_member_list", Returns: "wa.PartyMember[]", Doc: "Every member, online or not, in slot order, with its IDs, as getpartymember types 0 to 2 (review decision 58).", Permission: "game.read"},
 			{Name: "add", Params: []Param{playerParam}, Returns: "boolean", Doc: "Puts the player in the party, as party_addmember. Returns false when the player has a party, the party is full, or a character of the same account is in it. The party_join event follows, with the reason \"script\".", Permission: "party.manage"},
 			{Name: "remove", Params: []Param{playerParam}, Returns: "boolean", Doc: "Takes the player out of the party, as party_delmember. The leader's removal breaks the party up, as in rAthena. Returns false when the player is not in the party.", Permission: "party.manage"},
 			{Name: "set_leader", Params: []Param{playerParam}, Returns: "boolean", Doc: "Makes an online member the leader, as party_changeleader. Returns false when the player is not an online member, or leads already. The party_change event follows.", Permission: "party.manage"},
 			{Name: "set_options", Params: []Param{{"options", "wa.PartyOptions", ""}}, Doc: "Changes the options it names, as party_changeoption. Even exp share needs the online members' base levels within the ruleset's party_share_level, else exp share stays each. The party_change event follows a change.", Permission: "party.manage"},
 			{Name: "disband", Doc: "Breaks the party up, as party_destroy. Each member gets the party_leave event, with the reason \"disbanded\".", Permission: "party.manage"},
+		},
+	},
+	{
+		Name: "wa.PartyMember", Doc: "One member of party:get_member_list.",
+		Fields: []Field{
+			{"name", "string", ""},
+			{"character_id", "integer", ""},
+			{"account_id", "integer", ""},
+			{"online", "boolean", ""},
 		},
 	},
 	{
@@ -910,6 +946,26 @@ var Classes = []Class{
 			{"channel", "string", `"public", "whisper", "system", or a channel's name with its #.`},
 			{"from", "string", "The speaker's name, or empty for a system line or a channel's own line."},
 			{"text", "string", ""},
+		},
+	},
+	{
+		Name: "wa.NpcEventOptions", Doc: "The options of an npc_event handler (review decision 58).",
+		Fields: []Field{
+			{"name", "string", "The event label the handler runs for, such as OnEnable, without regard to case: 1 to 50 letters, digits and _."},
+		},
+	},
+	{
+		Name: "wa.NpcEvent", Doc: "The object of the npc_event event.",
+		Fields: []Field{
+			{"name", "string", "The label, in lower case."},
+			{"player", "wa.Player?", "The player of npc:fire_event's player option, or nil."},
+			{"conversation", "wa.Conversation?", "The conversation with the player, or nil without one."},
+		},
+	},
+	{
+		Name: "wa.FireEventOptions", Doc: "The options of npc:fire_event.",
+		Fields: []Field{
+			{"player", "wa.Player?", "Runs the event for the player, as doevent. It must be on the NPC's map."},
 		},
 	},
 	{
@@ -1577,8 +1633,9 @@ var statusMethods = []Func{
 	{Name: "get_statuses", Returns: "wa.Status[]", Doc: "The active statuses, by status.", Permission: "game.read"},
 }
 
-// Variable classes: one per type, for the scopes with a player and for
-// server variables. They share two runtime handle types.
+// Variable classes: one per type, for the scopes with a player, for
+// server variables, temporary ones too, and for NPC variables. They share
+// three runtime handle types.
 func init() {
 	for _, kind := range []string{"integer", "boolean", "string", "table"} {
 		typ := kind
@@ -1586,7 +1643,13 @@ func init() {
 			typ = "table?"
 		}
 		player := Class{Name: "wa." + title(kind) + "Variable", Handle: "variable", Doc: "A declared " + kind + " variable of a player."}
-		server := Class{Name: "wa.Server" + title(kind) + "Variable", Handle: "server variable", Doc: "A declared " + kind + " server variable."}
+		server := Class{Name: "wa.Server" + title(kind) + "Variable", Handle: "server variable", Doc: "A declared " + kind + " server variable, saved or temporary."}
+		npc := Class{Name: "wa.Npc" + title(kind) + "Variable", Handle: "npc variable", Doc: "A declared " + kind + " NPC variable (review decision 58)."}
+		npcParam := Param{"npc", "wa.Npc", "An NPC handle, of any map."}
+		npc.Methods = []Func{
+			{Name: "get", Params: []Param{npcParam}, Returns: typ, Doc: "The NPC's value, or the default."},
+			{Name: "set", Params: []Param{npcParam, {"value", typ, ""}}, Doc: "Changes the NPC's value."},
+		}
 		player.Methods = []Func{
 			{Name: "get", Params: []Param{playerParam}, Returns: typ, Doc: "The value, or the default: 0, false, \"\", or nil for a table."},
 			{Name: "set", Params: []Param{playerParam, {"value", typ, "nil or the default removes the stored value."}}, Doc: "Changes the value."},
@@ -1598,23 +1661,26 @@ func init() {
 		if kind == "integer" {
 			player.Methods = append(player.Methods, Func{Name: "add", Params: []Param{playerParam, {"amount", "integer", ""}}, Returns: "integer", Doc: "Adds to the value in one step, and returns the new value."})
 			server.Methods = append(server.Methods, Func{Name: "add", Params: []Param{{"amount", "integer", ""}}, Returns: "integer", Doc: "Adds to the value in one step, and returns the new value."})
+			npc.Methods = append(npc.Methods, Func{Name: "add", Params: []Param{npcParam, {"amount", "integer", ""}}, Returns: "integer", Doc: "Adds to the NPC's value in one step, and returns the new value."})
 		}
-		Classes = append(Classes, player, server)
+		Classes = append(Classes, player, server, npc)
 	}
 }
 
 // Events lists every event name of wa.events.
 var Events = []Event{
-	{Name: "login", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "A player logs in, in the zone it enters."},
-	{Name: "logout", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "A player logs out, before it leaves."},
-	{Name: "map_enter", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "A player enters the zone: at login and after a warp."},
+	{Name: "login", Kinds: []string{"mod", "npc", "event"}, Params: []Param{playerParam}, Doc: "A player logs in, in the zone it enters. An NPC hears the players of its map, as OnPCLoginEvent, unless it is disabled."},
+	{Name: "logout", Kinds: []string{"mod", "npc", "event"}, Params: []Param{playerParam}, Doc: "A player logs out, before it leaves. An NPC hears the players of its map, as OnPCLogoutEvent, unless it is disabled."},
+	{Name: "map_enter", Kinds: []string{"mod", "npc", "event"}, Params: []Param{playerParam}, Doc: "A player enters the zone: at login and after a warp. An NPC hears the players of its map, as OnPCLoadMapEvent, unless it is disabled."},
 	{Name: "death", Kinds: []string{"mod", "npc", "event"}, Params: []Param{{"death", "wa.Death", ""}}, Doc: "A player or a monster died on the context's map. Options narrow it."},
-	{Name: "base_level_up", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "The player gained a base level."},
-	{Name: "job_level_up", Kinds: []string{"mod", "event"}, Params: []Param{playerParam}, Doc: "The player gained a job level."},
+	{Name: "base_level_up", Kinds: []string{"mod", "npc", "event"}, Params: []Param{playerParam}, Doc: "The player gained a base level. An NPC hears the players of its map, as OnPCBaseLvUpEvent, unless it is disabled."},
+	{Name: "job_level_up", Kinds: []string{"mod", "npc", "event"}, Params: []Param{playerParam}, Doc: "The player gained a job level. An NPC hears the players of its map, as OnPCJobLvUpEvent, unless it is disabled."},
 	{Name: "job_change", Kinds: []string{"mod", "event"}, Params: []Param{{"change", "wa.JobChange", ""}}, Doc: "The player changed jobs: player:change_job, player:rebirth, or a converted jobchange. It fires after the stats and skills of the new job are set."},
 	{Name: "click", Kinds: []string{"npc"}, Params: []Param{playerParam, {"conversation", "wa.Conversation", ""}}, Doc: "A player talks to the NPC."},
 	{Name: "touch", Kinds: []string{"npc"}, Params: []Param{playerParam, {"conversation", "wa.Conversation", ""}}, Doc: "A player stepped into the NPC's touch area, the record's touch field, as rAthena's OnTouch. It fires once each time the player comes in: on a step, or when it arrives on a cell of the area. Hidden and dead players fire it too. The handlers run in a conversation with the player, which shows nothing until a handler shows a step (review decision 56). A touch while the player talks to an NPC waits until that conversation ends, and runs only if the player is still in the area then."},
 	{Name: "untouch", Kinds: []string{"npc"}, Params: []Param{playerParam}, Doc: "A player who fired touch left the NPC's touch area: a step out of it, a warp, or a logout. A player who left the map can only be compared: reading it raises an error."},
+	{Name: "npc_event", Kinds: []string{"npc"}, Params: []Param{{"event", "wa.NpcEvent", ""}}, Doc: "An event of the label in the options was sent to the NPC: npc:fire_event or world.fire_npc_event, as rAthena's named labels such as OnEnable (review decision 58). It runs after the step that sent it. With a player it runs in a conversation with the player."},
+	{Name: "monster_touch", Kinds: []string{"npc"}, Params: []Param{{"monster", "wa.Monster", ""}}, Doc: "A monster walked into the NPC's touch area, as OnTouchNPC (npc_touch_areanpc2). It fires once until the monster steps out of every touch area or into another NPC's. A disabled or cloaked NPC hears none."},
 	{Name: "use", Kinds: []string{"item"}, Params: []Param{playerParam}, Doc: "The item is used."},
 	{Name: "damage", Kinds: []string{"item"}, Params: []Param{{"hit", "wa.Damage", ""}}, Doc: "A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3)."},
 	{Name: "skill_used", Kinds: []string{"item", "mod", "event"}, Params: []Param{{"use", "wa.SkillUse", ""}}, Doc: "A skill took effect, after its cast time. An interrupted cast does not fire it. An item's handler hears the wearer's skills. A mod or event context hears every skill of its map: options narrow it."},

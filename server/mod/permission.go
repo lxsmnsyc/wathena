@@ -64,6 +64,9 @@ var Permissions = []Permission{
 	// player.skills is review decision 57's: player:give_skill, which
 	// gives skills outside the skill tree and skill points.
 	{Name: "player.skills", Approval: true, Flagged: true, Allows: "give players skills and skill levels outside their skill tree, without skill points"},
+	// npcs.control is review decision 58's: showing, hiding, cloaking and
+	// removing another mod's NPCs, and sending them events.
+	{Name: "npcs.control", Approval: true, Allows: "show, hide, cloak and remove other mods' NPCs, core's too, and send them events"},
 }
 
 // LookupPermission returns a permission by name.

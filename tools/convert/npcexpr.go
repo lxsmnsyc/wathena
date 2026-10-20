@@ -594,7 +594,11 @@ func (b *body) setRef(s *SetRef) error {
 	}
 	switch strings.ToLower(s.Ref.Name) {
 	case "getvariableofnpc":
-		return b.unsupported(unsupported("getvariableofnpc", "set on an NPC variable of another NPC"))
+		if err := b.setVariableOfNPC(s); err != nil {
+			return b.unsupported(err)
+		}
+		b.n.ok("getvariableofnpc")
+		return nil
 	case "getarg":
 		return b.unsupported(unsupported("set", "on getarg, a reference argument that is not an array element"))
 	case "getd":
@@ -797,17 +801,19 @@ func (b *body) call(e *Call) (val, error) {
 		}
 		return val{}, unsupported("strcharinfo", "other than the name, the party, the guild and the map")
 	case "strnpcinfo":
-		if len(args) == 1 {
-			if v, err := b.expr(args[0]); err == nil && v.static != nil {
-				switch *v.static {
-				case 0, 1:
-					return done(val{code: "npc.name", t: tStr}, nil)
-				case 4:
-					return done(val{code: "npc.map", t: tStr}, nil)
-				}
-			}
-		}
-		return val{}, unsupported("strnpcinfo", "other than the name and the map")
+		return done(b.strnpcinfo(args))
+	case "donpcevent":
+		return done(b.donpcevent(args))
+	case "cmdothernpc":
+		return done(b.cmdothernpc(args))
+	case "isnpccloaked":
+		return done(b.isnpccloaked(args))
+	case "getvariableofnpc":
+		return done(b.getvariableofnpc(args))
+	case "convertpcinfo":
+		return done(b.convertpcinfo(args))
+	case "atcommand", "setbattleflag":
+		return val{}, unsupported(name, "%s", refusedCommands[name])
 	case "getcharid":
 		if len(args) == 1 {
 			if v, err := b.expr(args[0]); err == nil && v.static != nil {
@@ -826,7 +832,7 @@ func (b *body) call(e *Call) (val, error) {
 			}
 		}
 		if len(args) == 2 {
-			return val{}, unsupported("getcharid", "of another character")
+			return done(b.otherCharID(args))
 		}
 		return val{}, unsupported("getcharid", "battlegrounds, clans and other IDs")
 	case "getitemname":
@@ -1323,6 +1329,12 @@ func (b *body) commandErr(name string, args []Expr) error {
 		if err != nil {
 			return err
 		}
+		if v.str == nil {
+			// A computed text may be empty, which rAthena sends as is and
+			// the API refuses: R.mapannounce leaves it out.
+			b.line("R.mapannounce(%s, %s)", m.asText(), v.asText())
+			break
+		}
 		f.need("maps")
 		b.line("maps.announce(%s, %s)", m.asText(), v.asText())
 	case "logmes":
@@ -1379,6 +1391,31 @@ func (b *body) commandErr(name string, args []Expr) error {
 		return b.timerCommand(name, args)
 	case "killmonster":
 		return unsupported(name, "the API cannot remove spawned monsters")
+	case "enablenpc", "disablenpc", "hideonnpc", "hideoffnpc", "cloakonnpc", "cloakoffnpc", "cloakonnpcself", "cloakoffnpcself":
+		return b.npcView(name, args)
+	case "donpcevent":
+		v, err := b.donpcevent(args)
+		if err != nil {
+			return err
+		}
+		if v.code == "false" {
+			b.line("-- donpcevent without \"::\" finds no event, as in rAthena.")
+			break
+		}
+		// "::OnX" as a statement: the count is not read.
+		b.line("%s", strings.TrimSuffix(strings.TrimPrefix(v.code, "("), " > 0)"))
+	case "doevent":
+		return b.doevent(args)
+	case "cmdothernpc":
+		v, err := b.cmdothernpc(args)
+		if err != nil {
+			return err
+		}
+		b.line("%s", v.code)
+	case "unloadnpc":
+		return b.unloadnpc(args)
+	case "atcommand", "setbattleflag":
+		return unsupported(name, "%s", refusedCommands[name])
 	default:
 		if ok, err := b.guildCommand(name, args); ok {
 			return err
@@ -1444,21 +1481,6 @@ func (b *body) ownEvent(what string, e Expr) (string, error) {
 		return "", unsupported(what, "%s is not an event label of this NPC", label)
 	}
 	return lower, nil
-}
-
-// mobEvents lists the labels that this NPC's monster commands run when
-// their monsters die.
-func (n *npcConv) mobEvents(stmts []Stmt) map[string]bool {
-	out := map[string]bool{}
-	b := n.newBody(0)
-	walkStmts(stmts, func(s Stmt) {
-		if c, ok := s.(*Command); ok && strings.EqualFold(c.Name, "monster") && len(c.Args) >= 7 {
-			if label, err := b.ownEvent("monster", c.Args[6]); err == nil && label != "" {
-				out[label] = true
-			}
-		}
-	})
-	return out
 }
 
 // walkStmts calls fn for each statement, nested ones too.
@@ -1562,14 +1584,37 @@ func (b *body) monster(args []Expr) error {
 	if len(args) > 6 {
 		label, err := b.ownEvent(what, args[6])
 		if err != nil {
-			return err
-		}
-		if label != "" {
+			other, ok := b.otherMobEvent(args[6])
+			if !ok {
+				return err
+			}
+			call += other
+		} else if label != "" {
 			call += fmt.Sprintf(", %s, %s", luaString(label), b.n.eventFn(label))
 		}
 	}
 	b.line("%s)", call)
 	return nil
+}
+
+// otherMobEvent is the death label of a monster command that names
+// another NPC's label, "<NPC>::<label>" (review decision 58): it runs
+// for the killer, as mob_dead's npc_event, or with no player. The NPC
+// must be on the monster's map, where the killer is.
+func (b *body) otherMobEvent(e Expr) (string, bool) {
+	s, ok := e.(*Str)
+	if !ok || b.n.isFunction {
+		return "", false
+	}
+	i := strings.LastIndex(s.Value, "::")
+	if i <= 0 {
+		return "", false
+	}
+	name, label := s.Value[:i], s.Value[i+2:]
+	if m, known := b.n.c.npcMap[name]; !known || name == b.n.line.Name || m != b.n.line.Map || !labelName.MatchString(label) {
+		return "", false
+	}
+	return fmt.Sprintf(", %s, R.npc_event_of(%s, %s)", luaString(s.Value), luaString(b.n.c.recordFor(name)), luaString(label)), true
 }
 
 // mobcount writes mobcount for an event label of this NPC: the monsters

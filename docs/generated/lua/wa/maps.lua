@@ -24,4 +24,18 @@ function maps.find_entities(query) end
 ---@return string?
 function maps.get_display_name(map) end
 
+---An online player of the context's map by name, as rAthena's map_nick2sd (review decision 58). nil for a player who is offline or on another map: a player handle acts in its own zone.
+---
+---Needs the permission `game.read`.
+---@param name string A character name, matched exactly.
+---@return wa.Player?
+function maps.find_player(name) end
+
+---An online player of the context's map by account ID, or else by character ID, as rAthena's convertpcinfo reads map_id2sd, then map_charid2sd (review decision 58). nil for a player who is offline or on another map.
+---
+---Needs the permission `game.read`.
+---@param id integer An account ID, or a character ID, as player.account_id and player.character_id.
+---@return wa.Player?
+function maps.find_player_by_id(id) end
+
 return maps

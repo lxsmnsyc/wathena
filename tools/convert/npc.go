@@ -219,8 +219,17 @@ type npcConverter struct {
 	groups map[int64]string
 	// duplicated are the unique names of the NPCs that have duplicates.
 	// A duplicate runs its source's script, so a script that names its
-	// own NPC names the source there.
+	// own NPC names the source there. dups are the duplicates of each
+	// source, by unique name.
 	duplicated map[string]bool
+	dups       map[string][]string
+	// recordOf is the record name of each NPC by its unique name, and
+	// npcMap its map, "" for an NPC without one (review decision 58).
+	recordOf, npcMap map[string]string
+	// shared are the .x variables that getvariableofnpc reads, by NPC
+	// name and variable, and sharedAny those it reads by a computed NPC
+	// name (npcworld.go).
+	shared, sharedAny map[string]bool
 }
 
 // monsterInfo is a monster of client_tables.json: its AegisName, and
@@ -340,11 +349,16 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 	names := map[string]bool{}
 	recordNames := make([]string, len(extract.NPCs))
 	shopNPCs := map[int]*NPC{}
+	c.recordOf, c.npcMap = map[string]string{}, map[string]string{}
 	for i := range extract.NPCs {
 		if l := &extract.NPCs[i]; l.Kind != "function" {
 			recordNames[i] = recordName(l.Name, names)
+			if _, ok := c.recordOf[l.Name]; !ok {
+				c.recordOf[l.Name], c.npcMap[l.Name] = recordNames[i], l.Map
+			}
 		}
 	}
+	c.sharedVars(extract.NPCs)
 	for i := range extract.NPCs {
 		l := &extract.NPCs[i]
 		if !isShopKind(l.Kind) {
@@ -500,8 +514,16 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 		n.converted = n.Status
 	}
 	if l.Map == "" {
-		n.Unsupported = append(n.Unsupported, "floating: a script NPC without a map runs only through events")
-		n.Status = None
+		// An NPC without a map runs only through events, in the start
+		// map's zone (review decision 58).
+		if n.Script == "" {
+			n.Unsupported = append(n.Unsupported, "floating: a script NPC without a map whose script does nothing")
+			n.Status = None
+			return n
+		}
+		n.Placed = true
+		fields := []string{"name: " + yamlString(n.Name), "script: " + yamlString(n.Script), "display_name: " + yamlString(displayName(l.Display))}
+		n.record = "- {" + strings.Join(fields, ", ") + "}"
 		return n
 	}
 	if strings.Contains(l.Map, "@") {
@@ -511,17 +533,23 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 		n.Status = None
 		return n
 	}
-	if l.State != "" && l.State != "enabled" {
-		n.Unsupported = append(n.Unsupported, "state: the NPC starts "+l.State+", and needs events to show")
+	state := ""
+	switch l.State {
+	case "", "enabled":
+	case "disabled", "hidden", "cloaked":
+		// script(DISABLED), (HIDDEN) and (CLOAKED) (review decision 58).
+		state = l.State
+	default:
+		n.Unsupported = append(n.Unsupported, "state: the NPC starts "+l.State)
 		n.Status = None
 		return n
 	}
 	touch := n.touch && l.XS >= 0 && l.YS >= 0
 	view, ok := c.sprite(l.Sprite)
-	if !ok && touch && l.Sprite == "-1" {
-		// An NPC without a sprite still has its touch area in rAthena.
-		// HIDDEN_NPC shows nothing in the client.
-		view, ok = "HIDDEN_NPC", true
+	if !ok && l.Sprite == "-1" {
+		// rAthena's view -1: no view and no click, events and touch only
+		// (review decision 58).
+		view, ok = "none", true
 	}
 	if !ok {
 		n.Unsupported = append(n.Unsupported, "sprite: "+l.Sprite+" is not an NPC sprite")
@@ -542,6 +570,9 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 		// rAthena's OnTouch area: the cells within the spans of the NPC.
 		n.Touch = true
 		fields = append(fields, fmt.Sprintf("touch: {x_span: %d, y_span: %d}", l.XS, l.YS))
+	}
+	if state != "" {
+		fields = append(fields, "state: "+state)
 	}
 	n.record = "- {" + strings.Join(fields, ", ") + "}"
 	return n

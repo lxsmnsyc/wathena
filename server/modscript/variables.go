@@ -48,8 +48,10 @@ const (
 var variableName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,63}$`)
 
 // variableScopes are the scopes of wa.variables, with whether a value
-// needs a player.
-var variableScopes = map[string]bool{"character": true, "character_temporary": true, "account": true, "server": false}
+// needs a player. npc values need an NPC instead, and server_temporary
+// values need neither (review decision 58).
+var variableScopes = map[string]bool{"character": true, "character_temporary": true, "account": true, "server": false,
+	"npc": false, "server_temporary": false}
 
 type variable struct {
 	mod, scope, kind, name string
@@ -89,7 +91,9 @@ func (r *Runtime) variablesDeclare(c *script.Call) error {
 		c.Return(script.Int(prev.id))
 		return nil
 	}
-	if r.modVariables[mod] >= MaxModVariables {
+	// Core declares a variable for each name its converted NPCs use, so
+	// it has no limit (review decision 58).
+	if mod != coreMod && r.modVariables[mod] >= MaxModVariables {
 		return fmt.Errorf("%s: %s has declared %d variables, the most a mod may", what, mod, MaxModVariables)
 	}
 	r.modVariables[mod]++
@@ -114,8 +118,37 @@ func (r *Runtime) variableOf(c *script.Call) (*variable, error) {
 	return r.variables[id], nil
 }
 
+// tempKey is the key of a value that is not saved: an NPC variable of
+// the NPC that Arg(1) names, or a temporary server variable.
+func (r *Runtime) tempKey(v *variable, c *script.Call, method string) (variables.TempKey, error) {
+	k := variables.TempKey{Mod: v.mod, Name: v.name}
+	if v.scope != "npc" {
+		return k, nil
+	}
+	npc, ok := c.Arg(1).AsInt()
+	if !ok {
+		return k, fmt.Errorf("%s: want an NPC, such as count:%s(npc)", v.what(method), method)
+	}
+	h, err := r.npcWorld(v.what(method))
+	if err != nil {
+		return k, err
+	}
+	if k.NPC, err = h.NPCKey(npc); err != nil {
+		return k, fmt.Errorf("%s: %w", v.what(method), err)
+	}
+	return k, nil
+}
+
 // read returns a variable's value as JSON, or "" at its default.
 func (r *Runtime) readVariable(v *variable, c *script.Call, method string) (string, int64, error) {
+	if v.scope == "npc" || v.scope == "server_temporary" {
+		k, err := r.tempKey(v, c, method)
+		if err != nil {
+			return "", 0, err
+		}
+		s, _ := r.temp.Get(k)
+		return s, 0, nil
+	}
 	if v.scope == "server" {
 		if r.opts.Server == nil {
 			return "", 0, fmt.Errorf("%s: server variables are not set up here", v.what(method))
@@ -171,13 +204,20 @@ func (r *Runtime) variableSet(c *script.Call) error {
 	if err := r.mutating(v.what("set")); err != nil {
 		return err
 	}
-	_, player, err := r.readVariable(v, c, "set")
-	if err != nil {
-		return err
-	}
 	s, err := encodeVariable(v.kind, c.Arg(2))
 	if err != nil {
 		return fmt.Errorf("%s: %w", v.what("set"), err)
+	}
+	if v.scope == "npc" || v.scope == "server_temporary" {
+		k, err := r.tempKey(v, c, "set")
+		if err != nil {
+			return err
+		}
+		return r.temp.Set(k, s)
+	}
+	_, player, err := r.readVariable(v, c, "set")
+	if err != nil {
+		return err
 	}
 	return r.writeVariable(v, player, s)
 }
@@ -213,6 +253,23 @@ func (r *Runtime) variableAdd(c *script.Call) error {
 			return "", 0, nil
 		}
 		return strconv.FormatInt(n, 10), n, nil
+	}
+	if v.scope == "npc" || v.scope == "server_temporary" {
+		k, err := r.tempKey(v, c, "add")
+		if err != nil {
+			return err
+		}
+		var out int64
+		_, err = r.temp.Update(k, func(old string) (string, error) {
+			s, n, err := add(old)
+			out = n
+			return s, err
+		})
+		if err != nil {
+			return err
+		}
+		c.Return(script.Int(out))
+		return nil
 	}
 	if v.scope == "server" {
 		if r.opts.Server == nil {

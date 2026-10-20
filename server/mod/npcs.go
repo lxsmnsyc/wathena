@@ -58,7 +58,21 @@ type NPC struct {
 	Place *NPCPlace
 	// Touch is the NPC's touch area, or nil (review decision 55).
 	Touch *NPCTouch
+	// State is how the NPC starts: "", disabled, hidden or cloaked, as
+	// rAthena's script(DISABLED), (HIDDEN) and (CLOAKED) lines (review
+	// decision 58).
+	State string
+	// NoSprite is set for sprite: none, rAthena's view -1: no view and no
+	// click, events and touch only.
+	NoSprite bool
+	// Floating is set for a script record without a map or a place. It
+	// runs only through events, in the start map's zone (review decision
+	// 58).
+	Floating bool
 }
+
+// NPCStates are the values of an NPC record's state field.
+var NPCStates = []string{"disabled", "hidden", "cloaked"}
 
 // NPCTouch is the touch field: the cells within XSpan and YSpan of the
 // NPC's cell, as rAthena's OnTouch area. A player who steps into it
@@ -124,7 +138,7 @@ type ShopCostItem struct {
 }
 
 // npcFields are the fields of an NPC record.
-var npcFields = []string{"map", "x", "y", "place", "direction", "sprite", "script", "display_name", "shop", "discount", "touch"}
+var npcFields = []string{"map", "x", "y", "place", "direction", "sprite", "script", "display_name", "shop", "discount", "touch", "state"}
 
 // shopFields are the fields of a shop table.
 var shopFields = []string{"items", "buys_from_players", "discount"}
@@ -202,7 +216,16 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 		return n, nil
 	}
 	n.Placed = true
-	if hasPlace {
+	_, hasScript := r.Fields["script"]
+	if !hasMap && !hasPlace && hasScript {
+		// An NPC without a map: it runs only through events.
+		n.Floating = true
+		for _, k := range []string{"x", "y", "direction", "sprite", "touch", "state"} {
+			if _, ok := r.Fields[k]; ok {
+				errs = append(errs, fmt.Sprintf("%s needs a map: an NPC without a map has no place, and runs only through events", k))
+			}
+		}
+	} else if hasPlace {
 		for _, k := range []string{"map", "x", "y"} {
 			if _, ok := r.Fields[k]; ok {
 				errs = append(errs, fmt.Sprintf("%s does not go with place: the NPC stands at each place", k))
@@ -237,7 +260,16 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 		}
 	}
 	switch v := r.Fields["sprite"].(type) {
+	case nil:
+		if !n.Floating {
+			errs = append(errs, "sprite is required: an NPC sprite name, such as 4_F_KAFRA1, or none")
+		}
 	case string:
+		if v == "none" {
+			// rAthena's view -1: no view and no click.
+			n.NoSprite = true
+			break
+		}
 		if IsArtName(v) {
 			if err := CheckArtName(v, "sprite"); err != nil {
 				errs = append(errs, fmt.Sprintf("sprite: %v", err))
@@ -261,7 +293,14 @@ func (s *Set) npc(r *Record, sprite func(string) (uint32, bool)) (NPC, error) {
 		}
 		n.Sprite = uint32(v) // #nosec G115 -- checked above.
 	default:
-		errs = append(errs, "sprite is required: an NPC sprite name, such as 4_F_KAFRA1")
+		errs = append(errs, "sprite is an NPC sprite name, such as 4_F_KAFRA1, or none")
+	}
+	if v, ok := r.Fields["state"]; ok {
+		st, isText := v.(string)
+		if !isText || !slices.Contains(NPCStates, st) {
+			errs = append(errs, "state is disabled, hidden or cloaked: how the NPC starts, until a script shows it")
+		}
+		n.State = st
 	}
 	if d, ok := r.Fields["display_name"]; ok {
 		name, isText := d.(string)

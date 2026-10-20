@@ -60,6 +60,9 @@ type Spawn struct {
 
 type monster struct {
 	spawn *Spawn
+	// touchNPC is the NPC whose monster_touch ran for the monster, until
+	// it steps out of the touch areas, as md->areanpc_id.
+	touchNPC *entity
 	// nextWalk is next_walktime: when the monster next tries to wander,
 	// in zone milliseconds.
 	nextWalk int64

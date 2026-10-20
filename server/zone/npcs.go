@@ -82,9 +82,14 @@ func (z *Zone) startNPCs() {
 		return
 	}
 	z.npcsStarted = true
+	// The world counts the zone's labels once its NPCs have registered
+	// them: until then, events for every NPC still come to it.
+	if d := z.npcDir(); d != nil {
+		defer d.markStarted(z)
+	}
 	var npcs []*entity
-	for e := range z.entities.all() {
-		if e.npc != nil && e.npc.Script != "" {
+	for _, e := range z.npcsInOrder() {
+		if e.npc.Script != "" && !e.npc.removed {
 			npcs = append(npcs, e)
 		}
 	}
@@ -104,7 +109,18 @@ func (z *Zone) startNPCs() {
 			continue
 		}
 		e.npc.script = n
+		e.npc.setScriptState()
 	}
+}
+
+// npcLabel keeps the world's directory of an NPC's event labels.
+func (z *Zone) npcLabel(handle int64, label string, add bool) {
+	e := z.npcHandles[handle]
+	d := z.npcDir()
+	if e == nil || d == nil || e.npc.entry == nil {
+		return
+	}
+	d.label(e.npc.entry, label, add)
 }
 
 // near is npc_checknear.
@@ -149,7 +165,7 @@ func (z *Zone) click(p *Player, netID uint32) {
 			break
 		}
 	}
-	if e == nil || e.npc == nil || !z.entities.has(e) || !near(p, e) {
+	if e == nil || e.npc == nil || !z.entities.has(e) || !near(p, e) || !e.npc.clickable() {
 		return
 	}
 	n := e.npc
@@ -464,8 +480,11 @@ func (z *Zone) emotionEvents(p *Player) []*wathenav1.Event {
 // The NPCHost side of scriptHost.
 
 func (h scriptHost) npc(id int64) (*entity, error) {
+	if id >= remoteBase {
+		return nil, errors.New("the NPC is on another map: only its fields, its view and its events reach it")
+	}
 	e := h.z.npcByHandle(id)
-	if e == nil || !h.z.entities.has(e) {
+	if e == nil || e.npc.removed || !e.npc.floating && !h.z.entities.has(e) {
 		return nil, errors.New("the NPC is gone from this map")
 	}
 	return e, nil
@@ -473,6 +492,13 @@ func (h scriptHost) npc(id int64) (*entity, error) {
 
 // NPCField reads an NPC handle: name, map, x or y.
 func (h scriptHost) NPCField(id int64, field string) (script.Value, error) {
+	if id >= remoteBase {
+		t, err := h.npcTarget(id)
+		if err != nil {
+			return script.Nil, err
+		}
+		return h.remoteField(t.entry, field)
+	}
 	e, err := h.npc(id)
 	if err != nil {
 		return script.Nil, err
@@ -489,9 +515,28 @@ func (h scriptHost) NPCField(id int64, field string) (script.Value, error) {
 var npcFields = map[string]func(h scriptHost, e *entity) script.Value{
 	"kind": func(scriptHost, *entity) script.Value { return script.String("npc") },
 	"name": func(_ scriptHost, e *entity) script.Value { return script.String(e.npc.DisplayName) },
-	"map":  func(h scriptHost, _ *entity) script.Value { return script.String(h.Map()) },
-	"x":    func(_ scriptHost, e *entity) script.Value { return intValue(e.x) },
-	"y":    func(_ scriptHost, e *entity) script.Value { return intValue(e.y) },
+	"full_name": func(_ scriptHost, e *entity) script.Value {
+		_, _, full := npcNames(e.npc.Name, e.npc.DisplayName)
+		return script.String(full)
+	},
+	"hidden_name": func(_ scriptHost, e *entity) script.Value {
+		_, hidden, _ := npcNames(e.npc.Name, e.npc.DisplayName)
+		return script.String(hidden)
+	},
+	"unique_name": func(_ scriptHost, e *entity) script.Value {
+		unique, _, _ := npcNames(e.npc.Name, e.npc.DisplayName)
+		return script.String(unique)
+	},
+	"map": func(h scriptHost, e *entity) script.Value {
+		if e.npc.floating {
+			// An NPC without a map, as strnpcinfo(4) reads it (nd->m < 0).
+			return script.String("")
+		}
+		return script.String(h.Map())
+	},
+	"x":     func(_ scriptHost, e *entity) script.Value { return intValue(e.x) },
+	"y":     func(_ scriptHost, e *entity) script.Value { return intValue(e.y) },
+	"state": func(_ scriptHost, e *entity) script.Value { return script.String(e.npc.state()) },
 }
 
 // NPCEmotion shows an emotion over an NPC to everyone who sees it.
@@ -499,6 +544,10 @@ func (h scriptHost) NPCEmotion(id int64, emotion int64) error {
 	e, err := h.npc(id)
 	if err != nil {
 		return err
+	}
+	if e.npc.floating {
+		// An NPC without a map has no place to show it (nd->m < 0).
+		return nil
 	}
 	h.z.emotions = append(h.z.emotions, npcEmotion{e, uint32(emotion)}) // #nosec G115 -- checked by the runtime.
 	return nil
@@ -510,6 +559,10 @@ func (h scriptHost) NPCSay(id int64, text string) error {
 	e, err := h.npc(id)
 	if err != nil {
 		return err
+	}
+	if e.npc.floating {
+		// Nobody hears an NPC without a map.
+		return nil
 	}
 	h.z.chats = append(h.z.chats, chatLine{speaker: e, name: e.npc.DisplayName, text: text})
 	return nil

@@ -39,6 +39,8 @@ type Mods struct {
 	Set   *mod.Set
 	Items *mod.Items
 	// NPCs are the placed NPCs, by map asset name, such as map/prontera.
+	// The NPCs without a map are under "": they run in the start map's
+	// zone (review decision 58).
 	NPCs map[string][]zone.NPC
 	// PlaceNPCs are the NPCs whose records give a place in place of a
 	// map: each stands at every place of its scope with its tag, which
@@ -275,7 +277,7 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 		}
 		zn := zone.NPC{
 			Name: n.Name, DisplayName: n.DisplayName, X: n.X, Y: n.Y, Direction: n.Direction, Sprite: n.Sprite,
-			Shop: shops.Get(n.Name),
+			Shop: shops.Get(n.Name), State: n.State, NoSprite: n.NoSprite, Floating: n.Floating,
 		}
 		if n.Script != "" {
 			zn.Script = n.ScriptMod + ":" + n.Script

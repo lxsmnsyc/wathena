@@ -315,7 +315,9 @@ func (e *Env) checkEntries(l *Loaded, rep *Report) {
 	// The map of the mod's first NPC, so its setup sees a map it uses.
 	where := DefaultMap
 	for _, asset := range slices.Sorted(maps.Keys(l.NPCs)) {
-		if slices.ContainsFunc(l.NPCs[asset], func(n zone.NPC) bool { return strings.HasPrefix(n.Name, id+":") }) {
+		// NPCs without a map are under "", and run on the test world's
+		// one map wherever it is.
+		if asset != "" && slices.ContainsFunc(l.NPCs[asset], func(n zone.NPC) bool { return strings.HasPrefix(n.Name, id+":") }) {
 			where = strings.TrimPrefix(asset, "map/")
 			break
 		}

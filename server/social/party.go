@@ -713,8 +713,17 @@ type Info struct {
 	// online ones.
 	Members []string
 	Online  []string
+	// Roster is every member in slot order, with its IDs.
+	Roster []Member
 	// Ended is set for a party that broke up.
 	Ended bool
+}
+
+// Member is one member of a party, as rAthena's getpartymember reads it.
+type Member struct {
+	Name              string
+	CharID, AccountID int64
+	Online            bool
 }
 
 // Party returns what scripts read of a party, also for a party that
@@ -735,6 +744,7 @@ func (r *Registry) Party(id int64) (Info, bool) {
 	}
 	for _, m := range pt.members() {
 		in.Members = append(in.Members, m.name)
+		in.Roster = append(in.Roster, Member{Name: m.name, CharID: m.charID, AccountID: m.accountID, Online: m.online})
 		if m.online {
 			in.Online = append(in.Online, m.name)
 		}

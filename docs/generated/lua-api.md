@@ -33,7 +33,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.places`](#waplaces) | Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil. |
 | [`wa.towns`](#watowns) | The towns of the world layout (review decision 43): each with an ID such as t7, a display name, a map and a level band. A classic world has no towns: list returns an empty list, and nearest and get nil. |
 | [`wa.generation`](#wageneration) | Generation layers (review decision 46): mod code that runs when wactl world new makes a procedural world, on the server only, and in the test worlds of wactl mod test. A layer adds named places, objects and bosses to each generated map. It cannot change terrain cells, which the client generates. Both calls need world.generate. In a running zone they record what they get, and nothing runs it. |
-| [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables. |
+| [`wa.variables`](#wavariables) | Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. Core has no such limit (review decision 58). A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables. Its server variables, and apart its temporary server and NPC variables, hold at most 256 values, which core does not have either. |
 | [`wa.random`](#warandom) | Random numbers from the zone's secret stream. |
 | [`wa.integers`](#waintegers) | Integer division that rounds as C does, toward zero, for scripts converted from rAthena. |
 | [`wa.bonuses`](#wabonuses) | Item bonuses (proposal 0002a). Equip contexts only. |
@@ -92,7 +92,7 @@ Permission: `event.listen`.
 |---|---|---|
 | `name` | `wa.EventName` | The event's name. An unknown name, or an event of another context kind, raises an error. |
 | `handler` | `function` | Runs each time the event fires, in registration order. |
-| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|wa.SkillUsedOptions\|wa.ChatOptions\|wa.TradeOptions\|nil` | Only the death, status, skill_used, chat and trade events take options: they narrow which events run the handler. |
+| `options` | `wa.DeathOptions\|wa.StatusEventOptions\|wa.SkillUsedOptions\|wa.ChatOptions\|wa.TradeOptions\|wa.NpcEventOptions\|nil` | Only the death, status, skill_used, chat, trade and npc_event events take options: they narrow which events run the handler. npc_event needs its options: the label. |
 
 ### wa.hooks
 
@@ -381,6 +381,26 @@ Permission: `game.read`.
 |---|---|---|
 | `map` | `string` | A map ID, such as "gen:town:t7". |
 
+#### `maps.find_player(name) → wa.Player?`
+
+An online player of the context's map by name, as rAthena's map_nick2sd (review decision 58). nil for a player who is offline or on another map: a player handle acts in its own zone.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A character name, matched exactly. |
+
+#### `maps.find_player_by_id(id) → wa.Player?`
+
+An online player of the context's map by account ID, or else by character ID, as rAthena's convertpcinfo reads map_id2sd, then map_charid2sd (review decision 58). nil for a player who is offline or on another map.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `id` | `integer` | An account ID, or a character ID, as player.account_id and player.character_id. |
+
 ### wa.world
 
 ```lua
@@ -408,6 +428,24 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string` | A shop of data/npcs.yml: a full record name, or a plain name, which is the calling mod's record, then core's. |
+
+#### `world.get_npc(name) → wa.Npc?`
+
+An NPC of any map, or one without a map, as rAthena's npc_name2id (review decision 58). nil when there is none, or it was removed. A handle of an NPC of another map reads its fields, and its changes and events run in that NPC's zone after the current step. Its other methods raise an error there.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | An NPC of data/npcs.yml: a full record name, such as core:Guard#1, or a plain name, which is the calling mod's record, then core's. Case counts. |
+
+#### `world.fire_npc_event(name) → integer`
+
+Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent "::OnX" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | An event label, such as OnEnable, without regard to case. |
 
 ### wa.world_events
 
@@ -680,7 +718,7 @@ Permission: `world.generate`.
 local variables = require "wa.variables"
 ```
 
-Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables.
+Saved variables, declared at the top of a file with a scope and a type. They are stored under the mod's ID. A mod declares at most 256 variables, and declaring one again gives the same handle. Core has no such limit (review decision 58). A mod's values take at most 1 MiB as JSON on one player, and 1 MiB in its server variables. Its server variables, and apart its temporary server and NPC variables, hold at most 256 values, which core does not have either.
 
 #### `variables.character_integer(name) → wa.IntegerVariable`
 
@@ -835,6 +873,86 @@ Permission: `storage.mod`.
 #### `variables.server_table(name) → wa.ServerTableVariable`
 
 Declares a table variable. One value for the whole world, saved soon after a change.
+
+Permission: `storage.mod`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+
+#### `variables.server_temporary_integer(name) → wa.ServerIntegerVariable`
+
+Declares a integer variable. One value for the whole world, not saved, as rAthena's $@ variables (review decision 58).
+
+Permission: `storage.mod`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+
+#### `variables.server_temporary_boolean(name) → wa.ServerBooleanVariable`
+
+Declares a boolean variable. One value for the whole world, not saved, as rAthena's $@ variables (review decision 58).
+
+Permission: `storage.mod`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+
+#### `variables.server_temporary_string(name) → wa.ServerStringVariable`
+
+Declares a string variable. One value for the whole world, not saved, as rAthena's $@ variables (review decision 58).
+
+Permission: `storage.mod`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+
+#### `variables.server_temporary_table(name) → wa.ServerTableVariable`
+
+Declares a table variable. One value for the whole world, not saved, as rAthena's $@ variables (review decision 58).
+
+Permission: `storage.mod`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+
+#### `variables.npc_integer(name) → wa.NpcIntegerVariable`
+
+Declares a integer variable. One value per NPC, which every zone reads, not saved, as rAthena's .x variables and getvariableofnpc (review decision 58).
+
+Permission: `storage.mod`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+
+#### `variables.npc_boolean(name) → wa.NpcBooleanVariable`
+
+Declares a boolean variable. One value per NPC, which every zone reads, not saved, as rAthena's .x variables and getvariableofnpc (review decision 58).
+
+Permission: `storage.mod`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+
+#### `variables.npc_string(name) → wa.NpcStringVariable`
+
+Declares a string variable. One value per NPC, which every zone reads, not saved, as rAthena's .x variables and getvariableofnpc (review decision 58).
+
+Permission: `storage.mod`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+
+#### `variables.npc_table(name) → wa.NpcTableVariable`
+
+Declares a table variable. One value per NPC, which every zone reads, not saved, as rAthena's .x variables and getvariableofnpc (review decision 58).
 
 Permission: `storage.mod`.
 
@@ -1917,15 +2035,19 @@ Permission: `game.read`.
 
 ### wa.Npc
 
-An NPC: the instance of an NPC context.
+An NPC: the instance of an NPC context, or what world.get_npc returns. A handle of an NPC of another map reads its fields, and its changes and events run in that NPC's zone after the current step. Its other methods raise an error there.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `kind` | `"npc"` | The entity's kind. |
-| `name` | `string` | The name players see. |
-| `map` | `string` |  |
+| `name` | `string` | The name players see, as strnpcinfo(1). |
+| `full_name` | `string` | The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the record's name has a # part (review decision 58). |
+| `hidden_name` | `string` | The part after # of the record's name, or "", as strnpcinfo(2). |
+| `unique_name` | `string` | The record's name without the mod's ID, as strnpcinfo(3). world.get_npc finds the NPC by it in the same mod. |
+| `map` | `string` | The map's name, as strnpcinfo(4). "" for an NPC without a map, which runs in the start map's zone. |
 | `x` | `integer` |  |
 | `y` | `integer` |  |
+| `state` | `"shown"\|"hidden"\|"disabled"` | disabled after npc:hide(), hidden after npc:set_hidden(true), shown otherwise. Cloaking is apart: npc:is_cloaked(). |
 
 #### `npc:show_emotion(emotion)`
 
@@ -1951,6 +2073,54 @@ Shows an icon over the NPC to one player, as showevent. It stays while the playe
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
 | `icon` | `wa.QuestIcon?` | nil removes the icon. |
+
+#### `npc:show()`
+
+Shows the NPC, as enablenpc: it shows, takes clicks, and its touch area works again. A player who stands in the area gets the touch event, as npc_enable_target (npc.cpp 1100). It does not uncloak the NPC. Another mod's NPC needs npcs.control.
+
+#### `npc:hide()`
+
+Disables the NPC, as disablenpc: no view, no click, no touch, and its player events and events with a player do not run. npc:fire_event without a player still runs its handlers, as donpcevent. Another mod's NPC needs npcs.control.
+
+#### `npc:set_hidden(hidden)`
+
+Hides or shows the NPC, as hideonnpc and hideoffnpc: hidden, it does not show and refuses clicks, but its touch area works. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `hidden` | `boolean` |  |
+
+#### `npc:set_cloaked(cloaked, player?)`
+
+Cloaks or uncloaks the NPC, as cloakonnpc and cloakoffnpc, or for one player, as cloakonnpcself and cloakoffnpcself. A cloaked NPC does not show to that player and has no touch for it, and monsters do not touch it. A change for everyone ends the changes for single players on the NPC's map, as npc_cloaked_sub. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `cloaked` | `boolean` |  |
+| `player` | `wa.Player?` | One player, or nil for everyone. |
+
+#### `npc:is_cloaked(player?) → boolean`
+
+Whether the NPC is cloaked for the player, or for everyone, as isnpccloaked.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player?` | One player, or nil for everyone. |
+
+#### `npc:remove()`
+
+Removes the NPC until the server restarts, as unloadnpc: it vanishes, its context ends after the current step, and its NPC variables go. Another mod's NPC needs npcs.control.
+
+#### `npc:fire_event(name, options?) → boolean`
+
+Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; true for an NPC whose zone has not started its scripts. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | An event label, such as OnEnable, without regard to case. |
+| `options` | `wa.FireEventOptions?` |  |
 
 #### `npc:show_effect(effect)`
 
@@ -2399,6 +2569,12 @@ Every member's name, online or not, in slot order.
 
 Permission: `game.read`.
 
+#### `party:get_member_list() → wa.PartyMember[]`
+
+Every member, online or not, in slot order, with its IDs, as getpartymember types 0 to 2 (review decision 58).
+
+Permission: `game.read`.
+
 #### `party:add(player) → boolean`
 
 Puts the player in the party, as party_addmember. Returns false when the player has a party, the party is full, or a character of the same account is in it. The party_join event follows, with the reason "script".
@@ -2444,6 +2620,17 @@ Permission: `party.manage`.
 Breaks the party up, as party_destroy. Each member gets the party_leave event, with the reason "disbanded".
 
 Permission: `party.manage`.
+
+### wa.PartyMember
+
+One member of party:get_member_list.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` |  |
+| `character_id` | `integer` |  |
+| `account_id` | `integer` |  |
+| `online` | `boolean` |  |
 
 ### wa.PartyOptions
 
@@ -2741,6 +2928,32 @@ It exists only in tests that `wactl mod test` runs.
 | `channel` | `string` | "public", "whisper", "system", or a channel's name with its #. |
 | `from` | `string` | The speaker's name, or empty for a system line or a channel's own line. |
 | `text` | `string` |  |
+
+### wa.NpcEventOptions
+
+The options of an npc_event handler (review decision 58).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` | The event label the handler runs for, such as OnEnable, without regard to case: 1 to 50 letters, digits and _. |
+
+### wa.NpcEvent
+
+The object of the npc_event event.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` | The label, in lower case. |
+| `player` | `wa.Player?` | The player of npc:fire_event's player option, or nil. |
+| `conversation` | `wa.Conversation?` | The conversation with the player, or nil without one. |
+
+### wa.FireEventOptions
+
+The options of npc:fire_event.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player?` | Runs the event for the player, as doevent. It must be on the NPC's map. |
 
 ### wa.EventHandle
 
@@ -3934,7 +4147,7 @@ Adds to the value in one step, and returns the new value.
 
 ### wa.ServerIntegerVariable
 
-A declared integer server variable.
+A declared integer server variable, saved or temporary.
 
 #### `serverIntegerVariable:get() → integer`
 
@@ -3954,6 +4167,36 @@ Adds to the value in one step, and returns the new value.
 
 | Parameter | Type | Meaning |
 |---|---|---|
+| `amount` | `integer` |  |
+
+### wa.NpcIntegerVariable
+
+A declared integer NPC variable (review decision 58).
+
+#### `npcIntegerVariable:get(npc) → integer`
+
+The NPC's value, or the default.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
+
+#### `npcIntegerVariable:set(npc, value)`
+
+Changes the NPC's value.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
+| `value` | `integer` |  |
+
+#### `npcIntegerVariable:add(npc, amount) → integer`
+
+Adds to the NPC's value in one step, and returns the new value.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
 | `amount` | `integer` |  |
 
 ### wa.BooleanVariable
@@ -3979,7 +4222,7 @@ Changes the value.
 
 ### wa.ServerBooleanVariable
 
-A declared boolean server variable.
+A declared boolean server variable, saved or temporary.
 
 #### `serverBooleanVariable:get() → boolean`
 
@@ -3991,6 +4234,27 @@ Changes the value.
 
 | Parameter | Type | Meaning |
 |---|---|---|
+| `value` | `boolean` |  |
+
+### wa.NpcBooleanVariable
+
+A declared boolean NPC variable (review decision 58).
+
+#### `npcBooleanVariable:get(npc) → boolean`
+
+The NPC's value, or the default.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
+
+#### `npcBooleanVariable:set(npc, value)`
+
+Changes the NPC's value.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
 | `value` | `boolean` |  |
 
 ### wa.StringVariable
@@ -4016,7 +4280,7 @@ Changes the value.
 
 ### wa.ServerStringVariable
 
-A declared string server variable.
+A declared string server variable, saved or temporary.
 
 #### `serverStringVariable:get() → string`
 
@@ -4028,6 +4292,27 @@ Changes the value.
 
 | Parameter | Type | Meaning |
 |---|---|---|
+| `value` | `string` |  |
+
+### wa.NpcStringVariable
+
+A declared string NPC variable (review decision 58).
+
+#### `npcStringVariable:get(npc) → string`
+
+The NPC's value, or the default.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
+
+#### `npcStringVariable:set(npc, value)`
+
+Changes the NPC's value.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
 | `value` | `string` |  |
 
 ### wa.TableVariable
@@ -4053,7 +4338,7 @@ Changes the value.
 
 ### wa.ServerTableVariable
 
-A declared table server variable.
+A declared table server variable, saved or temporary.
 
 #### `serverTableVariable:get() → table?`
 
@@ -4067,20 +4352,43 @@ Changes the value.
 |---|---|---|
 | `value` | `table?` |  |
 
+### wa.NpcTableVariable
+
+A declared table NPC variable (review decision 58).
+
+#### `npcTableVariable:get(npc) → table?`
+
+The NPC's value, or the default.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
+
+#### `npcTableVariable:set(npc, value?)`
+
+Changes the NPC's value.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `npc` | `wa.Npc` | An NPC handle, of any map. |
+| `value` | `table?` |  |
+
 ## Events
 
 | Event | Contexts | Handler arguments | When |
 |---|---|---|---|
-| `login` | mod, event | `player: wa.Player` | A player logs in, in the zone it enters. |
-| `logout` | mod, event | `player: wa.Player` | A player logs out, before it leaves. |
-| `map_enter` | mod, event | `player: wa.Player` | A player enters the zone: at login and after a warp. |
+| `login` | mod, npc, event | `player: wa.Player` | A player logs in, in the zone it enters. An NPC hears the players of its map, as OnPCLoginEvent, unless it is disabled. |
+| `logout` | mod, npc, event | `player: wa.Player` | A player logs out, before it leaves. An NPC hears the players of its map, as OnPCLogoutEvent, unless it is disabled. |
+| `map_enter` | mod, npc, event | `player: wa.Player` | A player enters the zone: at login and after a warp. An NPC hears the players of its map, as OnPCLoadMapEvent, unless it is disabled. |
 | `death` | mod, npc, event | `death: wa.Death` | A player or a monster died on the context's map. Options narrow it. |
-| `base_level_up` | mod, event | `player: wa.Player` | The player gained a base level. |
-| `job_level_up` | mod, event | `player: wa.Player` | The player gained a job level. |
+| `base_level_up` | mod, npc, event | `player: wa.Player` | The player gained a base level. An NPC hears the players of its map, as OnPCBaseLvUpEvent, unless it is disabled. |
+| `job_level_up` | mod, npc, event | `player: wa.Player` | The player gained a job level. An NPC hears the players of its map, as OnPCJobLvUpEvent, unless it is disabled. |
 | `job_change` | mod, event | `change: wa.JobChange` | The player changed jobs: player:change_job, player:rebirth, or a converted jobchange. It fires after the stats and skills of the new job are set. |
 | `click` | npc | `player: wa.Player, conversation: wa.Conversation` | A player talks to the NPC. |
 | `touch` | npc | `player: wa.Player, conversation: wa.Conversation` | A player stepped into the NPC's touch area, the record's touch field, as rAthena's OnTouch. It fires once each time the player comes in: on a step, or when it arrives on a cell of the area. Hidden and dead players fire it too. The handlers run in a conversation with the player, which shows nothing until a handler shows a step (review decision 56). A touch while the player talks to an NPC waits until that conversation ends, and runs only if the player is still in the area then. |
 | `untouch` | npc | `player: wa.Player` | A player who fired touch left the NPC's touch area: a step out of it, a warp, or a logout. A player who left the map can only be compared: reading it raises an error. |
+| `npc_event` | npc | `event: wa.NpcEvent` | An event of the label in the options was sent to the NPC: npc:fire_event or world.fire_npc_event, as rAthena's named labels such as OnEnable (review decision 58). It runs after the step that sent it. With a player it runs in a conversation with the player. |
+| `monster_touch` | npc | `monster: wa.Monster` | A monster walked into the NPC's touch area, as OnTouchNPC (npc_touch_areanpc2). It fires once until the monster steps out of every touch area or into another NPC's. A disabled or cloaked NPC hears none. |
 | `use` | item | `player: wa.Player` | The item is used. |
 | `damage` | item | `hit: wa.Damage` | A hit the wearer deals or takes: each normal attack that lands. Skill hits come with skills (phase 4 step 3). |
 | `skill_used` | item, mod, event | `use: wa.SkillUse` | A skill took effect, after its cast time. An interrupted cast does not fire it. An item's handler hears the wearer's skills. A mod or event context hears every skill of its map: options narrow it. |
@@ -4123,7 +4431,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `untouch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `untouch`, `npc_event`, `monster_touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
 
 ### wa.BonusName
 

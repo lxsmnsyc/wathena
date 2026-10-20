@@ -22,6 +22,7 @@ return function()
       do return end
     end)
   end
+  events.on("npc_event", function(event) event_ontouch(event.player, event.conversation) end, { name = "OnTouch" })
   events.on("touch", event_ontouch)
   events.on("click", function(player, conversation)
     R.run(function()

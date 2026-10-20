@@ -6,9 +6,11 @@
 
 local events = require "wa.events"
 local items = require "wa.items"
+local maps = require "wa.maps"
 local spawning = require "wa.spawning"
 local timers = require "wa.timers"
 local variables = require "wa.variables"
+local world = require "wa.world"
 
 local R = {}
 
@@ -832,7 +834,7 @@ local function dynamic(scope, text, player)
 	end
 	local declared = bare:lower() .. (str and "_text" or "")
 	local owner = player
-	if scope == "server" then
+	if scope == "server" or scope == "server_temporary" then
 		owner = nil
 	end
 	local default = str and "" or 0
@@ -843,6 +845,109 @@ local function dynamic(scope, text, player)
 		end
 	end
 	return variables[scope .. "_table"](declared), index, owner, default
+end
+
+-- NPCs by name (review decision 58). A command on an NPC that does not
+-- exist does nothing, as rAthena only logs an error.
+
+-- npc_named is the handle of an NPC: a record name, or a handle.
+local function npc_named(target)
+	if type(target) == "string" then
+		return world.get_npc(target)
+	end
+	return target
+end
+
+-- npc_view is enablenpc, disablenpc, hideonnpc and hideoffnpc, and the
+-- cloaks for everyone: a method of the NPC's handle.
+function R.npc_view(target, method, ...)
+	local n = npc_named(target)
+	if n ~= nil then
+		n[method](n, ...)
+	end
+end
+
+-- npc_cloak_for is the cloak of one player: cloakonnpcself and
+-- cloakoffnpcself, or the cloaks with getcharid(0). Without an attached
+-- player it does nothing, as script_rid2sd.
+function R.npc_cloak_for(target, cloaked, player)
+	local n = npc_named(target)
+	if n ~= nil and player ~= nil then
+		n:set_cloaked(cloaked, player)
+	end
+end
+
+-- is_cloaked is isnpccloaked for the attached player: false for an NPC
+-- that does not exist or without a player.
+function R.is_cloaked(target, player)
+	local n = npc_named(target)
+	if n == nil or player == nil then
+		return false
+	end
+	return n:is_cloaked(player)
+end
+
+-- fire is donpcevent "<NPC>::<label>": whether the NPC has the label.
+function R.fire(target, label)
+	local n = npc_named(target)
+	if n == nil then
+		return false
+	end
+	return n:fire_event(label)
+end
+
+-- doevent runs the label for the attached player, or does nothing
+-- without one, as script_rid2sd.
+function R.doevent(target, label, player)
+	local n = npc_named(target)
+	if n ~= nil and player ~= nil then
+		n:fire_event(label, { player = player })
+	end
+end
+
+-- donpcevent is donpcevent of an event name made when the script runs:
+-- "<NPC>::<label>", or "::<label>" for every NPC with the label.
+function R.donpcevent(text)
+	local name, label = tostring(text):match("^(.*)::([%a_][%w_]*)$")
+	if label == nil then
+		return false
+	end
+	if name == "" then
+		return world.fire_npc_event(label) > 0
+	end
+	return R.fire(name, label)
+end
+
+-- npc_event_of is the death event of a monster whose label is another
+-- NPC's: the label runs for the killer, as mob_dead's npc_event, or
+-- with no player.
+function R.npc_event_of(target, label)
+	return function(player)
+		if player ~= nil then
+			R.doevent(target, label, player)
+		else
+			R.fire(target, label)
+		end
+	end
+end
+
+-- npc_of is the NPC of getvariableofnpc, which ends the script for an
+-- NPC that does not exist, as rAthena's does.
+function R.npc_of(target)
+	local n = npc_named(target)
+	if n == nil then
+		R.stop()
+	end
+	return n
+end
+
+-- player_field reads a field of a player handle, or the default without
+-- a player.
+function R.player_field(p, field, default)
+	if p == nil then
+		return default
+	end
+	return p[field]
 end
 
 -- getd reads a variable by a name made when the script runs.
@@ -911,6 +1016,14 @@ function R.warp(player, map, x, y)
 	end
 end
 
+-- mapannounce is mapannounce of a computed text. An empty text shows
+-- nothing, so it is left out.
+function R.mapannounce(map, text)
+	if text ~= "" then
+		maps.announce(map, text)
+	end
+end
+
 -- input is rAthena's input for a number: the player may enter any
 -- number. One above max becomes max and returns 1, one below min
 -- becomes min and returns 2, as buildin_input does.
@@ -937,10 +1050,19 @@ end
 -- party_members is rAthena's getpartymember for names: every member's
 -- name in an array from 0, and the count. Without a party the array is
 -- empty and the count is 0.
-function R.party_members(party)
+function R.party_members(party, field)
 	local out = {}
 	if party == nil then
 		return out, 0
+	end
+	if field ~= nil then
+		-- getpartymember types 1 and 2: character and account IDs (review
+		-- decision 58).
+		local list = party:get_member_list()
+		for i, m in ipairs(list) do
+			out[i - 1] = m[field]
+		end
+		return out, #list
 	end
 	local names = party:get_member_names()
 	for i, name in ipairs(names) do

@@ -17,9 +17,12 @@ import (
 //   - .@x: a Lua local of the function, declared at its top, so labels
 //     and goto work.
 //   - .x: a local of the NPC's setup function, which every click shares.
-//   - x, @x, #x, ##x and $x: variables of wa.variables, of the character,
-//     the character until logout, the account and the server. ## is an
-//     account variable too.
+//     A .x that getvariableofnpc reads from another NPC is an NPC
+//     variable of wa.variables instead, which every zone reads (review
+//     decision 58).
+//   - x, @x, #x, ##x, $x and $@x: variables of wa.variables, of the
+//     character, the character until logout, the account, the server,
+//     and the server until it stops. ## is an account variable too.
 //   - Arrays are tables with keys from 0. x and x[0] are the same.
 //   - The type is integer, or string for names ending in $.
 
@@ -83,7 +86,10 @@ func (v val) asText() string {
 // npcVar is a variable that lives outside a Lua function: a variable of
 // wa.variables, or an NPC variable.
 type npcVar struct {
-	scope string // character, character_temporary, account, server or npc
+	// scope is character, character_temporary, account, server or
+	// server_temporary for wa.variables, npc for a local of the setup
+	// function, and npc_shared for an NPC variable of wa.variables.
+	scope string
 	name  string
 	str   bool
 	array bool
@@ -390,9 +396,10 @@ type body struct {
 	// rebirth is set after jobchange Job_Novice_High, which converts to
 	// player:rebirth, so the resetlvl(1) after it converts to nothing.
 	rebirth bool
-	// partyNames and partyCount are the locals that getpartymember sets,
-	// for reads of $@partymembername$ and $@partymembercount.
-	partyNames, partyCount string
+	// partyNames, partyCIDs, partyAIDs and partyCount are the locals
+	// that getpartymember sets, for reads of $@partymembername$,
+	// $@partymembercid, $@partymemberaid and $@partymembercount.
+	partyNames, partyCIDs, partyAIDs, partyCount string
 	// guildNames and guildCount are the locals that getguildmember sets,
 	// for reads of $@guildmembername$ and $@guildmembercount.
 	guildNames, guildCount string
@@ -541,8 +548,11 @@ func (b *body) variable(name string) (*npcVar, error) {
 			return nil, unsupported("variables", "%s is an NPC variable in a function", name)
 		}
 		scope = "npc"
+		if n.c.sharedVar(n.line.Name, key) {
+			scope = "npc_shared"
+		}
 	case "$@":
-		return nil, unsupported("variables", "%s is a temporary server variable", name)
+		scope = "server_temporary"
 	case "'":
 		return nil, unsupported("variables", "%s is an instance variable", name)
 	}
@@ -558,7 +568,8 @@ func (b *body) variable(name string) (*npcVar, error) {
 	if scope == "npc" {
 		v.local = "npc_" + luaName(bare)
 	} else {
-		v.local = map[string]string{"character": "", "character_temporary": "TEMP_", "account": "ACCOUNT_", "server": "SERVER_"}[scope] + constName(bare)
+		v.local = map[string]string{"character": "", "character_temporary": "TEMP_", "account": "ACCOUNT_", "server": "SERVER_",
+			"server_temporary": "SERVER_TEMP_", "npc_shared": "NPC_"}[scope] + constName(bare)
 		if str {
 			v.local += "_TEXT"
 		}
@@ -595,16 +606,46 @@ func (v *npcVar) declaration() string {
 	case v.str:
 		kind = "string"
 	}
-	return fmt.Sprintf("local %s = variables.%s_%s %s", v.local, v.scope, kind, luaString(v.name))
+	scope := v.scope
+	if scope == "npc_shared" {
+		scope = "npc"
+	}
+	return fmt.Sprintf("local %s = variables.%s_%s %s", v.local, scope, kind, luaString(v.name))
 }
 
-// owner is the player argument of a variable's methods: none for a
-// server variable.
+// owner is the argument of a variable's methods: none for a server
+// variable, the NPC for an NPC variable, and the player otherwise.
 func (v *npcVar) owner() string {
-	if v.scope == "server" {
+	switch v.scope {
+	case "server", "server_temporary":
 		return "nil"
+	case "npc_shared":
+		return "npc"
 	}
 	return "player"
+}
+
+// get, set and add are a variable's methods, with the owner first when
+// it has one.
+func (v *npcVar) get() string {
+	if o := v.owner(); o != "nil" {
+		return v.local + ":get(" + o + ")"
+	}
+	return v.local + ":get()"
+}
+
+func (v *npcVar) set(value string) string {
+	if o := v.owner(); o != "nil" {
+		return v.local + ":set(" + o + ", " + value + ")"
+	}
+	return v.local + ":set(" + value + ")"
+}
+
+func (v *npcVar) add(amount string) string {
+	if o := v.owner(); o != "nil" {
+		return v.local + ":add(" + o + ", " + amount + ")"
+	}
+	return v.local + ":add(" + amount + ")"
 }
 
 // readVar reads a variable or one element of an array.
@@ -658,10 +699,7 @@ func (b *body) readVar(name string, index Expr) (val, error) {
 	if v.array {
 		return val{code: fmt.Sprintf("R.aget(%s, %s, %s, %s)", v.local, v.owner(), idx, def), t: t}, nil
 	}
-	if v.scope == "server" {
-		return val{code: v.local + ":get()", t: t}, nil
-	}
-	return val{code: v.local + ":get(player)", t: t}, nil
+	return val{code: v.get(), t: t}, nil
 }
 
 // writeVar writes a variable, or one element of an array.
@@ -671,12 +709,19 @@ func (b *body) writeVar(target *Var, value val) error {
 	}
 	prefix, _, str := varName(target.Name)
 	code := value.asInt()
-	if str {
-		code = value.asText()
+	switch {
+	case str && (value.t == tAny || value.t == tInt || value.t == tBool):
+		// rAthena's set turns a number into its digits (conv_str).
+		code = "R.text(" + value.asInt() + ")"
 		if value.t == tAny {
-			// rAthena's set turns a number into its digits.
 			code = "R.text(" + value.code + ")"
 		}
+	case str:
+		code = value.asText()
+	case value.t == tStr:
+		// A string into a number variable is conv_num: strtoll in base
+		// 10, held to the int32 limits.
+		code = "R.strtol(" + value.code + ", 10)"
 	}
 	idx := "0"
 	if target.Index != nil {
@@ -708,13 +753,10 @@ func (b *body) writeVar(target *Var, value val) error {
 		return nil
 	}
 	b.n.file.need("variables")
-	switch {
-	case v.array:
+	if v.array {
 		b.line("R.aset(%s, %s, %s, %s)", v.local, v.owner(), idx, code)
-	case v.scope == "server":
-		b.line("%s:set(%s)", v.local, code)
-	default:
-		b.line("%s:set(player, %s)", v.local, code)
+	} else {
+		b.line("%s", v.set(code))
 	}
 	return nil
 }
@@ -934,8 +976,8 @@ func (b *body) assign(s *Assign) error {
 	// x += n on a saved integer is one add, so it cannot lose a change
 	// made in between.
 	if (s.Op == "+=" || s.Op == "-=") && t.Index == nil {
-		if p, _, str := varName(t.Name); !str && p != ".@" && p != "." {
-			if v, err := b.variable(t.Name); err == nil && !v.array {
+		if p, _, str := varName(t.Name); !str && p != ".@" {
+			if v, err := b.variable(t.Name); err == nil && !v.array && v.scope != "npc" {
 				d, err := b.expr(s.Value)
 				if err != nil {
 					return b.unsupported(err)
@@ -945,11 +987,7 @@ func (b *body) assign(s *Assign) error {
 					amount = "-" + amount
 				}
 				b.n.file.need("variables")
-				if v.scope == "server" {
-					b.line("%s:add(%s)", v.local, amount)
-				} else {
-					b.line("%s:add(player, %s)", v.local, amount)
-				}
+				b.line("%s", v.add(amount))
 				b.n.ok("variables")
 				return nil
 			}

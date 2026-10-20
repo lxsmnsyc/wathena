@@ -268,6 +268,12 @@ func TestPartyChatAndReads(t *testing.T) {
 	if in.Leader != "Ann" || !in.LeaderOnline || !slices.Equal(in.Members, []string{"Ann", "Bob"}) {
 		t.Errorf("info %+v", in)
 	}
+	// The roster of party:get_member_list (review decision 58).
+	w.r.Offline(w.ps["Bob"], w.boxes["Bob"])
+	in, _ = w.r.Party(id)
+	if want := []Member{{Name: "Ann", AccountID: 1, Online: true}, {Name: "Bob", AccountID: 2}}; !slices.Equal(in.Roster, want) {
+		t.Errorf("roster %+v", in.Roster)
+	}
 }
 
 func TestScriptCalls(t *testing.T) {

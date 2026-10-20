@@ -38,6 +38,7 @@ return function()
       do return end
     end)
   end
+  events.on("npc_event", function(event) event_onmon0000(event.player, event.conversation) end, { name = "OnMon0000" })
   schedules.weekly("monday", "00:00", event_onmon0000)
   events.on("click", function(player, conversation)
     R.run(function()
