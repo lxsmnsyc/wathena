@@ -3572,6 +3572,7 @@ Ordered by expected demand. Each item gets its own exit criteria when it starts.
     - generator determinism on every platform: JS numbers are doubles, so the generator stays integer-only (scriptc's `Int32` contract) and needs fused multiply-add turned off;
     - scriptc's maturity. On 2026-10-17 it was version 0.3.0, marked experimental, with partial package support. It has no runtime `eval` and no built-in engine, so a scriptc-built server cannot load JS mods from source at runtime.
   - **Recommendation:** study the mods part after the first release. Hold the server port until scriptc is stable, and decide after a small prototype of one zone and its tick.
+  - **Study of 2026-10-20:** [decision 0061](decisions/0061-scriptc-study.md) tested scriptc 0.3.6 against Go and Node. It lists what works, what blocks a port, and the conditions for looking again.
 - **Lua API design.** The API in section 5 is a sketch. It will be redesigned before the binding layer is built, for example so that mods do not define custom globals. The redesign needs a design proposal.
 - **One Lua state per mod.** Per-mod memory limits need a separate state for each mod in each zone, instead of shared environment tables (threat model, finding 1). Decide this in the Lua API redesign.
 - **Crash recovery for zone processes.** A crash in C Lua stops the process. The save interval and restart behavior need numbers (threat model, finding 3).
