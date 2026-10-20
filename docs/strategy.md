@@ -293,6 +293,7 @@ One refactor is already going the right way. Skills are moving from large `switc
 - Support for the official Ragnarok Online client.
 - Including Gravity's assets in the repository, or hosting them on the project's own infrastructure. Server operators supply and serve them for their own servers (section 10.1).
 - Mobile-native apps. The web client has touch input as decision 0034 built it, and it is frozen there (2026-10-17).
+- Published binaries, images or signatures. Releases are source tags, and owners build with the setup guide (2026-10-20).
 - Browsers other than Chromium. The web client supports Chromium-based browsers, such as Chrome and Edge, and is tested only in Chromium. Firefox and Safari are not tested or supported (2026-10-18).
 - Running a game server, a beta, or a world of the project's own. wAthena is server software, as rAthena is: server owners run their own worlds (2026-10-18).
 - Art packs. Server owners supply the art, such as their own GRF files through the GRF importer. The project ships the asset contract, the importer and placeholders only (2026-10-18).
@@ -1614,8 +1615,8 @@ Section 6.6 covers the sandbox and permissions. Additional Lua rules:
 
 - CI runs `govulncheck`, `gosec`, `golangci-lint`, tests with the race detector, and short fuzz runs on every pull request.
 - Longer fuzz runs on message decoders, YAML loaders, and the mod loader run every night.
-- Go modules are pinned by `go.sum`. Web client packages are pinned by the lock file. Dependency updates go through review. Releases include a software bill of materials.
-- Release binaries are signed.
+- Go modules are pinned by `go.sum`. Web client packages are pinned by the lock file. Dependency updates go through review.
+- Releases are tags of the source. The project publishes no binaries or images, so there is nothing to sign (2026-10-20).
 - `SECURITY.md` explains how to report vulnerabilities privately, and states the target time for a first response.
 - The project reviews its own security before the first release. wAthena is open source with no budget, so there is no paid review and no bug bounty. Outside reports come through `SECURITY.md` (2026-10-18).
 
@@ -3428,7 +3429,7 @@ Built with the `procedural` tag. Both world modes ship, with procedural as the d
 - Load tests on the all-in-one release build, as large as the development machine allows. There is no rented machine (2026-10-18). The docs state the measured player count and the machine it ran on. The load test tool ships with the release, so owners can measure their own hardware.
 - A security review by the project against section 7. There is no paid review and no bug bounty (section 7.9).
 - Setup guide for server owners and a first-start guide for players.
-- A tagged release with signed binaries, images and a software bill of materials. The project runs no server or beta of its own (section 2.2).
+- A tagged release, `v0.1.0`, on the commit that passed every check, with release notes, the known issues and the classic coverage list. Owners build from the tag with the setup guide. The project publishes no binaries, images or signatures: wAthena is server software that owners build and run (2026-10-20). The project runs no server or beta of its own (section 2.2).
 
 Exit criteria:
 
