@@ -171,7 +171,7 @@ Monsters that the context owns. They go when it ends. Monsters of another map be
 
 #### `spawning.monsters(spec) → wa.Monster[]`
 
-Places monsters on a map and returns their handles, as rAthena's monster and areamonster. Without x and y, each lands on a random walkable cell away from the map's edges, as map_search_freecell. On another map, the map's zone places them after the current step, and the list is empty: maps.count_monsters counts them at once (review decision 58).
+Places monsters on a map and returns their handles, as rAthena's monster and areamonster. Without x and y, each lands on a random walkable cell away from the map's edges, as map_search_freecell. On another map, the map's zone places them after the current step: the handles come back at once, as monster fills $@mobid, and maps.count_monsters counts them at once (review decisions 58 and 59). A monster that finds no cell leaves its handle without a monster.
 
 Permission: `npc.create`.
 
@@ -430,11 +430,9 @@ Permission: `game.read`.
 
 #### `maps.count_monsters(map, options?) → integer?`
 
-The living monsters of a map, or those of a label, as mobcount. Monsters that spawning.monsters asked another zone to place count at once. nil for a map that does not run in this world.
+The living monsters of a map, or those of a label, as mobcount. Monsters that spawning.monsters asked another zone to place count at once. A monster label's event reads the counts of the moment its monster died, as rAthena runs the label inside mob_dead and inside killmonster's loop. nil for a map that does not run in this world.
 
 Permission: `game.read`.
-
-Provisional: not reviewed in proposal 0002 yet.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -445,7 +443,7 @@ Provisional: not reviewed in proposal 0002 yet.
 
 Kills monsters of a map with no exp and no drops, as killmonster and killmonsterall (review decision 58). Without options, every monster dies, and those of spawn lines come back. Their labels do not run unless run_labels is set. Another map's zone kills them after the current step.
 
-Permission: `npc.create`.
+Permission: `maps.control`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -454,7 +452,7 @@ Permission: `npc.create`.
 
 #### `maps.warp_players(map, to_map, x, y, options?)`
 
-Moves the players of a map, as mapwarp and areawarp (review decision 58). A cell that is not on the target map is a random one. Dead players stay. The map's zone moves them after the current step.
+Moves the players of a map, as mapwarp and areawarp (review decision 58). A cell that is not on the target map is a random one. to_map "random" moves each player to a random cell of its own map, as areawarp's "Random" (x and y are left out). Dead players move too, as rAthena's: they lie dead on the new cell and return to their save point after the rest of their wait. The map's zone moves them after the current step.
 
 Permission: `player.warp`.
 
@@ -466,11 +464,11 @@ Permission: `player.warp`.
 | `y` | `integer` |  |
 | `options` | `wa.WarpPlayersOptions?` |  |
 
-#### `maps.set_cells(map, x1, y1, x2, y2, kind, on)`
+#### `maps.set_cells(map, x1, y1, x2, y2, kind, on, options?)`
 
-Turns a kind of cell on or off in a rectangle, as setcell (review decision 58). walkable and shootable change where units walk and shoot, and the map's players get the cells, as setwall sends them; players who enter later get them too. no_vending and no_buying_store refuse shops there. Kinds whose systems do not exist raise an error. The map's zone changes them after the current step.
+Turns a kind of cell on or off in a rectangle, as setcell (review decision 58). walkable and shootable change where units walk and shoot. The players' clients are not told, as rAthena's setcell sends nothing; with send, the map's players get the cells, and players who enter later get them too, as setwall sends a wall's cells. no_vending and no_buying_store refuse shops there. Kinds whose systems do not exist raise an error. The map's zone changes them after the current step.
 
-Permission: `npc.create`.
+Permission: `maps.control`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -481,6 +479,7 @@ Permission: `npc.create`.
 | `y2` | `integer` | The rectangle's opposite corner. |
 | `kind` | `wa.CellKind` |  |
 | `on` | `boolean` |  |
+| `options` | `wa.SetCellsOptions?` |  |
 
 #### `maps.check_cell(map, x, y, kind) → boolean`
 
@@ -511,8 +510,6 @@ Reads a map flag, as getmapflag: a script's, or else the world layout's. A flag 
 
 Permission: `game.read`.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `map` | `string` | A map name, such as prontera. |
@@ -531,7 +528,7 @@ Permission: `game.read`.
 
 #### `maps.find_entities(query) → (wa.Player|wa.Monster|wa.Npc)[]`
 
-The entities of an area of the context's map that pass every filter, sorted, and cut to the limit. Ties sort by kind, then by entity. A query with no area, two areas, or a field it does not know raises an error.
+The entities of an area of the context's map, or of the query's map, that pass every filter, sorted, and cut to the limit. Ties sort by kind, then by entity. On another map, the entities are those of the zone's last step, as the world keeps them: the area is x and y with radius, a rectangle or cells, and the query has no entity filters. A query with no area, two areas, or a field it does not know raises an error.
 
 Permission: `game.read`.
 
@@ -551,7 +548,7 @@ Permission: `game.read`.
 
 #### `maps.find_player(name) → wa.Player?`
 
-An online player of the context's map by name, as rAthena's map_nick2sd (review decision 58). nil for a player who is offline or on another map: a player handle acts in its own zone.
+An online player of any map by name, as rAthena's map_nick2sd (review decisions 58 and 59). nil for a player who is offline. A player of another map is a handle that reads the fields the world keeps and sends its actions to the player's map.
 
 Permission: `game.read`.
 
@@ -561,7 +558,7 @@ Permission: `game.read`.
 
 #### `maps.find_player_by_id(id) → wa.Player?`
 
-An online player of the context's map by account ID, or else by character ID, as rAthena's convertpcinfo reads map_id2sd, then map_charid2sd (review decision 58). nil for a player who is offline or on another map.
+An online player of any map by account ID, or else by character ID, as rAthena's convertpcinfo reads map_id2sd, then map_charid2sd (review decisions 58 and 59). nil for a player who is offline.
 
 Permission: `game.read`.
 
@@ -569,14 +566,25 @@ Permission: `game.read`.
 |---|---|---|
 | `id` | `integer` | An account ID, or a character ID, as player.account_id and player.character_id. |
 
-#### `maps.play_music(map, file)`
+#### `maps.find_monster(id) → wa.Monster?`
 
-Plays background music to every player of a map, as playBGMall with a map. The map's own music comes back with each player's next map change.
+A living monster of any map by its game ID, as rAthena's map_id2md reads a GID of $@mobid (review decision 59). nil once it died. A monster of another map is a handle that reads what its zone shares and sends kill, remove, set_hp, set_damage_immune, set_modes, set_speed, use_skill_at and warp_to to its map.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `id` | `integer` | A game ID, as monster.game_id. |
+
+#### `maps.play_music(map, file, options?)`
+
+Plays background music to every player of a map, or of a rectangle of it, as playBGMall with a map. The map's own music comes back with each player's next map change.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `map` | `string` | A map name, such as prontera. |
 | `file` | `string` | A music name of the assets, without music/, such as 08. |
+| `options` | `wa.MusicOptions?` |  |
 
 #### `maps.play_sound(map, file, options?)`
 
@@ -651,6 +659,14 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string` | A shop of data/npcs.yml: a full record name, or a plain name, which is the calling mod's record, then core's. |
+
+#### `world.play_music(file)`
+
+Plays background music to every player of every map, as playBGMall without a map (review decision 59). Each map's own music comes back with each player's next map change.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `file` | `string` | A music name of the assets, without music/, such as 08. |
 
 #### `world.get_npc(name) → wa.Npc?`
 
@@ -1559,7 +1575,7 @@ Handles are read-only. Writing a field raises an error. Changes are method calls
 
 ### wa.Player
 
-A player. Each access looks the player up again. A handle to a player who left the map raises an error. Reading needs game.read.
+A player. Each access looks the player up again. A handle to a player who left the map raises an error. Reading needs game.read. A handle of a player of another map (review decision 59), from maps.find_player or a player event of another map, follows the character from map to map: it reads kind, name, map, x, y, character_id, account_id, sex, base_level, job_level, job, job_class, zeny, hp, max_hp, sp, max_sp, weight, max_weight, skill_points, party and guild as of the player's last step, and other fields raise an error. Its methods that need game.read raise an error, and exists tells whether it is online. Its other methods run on the player's map after the current step, in the calling mod's name, and return nil; their arguments must be plain values and tables. A player who went offline gets nothing.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -1850,12 +1866,12 @@ Shows an emotion over the player to everyone who sees it, as emotion on a player
 
 #### `player:play_sound(file, options?)`
 
-Plays a sound to the player alone, as soundeffect.
+Plays a sound to the player alone, as soundeffect, or with to "area" to every player who sees it, from it, as soundeffectall without a map with an attached player.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `file` | `string` | A sound name of the assets, without sound/, such as effect/ef_hit1. |
-| `options` | `wa.SoundOptions?` |  |
+| `options` | `wa.PlayerSoundOptions?` |  |
 
 #### `player:play_music(file)`
 
@@ -2412,6 +2428,7 @@ A monster. A killed monster's handle reads while its death event runs, with is_a
 | `x` | `integer` |  |
 | `y` | `integer` |  |
 | `is_alive` | `boolean` |  |
+| `game_id` | `integer` | Its game ID, as rAthena's GID: maps.find_monster finds it on any map while it lives. |
 | `target` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | The unit its AI follows (target_id), or nil. |
 | `state` | `wa.MonsterState` | Its skill state, in rAthena's words. |
 | `master` | `wa.Player\|wa.Monster\|nil` | The unit that summoned it as a slave, or nil. |
@@ -2717,13 +2734,14 @@ Changes the name players see, as setnpcdisplay. npc.name reads it. Another mod's
 |---|---|---|
 | `name` | `string` | 1 to 50 bytes. |
 
-#### `npc:set_sprite(sprite)`
+#### `npc:set_sprite(sprite, options?)`
 
-Changes the NPC's view, as setnpcdisplay's class and classchange: players who see the NPC see it again with the new view. A job ID shows a character with the look of npc:set_look. Another mod's NPC needs npcs.control.
+Changes the NPC's view, as setnpcdisplay's class: players who see the NPC see it again with the new view. A job ID shows a character with the look of npc:set_look. With keep = false it is classchange: the view shows to the players who see the NPC, or to the to player, and the NPC keeps its own, so players who see it later see the old view; a job ID shows nothing, as clif_class_change. Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `sprite` | `integer` | An NPC sprite, a monster ID or a job ID, as rAthena takes any class. |
+| `options` | `wa.SpriteOptions?` |  |
 
 #### `npc:set_look(look)`
 
@@ -2733,23 +2751,25 @@ Changes the NPC's view and the look of a job view, as setunitdata with UNPC_CLAS
 |---|---|---|
 | `look` | `wa.NpcLook` | The fields to change. |
 
-#### `npc:move_to(x, y)`
+#### `npc:move_to(x, y, direction?)`
 
-Moves the NPC to a cell at once, as movenpc: a cell past the map's edge is the edge's, and the cell need not be walkable. Players near the old cell see it go, and players near the new one see it come. Its touch area moves with it. Another mod's NPC needs npcs.control.
-
-| Parameter | Type | Meaning |
-|---|---|---|
-| `x` | `integer` |  |
-| `y` | `integer` |  |
-
-#### `npc:walk_to(x, y) → boolean`
-
-The NPC walks to a cell at its speed, as npcwalkto and unitwalk. Returns false, and stays, when no walk reaches the cell. The players it walks into touch it, as unit_walktoxy_ontouch. An NPC of another map returns true, and its zone checks the walk. Another mod's NPC needs npcs.control.
+Moves the NPC to a cell at once, as movenpc: a cell past the map's edge is the edge's, and the cell need not be walkable. With a direction, the NPC faces it, as movenpc's fourth argument. Players near the old cell see it go, and players near the new one see it come. Its touch area moves with it. Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `x` | `integer` |  |
 | `y` | `integer` |  |
+| `direction` | `integer?` | 0 north to 7 north-east, counterclockwise, as rAthena's DIR_. The NPC's own by default. |
+
+#### `npc:walk_to(x, y, options?) → boolean`
+
+The NPC walks to a cell at its speed, as npcwalkto and unitwalk. Returns false, and stays, when no walk reaches the cell. The players it walks into touch it, as unit_walktoxy_ontouch. With a label, the label's event runs with no player when a walk of the NPC ends on the cell it walks to, as unitwalk's event (unit.cpp 650); the label stays until one does. An NPC of another map returns true, and its zone checks the walk. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+| `options` | `wa.NpcWalkOptions?` |  |
 
 #### `npc:set_speed(milliseconds)`
 
@@ -2759,9 +2779,13 @@ Sets the NPC's walk speed, as npcspeed. A walk takes it from its next step. Anot
 |---|---|---|
 | `milliseconds` | `integer` | 20 to 1000: the time to walk one cell. NPCs start at 200. |
 
-#### `npc:stop()`
+#### `npc:stop(options?)`
 
-Stops the NPC's walk, as npcstop: past half its step it finishes the cell, then it stands. Another mod's NPC needs npcs.control.
+Stops the NPC's walk, as npcstop: past half its step it finishes the cell, then it stands, and the players who see it get its cell. With send_cell = false it is unitstopwalk's default: it stands on its cell at once and the players get nothing, so their clients go on drawing the walk. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `options` | `wa.NpcStopOptions?` |  |
 
 #### `npc:show_progress(seconds, options?)`
 
@@ -2915,11 +2939,15 @@ Permission: `player.give_items`.
 |---|---|---|
 | `amount` | `integer` | -20 to 20, not 0. |
 
-#### `equippedItem:destroy()`
+#### `equippedItem:destroy(options?)`
 
-Takes the copy off and deletes it, as delequip, and failedrefitem's deletion.
+Takes the copy off and deletes it, as delequip. With refine_failure it is failedrefitem: the refine goes to 0 first, and the wearer shows the refine failure effect.
 
 Permission: `player.give_items`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `options` | `wa.DestroyOptions?` |  |
 
 ### wa.CardRolls
 
@@ -3325,17 +3353,18 @@ Breaks the party up, as party_destroy. Each member gets the party_leave event, w
 
 Permission: `party.manage`.
 
-#### `party:warp(map, x, y)`
+#### `party:warp(map, x?, y?, options?)`
 
-Moves every online member that lives, on any map, to a cell, as warpparty (review decision 58). A cell that is not on the map is a random one. Each member's zone moves it after the current step. Map flags that refuse warps do not exist yet.
+Moves every online member that lives, on any map or on the from map, as warpparty (review decisions 58 and 59): to a cell of a map, with a random walkable cell within range_x and range_y of it; "random" to a random cell of each member's own map; "save_point_all" to each member's save point; "save_point" to the player option's save point; "leader" to the leader's cell, the leader staying; "random_all" to one random cell of the player option's map, the player to the cell itself. A cell that is not on the map is a random one. Dead members stay, as buildin_warpparty skips them. Each member's zone moves it after the current step. Map flags that refuse warps do not exist yet.
 
 Permission: `player.warp`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `map` | `string` | A map name, such as prontera. |
-| `x` | `integer` |  |
-| `y` | `integer` |  |
+| `map` | `string` | A map name, such as prontera, or one of warpparty's targets: "random", "save_point", "save_point_all", "leader" or "random_all". |
+| `x` | `integer?` |  |
+| `y` | `integer?` |  |
+| `options` | `wa.PartyWarpOptions?` |  |
 
 ### wa.PartyMember
 
@@ -3660,8 +3689,8 @@ The object of the npc_event event.
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | `string` | The label, in lower case. |
-| `player` | `wa.Player?` | The player of npc:fire_event's player option, or nil. |
-| `conversation` | `wa.Conversation?` | The conversation with the player, or nil without one. |
+| `player` | `wa.Player?` | The player of npc:fire_event's player option, the killer of a monster's label, or nil. A player of another map is a handle that acts on its own map (review decision 59). |
+| `conversation` | `wa.Conversation?` | The conversation with the player, or nil without one, and for a player of another map. |
 
 ### wa.FireEventOptions
 
@@ -3736,6 +3765,75 @@ The options of npc:play_sound.
 |---|---|---|
 | `to` | `"area"\|"map"\|nil` | The players who see the NPC (the default), or every player of its map. |
 | `repeat` | `boolean?` | Plays the sound again and again, as type 1. |
+
+### wa.PlayerSoundOptions
+
+The options of player:play_sound.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `to` | `"area"\|nil` | The player alone (the default), or every player who sees it, from it, as soundeffectall without a map. |
+| `repeat` | `boolean?` | Plays the sound again and again, as type 1. |
+
+### wa.MusicOptions
+
+The options of maps.play_music.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `rectangle` | `integer[][]?` | Two opposite corners: only the players there hear it, as playBGMall with an area. |
+
+### wa.SpriteOptions
+
+The options of npc:set_sprite.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `keep` | `boolean?` | true, the default: the NPC keeps the view. false: it shows once, as classchange. |
+| `to` | `"area"\|wa.Player\|nil` | With keep = false: the players who see the NPC (the default), or one player, as classchange's BC_SELF. |
+
+### wa.NpcWalkOptions
+
+The options of npc:walk_to.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `label` | `string?` | An event label of the context's own NPC, or "<NPC>::<label>" of another NPC, as unitwalk's event label: it runs once a walk ends on its cell. Another mod's NPC needs npcs.control. |
+
+### wa.NpcStopOptions
+
+The options of npc:stop.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `send_cell` | `boolean?` | true, the default, as npcstop. false as unitstopwalk's default USW_NONE. |
+
+### wa.DestroyOptions
+
+The options of equipped:destroy.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `refine_failure` | `boolean?` | As failedrefitem: the refine goes to 0, and the wearer shows the refine failure effect. |
+
+### wa.SetCellsOptions
+
+The options of maps.set_cells.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `send` | `boolean?` | Sends the walkable or shootable cells to the map's players, and to players who enter later, as setwall does. false by default, as setcell. |
+
+### wa.PartyWarpOptions
+
+The options of party:warp.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `from` | `string?` | Only the members on this map, as warpparty's from map. |
+| `range_x` | `integer?` | With a map, leader or random_all: a random walkable cell within this range of the cell, up to 10 tries, else the cell itself. |
+| `range_y` | `integer?` |  |
+| `player` | `wa.Player?` | The player whose save point save_point uses, and whose map random_all picks a cell of, as warpparty's attached player. |
 
 ### wa.MessageOptions
 
@@ -4185,7 +4283,7 @@ The monsters of spawning.monsters.
 | Field | Type | Meaning |
 |---|---|---|
 | `monster` | `integer` | From monsters.id. |
-| `map` | `string?` | The context's own map by default. On another map, the monsters belong to no context, and respawn raises an error. |
+| `map` | `string?` | The context's own map by default. On another map, the monsters belong to no context, and respawn raises an error. Their handles come back at once and act on their map (review decision 59). |
 | `amount` | `integer?` | 1 to 1000. 1 by default. |
 | `x` | `integer?` | With y, the cell. Without them, a random walkable cell for each monster. |
 | `y` | `integer?` |  |
@@ -4196,7 +4294,7 @@ The monsters of spawning.monsters.
 | `display_name` | `string?` | The name players see, at most 23 bytes, as the name of monster. "--en--" and "--ja--" are the monster's own. The monster's own by default. |
 | `size` | `"normal"\|"small"\|"big"\|nil` | Shows the monster small or big, as monster's size: players see the baby or giant body effect. Its stats stay, as mob_size_influence is off by default. |
 | `ai` | `wa.SpawnAI?` | rAthena's AI_ type. A monster with an AI and no master fights the monsters without an AI, which fight it unless its AI is wave_mode. Players may hit it. It gives exp, and drops nothing unless it is a sphere. |
-| `label` | `string?` | An event label, such as OnMyMobDead, of the context's own NPC, or "<NPC>::<label>" of another NPC, as monster's event label. The NPC's npc_event handler of the label runs when each monster dies: with the player that killed it, or the one that dealt the most damage, when the NPC runs in the monsters' zone, and with no player otherwise. It names the monsters for maps.count_monsters and maps.remove_monsters. Another mod's NPC needs npcs.control. |
+| `label` | `string?` | An event label, such as OnMyMobDead, of the context's own NPC, or "<NPC>::<label>" of another NPC, as monster's event label. The NPC's npc_event handler of the label runs when each monster dies: with the player that killed it, or the one that dealt the most damage, on any map, and with no player when neither is a player. It reads the monster counts of the moment its monster died. It names the monsters for maps.count_monsters and maps.remove_monsters. Another mod's NPC needs npcs.control. |
 
 ### wa.AnnounceOptions
 
@@ -4453,7 +4551,7 @@ A query of maps.find_entities. It has one area: around with radius, x and y with
 | Field | Type | Meaning |
 |---|---|---|
 | `around` | `wa.Player\|wa.Monster\|wa.Npc\|nil` | The area is the cells within radius of the entity. The entity is in its own area: exclude leaves it out. |
-| `map` | `string?` | The context's own map, which is the default. Another map raises an error. |
+| `map` | `string?` | The context's own map, which is the default. Another map reads what the world keeps of its last step (review decision 59): x and y with radius, rectangle or cells, and no entity filters. |
 | `x` | `integer?` | With y, the area is the cells within radius of the cell. |
 | `y` | `integer?` |  |
 | `radius` | `integer?` | 0 to 30 cells, with around or x and y. |
@@ -5397,12 +5495,12 @@ Changes the NPC's value.
 
 | Event | Contexts | Handler arguments | When |
 |---|---|---|---|
-| `login` | mod, npc, event | `player: wa.Player` | A player logs in, in the zone it enters. An NPC hears the players of its map, as OnPCLoginEvent, unless it is disabled. |
-| `logout` | mod, npc, event | `player: wa.Player` | A player logs out, before it leaves. An NPC hears the players of its map, as OnPCLogoutEvent, unless it is disabled. |
-| `map_enter` | mod, npc, event | `player: wa.Player` | A player enters the zone: at login and after a warp. An NPC hears the players of its map, as OnPCLoadMapEvent, unless it is disabled. |
-| `death` | mod, npc, event | `death: wa.Death` | A player or a monster died on the context's map. Options narrow it. |
-| `base_level_up` | mod, npc, event | `player: wa.Player` | The player gained a base level. An NPC hears the players of its map, as OnPCBaseLvUpEvent, unless it is disabled. |
-| `job_level_up` | mod, npc, event | `player: wa.Player` | The player gained a job level. An NPC hears the players of its map, as OnPCJobLvUpEvent, unless it is disabled. |
+| `login` | mod, npc, event | `player: wa.Player` | A player logs in, in the zone it enters. An NPC hears the players of every map, as OnPCLoginEvent, unless it is disabled (review decision 59): a player of another map is a handle that acts on its own map. |
+| `logout` | mod, npc, event | `player: wa.Player` | A player logs out, before it leaves. An NPC hears the players of every map, as OnPCLogoutEvent, unless it is disabled (review decision 59). The logout waits for the NPCs of other maps, up to 2 seconds, so their actions on the player run before its last save. |
+| `map_enter` | mod, npc, event | `player: wa.Player` | A player enters the zone: at login and after a warp. An NPC hears the players of every map, unless it is disabled (review decision 59). rAthena's OnPCLoadMapEvent runs only on maps with the loadevent flag. |
+| `death` | mod, npc, event | `death: wa.Death` | A player or a monster died on the context's map. Options narrow it. An NPC hears the deaths of the players of every map too, as OnPCDieEvent, unless it is disabled (review decision 59): the victim and a player killer are handles that act on their own maps, and a monster killer of another map is left out. |
+| `base_level_up` | mod, npc, event | `player: wa.Player` | The player gained a base level. An NPC hears the players of every map, as OnPCBaseLvUpEvent, unless it is disabled (review decision 59). |
+| `job_level_up` | mod, npc, event | `player: wa.Player` | The player gained a job level. An NPC hears the players of every map, as OnPCJobLvUpEvent, unless it is disabled (review decision 59). |
 | `job_change` | mod, event | `change: wa.JobChange` | The player changed jobs: player:change_job, player:rebirth, or a converted jobchange. It fires after the stats and skills of the new job are set. |
 | `click` | npc | `player: wa.Player, conversation: wa.Conversation` | A player talks to the NPC. |
 | `touch` | npc | `player: wa.Player, conversation: wa.Conversation` | A player stepped into the NPC's touch area, the record's touch field, as rAthena's OnTouch. It fires once each time the player comes in: on a step, or when it arrives on a cell of the area. Hidden and dead players fire it too. The handlers run in a conversation with the player, which shows nothing until a handler shows a step (review decision 56). A touch while the player talks to an NPC waits until that conversation ends, and runs only if the player is still in the area then. |

@@ -2,6 +2,7 @@ package zone
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"slices"
@@ -1077,6 +1078,9 @@ func (h scriptHost) entityOf(ref modscript.Entity) (*entity, error) {
 	case "monster":
 		if e := z.monsterHandles[ref.ID]; e != nil && z.entities.has(e) && !e.dead {
 			return e, nil
+		}
+		if isRemoteMonster(ref.ID) {
+			return nil, errors.New("the monster is on another map")
 		}
 		return nil, fmt.Errorf("the monster is gone from this map")
 	case "npc":

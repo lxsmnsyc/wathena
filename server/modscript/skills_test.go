@@ -452,7 +452,7 @@ return function()
     try { x = 1, y = 1 }
     try { x = 1, y = 1, radius = 31 }
     try { cells = { { 1, 1 } }, radius = 2 }
-    try { x = 1, y = 1, radius = 2, map = "geffen" }
+    try { around = player, radius = 2, map = "geffen" }
     try { x = 1, y = 1, radius = 2, sort = "best" }
     try { x = 1, y = 1, radius = 2, kinds = { "pet" } }
     try { x = 1, y = 1, radius = 2, around_of = player }
@@ -476,7 +476,7 @@ end`))
 		"maps.find_entities: x and y needs radius",
 		"maps.find_entities: radius must be 0 to 30 cells",
 		"maps.find_entities: radius and shape go with around, or x and y, and this area is cells",
-		"maps.find_entities: this context runs on prontera, and finds entities on its own map only, not on geffen",
+		"maps.find_entities: on another map, the area is x and y with radius, a rectangle or cells, and the query has no enemies_of, allies_of, line_of_sight or exclude",
 		`maps.find_entities: sort is "nearest", "farthest", "lowest_hp" or "random"`,
 		`maps.find_entities: kinds holds "player", "monster" and "npc"`,
 		`maps.find_entities: "around_of" is not a field; the fields are ` + queryFields,

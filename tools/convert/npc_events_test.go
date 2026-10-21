@@ -180,13 +180,15 @@ func TestNPCEventsConvert(t *testing.T) {
 	for _, c := range []struct{ script, want string }{
 		{`{ monster "prontera",0,0,"--ja--",1002,1,"::OnMyMobDead"; end; }`, "a global event label (::OnMyMobDead)"},
 		{`{ monster "prontera",0,0,"--ja--",1002,1,"",5; end; }`, "the size 5, which rAthena refuses"},
-		{`{ monster "this",0,0,"--ja--",1002,1; end; }`, "on the attached player's map"},
+		{`{ end; OnPCKillEvent: end; }`, "event onpckillevent: a player's kill of a player, which needs PvP"},
+		{`{ end; OnNPCKillEvent: end; }`, "event onnpckillevent: the death event cannot tell a monster without an event label"},
 		{`{ killmonster "prontera",""; end; }`, "without an event label"},
 		{`{ setmapflag "prontera",mf_pvp; end; }`, "the map flag pvp: PvP is not ported"},
 		{`{ setmapflag "prontera",mf_noteleport; end; }`, "the map flag noteleport: its effect is not built yet"},
 		{`{ setcell "prontera",1,1,2,2,cell_basilica,1; end; }`, "basilica cells"},
-		{`{ warpparty "Leader",0,0,getcharid(1); end; }`, `to "Leader"`},
-		{`{ areawarp "prontera",1,1,2,2,"Random",0,0; end; }`, "to a random cell"},
+		{`{ end; OnPCLoginEvent: mes "Hi"; close; }`, "event onpcloginevent: it waits or shows a dialog, and the player events have no conversation"},
+		{`{ areamobuseskill "prontera",1,1,1,1002,"NPC_EMOTION",1,0,0,ET_GO,0; end; }`, "areamobuseskill: a cast time"},
+		{`{ attachrid .@a,0; end; }`, "attachrid: without force"},
 	} {
 		c2 := res.conv
 		n := c2.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})

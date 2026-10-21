@@ -144,6 +144,11 @@ type Options struct {
 	// NPCLabels hears an NPC gain (add) or lose a handler of an event
 	// label, so the host knows which NPCs have one. It may be nil.
 	NPCLabels func(npc int64, label string, add bool)
+	// NPCEvents hears an NPC context gain (add) or lose a handler of a
+	// player event of PlayerEvents, so the world sends the events of
+	// other zones' players to the zone (review decision 59). It may be
+	// nil.
+	NPCEvents func(event string, add bool)
 }
 
 // Limits of what one context can hold, so a script cannot fill the
@@ -171,7 +176,7 @@ type Runtime struct {
 	fns  struct {
 		loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref
 		loadTests, runCase, describe, runHooks, condition                         *script.Ref
-		statusBonuses, runGeneration, npcEvent                                    *script.Ref
+		statusBonuses, runGeneration, npcEvent, playerCall                        *script.Ref
 	}
 	nextID int64
 
@@ -266,7 +271,10 @@ type Runtime struct {
 	// at the last charge. tick counts the ticks, and tickNow is the zone
 	// clock at the last one.
 	// temp is Options.Temporary, or the runtime's own.
-	temp      *variables.Temporary
+	temp *variables.Temporary
+	// callCtx are the contexts that run player calls of other zones for
+	// mods without a mod context here (remoteplayers.go).
+	callCtx   map[string]*Context
 	budgets   map[string]*budget
 	nextOwner int
 	spent     int64
@@ -451,6 +459,9 @@ func (r *Runtime) init() error {
 		{"timers_cancel", r.timersCancel},
 		{"items_id", r.itemsID},
 		{"player_field", r.playerField},
+		{"player_remote", r.playerRemote},
+		{"world_play_music", r.worldPlayMusic},
+		{"maps_find_monster", r.mapsFindMonster},
 		{"monster_field", r.monsterField},
 		{"player_send_message", r.playerSendMessage},
 		{"player_give_item", r.playerGiveItem},
@@ -666,6 +677,7 @@ func (r *Runtime) init() error {
 		{"status_bonuses", &r.fns.statusBonuses},
 		{"run_generation", &r.fns.runGeneration},
 		{"npc_event", &r.fns.npcEvent},
+		{"player_call", &r.fns.playerCall},
 	} {
 		ref, err := r.s.Keep(tab.Get(f.name))
 		if err != nil {
@@ -873,6 +885,7 @@ func (r *Runtime) removeHandler(h *handler) {
 	}
 	h.removed = true
 	r.labelChanged(h, false)
+	r.eventListened(h, false)
 	h.fn.Release()
 	delete(r.byID, h.id)
 	list := r.handlers[h.event]

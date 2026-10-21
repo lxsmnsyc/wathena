@@ -426,7 +426,7 @@
 ---| "status_immune"
 ---| "skill_immune"
 
----A player. Each access looks the player up again. A handle to a player who left the map raises an error. Reading needs game.read.
+---A player. Each access looks the player up again. A handle to a player who left the map raises an error. Reading needs game.read. A handle of a player of another map (review decision 59), from maps.find_player or a player event of another map, follows the character from map to map: it reads kind, name, map, x, y, character_id, account_id, sex, base_level, job_level, job, job_class, zeny, hp, max_hp, sp, max_sp, weight, max_weight, skill_points, party and guild as of the player's last step, and other fields raise an error. Its methods that need game.read raise an error, and exists tells whether it is online. Its other methods run on the player's map after the current step, in the calling mod's name, and return nil; their arguments must be plain values and tables. A player who went offline gets nothing.
 ---@class wa.Player
 ---@field kind "player" The entity's kind.
 ---@field name string The character's name.
@@ -633,9 +633,9 @@ function wa_Player:say_aloud(text, options) end
 ---@param emotion integer An emotion from wa.emotions.
 function wa_Player:show_emotion(emotion) end
 
----Plays a sound to the player alone, as soundeffect.
+---Plays a sound to the player alone, as soundeffect, or with to "area" to every player who sees it, from it, as soundeffectall without a map with an attached player.
 ---@param file string A sound name of the assets, without sound/, such as effect/ef_hit1.
----@param options? wa.SoundOptions
+---@param options? wa.PlayerSoundOptions
 function wa_Player:play_sound(file, options) end
 
 ---Plays background music to the player, as playBGM. The map's own music comes back with the next map change.
@@ -1016,6 +1016,7 @@ function wa_Player:get_statuses() end
 ---@field x integer
 ---@field y integer
 ---@field is_alive boolean
+---@field game_id integer Its game ID, as rAthena's GID: maps.find_monster finds it on any map while it lives.
 ---@field target wa.Player|wa.Monster|wa.Npc|nil The unit its AI follows (target_id), or nil.
 ---@field state wa.MonsterState Its skill state, in rAthena's words.
 ---@field master wa.Player|wa.Monster|nil The unit that summoned it as a slave, or nil.
@@ -1213,31 +1214,35 @@ function wa_Npc:set_title(text) end
 ---@param name string 1 to 50 bytes.
 function wa_Npc:set_display_name(name) end
 
----Changes the NPC's view, as setnpcdisplay's class and classchange: players who see the NPC see it again with the new view. A job ID shows a character with the look of npc:set_look. Another mod's NPC needs npcs.control.
+---Changes the NPC's view, as setnpcdisplay's class: players who see the NPC see it again with the new view. A job ID shows a character with the look of npc:set_look. With keep = false it is classchange: the view shows to the players who see the NPC, or to the to player, and the NPC keeps its own, so players who see it later see the old view; a job ID shows nothing, as clif_class_change. Another mod's NPC needs npcs.control.
 ---@param sprite integer An NPC sprite, a monster ID or a job ID, as rAthena takes any class.
-function wa_Npc:set_sprite(sprite) end
+---@param options? wa.SpriteOptions
+function wa_Npc:set_sprite(sprite, options) end
 
 ---Changes the NPC's view and the look of a job view, as setunitdata with UNPC_CLASS, UNPC_HAIRSTYLE and the other looks. Another mod's NPC needs npcs.control.
 ---@param look wa.NpcLook The fields to change.
 function wa_Npc:set_look(look) end
 
----Moves the NPC to a cell at once, as movenpc: a cell past the map's edge is the edge's, and the cell need not be walkable. Players near the old cell see it go, and players near the new one see it come. Its touch area moves with it. Another mod's NPC needs npcs.control.
+---Moves the NPC to a cell at once, as movenpc: a cell past the map's edge is the edge's, and the cell need not be walkable. With a direction, the NPC faces it, as movenpc's fourth argument. Players near the old cell see it go, and players near the new one see it come. Its touch area moves with it. Another mod's NPC needs npcs.control.
 ---@param x integer
 ---@param y integer
-function wa_Npc:move_to(x, y) end
+---@param direction? integer 0 north to 7 north-east, counterclockwise, as rAthena's DIR_. The NPC's own by default.
+function wa_Npc:move_to(x, y, direction) end
 
----The NPC walks to a cell at its speed, as npcwalkto and unitwalk. Returns false, and stays, when no walk reaches the cell. The players it walks into touch it, as unit_walktoxy_ontouch. An NPC of another map returns true, and its zone checks the walk. Another mod's NPC needs npcs.control.
+---The NPC walks to a cell at its speed, as npcwalkto and unitwalk. Returns false, and stays, when no walk reaches the cell. The players it walks into touch it, as unit_walktoxy_ontouch. With a label, the label's event runs with no player when a walk of the NPC ends on the cell it walks to, as unitwalk's event (unit.cpp 650); the label stays until one does. An NPC of another map returns true, and its zone checks the walk. Another mod's NPC needs npcs.control.
 ---@param x integer
 ---@param y integer
+---@param options? wa.NpcWalkOptions
 ---@return boolean
-function wa_Npc:walk_to(x, y) end
+function wa_Npc:walk_to(x, y, options) end
 
 ---Sets the NPC's walk speed, as npcspeed. A walk takes it from its next step. Another mod's NPC needs npcs.control.
 ---@param milliseconds integer 20 to 1000: the time to walk one cell. NPCs start at 200.
 function wa_Npc:set_speed(milliseconds) end
 
----Stops the NPC's walk, as npcstop: past half its step it finishes the cell, then it stands. Another mod's NPC needs npcs.control.
-function wa_Npc:stop() end
+---Stops the NPC's walk, as npcstop: past half its step it finishes the cell, then it stands, and the players who see it get its cell. With send_cell = false it is unitstopwalk's default: it stands on its cell at once and the players get nothing, so their clients go on drawing the walk. Another mod's NPC needs npcs.control.
+---@param options? wa.NpcStopOptions
+function wa_Npc:stop(options) end
 
 ---Shows a progress bar over the NPC to everyone who sees it, and waits until it is full, as progressbar_npc. It runs only in a conversation's handler, whose player cannot act while it waits. Players who come into view see the time left. Another mod's NPC needs npcs.control.
 ---@param seconds integer 0 to 600.
@@ -1343,10 +1348,11 @@ function wa_EquippedItem:reroll(name) end
 ---@return integer
 function wa_EquippedItem:add_refine(amount) end
 
----Takes the copy off and deletes it, as delequip, and failedrefitem's deletion.
+---Takes the copy off and deletes it, as delequip. With refine_failure it is failedrefitem: the refine goes to 0 first, and the wearer shows the refine failure effect.
 ---
 ---Needs the permission `player.give_items`.
-function wa_EquippedItem:destroy() end
+---@param options? wa.DestroyOptions
+function wa_EquippedItem:destroy(options) end
 
 ---A card in an equipped copy's slots.
 ---@class wa.CardRolls
@@ -1655,13 +1661,14 @@ function wa_Party:set_options(options) end
 ---Needs the permission `party.manage`.
 function wa_Party:disband() end
 
----Moves every online member that lives, on any map, to a cell, as warpparty (review decision 58). A cell that is not on the map is a random one. Each member's zone moves it after the current step. Map flags that refuse warps do not exist yet.
+---Moves every online member that lives, on any map or on the from map, as warpparty (review decisions 58 and 59): to a cell of a map, with a random walkable cell within range_x and range_y of it; "random" to a random cell of each member's own map; "save_point_all" to each member's save point; "save_point" to the player option's save point; "leader" to the leader's cell, the leader staying; "random_all" to one random cell of the player option's map, the player to the cell itself. A cell that is not on the map is a random one. Dead members stay, as buildin_warpparty skips them. Each member's zone moves it after the current step. Map flags that refuse warps do not exist yet.
 ---
 ---Needs the permission `player.warp`.
----@param map string A map name, such as prontera.
----@param x integer
----@param y integer
-function wa_Party:warp(map, x, y) end
+---@param map string A map name, such as prontera, or one of warpparty's targets: "random", "save_point", "save_point_all", "leader" or "random_all".
+---@param x? integer
+---@param y? integer
+---@param options? wa.PartyWarpOptions
+function wa_Party:warp(map, x, y, options) end
 
 ---One member of party:get_member_list.
 ---@class wa.PartyMember
@@ -1896,8 +1903,8 @@ local wa_NpcEventOptions = {}
 ---The object of the npc_event event.
 ---@class wa.NpcEvent
 ---@field name string The label, in lower case.
----@field player wa.Player? The player of npc:fire_event's player option, or nil.
----@field conversation wa.Conversation? The conversation with the player, or nil without one.
+---@field player wa.Player? The player of npc:fire_event's player option, the killer of a monster's label, or nil. A player of another map is a handle that acts on its own map (review decision 59).
+---@field conversation wa.Conversation? The conversation with the player, or nil without one, and for a player of another map.
 local wa_NpcEvent = {}
 
 ---The options of npc:fire_event.
@@ -1949,6 +1956,51 @@ local wa_SoundOptions = {}
 ---@field to "area"|"map"|nil The players who see the NPC (the default), or every player of its map.
 ---@field repeat boolean? Plays the sound again and again, as type 1.
 local wa_NpcSoundOptions = {}
+
+---The options of player:play_sound.
+---@class wa.PlayerSoundOptions
+---@field to "area"|nil The player alone (the default), or every player who sees it, from it, as soundeffectall without a map.
+---@field repeat boolean? Plays the sound again and again, as type 1.
+local wa_PlayerSoundOptions = {}
+
+---The options of maps.play_music.
+---@class wa.MusicOptions
+---@field rectangle integer[][]? Two opposite corners: only the players there hear it, as playBGMall with an area.
+local wa_MusicOptions = {}
+
+---The options of npc:set_sprite.
+---@class wa.SpriteOptions
+---@field keep boolean? true, the default: the NPC keeps the view. false: it shows once, as classchange.
+---@field to "area"|wa.Player|nil With keep = false: the players who see the NPC (the default), or one player, as classchange's BC_SELF.
+local wa_SpriteOptions = {}
+
+---The options of npc:walk_to.
+---@class wa.NpcWalkOptions
+---@field label string? An event label of the context's own NPC, or "<NPC>::<label>" of another NPC, as unitwalk's event label: it runs once a walk ends on its cell. Another mod's NPC needs npcs.control.
+local wa_NpcWalkOptions = {}
+
+---The options of npc:stop.
+---@class wa.NpcStopOptions
+---@field send_cell boolean? true, the default, as npcstop. false as unitstopwalk's default USW_NONE.
+local wa_NpcStopOptions = {}
+
+---The options of equipped:destroy.
+---@class wa.DestroyOptions
+---@field refine_failure boolean? As failedrefitem: the refine goes to 0, and the wearer shows the refine failure effect.
+local wa_DestroyOptions = {}
+
+---The options of maps.set_cells.
+---@class wa.SetCellsOptions
+---@field send boolean? Sends the walkable or shootable cells to the map's players, and to players who enter later, as setwall does. false by default, as setcell.
+local wa_SetCellsOptions = {}
+
+---The options of party:warp.
+---@class wa.PartyWarpOptions
+---@field from string? Only the members on this map, as warpparty's from map.
+---@field range_x integer? With a map, leader or random_all: a random walkable cell within this range of the cell, up to 10 tries, else the cell itself.
+---@field range_y integer?
+---@field player wa.Player? The player whose save point save_point uses, and whose map random_all picks a cell of, as warpparty's attached player.
+local wa_PartyWarpOptions = {}
 
 ---The options of player:send_message.
 ---@class wa.MessageOptions
@@ -2257,7 +2309,7 @@ local wa_WhenOptions = {}
 ---The monsters of spawning.monsters.
 ---@class wa.SpawnSpec
 ---@field monster integer From monsters.id.
----@field map string? The context's own map by default. On another map, the monsters belong to no context, and respawn raises an error.
+---@field map string? The context's own map by default. On another map, the monsters belong to no context, and respawn raises an error. Their handles come back at once and act on their map (review decision 59).
 ---@field amount integer? 1 to 1000. 1 by default.
 ---@field x integer? With y, the cell. Without them, a random walkable cell for each monster.
 ---@field y integer?
@@ -2268,7 +2320,7 @@ local wa_WhenOptions = {}
 ---@field display_name string? The name players see, at most 23 bytes, as the name of monster. "--en--" and "--ja--" are the monster's own. The monster's own by default.
 ---@field size "normal"|"small"|"big"|nil Shows the monster small or big, as monster's size: players see the baby or giant body effect. Its stats stay, as mob_size_influence is off by default.
 ---@field ai wa.SpawnAI? rAthena's AI_ type. A monster with an AI and no master fights the monsters without an AI, which fight it unless its AI is wave_mode. Players may hit it. It gives exp, and drops nothing unless it is a sphere.
----@field label string? An event label, such as OnMyMobDead, of the context's own NPC, or "<NPC>::<label>" of another NPC, as monster's event label. The NPC's npc_event handler of the label runs when each monster dies: with the player that killed it, or the one that dealt the most damage, when the NPC runs in the monsters' zone, and with no player otherwise. It names the monsters for maps.count_monsters and maps.remove_monsters. Another mod's NPC needs npcs.control.
+---@field label string? An event label, such as OnMyMobDead, of the context's own NPC, or "<NPC>::<label>" of another NPC, as monster's event label. The NPC's npc_event handler of the label runs when each monster dies: with the player that killed it, or the one that dealt the most damage, on any map, and with no player when neither is a player. It reads the monster counts of the moment its monster died. It names the monsters for maps.count_monsters and maps.remove_monsters. Another mod's NPC needs npcs.control.
 local wa_SpawnSpec = {}
 
 ---Options of maps.announce.
@@ -2282,8 +2334,6 @@ local wa_AnnounceOptions = {}
 local wa_AreaOptions = {}
 
 ---Options of maps.count_monsters.
----
----Provisional: not reviewed in proposal 0002 yet.
 ---@class wa.CountMonstersOptions
 ---@field label string? Only the monsters of this label of spawning.monsters, as mobcount's event label. Every monster of the map by default, as mobcount's "all".
 local wa_CountMonstersOptions = {}
@@ -2460,7 +2510,7 @@ local wa_MonsterTargetChoice = {}
 ---A query of maps.find_entities. It has one area: around with radius, x and y with radius, rectangle, line, or cells. The other fields filter and sort.
 ---@class wa.EntityQuery
 ---@field around wa.Player|wa.Monster|wa.Npc|nil The area is the cells within radius of the entity. The entity is in its own area: exclude leaves it out.
----@field map string? The context's own map, which is the default. Another map raises an error.
+---@field map string? The context's own map, which is the default. Another map reads what the world keeps of its last step (review decision 59): x and y with radius, rectangle or cells, and no entity filters.
 ---@field x integer? With y, the area is the cells within radius of the cell.
 ---@field y integer?
 ---@field radius integer? 0 to 30 cells, with around or x and y.

@@ -18,7 +18,9 @@ import (
 //   - Every event label of a script (a label that starts with On) is an
 //     npc_event handler, as rAthena's ev_db lists them, so donpcevent
 //     reaches OnInit and the clock and timer labels too. The labels
-//     rAthena runs for the players of every map do not convert.
+//     rAthena runs for the players of every map are handlers of the
+//     player events too, which reach the NPCs of every map (review
+//     decision 59).
 //   - atcommand and setbattleflag are refused by review decision 58.
 
 // refusedCommands are the commands review decision 58 refuses, with the
@@ -29,11 +31,22 @@ var refusedCommands = map[string]string{
 }
 
 // playerLabels are rAthena's labels of one player's events, which run
-// for every NPC with the label, on every map (npc_script_event).
-var playerLabels = map[string]bool{
-	"onpcloginevent": true, "onpclogoutevent": true, "onpcloadmapevent": true, "onpcbaselvupevent": true,
-	"onpcjoblvupevent": true, "onpcdieevent": true, "onpckillevent": true, "onnpckillevent": true,
-	"onpcidentifyevent": true, "onpcstatcalcevent": true,
+// for every NPC with the label, on every map (npc_script_event, npc.cpp
+// 5824), by the API's player event, or "" for a label whose event the
+// API does not have, with the reason in playerLabelRefused.
+var playerLabels = map[string]string{
+	"onpcloginevent": "login", "onpclogoutevent": "logout", "onpcloadmapevent": "map_enter", "onpcbaselvupevent": "base_level_up",
+	"onpcjoblvupevent": "job_level_up", "onpcdieevent": "death", "onpckillevent": "", "onnpckillevent": "",
+	"onpcidentifyevent": "", "onpcstatcalcevent": "",
+}
+
+// playerLabelRefused are the reasons the other player labels do not
+// convert.
+var playerLabelRefused = map[string]string{
+	"onpckillevent":     "a player's kill of a player, which needs PvP, which is not ported",
+	"onnpckillevent":    "the death event cannot tell a monster without an event label (mob.cpp 3611), which is new API",
+	"onpcidentifyevent": "wAthena has no event for an item's identification",
+	"onpcstatcalcevent": "wAthena has no event for a stat calculation",
 }
 
 // systemLabels are labels that rAthena runs on its own for systems
@@ -49,8 +62,8 @@ var systemLabels = map[string]bool{
 // handler, or nil.
 func labelError(label string) error {
 	switch {
-	case playerLabels[label]:
-		return unsupported("event "+label, "rAthena runs it for the players of every map, and an NPC hears only the players of its own map (decision 0062)")
+	case playerLabelRefused[label] != "":
+		return unsupported("event "+label, "%s", playerLabelRefused[label])
 	case systemLabels[label]:
 		return unsupported("event "+label, "")
 	}

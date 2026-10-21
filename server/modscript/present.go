@@ -58,15 +58,19 @@ type PresentHost interface {
 	SetNPCDisplayName(npc int64, name string) error
 	// SetNPCLook is setnpcdisplay's class and setunitdata's UNPC_ looks.
 	SetNPCLook(npc int64, look NPCLook) error
-	// MoveNPC is movenpc.
-	MoveNPC(npc int64, x, y int) error
+	// MoveNPC is movenpc, with its direction, 0 north counterclockwise,
+	// or -1 to keep the NPC's.
+	MoveNPC(npc int64, x, y, dir int) error
 	// WalkNPC is npcwalkto and unitwalk on an NPC. It reports whether
-	// the NPC can walk there.
-	WalkNPC(npc int64, x, y int) (bool, error)
+	// the NPC can walk there. label is unitwalk's event label, or nil.
+	WalkNPC(npc int64, x, y int, label *MonsterLabel) (bool, error)
+	// SendNPCSprite is classchange: the view shows to the players who
+	// see the NPC, or to one, and the NPC keeps its own.
+	SendNPCSprite(npc, sprite int64, to SendTarget) error
 	// SetNPCSpeed is npcspeed.
 	SetNPCSpeed(npc int64, ms int) error
-	// StopNPC is npcstop and unitstopwalk on an NPC.
-	StopNPC(npc int64) error
+	// StopNPC is npcstop, and unitstopwalk on an NPC without sendCell.
+	StopNPC(npc int64, sendCell bool) error
 	// ShowNPCProgress is progressbar_npc's bar over the NPC.
 	ShowNPCProgress(npc int64, ms int64, color uint32) error
 	// NPCUseSkill is npcskill: the NPC casts a skill on a target with a
@@ -75,12 +79,14 @@ type PresentHost interface {
 	// ShowSkillEffect is skilleffect.
 	ShowSkillEffect(e Entity, skill, level int64) error
 	// PlaySound plays a sound: on a player alone (soundeffect), around
-	// an NPC or to its map (soundeffectall), or to a map's players.
-	// source is the player or NPC, or a zero Entity with mapName.
+	// a player or an NPC or to an NPC's map (soundeffectall), or to a
+	// map's players. source is the player or NPC, or a zero Entity with
+	// mapName.
 	PlaySound(source Entity, mapName, name string, to string, repeat bool) error
-	// PlayMusic plays background music to a player, or to a map's
-	// players when player is 0 (playBGM, playBGMall).
-	PlayMusic(player int64, mapName, name string) error
+	// PlayMusic plays background music to a player, or when player is 0
+	// to the players of a map, of a rectangle of it, or with no map of
+	// the world (playBGM, playBGMall).
+	PlayMusic(player int64, mapName, name string, area *Rect) error
 	// SendColoredMessage is dispbottom with a color.
 	SendColoredMessage(player int64, text string, color uint32) error
 	// ShowDigits is showdigit. kind is 0 to 3.
@@ -281,7 +287,18 @@ func (r *Runtime) npcPresent(c *script.Call) error {
 		if !ok || v < 0 || v > 1<<31-1 {
 			return errors.New(what + ": want a sprite ID: an NPC sprite, a monster or a job")
 		}
-		return wrap(what, h.SetNPCLook(id, NPCLook{Sprite: &v}))
+		// arg(1) is keep, and arg(2) and arg(3) the send target.
+		if keep := arg(1); keep.IsNil() || keep.Truthy() {
+			if !arg(2).IsNil() {
+				return errors.New(what + ": to needs keep = false: a view that is kept shows to everyone")
+			}
+			return wrap(what, h.SetNPCLook(id, NPCLook{Sprite: &v}))
+		}
+		to, err := sendTarget(what, arg(2), arg(3), "area", "player")
+		if err != nil {
+			return err
+		}
+		return wrap(what, h.SendNPCSprite(id, v, to))
 	case "set_look":
 		look, err := readNPCLook(what, arg(0))
 		if err != nil {
@@ -293,13 +310,33 @@ func (r *Runtime) npcPresent(c *script.Call) error {
 		if err != nil {
 			return err
 		}
-		return wrap(what, h.MoveNPC(id, x, y))
+		dir := -1
+		if v := arg(2); !v.IsNil() {
+			d, ok := v.AsInt()
+			if !ok || d < 0 || d > 7 {
+				return errors.New(what + ": the direction is 0 north to 7 north-east, counterclockwise, as rAthena's DIR_")
+			}
+			dir = int(d)
+		}
+		return wrap(what, h.MoveNPC(id, x, y, dir))
 	case "walk_to":
 		x, y, err := checkCell(what, arg(0), arg(1))
 		if err != nil {
 			return err
 		}
-		ok, err := h.WalkNPC(id, x, y)
+		var label *MonsterLabel
+		if v := arg(2); !v.IsNil() {
+			mh, err := r.mapHost(what)
+			if err != nil {
+				return err
+			}
+			l, err := r.monsterLabel(what, v, mh, true)
+			if err != nil {
+				return err
+			}
+			label = &l
+		}
+		ok, err := h.WalkNPC(id, x, y, label)
 		if err != nil {
 			return wrap(what, err)
 		}
@@ -312,7 +349,15 @@ func (r *Runtime) npcPresent(c *script.Call) error {
 		}
 		return wrap(what, h.SetNPCSpeed(id, int(ms)))
 	case "stop":
-		return wrap(what, h.StopNPC(id))
+		send := true
+		if v := arg(0); !v.IsNil() {
+			b, ok := v.AsBool()
+			if !ok {
+				return errors.New(what + ": send_cell must be true or false")
+			}
+			send = b
+		}
+		return wrap(what, h.StopNPC(id, send))
 	case "play_sound":
 		name, err := checkAsset(what, "sound", arg(0))
 		if err != nil {
@@ -552,13 +597,20 @@ func (r *Runtime) playerPresent(c *script.Call) error {
 		if err != nil {
 			return err
 		}
-		return wrap(what, h.PlaySound(player, "", name, "player", arg(1).Truthy()))
+		to := "player"
+		if v := arg(2); !v.IsNil() {
+			if s, _ := v.AsString(); s != "area" {
+				return errors.New(what + `: to is "area", or nil for the player alone`)
+			}
+			to = "area"
+		}
+		return wrap(what, h.PlaySound(player, "", name, to, arg(1).Truthy()))
 	case "play_music":
 		name, err := checkAsset(what, "music", arg(0))
 		if err != nil {
 			return err
 		}
-		return wrap(what, h.PlayMusic(id, "", name))
+		return wrap(what, h.PlayMusic(id, "", name, nil))
 	case "send_message":
 		text, err := checkText(what, arg(0), MaxMessage)
 		if err != nil {
@@ -601,6 +653,24 @@ func (r *Runtime) playerPresent(c *script.Call) error {
 	return fmt.Errorf("player has no method %q", op)
 }
 
+// worldPlayMusic is world.play_music, playBGMall without a map: every
+// player of the world.
+func (r *Runtime) worldPlayMusic(c *script.Call) error {
+	const what = "world.play_music"
+	if err := r.mutating(what); err != nil {
+		return err
+	}
+	name, err := checkAsset(what, "music", c.Arg(0))
+	if err != nil {
+		return err
+	}
+	h, err := r.presentHost(what)
+	if err != nil {
+		return err
+	}
+	return wrap(what, h.PlayMusic(0, "", name, nil))
+}
+
 // DigitKinds are player:show_digits's kinds, showdigit's types 0 to 3.
 var DigitKinds = []string{"show", "count_up", "count_down", "count_down_to_zero"}
 
@@ -627,7 +697,16 @@ func (r *Runtime) mapsPresent(c *script.Call) error {
 		if err != nil {
 			return err
 		}
-		return wrap(what, h.PlayMusic(0, m, name))
+		var area *Rect
+		err = walkOptions(what, arg(1), []string{"rectangle"}, func(_ string, v script.Value) error {
+			rc, err := readRect(what, "rectangle", v)
+			area = &rc
+			return err
+		})
+		if err != nil {
+			return err
+		}
+		return wrap(what, h.PlayMusic(0, m, name, area))
 	case "play_sound":
 		name, err := checkAsset(what, "sound", arg(0))
 		if err != nil {

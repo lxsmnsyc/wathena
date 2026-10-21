@@ -184,6 +184,11 @@ type npc struct {
 	barColor   uint32
 	skillLevel int
 	skillStat  int
+	// walkDone is the event label of npc:walk_to's label option, as
+	// unitwalk's ud->walk_done_event, and walkX and walkY the cell of
+	// the last walk, as ud->to_x and to_y (npcpresent.go).
+	walkDone     *monsterLabel
+	walkX, walkY int
 }
 
 // SetNPCs places NPCs on the map. It replaces the NPCs set before. Call
@@ -330,7 +335,7 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
 		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location, Rules: z.worldRules(),
 		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places, Atlas: z.Mods.Atlas, Quests: z.Mods.Quests,
-		Temporary: z.Mods.Temporary, NPCLabels: z.npcLabel}
+		Temporary: z.Mods.Temporary, NPCLabels: z.npcLabel, NPCEvents: z.npcEventListener}
 	// The job tables are read at each call: a headless zone gets them
 	// after its Lua state is made.
 	opts.Jobs = zoneJobs{z}
@@ -477,9 +482,23 @@ func (h scriptHost) Map() string { return strings.TrimPrefix(h.z.Map, "map/") }
 
 func (h scriptHost) player(id int64) (*Player, error) {
 	if id > 0 && id <= int64(^uint32(0)) {
-		if p := h.z.players[uint32(id)]; p != nil && !p.gone() {
+		// A player whose logout waits for other zones still takes their
+		// calls (playerworld.go).
+		if p := h.z.players[uint32(id)]; p != nil && (!p.gone() || p.leaving != nil) {
 			return p, nil
 		}
+	}
+	if IsRemotePlayer(id) {
+		// A handle of a player of another zone acts here once the player
+		// came to this zone.
+		_, p, err := h.remotePlayer(id)
+		if err != nil {
+			return nil, err
+		}
+		if p == nil {
+			return nil, errors.New("the player is on another map")
+		}
+		return p, nil
 	}
 	return nil, errors.New("the player has left this map")
 }
@@ -487,6 +506,15 @@ func (h scriptHost) player(id int64) (*Player, error) {
 // PlayerField reads a field of a player handle (proposal 0002, "Players
 // and other entities").
 func (h scriptHost) PlayerField(id int64, field string) (script.Value, error) {
+	if IsRemotePlayer(id) {
+		en, p, err := h.remotePlayer(id)
+		if err != nil {
+			return script.Nil, err
+		}
+		if p == nil {
+			return h.remotePlayerField(en, field)
+		}
+	}
 	p, err := h.player(id)
 	if err != nil {
 		return script.Nil, err
@@ -593,6 +621,9 @@ func maxOf(e *entity, hp bool) script.Value {
 // MonsterField reads a field of a monster handle. A killed monster is
 // readable until its death event has run, with is_alive false.
 func (h scriptHost) MonsterField(id int64, field string) (script.Value, error) {
+	if isRemoteMonster(id) {
+		return h.remoteMonsterField(id, field)
+	}
 	e := h.z.monsterHandles[id]
 	if e == nil {
 		return script.Nil, errors.New("the monster is gone from this map")
@@ -622,6 +653,8 @@ var monsterFields = map[string]func(h scriptHost, e *entity) script.Value{
 	"x":        func(_ scriptHost, e *entity) script.Value { return intValue(e.x) },
 	"y":        func(_ scriptHost, e *entity) script.Value { return intValue(e.y) },
 	"is_alive": func(h scriptHost, e *entity) script.Value { return script.Bool(!e.dead && h.z.entities.has(e)) },
+	// game_id is rAthena's GID of the monster (review decision 59).
+	"game_id": func(h scriptHost, e *entity) script.Value { return script.Int(h.z.gameID(e)) },
 }
 
 // SendMessage shows a line to one player in the chat log, as server

@@ -25,6 +25,10 @@ const (
 	sendAllSameMap, sendSelf  = 1, 24
 	jtFakeNPC                 = -1
 	uswDefaultNPCStop         = 1 | 4 | 8 // USW_FIXPOS | USW_MOVE_FULL_CELL | USW_FORCE_STOP
+	uswFixPos, uswFullCell    = 1, 4
+	uswMoveOnce               = 2
+	umobHP, umobSpeed         = 2, 8
+	umobMode, umobDmgImmune   = 9, 31
 	unpcSex, unpcClass        = 32, 33
 	unpcHairStyle, unpcHairCl = 34, 35
 	unpcHeadBottom, unpcHeadM = 36, 37
@@ -258,6 +262,10 @@ func (b *body) presentCommand(name string, args []Expr) (ok bool, err error) {
 		return true, err
 	case "unitwarp":
 		return true, b.unitwarp(args)
+	case "unitkill":
+		return true, b.unitkill(args)
+	case "unitskillusepos":
+		return true, b.unitskillusepos(args)
 	case "unitstopwalk":
 		return true, b.unitstopwalk(args)
 	case "npcspeed", "npcwalkto", "npcstop", "movenpc":
@@ -418,6 +426,24 @@ func (b *body) unittalk(args []Expr) error {
 	const what = "unittalk"
 	if len(args) < 2 || len(args) > 3 {
 		return unsupported(what, "arguments")
+	}
+	if mob, ok, err := b.mobGID(what, args[0]); ok || err != nil {
+		// Another game ID: a player by account ID on any map, or a
+		// monster (review decision 59). The player's line goes to its own
+		// chat range.
+		if err != nil {
+			return err
+		}
+		if len(args) == 3 {
+			return unsupported(what, "a flag with a game ID other than the attached player's")
+		}
+		text, err := b.expr(args[1])
+		if err != nil {
+			return err
+		}
+		gid := strings.TrimSuffix(strings.TrimPrefix(mob, "R.unit_monster("), ")")
+		b.line("R.unittalk(%s, %s)", gid, text.asText())
+		return nil
 	}
 	kind, _, err := b.gidRef(what, args[0])
 	if err != nil {
@@ -715,21 +741,22 @@ func (b *body) setnpcdisplay(args []Expr) (val, error) {
 }
 
 // classchange converts classchange <class>{,"<NPC>"{,<flag>}} (script.cpp
-// 15163) for the area. rAthena only sends the class to the players near;
-// npc:set_sprite keeps it for later viewers too.
+// 15163): the class shows to the players near, or with BC_SELF to the
+// attached player, and the NPC keeps its own, as npc:set_sprite with
+// keep = false (review decision 59). BC_SELF without a player does
+// nothing, as rAthena fails.
 func (b *body) classchange(args []Expr) error {
 	const what = "classchange"
 	if len(args) < 1 || len(args) > 3 {
 		return unsupported(what, "arguments")
 	}
+	self := false
 	if len(args) == 3 {
 		f, err := b.fixed(what, "flag", args[2])
 		if err != nil {
 			return err
 		}
-		if f == bcSelf {
-			return unsupported(what, "for one player, which the API does not show")
-		}
+		self = f == bcSelf
 	}
 	target := "npc"
 	if len(args) >= 2 {
@@ -742,7 +769,11 @@ func (b *body) classchange(args []Expr) error {
 	if err != nil {
 		return err
 	}
-	b.line("%s", b.onNPC(target, "set_sprite", c.asInt()))
+	if self {
+		b.line("if player ~= nil then %s end", b.onNPC(target, "set_sprite", c.asInt(), "{ keep = false, to = player }"))
+		return nil
+	}
+	b.line("%s", b.onNPC(target, "set_sprite", c.asInt(), "{ keep = false }"))
 	return nil
 }
 
@@ -752,6 +783,12 @@ func (b *body) setunitdata(args []Expr) error {
 	const what = "setunitdata"
 	if len(args) != 3 {
 		return unsupported(what, "arguments")
+	}
+	if mob, ok, err := b.mobGID(what, args[0]); ok || err != nil {
+		if err != nil {
+			return err
+		}
+		return b.setunitdataMob(mob, args)
 	}
 	target, err := b.npcGID(what, args[0])
 	if err != nil {
@@ -781,6 +818,90 @@ func (b *body) setunitdata(args []Expr) error {
 	return nil
 }
 
+// mobGID reads a game ID of a monster: a value that is not the attached
+// player's or an NPC's, which R.unit_monster finds on any map when the
+// script runs (review decision 59). ok is false for a player's or an
+// NPC's game ID.
+func (b *body) mobGID(what string, e Expr) (code string, ok bool, err error) {
+	if _, _, gerr := b.gidRef(what, e); gerr == nil {
+		return "", false, nil
+	}
+	v, err := b.expr(e)
+	if err != nil {
+		return "", true, err
+	}
+	if v.t == tStr {
+		return "", true, unsupported(what, "a game ID that is a name")
+	}
+	return "R.unit_monster(" + v.asInt() + ")", true, nil
+}
+
+// setunitdataMob converts setunitdata on a monster's game ID with the
+// UMOB_ types that the API has (script.cpp 19447 to 19493).
+func (b *body) setunitdataMob(mob string, args []Expr) error {
+	const what = "setunitdata"
+	t, err := b.fixed(what, "type", args[1])
+	if err != nil {
+		return err
+	}
+	kind := map[int64]string{umobHP: "hp", umobSpeed: "speed", umobMode: "modes", umobDmgImmune: "immune"}[t]
+	if kind == "" {
+		return unsupported(what, "a monster's UMOB_ type other than UMOB_HP, UMOB_SPEED, UMOB_MODE and UMOB_DMGIMMUNE")
+	}
+	v, err := b.expr(args[2])
+	if err != nil {
+		return err
+	}
+	gid := strings.TrimSuffix(strings.TrimPrefix(mob, "R.unit_monster("), ")")
+	b.line("R.umob_set(%s, %q, %s)", gid, kind, v.asInt())
+	return nil
+}
+
+// unitkill converts unitkill <game ID> (script.cpp 20061) on a monster:
+// it dies with no exp and no drops, and its label runs.
+func (b *body) unitkill(args []Expr) error {
+	const what = "unitkill"
+	if len(args) != 1 {
+		return unsupported(what, "arguments")
+	}
+	mob, ok, err := b.mobGID(what, args[0])
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return unsupported(what, "on a player or an NPC")
+	}
+	b.line("do local m = %s if m ~= nil then m:kill() end end", mob)
+	return nil
+}
+
+// unitskillusepos converts unitskillusepos <game ID>,<skill>,<level>,
+// <x>,<y> (script.cpp 20305) on a monster, with the skill's own cast
+// time.
+func (b *body) unitskillusepos(args []Expr) error {
+	const what = "unitskillusepos"
+	if len(args) != 5 {
+		return unsupported(what, "a cast time or a cancel flag of its own")
+	}
+	mob, ok, err := b.mobGID(what, args[0])
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return unsupported(what, "on a player or an NPC")
+	}
+	skill, err := b.skillArg(what, args[1])
+	if err != nil {
+		return err
+	}
+	vals, err := b.args(args[2:])
+	if err != nil {
+		return err
+	}
+	b.line("do local m = %s if m ~= nil then m:use_skill_at(%s, %s, %s, %s) end end", mob, skill, vals[0].asInt(), vals[1].asInt(), vals[2].asInt())
+	return nil
+}
+
 // unitwalk converts unitwalk <game ID>,<x>,<y> (script.cpp 19996) for an
 // NPC: whether it can walk there.
 func (b *body) unitwalk(args []Expr) (val, error) {
@@ -795,10 +916,7 @@ func (b *body) unitwalk(args []Expr) (val, error) {
 // of a forced walk (script.cpp 20015, 20032).
 func (b *body) unitwalkCall(args []Expr) (string, error) {
 	const what = "unitwalk"
-	if len(args) == 4 {
-		return "", unsupported(what, "an event label at the walk's end")
-	}
-	if len(args) != 3 {
+	if len(args) != 3 && len(args) != 4 {
 		return "", unsupported(what, "arguments")
 	}
 	target, err := b.npcGID(what, args[0])
@@ -813,6 +931,18 @@ func (b *body) unitwalkCall(args []Expr) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if len(args) == 4 {
+		// The event label of the walk's end (unit.cpp 650), as
+		// npc:walk_to's label (review decision 59).
+		label, err := b.mobLabel(what, args[3])
+		if err != nil {
+			return "", err
+		}
+		if label == "" {
+			label = "nil"
+		}
+		return fmt.Sprintf("R.unitwalk(%s, %s, %s, %s)", target, x.asInt(), y.asInt(), label), nil
+	}
 	return fmt.Sprintf("R.unitwalk(%s, %s, %s)", target, x.asInt(), y.asInt()), nil
 }
 
@@ -822,6 +952,26 @@ func (b *body) unitwarp(args []Expr) error {
 	const what = "unitwarp"
 	if len(args) != 4 {
 		return unsupported(what, "arguments")
+	}
+	if mob, ok, err := b.mobGID(what, args[0]); ok || err != nil {
+		if err != nil {
+			return err
+		}
+		// A monster on its own map, "this" or its map's name.
+		m, err := b.expr(args[1])
+		if err != nil {
+			return err
+		}
+		vals, err := b.args(args[2:])
+		if err != nil {
+			return err
+		}
+		cond := "true"
+		if m.str == nil || *m.str != "this" {
+			cond = "m.map == " + m.asText()
+		}
+		b.line("do local m = %s if m ~= nil and %s then m:warp_to(%s, %s) end end", mob, cond, vals[0].asInt(), vals[1].asInt())
+		return nil
 	}
 	kind, target, err := b.gidRef(what, args[0])
 	if err != nil {
@@ -865,10 +1015,37 @@ func (b *body) unitstopwalk(args []Expr) error {
 	if err != nil {
 		return err
 	}
-	// rAthena's default USW_NONE sends no fixpos (unit.cpp 1733); the
-	// API's stop sends the cell.
-	b.line("R.npc_stop(%s)", target)
+	send := false
+	if len(args) == 2 {
+		if send, err = b.stopFlag(what, args[1]); err != nil {
+			return err
+		}
+	}
+	// rAthena's default USW_NONE stops at once and sends no fixpos
+	// (unit.cpp 1725, 1732), as npc:stop's send_cell = false.
+	b.line("R.npc_stop(%s, %t)", target, send)
 	return nil
+}
+
+// stopFlag reads a unit_stop_walking flag of npcstop and unitstopwalk
+// (unit.cpp 1695): without USW_FIXPOS, USW_MOVE_ONCE and
+// USW_MOVE_FULL_CELL the unit stops at once with no packet, as npc:stop's
+// send_cell = false; USW_FORCE_STOP and USW_RELEASE_TARGET change only
+// what the command returns and the chase target, which an NPC has not.
+// USW_FIXPOS with USW_MOVE_FULL_CELL finishes the cell and sends it, as
+// npc:stop. Other flags do not convert.
+func (b *body) stopFlag(what string, e Expr) (bool, error) {
+	f, err := b.fixed(what, "flag", e)
+	if err != nil {
+		return false, err
+	}
+	switch {
+	case f&(uswFixPos|uswMoveOnce|uswFullCell) == 0:
+		return false, nil
+	case f&uswFixPos != 0 && f&uswFullCell != 0 && f&uswMoveOnce == 0:
+		return true, nil
+	}
+	return false, unsupported(what, "a flag with USW_MOVE_ONCE, or with only one of USW_FIXPOS and USW_MOVE_FULL_CELL")
 }
 
 // npcMove converts npcspeed, npcwalkto, npcstop and movenpc (script.cpp
@@ -914,21 +1091,16 @@ func (b *body) npcMove(what string, args []Expr) error {
 		if err := pick(0); err != nil {
 			return err
 		}
+		send := true
 		if len(args) == 2 {
-			f, err := b.fixed(what, "flag", args[1])
-			if err != nil {
+			var err error
+			if send, err = b.stopFlag(what, args[1]); err != nil {
 				return err
-			}
-			if f != uswDefaultNPCStop {
-				return unsupported(what, "a flag other than the default USW_FIXPOS|USW_MOVE_FULL_CELL|USW_FORCE_STOP")
 			}
 		}
 		// USW_FORCE_STOP ends a forced walk too.
-		b.line("R.npc_stop(%s)", target)
+		b.line("R.npc_stop(%s, %t)", target, send)
 	case "movenpc":
-		if len(args) == 4 {
-			return unsupported(what, "a direction, which npc:move_to does not take")
-		}
 		if err := pick(0); err != nil {
 			return err
 		}
@@ -939,6 +1111,15 @@ func (b *body) npcMove(what string, args []Expr) error {
 		y, err := b.expr(args[2])
 		if err != nil {
 			return err
+		}
+		if len(args) == 4 {
+			// movenpc's direction, dir % 8 (script.cpp 16161).
+			d, err := b.expr(args[3])
+			if err != nil {
+				return err
+			}
+			b.line("%s", b.onNPC(target, "move_to", x.asInt(), y.asInt(), "("+d.asInt()+") % 8"))
+			break
 		}
 		b.line("%s", b.onNPC(target, "move_to", x.asInt(), y.asInt()))
 	}
@@ -1076,10 +1257,13 @@ func (b *body) skilleffect(args []Expr) error {
 // and type 2, which stops a sound, does not convert.
 func (b *body) soundeffect(what string, args []Expr) error {
 	max := map[string]int{"soundeffect": 2, "soundeffectall": 3}[what]
+	if what == "soundeffectall" && len(args) == 7 {
+		// rAthena reads a part of a map and plays nothing (script.cpp
+		// 15330).
+		b.line("-- soundeffectall of a part of a map plays nothing in rAthena")
+		return nil
+	}
 	if len(args) < 2 || len(args) > max {
-		if what == "soundeffectall" && len(args) == 7 {
-			return unsupported(what, "a part of a map")
-		}
 		return unsupported(what, "arguments")
 	}
 	f, ok := args[0].(*Str)
@@ -1113,7 +1297,11 @@ func (b *body) soundeffect(what string, args []Expr) error {
 		b.n.file.need("maps")
 		b.line("maps.play_sound(%s)", strings.Join(withOptions([]string{m.asText(), luaString(file)}, opts), ", "))
 	default:
-		b.line("npc:play_sound(%s)", strings.Join(withOptions([]string{luaString(file)}, opts), ", "))
+		// Around the attached player when there is one, from it, else
+		// around the NPC (script.cpp 15315).
+		withTo := append([]string{"to = \"area\""}, opts...)
+		b.line("if player ~= nil then player:play_sound(%s) else npc:play_sound(%s) end",
+			strings.Join(withOptions([]string{luaString(file)}, withTo), ", "), strings.Join(withOptions([]string{luaString(file)}, opts), ", "))
 	}
 	return nil
 }
@@ -1141,17 +1329,26 @@ func (b *body) playbgm(what string, args []Expr) error {
 	}
 	switch len(args) {
 	case 1:
-		return unsupported(what, "every map of the server, which maps.play_music does not reach")
-	case 2:
+		// Every player of the server (map_foreachpc).
+		b.n.file.need("world")
+		b.line("world.play_music(%s)", luaString(file))
+		return nil
+	case 2, 6:
 	default:
-		return unsupported(what, "a part of a map")
+		return unsupported(what, "arguments")
 	}
-	m, err := b.expr(args[1])
+	vals, err := b.args(args[1:])
 	if err != nil {
 		return err
 	}
 	b.n.file.need("maps")
-	b.line("maps.play_music(%s, %s)", m.asText(), luaString(file))
+	if len(args) == 6 {
+		// A part of a map (map_foreachinallarea).
+		b.line("R.on_map(%s, maps.play_music, %s, { rectangle = { { %s, %s }, { %s, %s } } })", vals[0].asText(), luaString(file),
+			vals[1].asInt(), vals[2].asInt(), vals[3].asInt(), vals[4].asInt())
+		return nil
+	}
+	b.line("maps.play_music(%s, %s)", vals[0].asText(), luaString(file))
 	return nil
 }
 

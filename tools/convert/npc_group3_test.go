@@ -18,7 +18,7 @@ func TestGroup3Convert(t *testing.T) {
 	}{
 		// B7: player reads and actions.
 		{`{ getexp 100,50; getexp2 -10,0; end; }`, []string{"player:give_exp(100, 50)", "player:give_exp(-10, 0, { raw = true })"}},
-		{`{ getexp 1,1,150000; end; }`, []string{"!getexp: arguments, or for another character"}},
+		{`{ getexp 1,1,150000; getexp 2,2,getcharid(0); end; }`, []string{"local player = R.by_char(150000)", "player:give_exp(1, 1)", "player:give_exp(2, 2)"}},
 		{`{ heal 100,-5; Hp = 1; Hp -= 10; end; }`, []string{"player:heal(100, -5)", "player:set_hp(1)", "player:set_hp((player.hp - 10))"}},
 		{`{ mes "" + Weight + "/" + MaxWeight + " " + SkillPoint; end; }`, []string{"player.weight", "player.max_weight", "player.skill_points"}},
 		{`{ setpcblock PCBLOCK_MOVE|PCBLOCK_ATTACK,true; setpcblock .@f,0; mes "" + getpcblock(); end; }`, []string{

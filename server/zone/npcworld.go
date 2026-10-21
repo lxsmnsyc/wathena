@@ -50,6 +50,11 @@ type NPCDirectory struct {
 	byName  map[string]*npcEntry
 	byZone  map[*Zone][]*npcEntry
 	started map[*Zone]bool
+	// events counts each zone's NPC handlers of the player events, and
+	// named the player events that the NPC scripts of a zone that has
+	// not started name in their source (playerworld.go).
+	events map[*Zone]map[string]int
+	named  map[*Zone]map[string]bool
 }
 
 // NewNPCDirectory makes an empty directory.
@@ -67,6 +72,8 @@ type npcEntry struct {
 	mod      string
 	scripted bool
 	floating bool
+	// script is the NPC's script entry, "<mod>:<path>".
+	script string
 
 	// Under the directory's lock. display, x and y change with
 	// npc:set_display_name and the NPC's moves (npcpresent.go).
@@ -105,7 +112,7 @@ func (d *NPCDirectory) AddZone(z *Zone) {
 		}
 		m, _, _ := strings.Cut(n.Name, ":")
 		en := &npcEntry{zone: z, handle: h, name: n.Name, mod: m, display: n.DisplayName, hidden: n.Hidden, x: e.x, y: e.y,
-			scripted: n.Script != "", floating: n.floating, state: n.state(), cloaked: n.cloak}
+			scripted: n.Script != "", floating: n.floating, state: n.state(), cloaked: n.cloak, script: n.Script}
 		n.entry = en
 		d.byZone[z] = append(d.byZone[z], en)
 		if d.byName[n.Name] == nil {
@@ -125,6 +132,8 @@ func (d *NPCDirectory) RemoveZone(z *Zone) {
 	}
 	delete(d.byZone, z)
 	delete(d.started, z)
+	delete(d.events, z)
+	delete(d.named, z)
 }
 
 // find finds an NPC by name: a full record name, or a plain name, which
@@ -283,13 +292,21 @@ type npcMessage struct {
 	// only the zone itself sends. charID is the character of a cloak for
 	// one player, from any zone.
 	player, charID int64
-	control        modscript.NPCControl
-	mods           []string
+	// playerName is the player of an event with a player of another
+	// zone, and counts the monster counts a monster label's event reads
+	// (maps.go).
+	playerName string
+	counts     *labelCounts
+	control    modscript.NPCControl
+	mods       []string
 	// run is the work of a presentation message on the NPC, and
 	// zoneRun the work of a message for a zone's players
 	// (npcpresent.go).
 	run     func(z *Zone, e *entity)
 	zoneRun func(z *Zone)
+	// playerEvent is a player event of another zone for the NPCs
+	// (playerworld.go).
+	playerEvent *playerEventMessage
 }
 
 type npcMessageKind int
@@ -303,6 +320,9 @@ const (
 	// something to the zone's players (npcpresent.go).
 	npcPresentMessage
 	npcZoneMessage
+	// npcPlayerEventMessage runs a player event of another zone for the
+	// NPC handlers (playerworld.go).
+	npcPlayerEventMessage
 )
 
 // npcInbox is a zone's NPC messages. Other zones post to it.
@@ -396,6 +416,9 @@ func (z *Zone) runNPCMessage(m npcMessage) {
 	case npcZoneMessage:
 		m.zoneRun(z)
 		return
+	case npcPlayerEventMessage:
+		z.runPlayerEvent(m.playerEvent)
+		return
 	case npcPresentMessage:
 		if e := z.npcHandles[m.handle]; e != nil && !e.npc.removed {
 			m.run(z, e)
@@ -430,6 +453,13 @@ func (z *Zone) runNPCMessage(m npcMessage) {
 		if n.script == nil {
 			return
 		}
+		prev := z.countView
+		z.countView = m.counts
+		defer func() { z.countView = prev }()
+		if m.playerName != "" {
+			z.runNPCEventAway(e, m.label, m.playerName)
+			return
+		}
 		if m.player == 0 {
 			_, _, _ = r.FireNPCEvent(n.script, m.label, 0)
 			return
@@ -447,6 +477,31 @@ func (z *Zone) runNPCMessage(m npcMessage) {
 			n.script = nil
 		}
 	}
+}
+
+// runNPCEventAway runs an event with a player of another zone, as
+// npc_event attaches a player of any map (npc.cpp 1767): its handlers get
+// a handle of the player, and no conversation, since the player talks on
+// its own map. A player who came to this zone runs it as runNPCEvent. A
+// player who went offline runs it with no player.
+func (z *Zone) runNPCEventAway(e *entity, label, name string) {
+	n := e.npc
+	d := z.playerDir()
+	var en *playerEntry
+	if d != nil {
+		en = d.find(name)
+	}
+	if en == nil {
+		_, _, _ = z.scripts.FireNPCEvent(n.script, label, 0)
+		return
+	}
+	if en.zone == z {
+		if p := z.players[en.id]; p != nil && !p.gone() {
+			z.runNPCEvent(&touchEvent{npc: e, player: p, label: label})
+		}
+		return
+	}
+	z.scripts.FireNPCEventAway(n.script, label, z.remotePlayerHandle(en.name))
 }
 
 // npcsInOrder are the zone's NPCs with a script handle, in handle order.
@@ -893,33 +948,6 @@ func (h scriptHost) BroadcastNPCEvent(label string, mods []string) (int, error) 
 		count += n
 	}
 	return count, nil
-}
-
-// FindPlayer finds a player of the zone by name.
-func (h scriptHost) FindPlayer(name string) (int64, bool) {
-	for _, p := range h.z.playersInOrder() {
-		if p.record.Name == name {
-			return int64(p.charID), true
-		}
-	}
-	return 0, false
-}
-
-// FindPlayerByID finds a player of the zone by account ID, or else by
-// character ID, as convertpcinfo's map_id2sd then map_charid2sd.
-func (h scriptHost) FindPlayerByID(id int64) (int64, bool) {
-	players := h.z.playersInOrder()
-	for _, p := range players {
-		if p.record.AccountID == id {
-			return int64(p.charID), true
-		}
-	}
-	for _, p := range players {
-		if p.record.ID == id {
-			return int64(p.charID), true
-		}
-	}
-	return 0, false
 }
 
 // playersInOrder are the zone's players that have not left, by ID.

@@ -78,7 +78,10 @@ func TestMapsAcrossZones(t *testing.T) {
 	for time.Now().Before(deadline) && strings.Count(get(), "dead") < 3 {
 		time.Sleep(10 * time.Millisecond)
 	}
-	want := "spawned 0 3 3 0;" + strings.Repeat("dead nil 0 true true;", 3)
+	// The handles come back at once (review decision 59), and each label
+	// reads the counts of the moment its monster died, as rAthena runs it
+	// inside killmonster's loop.
+	want := "spawned 3 3 3 0;dead nil 2 true true;dead nil 1 true true;dead nil 0 true true;"
 	if got := get(); got != want {
 		t.Fatalf("log %q, want %q", got, want)
 	}

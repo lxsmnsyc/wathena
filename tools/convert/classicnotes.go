@@ -147,7 +147,7 @@ func (r *NPCResult) ClassicNotes() string {
 		fmt.Fprintf(&b, "| %s | %d | %s |\n", escapeCell(x.k), x.v, escapeCell(mostCommon(details[x.k])))
 	}
 	b.WriteString("\n")
-	b.WriteString("- `event <label>` is a label that rAthena runs on its own, such as `OnPCLogoutEvent` or `OnAgitStart`. Every other label converts to an `npc_event` handler (review decision 58).\n")
+	b.WriteString("- `event <label>` is a label that rAthena runs on its own for a system that does not exist, such as `OnAgitStart`, or for an event the API does not have, such as `OnPCKillEvent`. Every other label converts to an `npc_event` handler (review decision 58), and the player labels, such as `OnPCLoginEvent`, to handlers of the player events of every map too (review decision 59).\n")
 	b.WriteString("- `parameter <name>` reads or changes a player parameter that does not convert, such as `MaxWeight`.\n")
 	b.WriteString("- `floating` is a script NPC without a map whose script does nothing. Other NPCs without a map are placed, and run in the start map's zone (review decision 58). `instance` is an NPC on an instance map. `sprite` is a view that is not an NPC sprite.\n")
 	fmt.Fprintf(&b, "- The NPC-to-NPC commands (`donpcevent`, `doevent`, enable and disable, cloaking and hiding, `getvariableofnpc`, `unloadnpc`) convert since review decision 58. The forms that do not, such as `doevent` to an NPC on another map, block %d of these scripts.\n\n", toNPC)

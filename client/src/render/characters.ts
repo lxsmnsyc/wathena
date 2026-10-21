@@ -222,6 +222,13 @@ export class Character {
     }
   }
 
+  /** Scales every part around the character's origin, as SpriteView.setScale. */
+  setScale(scale: number): void {
+    for (const v of this.views()) {
+      v.setScale(scale);
+    }
+  }
+
   /** Called when the body starts a frame with a sound event. */
   get onSound(): ((name: string) => void) | undefined {
     return this.body.onSound;

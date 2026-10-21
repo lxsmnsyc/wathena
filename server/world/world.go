@@ -35,8 +35,10 @@ type World struct {
 	stops   map[*zone.Zone]context.CancelFunc
 	retired []*zone.Zone
 	// npcs lists every zone's NPCs, which scripts reach across zones
-	// (review decision 58).
-	npcs *zone.NPCDirectory
+	// (review decision 58), and players every online player (review
+	// decision 59).
+	npcs    *zone.NPCDirectory
+	players *zone.PlayerDirectory
 }
 
 // New makes a world of zones. start is the asset name of the map where
@@ -45,7 +47,7 @@ type World struct {
 // the others.
 func New(start string, zones ...*zone.Zone) (*World, error) {
 	w := &World{zones: map[string]*zone.Zone{}, stopped: make(chan struct{}), stops: map[*zone.Zone]context.CancelFunc{},
-		npcs: zone.NewNPCDirectory()}
+		npcs: zone.NewNPCDirectory(), players: zone.NewPlayerDirectory()}
 	for _, z := range zones {
 		if w.zones[z.Map] != nil {
 			return nil, fmt.Errorf("world: map %s is listed twice", z.Map)
@@ -76,6 +78,9 @@ func New(start string, zones ...*zone.Zone) (*World, error) {
 
 // NPCs is the world's directory of NPCs.
 func (w *World) NPCs() *zone.NPCDirectory { return w.npcs }
+
+// Players is the world's directory of online players.
+func (w *World) Players() *zone.PlayerDirectory { return w.players }
 
 // sorted is the zones by map name. The caller holds w.mu or runs before
 // the world does.

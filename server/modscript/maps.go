@@ -41,8 +41,10 @@ type MapHost interface {
 	RemoveMonsters(mapName string, r RemoveMonsters) error
 	// WarpPlayers moves the players of a map, as mapwarp and areawarp.
 	WarpPlayers(mapName string, w WarpPlayers) error
-	// SetCells changes a kind of cell in a rectangle, as setcell.
-	SetCells(mapName string, area Rect, kind string, on bool) error
+	// SetCells changes a kind of cell in a rectangle, as setcell. send
+	// sends the cells to the map's players, and to the players who enter
+	// later, as setwall's clif_changemapcell; setcell sends nothing.
+	SetCells(mapName string, area Rect, kind string, on, send bool) error
 	// CheckCell reads a cell, as checkcell.
 	CheckCell(mapName string, x, y int, kind string) (bool, error)
 	// SetMapFlag and MapFlag are setmapflag, removemapflag and
@@ -59,9 +61,12 @@ type MapHost interface {
 	// MonsterInfo reads a monster's record, as getmonsterinfo.
 	MonsterInfo(monster uint32) (MonsterInfo, bool)
 	// PartyWarp moves the members of a party, as warpparty.
-	PartyWarp(party int64, mapName string, x, y int) error
+	PartyWarp(party int64, w PartyWarp) error
 	// LabelOwner is the NPC handle of a label's NPC, by name, or 0.
 	LabelOwner(name, mod string) int64
+	// FindMonster is the handle of a living monster of any map by its
+	// game ID, as map_id2md.
+	FindMonster(gameID int64) (int64, bool)
 }
 
 // Rect is a rectangle of cells, corners included, with X1 <= X2 and
@@ -106,6 +111,27 @@ type WarpPlayers struct {
 	// mapwarp's types 2 and 1.
 	Party, Guild int64
 }
+
+// PartyWarp is what party:warp moves, as warpparty.
+type PartyWarp struct {
+	// Map, X and Y are the target, or Target is one of warpparty's
+	// targets: random, save_point, save_point_all, leader or random_all.
+	Map    string
+	Target string
+	X, Y   int
+	// From moves only the members on that map. RangeX and RangeY pick a
+	// random walkable cell within that range of the target cell.
+	From           string
+	RangeX, RangeY int
+	// Player is the player whose save point save_point uses, and whose
+	// map random_all picks a cell of: warpparty's attached player.
+	Player int64
+}
+
+// PartyWarpTargets are party:warp's targets other than a map, as
+// warpparty's "Random", "SavePoint", "SavePointAll", "Leader" and
+// "RandomAll".
+var PartyWarpTargets = []string{"random", "save_point", "save_point_all", "leader", "random_all"}
 
 // FreeCell is a free cell search of maps.find_free_cell.
 type FreeCell struct {
@@ -328,7 +354,7 @@ func (r *Runtime) mapsCall(c *script.Call) error {
 		}
 		return nil
 	case "remove_monsters":
-		if err := r.need(what, "npc.create"); err != nil {
+		if err := r.need(what, "maps.control"); err != nil {
 			return err
 		}
 		var rm RemoveMonsters
@@ -463,7 +489,7 @@ func (r *Runtime) mapsWarpPlayers(c *script.Call, h MapHost, m string) error {
 func (r *Runtime) mapsSetCells(c *script.Call, h MapHost, m string) error {
 	const what = "maps.set_cells"
 	arg := func(i int) script.Value { return c.Arg(1 + i) }
-	if err := r.need(what, "npc.create"); err != nil {
+	if err := r.need(what, "maps.control"); err != nil {
 		return err
 	}
 	x1, y1, err := checkCell(what, arg(1), arg(2))
@@ -482,8 +508,23 @@ func (r *Runtime) mapsSetCells(c *script.Call, h MapHost, m string) error {
 	if !ok {
 		return fmt.Errorf("%s: on must be true or false", what)
 	}
+	send := false
+	err = walkOptions(what, arg(7), []string{"send"}, func(_ string, v script.Value) error {
+		b, ok := v.AsBool()
+		if !ok {
+			return fmt.Errorf("%s: send must be true or false", what)
+		}
+		send = b
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if send && kind != "walkable" && kind != "shootable" {
+		return fmt.Errorf("%s: only walkable and shootable cells are sent to players", what)
+	}
 	area := Rect{X1: min(x1, x2), Y1: min(y1, y2), X2: max(x1, x2), Y2: max(y1, y2)}
-	return wrap(what, h.SetCells(m, area, kind, on))
+	return wrap(what, h.SetCells(m, area, kind, on, send))
 }
 
 func (r *Runtime) mapsFindFreeCell(c *script.Call, h MapHost, m string) error {
@@ -608,6 +649,28 @@ func (r *Runtime) monsterCall8(c *script.Call) error {
 	return nil
 }
 
+// mapsFindMonster is maps.find_monster: a monster of any map by its game
+// ID, as rAthena's GID of $@mobid and the unit commands (review decision
+// 59).
+func (r *Runtime) mapsFindMonster(c *script.Call) error {
+	const what = "maps.find_monster"
+	if err := r.need(what, "game.read"); err != nil {
+		return err
+	}
+	id, ok := c.Arg(0).AsInt()
+	if !ok {
+		return errors.New(what + ": want a monster's game ID, such as monster.game_id")
+	}
+	h, err := r.mapHost(what)
+	if err != nil {
+		return err
+	}
+	if m, found := h.FindMonster(id); found {
+		c.Return(script.Int(m))
+	}
+	return nil
+}
+
 // monstersGet is monsters.get, as getmonsterinfo.
 func (r *Runtime) monstersGet(c *script.Call) error {
 	const what = "monsters.get"
@@ -654,7 +717,9 @@ func (r *Runtime) monstersGet(c *script.Call) error {
 	return nil
 }
 
-// partyWarp is party:warp, as warpparty to a map and a cell.
+// partyWarp is party:warp, as warpparty: Arg(0) is the party, Arg(1)
+// the map or a target, Arg(2) and Arg(3) the cell, Arg(4) the options
+// and Arg(5) the player of the player option.
 func (r *Runtime) partyWarp(c *script.Call) error {
 	const what = "party:warp"
 	if err := r.mutating(what); err != nil {
@@ -671,13 +736,58 @@ func (r *Runtime) partyWarp(c *script.Call) error {
 	if err != nil {
 		return err
 	}
-	x, y, err := checkCell(what, c.Arg(2), c.Arg(3))
+	w := PartyWarp{Map: m}
+	if slices.Contains(PartyWarpTargets, m) {
+		w.Map, w.Target = "", m
+	}
+	if w.Target == "" || w.Target == "leader" || w.Target == "random_all" {
+		// The cell of a map; the targets of their own cells take 0, 0.
+		if !c.Arg(2).IsNil() || !c.Arg(3).IsNil() {
+			if w.X, w.Y, err = checkCell(what, c.Arg(2), c.Arg(3)); err != nil {
+				return err
+			}
+		}
+	}
+	err = walkOptions(what, c.Arg(4), []string{"from", "range_x", "range_y", "player"}, func(k string, v script.Value) error {
+		switch k {
+		case "from":
+			w.From, err = checkMap(what+": from", v)
+			return err
+		case "range_x", "range_y":
+			n, ok := v.AsInt()
+			if !ok || n < 0 || n > 1023 {
+				return fmt.Errorf("%s: %s must be 0 to 1023 cells", what, k)
+			}
+			if k == "range_x" {
+				w.RangeX = int(n)
+			} else {
+				w.RangeY = int(n)
+			}
+		case "player":
+			p, ok := c.Arg(5).AsInt()
+			if !ok {
+				return fmt.Errorf("%s: player must be a player handle", what)
+			}
+			w.Player = p
+		}
+		return nil
+	})
 	if err != nil {
 		return err
+	}
+	if (w.Target == "save_point" || w.Target == "random_all") && w.Player == 0 {
+		return fmt.Errorf("%s: %s needs the player option, the player whose %s it uses", what, w.Target,
+			map[string]string{"save_point": "save point", "random_all": "map"}[w.Target])
+	}
+	if (w.RangeX != 0 || w.RangeY != 0) && w.Target != "" && w.Target != "leader" && w.Target != "random_all" {
+		return fmt.Errorf("%s: a range needs a map, leader or random_all", what)
+	}
+	if w.Target == "" && c.Arg(2).IsNil() {
+		return fmt.Errorf("%s: want a map and a cell, or one of %s", what, strings.Join(PartyWarpTargets, ", "))
 	}
 	h, err := r.mapHost(what)
 	if err != nil {
 		return err
 	}
-	return wrap(what, h.PartyWarp(id, m, x, y))
+	return wrap(what, h.PartyWarp(id, w))
 }

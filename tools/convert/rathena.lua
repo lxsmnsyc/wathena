@@ -314,10 +314,23 @@ local function spawn(spec, amount, extra)
 	for k, v in pairs(extra or {}) do
 		spec[k] = v
 	end
+	local all = {}
 	while amount > 0 do
 		spec.amount = math.min(amount, 1000)
 		amount = amount - spec.amount
-		spawning.monsters(spec)
+		for _, m in ipairs(spawning.monsters(spec)) do
+			all[#all + 1] = m
+		end
+	end
+	-- monster and areamonster put each monster's game ID in $@mobid[i]
+	-- (script.cpp 11312, 11435). Elements past the amount stay.
+	if #all > 0 then
+		local var = variables.server_temporary_table("mobid")
+		local t = load(var, nil)
+		for i, m in ipairs(all) do
+			t[i - 1] = m.game_id
+		end
+		store(var, nil, t)
 	end
 end
 
@@ -412,11 +425,181 @@ function R.areawarp(from, to, x1, y1, x2, y2, options)
 	R.warp_players(from, to, x1, y1, options)
 end
 
--- warpparty is warpparty to a map and a cell (script.cpp 5781).
-function R.warpparty(id, map, x, y)
+-- warp_targets are warpparty's targets other than a map (script.cpp
+-- 5804), as party:warp's.
+local warp_targets = { Random = "random", SavePoint = "save_point", SavePointAll = "save_point_all", Leader = "leader",
+	RandomAll = "random_all" }
+
+-- warpparty is warpparty (script.cpp 5781): to a map and a cell, or to
+-- one of its targets, from every map or from one, with a range. Its
+-- targets SavePoint and RandomAll use the attached player, and fail
+-- without one.
+function R.warpparty(id, map, x, y, player, from, rx, ry)
 	local party = parties.get(id)
-	if party ~= nil and map_runs(map) then
-		party:warp(map, x, y)
+	if party == nil then
+		return
+	end
+	local options = {}
+	if from ~= nil then
+		-- A from map that does not run moves nobody.
+		if not map_runs(from) then
+			return
+		end
+		options.from = from
+	end
+	if (rx or 0) ~= 0 or (ry or 0) ~= 0 then
+		options.range_x, options.range_y = rx or 0, ry or 0
+	end
+	local target = warp_targets[map]
+	if target ~= nil then
+		if target == "save_point" or target == "random_all" then
+			if player == nil then
+				return
+			end
+			options.player = player
+		end
+		if (target ~= "leader" and target ~= "random_all") then
+			options.range_x, options.range_y = nil, nil
+		end
+		party:warp(target, x, y, next(options) and options or nil)
+		return
+	end
+	if map_runs(map) then
+		party:warp(map, x, y, next(options) and options or nil)
+	end
+end
+
+-- this_map is a map argument of "this": the attached player's map, or a
+-- map that does not run without one, as buildin_monster and mobcount
+-- read it (script.cpp 11297, 14390).
+function R.this_map(player)
+	if player ~= nil then
+		return player.map
+	end
+	return "this"
+end
+
+-- attachrid is attachrid (script.cpp 13507): the online player of an
+-- account ID, on any map, or the player attached before when there is
+-- none, as map_id2sd finds only account IDs.
+function R.attachrid(old, id)
+	local p = maps.find_player_by_id(id)
+	if p == nil or p.account_id ~= id then
+		return old
+	end
+	return p
+end
+
+-- by_account and by_char are a player of a command's account or
+-- character ID argument (script_accid2sd and script_charid2sd), on any
+-- map, or nil, and the command does nothing, as rAthena only logs an
+-- error. by_name is a player by name (script_nick2sd).
+function R.by_account(id)
+	local p = maps.find_player_by_id(id)
+	if p ~= nil and p.account_id == id then
+		return p
+	end
+	return nil
+end
+
+function R.by_char(id)
+	local p = maps.find_player_by_id(id)
+	if p ~= nil and p.character_id == id then
+		return p
+	end
+	return nil
+end
+
+function R.by_name(name)
+	return maps.find_player(tostring(name))
+end
+
+-- unittalk is unittalk of a game ID other than the attached player's
+-- or an NPC's (script.cpp 20216): a player of any map by account ID, as
+-- player:say_aloud, or a monster, as monster:talk. The line keeps the
+-- speaker's name that the script wrote, as rAthena sends it whole.
+function R.unittalk(gid, text)
+	text = R.text(text)
+	if text == "" then
+		return
+	end
+	local p = R.by_account(gid)
+	if p ~= nil then
+		p:say_aloud(text)
+		return
+	end
+	local m = R.unit_monster(gid)
+	if m ~= nil then
+		m:talk(text)
+	end
+end
+
+-- by_gid is the unit of sc_start's and sc_end's game ID (map_id2bl): a
+-- player by account ID, or a monster of any map.
+function R.by_gid(id)
+	return R.by_account(id) or R.unit_monster(id)
+end
+
+-- unit_monster is the monster of a unit command's game ID, on any map,
+-- or nil: the unit commands of review decision 59 on monsters.
+function R.unit_monster(gid)
+	if math.type(gid) ~= "integer" then
+		return nil
+	end
+	return maps.find_monster(gid)
+end
+
+-- umob_set is setunitdata's UMOB_ types that the API has (script.cpp
+-- 19447 to 19493): UMOB_HP, UMOB_SPEED (within the API's 20 to 1000),
+-- UMOB_MODE and UMOB_DMGIMMUNE (value > 0).
+function R.umob_set(gid, kind, value)
+	local m = R.unit_monster(gid)
+	if m == nil then
+		return
+	end
+	if kind == "hp" then
+		m:set_hp(value)
+	elseif kind == "speed" then
+		m:set_speed(math.max(20, math.min(1000, value)))
+	elseif kind == "immune" then
+		m:set_damage_immune(value > 0)
+	elseif kind == "modes" then
+		local list = {}
+		for name, bit in pairs(R.mode_bits) do
+			if value & bit ~= 0 then
+				list[#list + 1] = name
+			end
+		end
+		table.sort(list)
+		m:set_modes(list)
+	end
+end
+
+-- areapercentheal is areapercentheal (script.cpp 5746): every player of
+-- a rectangle of a map heals a percent of its HP and SP, as
+-- pc_percentheal, in blocks that maps.find_entities takes.
+function R.areapercentheal(map, x1, y1, x2, y2, hp, sp)
+	if not map_runs(map) then
+		return
+	end
+	x1, x2 = math.min(x1, x2), math.max(x1, x2)
+	y1, y2 = math.min(y1, y2), math.max(y1, y2)
+	for bx = x1, x2, 60 do
+		for by = y1, y2, 60 do
+			local rect = { { bx, by }, { math.min(bx + 59, x2), math.min(by + 59, y2) } }
+			for _, p in ipairs(maps.find_entities { map = map, rectangle = rect, kinds = { "player" } }) do
+				local spec = {}
+				if hp ~= 0 then
+					spec.hp = hp
+				end
+				if sp ~= 0 then
+					spec.sp = sp
+				end
+				if next(spec) ~= nil then
+					p:heal_percent(spec)
+				end
+			end
+		end
 	end
 end
 
@@ -498,8 +681,10 @@ function R.setwall(map, x, y, size, dir, shootable, name)
 		if blocked(map, cx, cy) then
 			break
 		end
-		maps.set_cells(map, cx, cy, cx, cy, "walkable", false)
-		maps.set_cells(map, cx, cy, cx, cy, "shootable", shootable)
+		-- map_iwall_set sends a wall's cells to the map's players
+		-- (map.cpp 3511), where setcell sends nothing.
+		maps.set_cells(map, cx, cy, cx, cy, "walkable", false, { send = true })
+		maps.set_cells(map, cx, cy, cx, cy, "shootable", shootable, { send = true })
 		cells[#cells + 1] = cx .. "," .. cy
 	end
 	all[name] = map .. "|" .. table.concat(cells, ";")
@@ -518,8 +703,8 @@ function R.delwall(name)
 	local map, list = wall:match("^(.-)|(.*)$")
 	for cx, cy in list:gmatch("(%d+),(%d+)") do
 		cx, cy = math.tointeger(tonumber(cx)), math.tointeger(tonumber(cy))
-		maps.set_cells(map, cx, cy, cx, cy, "shootable", true)
-		maps.set_cells(map, cx, cy, cx, cy, "walkable", true)
+		maps.set_cells(map, cx, cy, cx, cy, "shootable", true, { send = true })
+		maps.set_cells(map, cx, cy, cx, cy, "walkable", true, { send = true })
 	end
 	all[name] = nil
 	walls():set(next(all) ~= nil and all or nil)
@@ -541,6 +726,7 @@ local mode_bits = {
 	knockback_immune = 0x200000, teleport_block = 0x400000, fixed_item_drop = 0x1000000, detector = 0x2000000,
 	status_immune = 0x4000000, skill_immune = 0x8000000,
 }
+R.mode_bits = mode_bits
 
 -- mob_info_fields are monsters.get's fields by getmonsterinfo's MOB_
 -- type (script.hpp 360).
@@ -1136,8 +1322,9 @@ local forced_walks = {}
 -- unitwalk is unitwalk on an NPC: refused while an earlier forced walk
 -- has not reached its cell, and else started after a 50 ms timer, as
 -- rAthena's unit_delay_walktoxy_timer. It gives 1, or 0 when refused.
--- force_walk ends on arrival, and with unitstopwalk and npcstop.
-function R.unitwalk(target, x, y)
+-- force_walk ends on arrival, and with unitstopwalk and npcstop. A
+-- label runs when a walk ends on its cell (unit.cpp 650).
+function R.unitwalk(target, x, y, label)
 	local n = npc_named(target)
 	if n == nil then
 		return 0
@@ -1153,7 +1340,11 @@ function R.unitwalk(target, x, y)
 	end
 	forced_walks[key] = { x, y }
 	timers.after(50, function()
-		if not n:walk_to(x, y) then
+		local options = nil
+		if label ~= nil then
+			options = { label = label }
+		end
+		if not n:walk_to(x, y, options) then
 			forced_walks[key] = nil
 		end
 	end)
@@ -1162,12 +1353,16 @@ end
 
 -- npc_stop is unitstopwalk and npcstop on an NPC: the walk stops, and so
 -- does a forced walk.
-function R.npc_stop(target)
+function R.npc_stop(target, send_cell)
 	local n = npc_named(target)
 	if n == nil then
 		return
 	end
 	forced_walks[tostring(n)] = nil
+	if send_cell == false then
+		n:stop({ send_cell = false })
+		return
+	end
 	n:stop()
 end
 
@@ -1798,7 +1993,9 @@ function R.failedrefitem(player, slot)
 	if e == nil then
 		return 0
 	end
-	e:destroy()
+	-- The refine goes to 0 and the failure effect shows (script.cpp
+	-- 9817 to 9821, review decision 59).
+	e:destroy({ refine_failure = true })
 	return 1
 end
 

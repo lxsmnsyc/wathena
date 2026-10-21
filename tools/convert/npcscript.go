@@ -571,13 +571,14 @@ func (n *npcConv) npcScript() (string, error) {
 	// A body may name more labels, with a monster command.
 	for i := 0; i < len(n.eventOrder); i++ {
 		e := n.eventOrder[i]
-		if e == touch || e == "oninit" {
+		playerEvent := playerLabels[e] != ""
+		if e == touch || e == "oninit" || playerEvent {
 			n.bodyCalls = map[string]bool{}
 		}
 		n.inEvent = e != touch
 		bodies[e], err = n.writeBody(events[e], 3, true, false)
 		n.inEvent = false
-		if e == touch || e == "oninit" {
+		if e == touch || e == "oninit" || playerEvent {
 			calls := n.bodyCalls
 			n.bodyCalls = nil
 			if err == nil && e == touch {
@@ -587,6 +588,10 @@ func (n *npcConv) npcScript() (string, error) {
 				// OnInit runs at the setup, with no player: a wait or a
 				// dialog there has no conversation.
 				err = unsupported("event oninit", "it waits or shows a dialog, and OnInit runs without a player")
+			}
+			if err == nil && playerEvent && n.touchHasDialog(bodies[e], calls) {
+				// The player events have a player and no conversation.
+				err = unsupported("event "+e, "it waits or shows a dialog, and the player events have no conversation")
 			}
 		}
 		if err != nil {
@@ -660,6 +665,21 @@ func (n *npcConv) npcScript() (string, error) {
 			// OnTouchNPC runs with the monster attached in rAthena, which a
 			// converted script cannot read.
 			f.line(`events.on("monster_touch", function() %s() end)`, n.eventFns[e])
+		}
+		// The labels of one player's events run with the player, for the
+		// players of every map (npc_script_event, review decision 59).
+		switch ev := playerLabels[e]; ev {
+		case "":
+		case "death":
+			// OnPCDieEvent: a player's death (status.cpp 1786).
+			f.line(`events.on("death", function(death) %s(death.victim, nil) end, { kind = "player" })`, n.eventFns[e])
+		case "map_enter":
+			// OnPCLoadMapEvent runs only on maps with the loadevent flag
+			// (clif.cpp 11148).
+			f.need("maps")
+			f.line(`events.on("map_enter", function(player) if maps.get_flag(player.map, "loadevent") then %s(player, nil) end end)`, n.eventFns[e])
+		default:
+			f.line(`events.on(%q, function(player) %s(player, nil) end)`, ev, n.eventFns[e])
 		}
 	}
 	for _, e := range order {

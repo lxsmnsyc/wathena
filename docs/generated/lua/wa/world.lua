@@ -18,6 +18,10 @@ function world.announce(text) end
 ---@return wa.Shop?
 function world.get_shop(name) end
 
+---Plays background music to every player of every map, as playBGMall without a map (review decision 59). Each map's own music comes back with each player's next map change.
+---@param file string A music name of the assets, without music/, such as 08.
+function world.play_music(file) end
+
 ---An NPC of any map, or one without a map, as rAthena's npc_name2id (review decision 58). nil when there is none, or it was removed. A handle of an NPC of another map reads its fields, and its changes and events run in that NPC's zone after the current step. Its other methods raise an error there.
 ---
 ---Needs the permission `game.read`.

@@ -48,6 +48,7 @@ return function()
   end)
   on("OnCells", function()
     maps.set_cells("test", 10, 10, 11, 10, "walkable", false)
+    maps.set_cells("test", 20, 20, 21, 20, "walkable", false, { send = true })
     maps.set_cells("test", 2, 2, 3, 3, "no_vending", true)
     note("cells " .. tostring(maps.check_cell("test", 10, 10, "no_pass")) .. " " .. tostring(maps.check_cell("test", 12, 10, "pass"))
       .. " " .. tostring(maps.check_cell("test", 39, 5, "no_pass")) .. " " .. tostring(maps.check_cell("test", 2, 3, "no_vending")))
@@ -198,9 +199,10 @@ func TestSpawnLabels(t *testing.T) {
 	fire(t, z, n, "OnSpawn")
 	seen(t, z)
 	fire(t, z, n, "OnRemoveAll")
-	// The labels run after the step that killed them (decision 0062), so
-	// each sees every kill. rAthena runs each label inside the loop.
-	if got := seen(t, z); got != "dead - 0;dead - 0;dead - 0;" {
+	// Each label reads the count of the moment its monster died, as
+	// rAthena runs it inside killmonster's loop (script.cpp 11463,
+	// mob.cpp 3600): the monsters not killed yet still count.
+	if got := seen(t, z); got != "dead - 2;dead - 1;dead - 0;" {
 		t.Fatalf("remove_monsters with labels: %q", got)
 	}
 }
@@ -226,7 +228,9 @@ func TestSpawnRectangle(t *testing.T) {
 }
 
 // TestCellsAndFlags checks setcell, checkcell, the cells sent to
-// players, and the map flags.
+// players, and the map flags. A cell change goes to the players only
+// with send, as rAthena's setcell sends nothing (script.cpp 20631) and
+// setwall sends its cells (map.cpp 3511, 3538).
 func TestCellsAndFlags(t *testing.T) {
 	z, p, n := mapsZone(t)
 	events(p)
@@ -245,15 +249,15 @@ func TestCellsAndFlags(t *testing.T) {
 		return out
 	}
 	z.stepAt(z.now + 50)
-	want := []uint32{packCell(10, 10, path.Shootable), packCell(11, 10, path.Shootable)}
+	want := []uint32{packCell(20, 20, path.Shootable), packCell(21, 20, path.Shootable)}
 	if got := cells(events(p)); len(got) != 2 || got[0] != want[0] || got[1] != want[1] {
-		t.Errorf("the player got %v, want %v", got, want)
+		t.Errorf("the player got %v, want only the sent cells %v", got, want)
 	}
-	// A player who enters gets the changed cells.
+	// A player who enters gets the sent cells alone.
 	q := add(z, "b")
 	z.stepAt(z.now + 50)
-	if got := cells(events(q)); len(got) != 2 {
-		t.Errorf("a new player got %v", got)
+	if got := cells(events(q)); len(got) != 2 || got[0] != want[0] || got[1] != want[1] {
+		t.Errorf("a new player got %v, want %v", got, want)
 	}
 	// The other map's view of the cells is the shared copy.
 	if g := z.shared.grid.Load(); !g.NoPass(10, 10) {

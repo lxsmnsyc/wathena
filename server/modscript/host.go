@@ -184,6 +184,7 @@ func (r *Runtime) eventsOn(c *script.Call) error {
 	r.handlers[name] = append(r.handlers[name], h)
 	r.byID[h.id] = h
 	r.labelChanged(h, true)
+	r.eventListened(h, true)
 	c.Return(script.Int(h.id))
 	return nil
 }

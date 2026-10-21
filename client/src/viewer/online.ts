@@ -117,6 +117,17 @@ import {
 /** The cell flags that MapCells changes. */
 const MOVE_FLAGS = WALKABLE | SHOOTABLE;
 
+/**
+ * Effects that scale an entity instead of drawing particles: rAthena sends
+ * EF_BABYBODY2 (421) and EF_GIANTBODY2 (423) for monsters spawned small or
+ * big (clif.cpp). The client has no reference size for them, so the
+ * factors are a choice: a quarter smaller and a quarter bigger.
+ */
+const BODY_SCALES: ReadonlyMap<number, number> = new Map([
+  [421, 0.75],
+  [423, 1.25],
+]);
+
 // Shows the entities a server sends: players appear, walk the paths the
 // server gives, and vanish. Items lie on the ground until someone picks
 // them up. Effects play on entities or cells. Warp portals are NPCs with
@@ -379,6 +390,8 @@ interface Pending {
   look: LookMessage | undefined;
   /** The newest status options. */
   options: Options | undefined;
+  /** The size an effect gave the entity, such as a small monster's. */
+  scale?: number;
 }
 
 /** A player's look and the option bits it is drawn with. */
@@ -901,6 +914,7 @@ export default class Online {
               );
               unit.stand(pending.x, pending.y, pending.dir);
               unit.appearance = appearance(pending.options, a.id === this.self);
+              unit.scale = pending.scale ?? 1;
               if (pending.walk !== undefined) {
                 unit.follow(...pending.walk);
               }
@@ -1929,6 +1943,20 @@ export default class Online {
    */
   private playEffect(e: EffectPlay, map: WMap): void {
     if (e.at.case === 'entity') {
+      // The body size effects scale the entity until it vanishes.
+      const scale = BODY_SCALES.get(e.effectId);
+      if (scale !== undefined) {
+        const pending = this.pending.get(e.at.value);
+        if (pending === undefined) {
+          const unit = this.units.get(e.at.value);
+          if (unit !== undefined) {
+            unit.scale = scale;
+          }
+        } else {
+          pending.scale = scale;
+        }
+        return;
+      }
       const key = `${e.at.value}:${e.effectId}`;
       const parts = this.play(e.effectId, e.at, map);
       // play fills the list as the effect's files load, so it is kept as is.

@@ -66,6 +66,11 @@ type Spawn struct {
 
 type monster struct {
 	spawn *Spawn
+	// serial is the monster's serial in the zone, for its game ID
+	// (remotemonsters.go). reserved is set until the monster of a
+	// serial that another zone reserved joins the zone's counts.
+	serial   int64
+	reserved bool
 	// touchNPC is the NPC whose monster_touch ran for the monster, until
 	// it steps out of the touch areas, as md->areanpc_id.
 	touchNPC *entity
@@ -202,8 +207,9 @@ func (z *Zone) spawnAt(s *Spawn, x, y int) *entity {
 	if speed <= 0 {
 		speed = WalkSpeed
 	}
+	serial, reserved := z.newMonsterSerial()
 	e := &entity{
-		monster: &monster{spawn: s, nextWalk: -1, label: s.label, specialAI: s.ai},
+		monster: &monster{spawn: s, nextWalk: -1, label: s.label, specialAI: s.ai, serial: serial, reserved: reserved},
 		x:       x, y: y,
 		dir:   z.rand.IntN(8),
 		speed: speed,

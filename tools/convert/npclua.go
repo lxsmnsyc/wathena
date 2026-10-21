@@ -255,6 +255,8 @@ func varName(name string) (prefix, bare string, str bool) {
 // scanArrays marks the variables a script uses as arrays: with an index,
 // or in an array command.
 func (n *npcConv) scanArrays(stmts []Stmt) {
+	// monster and areamonster fill $@mobid, an array (R.monster).
+	n.arrays["$@mobid"] = true
 	var expr func(e Expr)
 	mark := func(e Expr) {
 		if v, ok := asVar(e); ok {

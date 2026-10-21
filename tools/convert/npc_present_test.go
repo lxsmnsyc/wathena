@@ -55,12 +55,28 @@ func (h *npcHost) SetNPCLook(id int64, l modscript.NPCLook) error {
 	}
 	return h.present("%s", out)
 }
-func (h *npcHost) MoveNPC(id int64, x, y int) error { return h.present("move %d %d,%d", id, x, y) }
-func (h *npcHost) WalkNPC(id int64, x, y int) (bool, error) {
+func (h *npcHost) MoveNPC(id int64, x, y, dir int) error {
+	if dir >= 0 {
+		return h.present("move %d %d,%d dir %d", id, x, y, dir)
+	}
+	return h.present("move %d %d,%d", id, x, y)
+}
+func (h *npcHost) WalkNPC(id int64, x, y int, label *modscript.MonsterLabel) (bool, error) {
+	if label != nil {
+		return true, h.present("walk %d %d,%d label %s", id, x, y, label.Key)
+	}
 	return true, h.present("walk %d %d,%d", id, x, y)
 }
+func (h *npcHost) SendNPCSprite(id, sprite int64, to modscript.SendTarget) error {
+	return h.present("sprite %d %d to %s", id, sprite, to.To)
+}
 func (h *npcHost) SetNPCSpeed(id int64, ms int) error { return h.present("speed %d %d", id, ms) }
-func (h *npcHost) StopNPC(id int64) error             { return h.present("stop %d", id) }
+func (h *npcHost) StopNPC(id int64, send bool) error {
+	if !send {
+		return h.present("stop %d no cell", id)
+	}
+	return h.present("stop %d", id)
+}
 func (h *npcHost) ShowNPCProgress(id, ms int64, color uint32) error {
 	return h.present("bar %d %d %06x", id, ms, color)
 }
@@ -73,7 +89,10 @@ func (h *npcHost) ShowSkillEffect(e modscript.Entity, skill, level int64) error 
 func (h *npcHost) PlaySound(e modscript.Entity, mapName, name, to string, repeat bool) error {
 	return h.present("sound %s %s %s %s %t", e.Kind, mapName, name, to, repeat)
 }
-func (h *npcHost) PlayMusic(player int64, mapName, name string) error {
+func (h *npcHost) PlayMusic(player int64, mapName, name string, area *modscript.Rect) error {
+	if area != nil {
+		return h.present("music %d %s %s %v", player, mapName, name, *area)
+	}
 	return h.present("music %d %s %s", player, mapName, name)
 }
 func (h *npcHost) SendColoredMessage(_ int64, text string, color uint32) error {
@@ -113,7 +132,8 @@ func TestPresentConvert(t *testing.T) {
 		{`{ emotion ET_OK, playerattached(); emotion ET_HNG, getnpcid(0, "Guard#" + strnpcinfo(2)); end; }`, []string{
 			"player:show_emotion(emotions.ok)", `R.npc_view("Guard#" .. npc.hidden_name, "show_emotion", emotions.hng)`,
 		}},
-		{`{ unittalk .@aid,"Hi"; end; }`, []string{"!unittalk: a game ID other than"}},
+		{`{ unittalk .@aid,"Hi"; unittalk $@mobid[0],"Grr"; end; }`, []string{"R.unittalk(", `"Hi")`, `"Grr")`}},
+		{`{ unittalk .@aid,"Hi",bc_self; end; }`, []string{"!unittalk: a flag with a game ID other than"}},
 		{`{ emotion ET_SMILE, getnpcid(0, "Other#t"); emotion ET_OK, getcharid(3); emotion ET_HNG, getnpcid(0); end; }`, []string{
 			`R.npc_view("Other#t", "show_emotion", emotions.smile)`, "player:show_emotion(emotions.ok)", "npc:show_emotion(emotions.hng)",
 		}},
@@ -132,8 +152,9 @@ func TestPresentConvert(t *testing.T) {
 			`R.npc_display("Other#t", "Renamed", `, `R.npc_display("Other#t", nil, 844)`, `R.npc_display("Other#t", "Same", nil)`,
 		}},
 		{`{ setnpcdisplay "Other#t","x",1,2; end; }`, []string{"!setnpcdisplay: a size"}},
-		{`{ classchange 1002; classchange 1002,"Other#t"; end; }`, []string{"npc:set_sprite(1002)", `R.npc_view("Other#t", "set_sprite", 1002)`}},
-		{`{ classchange 1002,"",bc_self; end; }`, []string{"!classchange: for one player"}},
+		{`{ classchange 1002; classchange 1002,"Other#t"; end; }`, []string{"npc:set_sprite(1002, { keep = false })", `R.npc_view("Other#t", "set_sprite", 1002, { keep = false })`}},
+		{`{ classchange 1002,"",bc_self; classchange 7,"",bc_area; end; }`, []string{
+			"if player ~= nil then npc:set_sprite(1002, { keep = false, to = player }) end", "npc:set_sprite(7, { keep = false })"}},
 		{`{ .@npc_id = getnpcid(0); setunitdata .@npc_id, UNPC_HAIRSTYLE, 13; setunitdata .@npc_id, UNPC_SEX, SEX_MALE; setunitdata getnpcid(0, "Other#t"), UNPC_CLASS, 4056; end; }`, []string{
 			"-- .@npc_id holds the game ID of an NPC.", "npc:set_look({ hair_style = 13 })", `npc:set_look({ sex = "male" })`,
 			`R.npc_view("Other#t", "set_look", { sprite = 4056 })`,
@@ -143,16 +164,21 @@ func TestPresentConvert(t *testing.T) {
 		{`{ if (unitwalk(getnpcid(0), 10, 12)) end; unitwalk getnpcid(0,"Other#t"),1,2; end; }`, []string{
 			"if (R.unitwalk(npc, 10, 12) ~= 0) then", "\n" + `      R.unitwalk("Other#t", 1, 2)` + "\n",
 		}},
-		{`{ unitwalk getnpcid(0),1,2,"X::OnDone"; end; }`, []string{"!unitwalk: an event label at the walk's end"}},
+		{`{ unitwalk getnpcid(0),1,2,"X::OnDone"; end; }`, []string{`R.unitwalk(npc, 1, 2, "X::OnDone")`}},
 		{`{ unitwarp getnpcid(0),"this",3,4; unitwarp 0,"prontera",5,6; unitstopwalk getnpcid(0); end; }`, []string{
-			"npc:move_to(3, 4)", `player:warp("prontera", 5, 6)`, "R.npc_stop(npc)",
+			"npc:move_to(3, 4)", `player:warp("prontera", 5, 6)`, "R.npc_stop(npc, false)",
 		}},
 		{`{ unitwarp getnpcid(0),"geffen",3,4; end; }`, []string{"!unitwarp: an NPC to another map"}},
 		{`{ npcspeed 300; npcwalkto 5,6,"Other#t"; npcstop; movenpc "Other#t",7,8; end; }`, []string{
-			"npc:set_speed(300)", `R.npc_view("Other#t", "walk_to", 5, 6)`, "R.npc_stop(npc)", `R.npc_view("Other#t", "move_to", 7, 8)`,
+			"npc:set_speed(300)", `R.npc_view("Other#t", "walk_to", 5, 6)`, "R.npc_stop(npc, true)", `R.npc_view("Other#t", "move_to", 7, 8)`,
 		}},
-		{`{ movenpc "Other#t",7,8,2; end; }`, []string{"!movenpc: a direction"}},
-		{`{ npcstop "",USW_NONE; end; }`, []string{"!npcstop: a flag other than the default"}},
+		{`{ movenpc "Other#t",7,8,2; end; }`, []string{`R.npc_view("Other#t", "move_to", 7, 8, (2) % 8)`}},
+		{`{ npcstop "",USW_NONE; unitstopwalk getnpcid(0),USW_FIXPOS|USW_MOVE_FULL_CELL; end; }`, []string{"R.npc_stop(npc, false)", "R.npc_stop(npc, true)"}},
+		{`{ npcstop "",USW_MOVE_ONCE; end; }`, []string{"!npcstop: a flag with USW_MOVE_ONCE"}},
+		{`{ unitstopwalk getnpcid(0),USW_FORCE_STOP; end; }`, []string{"R.npc_stop(npc, false)"}},
+		{`{ unitkill $@mobid[0]; setunitdata $@mobid[1],UMOB_HP,5; unitskillusepos $@mobid[0],"MG_FIREWALL",1,5,6; end; }`, []string{
+			"do local m = R.unit_monster(", "m:kill()", `R.umob_set(`, `, "hp", 5)`, "m:use_skill_at("}},
+		{`{ setunitdata $@mobid[1],UMOB_AI,1; end; }`, []string{"!setunitdata: a monster's UMOB_ type other than"}},
 		{`{ progressbar_npc "FFFF00",2; progressbar_npc "0xFF0000",3,"Other#t"; end; }`, []string{
 			"npc:show_progress(2, { color = 0x000000 })", `R.npc_view("Other#t", "show_progress", 3, { color = 0xFF0000 })`,
 		}},
@@ -162,9 +188,11 @@ func TestPresentConvert(t *testing.T) {
 			`player:play_sound("jupe_warning", { ["repeat"] = true })`, `npc:play_sound("_curse")`, `maps.play_sound("prontera", "earth_quake")`,
 		}},
 		{`{ soundeffect "a.wav",2; end; }`, []string{"!soundeffect: type 2, which stops a sound"}},
-		{`{ soundeffectall "a.wav",0,"prontera",1,1,5,5; end; }`, []string{"!soundeffectall: a part of a map"}},
+		{`{ soundeffectall "a.wav",0,"prontera",1,1,5,5; soundeffectall "b.wav",1; end; }`, []string{
+			"plays nothing in rAthena", `if player ~= nil then player:play_sound("b", { to = "area", ["repeat"] = true }) else npc:play_sound("b", { ["repeat"] = true }) end`}},
 		{`{ playbgm "30.mp3"; playbgmall "59","prontera"; end; }`, []string{`player:play_music("30")`, `maps.play_music("prontera", "59")`}},
-		{`{ playbgmall "59"; end; }`, []string{"!playbgmall: every map of the server"}},
+		{`{ playbgmall "59"; playbgmall "60","prontera",1,2,3,4; end; }`, []string{`world.play_music("59")`,
+			`R.on_map("prontera", maps.play_music, "60", { rectangle = { { 1, 2 }, { 3, 4 } } })`}},
 		{`{ dispbottom "Hi",0xFF0000; dispbottom "Me",0x00FF00,getcharid(0); end; }`, []string{
 			`player:send_message("Hi", { color = 16711680 })`, `player:send_message("Me", { color = 65280 })`,
 		}},

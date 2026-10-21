@@ -321,8 +321,11 @@ func (h scriptHost) EquippedRefine(equipped int64, amount int) (int, error) {
 	return s.Refine, nil
 }
 
-// EquippedDestroy is delequip: the copy comes off and is deleted.
-func (h scriptHost) EquippedDestroy(equipped int64) error {
+// EquippedDestroy is delequip: the copy comes off and is deleted. With
+// refineFailure it is failedrefitem (script.cpp 9802): the refine goes
+// to 0, the copy comes off and is deleted, and the wearer shows
+// clif_misceffect's REFINE_FAILURE.
+func (h scriptHost) EquippedDestroy(equipped int64, refineFailure bool) error {
 	z := h.z
 	p, slot, card, err := z.equippedSlot(equipped)
 	if err != nil {
@@ -331,7 +334,13 @@ func (h scriptHost) EquippedDestroy(equipped int64) error {
 	if card >= 0 {
 		return errors.New("a card cannot be destroyed alone")
 	}
+	if refineFailure {
+		p.inventory.Slots[slot].Refine = 0
+	}
 	z.deleteItem(p, slot, 1, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_USED)
+	if refineFailure {
+		z.effects = append(z.effects, effect{p.entity, effectRefineFail})
+	}
 	return nil
 }
 

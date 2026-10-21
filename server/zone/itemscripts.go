@@ -19,6 +19,8 @@ import (
 type scriptWarp struct {
 	to   *Zone
 	x, y int
+	// dead is set for a warp that moves a dead player too.
+	dead bool
 }
 
 // systemMessage is a line of server text in the player's chat log.
@@ -210,7 +212,7 @@ func (z *Zone) StartCell() (int, int) { return z.startCell() }
 func (z *Zone) finishWarp(p *Player) {
 	w := p.warpTo
 	p.warpTo = nil
-	if w == nil || p.gone() || p.entity.dead || z.jailed(p) {
+	if w == nil || p.gone() || p.entity.dead && !w.dead || z.jailed(p) {
 		// A jailed player stays in jail.
 		return
 	}

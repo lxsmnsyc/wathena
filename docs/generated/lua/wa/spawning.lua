@@ -5,7 +5,7 @@
 ---@class wa.spawning
 local spawning = {}
 
----Places monsters on a map and returns their handles, as rAthena's monster and areamonster. Without x and y, each lands on a random walkable cell away from the map's edges, as map_search_freecell. On another map, the map's zone places them after the current step, and the list is empty: maps.count_monsters counts them at once (review decision 58).
+---Places monsters on a map and returns their handles, as rAthena's monster and areamonster. Without x and y, each lands on a random walkable cell away from the map's edges, as map_search_freecell. On another map, the map's zone places them after the current step: the handles come back at once, as monster fills $@mobid, and maps.count_monsters counts them at once (review decisions 58 and 59). A monster that finds no cell leaves its handle without a monster.
 ---
 ---Needs the permission `npc.create`.
 ---@param spec wa.SpawnSpec

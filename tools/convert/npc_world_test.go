@@ -111,17 +111,16 @@ func TestNPCWorldConvert(t *testing.T) {
 		byName[n.Source] = n
 	}
 	for name, want := range map[string]string{
-		"Doer#w":   "doevent: an NPC on another map than the player's, or without a map",
-		"Logout#w": "event onpclogoutevent: rAthena runs it for the players of every map",
-		"GM#w":     "atcommand: refused by review decision 58",
-		"Flag#w":   "setbattleflag: refused by review decision 58",
+		"Doer#w": "doevent: an NPC on another map than the player's, or without a map",
+		"GM#w":   "atcommand: refused by review decision 58",
+		"Flag#w": "setbattleflag: refused by review decision 58",
 	} {
 		if got := strings.Join(byName[name].Unsupported, "; "); !strings.Contains(got, want) {
 			t.Errorf("%s: unsupported %q, want %q", name, got, want)
 		}
 	}
 	for name, n := range byName {
-		if strings.HasPrefix(n.Source, "Doer") || n.Source == "Logout#w" || n.Source == "GM#w" || n.Source == "Flag#w" {
+		if strings.HasPrefix(n.Source, "Doer") || n.Source == "GM#w" || n.Source == "Flag#w" {
 			continue
 		}
 		if !n.Placed || n.Status == None {
@@ -147,6 +146,7 @@ func TestNPCWorldConvert(t *testing.T) {
 		},
 		"Ghost#w":     {`SERVER_TEMP_GHOST:set(1)`, `{ name = "OnInit" }`, "  event_oninit()\nend"},
 		"Touch Mob#w": {`events.on("monster_touch", function() event_ontouchnpc() end)`},
+		"Logout#w":    {`events.on("logout", function(player) event_onpclogoutevent(player, nil) end)`},
 		"Caller#w": {
 			`R.player_field(maps.find_player("Bob"), "account_id", 0)`, `R.player_field(maps.find_player_by_id(a), "name", "")`,
 			`R.party_members(player.party, "character_id")`, `R.setd("server_temporary", "$@dyn_" .. tostring(a), player, 2)`,

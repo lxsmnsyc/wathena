@@ -169,6 +169,11 @@ type Death struct {
 	X, Y       int
 	// Skill is the skill of the last hit, or 0 for a normal attack.
 	Skill int64
+	// Map is the map of a death of another zone, or "" for this zone's.
+	// NPCOnly runs it for the NPC handlers alone: a player's death of
+	// another zone reaches the NPCs of every map (review decision 59).
+	Map     string
+	NPCOnly bool
 }
 
 // FireDeath runs the death handlers whose options match.
@@ -178,9 +183,13 @@ func (r *Runtime) FireDeath(d Death) {
 		return
 	}
 	key := d.VictimKind + ":" + fmt.Sprint(d.Victim)
+	mapName := d.Map
+	if mapName == "" {
+		mapName = r.host.Map()
+	}
 	fields := []script.Field{
 		script.KV("victim", script.Int(d.Victim)), script.KV("victim_kind", script.String(d.VictimKind)),
-		script.KV("map", script.String(r.host.Map())), script.KV("x", script.Int(int64(d.X))), script.KV("y", script.Int(int64(d.Y))),
+		script.KV("map", script.String(mapName)), script.KV("x", script.Int(int64(d.X))), script.KV("y", script.Int(int64(d.Y))),
 	}
 	if d.Killer != 0 {
 		fields = append(fields, script.KV("killer", script.Int(d.Killer)), script.KV("killer_kind", script.String(d.KillerKind)))
@@ -190,13 +199,18 @@ func (r *Runtime) FireDeath(d Death) {
 	}
 	obj := script.NewTable(fields...)
 	for _, h := range slices.Clone(list) {
-		if h.removed || h.ctx.ended || r.off(h.ctx) {
+		if h.removed || h.ctx.ended || r.off(h.ctx) || d.NPCOnly && h.ctx.Kind != KindNPC {
+			continue
+		}
+		if d.VictimKind == "player" && skipsDisabled(h, "death") {
+			// A player's death is OnPCDieEvent, which a disabled NPC does
+			// not hear (npc_event_sub, npc.cpp 1767).
 			continue
 		}
 		if f := h.death; f != nil {
 			if f.victims != nil && !f.victims[key] || f.kind != "" && f.kind != d.VictimKind ||
 				f.monster != 0 && (d.VictimKind != "monster" || f.monster != d.Monster) ||
-				f.mapName != "" && f.mapName != r.host.Map() {
+				f.mapName != "" && f.mapName != mapName {
 				continue
 			}
 		}

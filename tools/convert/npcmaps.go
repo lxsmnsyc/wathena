@@ -247,9 +247,7 @@ func (b *body) monster(args []Expr) error {
 	if err != nil {
 		return err
 	}
-	if vals[0].str != nil && *vals[0].str == "this" {
-		return unsupported(what, "on the attached player's map (\"this\")")
-	}
+	b.thisMap(&vals[0])
 	code, err := b.spawnMonster(what, args[4])
 	if err != nil {
 		return err
@@ -274,9 +272,7 @@ func (b *body) areamonster(args []Expr) error {
 	if err != nil {
 		return err
 	}
-	if vals[0].str != nil && *vals[0].str == "this" {
-		return unsupported(what, "on the attached player's map (\"this\")")
-	}
+	b.thisMap(&vals[0])
 	code, err := b.spawnMonster(what, args[6])
 	if err != nil {
 		return err
@@ -288,6 +284,15 @@ func (b *body) areamonster(args []Expr) error {
 	b.line("R.areamonster(%s, %s, %s, %s, %s, %s, %s, %s, %s)", vals[0].asText(), vals[1].asInt(), vals[2].asInt(), vals[3].asInt(),
 		vals[4].asInt(), vals[5].asText(), code, vals[7].asInt(), tail)
 	return nil
+}
+
+// thisMap turns a map argument of "this" into the attached player's map,
+// as monster, areamonster and mobcount read it (script.cpp 11297, 11420,
+// 14390): without a player it names no map that runs (R.this_map).
+func (b *body) thisMap(v *val) {
+	if v.str != nil && *v.str == "this" {
+		*v = val{code: "R.this_map(player)", t: tStr}
+	}
 }
 
 // killmonster writes killmonster "<map>","<event label>"{,<type>}
@@ -393,9 +398,7 @@ func (b *body) mobcount(args []Expr) (val, error) {
 	if err != nil {
 		return val{}, err
 	}
-	if m.str != nil && *m.str == "this" {
-		return val{}, unsupported(what, "on the attached player's map (\"this\")")
-	}
+	b.thisMap(&m)
 	b.n.file.need("maps")
 	if s, ok := args[1].(*Str); ok && s.Value == "all" {
 		return val{code: fmt.Sprintf("(maps.count_monsters(%s) or -1)", m.asText()), t: tInt}, nil
@@ -555,6 +558,12 @@ func (b *body) mapsCommand(name string, args []Expr) (ok bool, err error) {
 		if err != nil {
 			return true, err
 		}
+		if vals[1].str != nil && *vals[1].str == "Random" {
+			// mapindex_name2id finds no map "Random": mapwarp does
+			// nothing (script.cpp 14337).
+			b.line("-- mapwarp to \"Random\" moves nobody in rAthena")
+			break
+		}
 		opts := "nil"
 		if len(args) == 6 {
 			if vals[4].static == nil {
@@ -579,10 +588,14 @@ func (b *body) mapsCommand(name string, args []Expr) (ok bool, err error) {
 		if err != nil {
 			return true, err
 		}
-		if vals[5].str != nil && *vals[5].str == "Random" {
-			return true, unsupported(name, "to a random cell of each player's map (\"Random\")")
-		}
 		area := fmt.Sprintf("rectangle = { { %s, %s }, { %s, %s } }", vals[1].asInt(), vals[2].asInt(), vals[3].asInt(), vals[4].asInt())
+		if vals[5].str != nil && *vals[5].str == "Random" {
+			// Each player to a random cell of its own map, as
+			// buildin_areawarp_sub's pc_randomwarp (script.cpp 5670).
+			f.need("maps")
+			b.line("R.on_map(%s, maps.warp_players, \"random\", 0, 0, { %s })", vals[0].asText(), area)
+			break
+		}
 		if len(args) == 10 {
 			b.line("R.areawarp(%s, %s, %s, %s, %s, %s, { %s })", vals[0].asText(), vals[5].asText(), vals[6].asInt(), vals[7].asInt(),
 				vals[8].asInt(), vals[9].asInt(), area)
@@ -590,23 +603,27 @@ func (b *body) mapsCommand(name string, args []Expr) (ok bool, err error) {
 		}
 		b.line("R.warp_players(%s, %s, %s, %s, { %s })", vals[0].asText(), vals[5].asText(), vals[6].asInt(), vals[7].asInt(), area)
 	case "warpparty":
-		// warpparty "<to>",<x>,<y>,<party ID> (script.cpp 5781).
-		if len(args) != 4 {
-			return true, unsupported(name, "from one map or with a range, which party:warp does not take")
+		// warpparty "<to>",<x>,<y>,<party ID>{,"<from>"{,<range x>,
+		// <range y>}} (script.cpp 5781), with its targets Random,
+		// SavePoint, SavePointAll, Leader and RandomAll.
+		if len(args) < 4 || len(args) > 7 {
+			return true, unsupported(name, "arguments")
 		}
 		vals, err := b.args(args)
 		if err != nil {
 			return true, err
 		}
-		if s := vals[0].str; s != nil {
-			switch *s {
-			case "Random", "SavePointAll", "SavePoint", "Leader", "RandomAll":
-				return true, unsupported(name, "to %q, which party:warp does not take", *s)
-			}
-		} else {
-			return true, unsupported(name, "to a computed map, which may be Random, SavePoint or Leader")
+		from, rx, ry := "nil", "0", "0"
+		if len(args) >= 5 {
+			from = vals[4].asText()
 		}
-		b.line("R.warpparty(%s, %s, %s, %s)", vals[3].asInt(), vals[0].asText(), vals[1].asInt(), vals[2].asInt())
+		if len(args) >= 6 {
+			rx = vals[5].asInt()
+		}
+		if len(args) >= 7 {
+			ry = vals[6].asInt()
+		}
+		b.line("R.warpparty(%s, %s, %s, %s, player, %s, %s, %s)", vals[3].asInt(), vals[0].asText(), vals[1].asInt(), vals[2].asInt(), from, rx, ry)
 	case "setcell":
 		// setcell "<map>",<x1>,<y1>,<x2>,<y2>,<type>,<flag> (script.cpp
 		// 20631).
@@ -675,6 +692,20 @@ func (b *body) mapsCommand(name string, args []Expr) (ok bool, err error) {
 		b.line("R.on_map(%s, maps.set_flag, %q, %t)", m.asText(), flag, name == "setmapflag")
 	case "getfreecell":
 		return true, b.getfreecell(args)
+	case "areapercentheal":
+		// areapercentheal "<map>",<x1>,<y1>,<x2>,<y2>,<hp>,<sp>
+		// (script.cpp 5746).
+		if len(args) != 7 {
+			return true, unsupported(name, "arguments")
+		}
+		vals, err := b.args(args)
+		if err != nil {
+			return true, err
+		}
+		b.line("R.areapercentheal(%s, %s, %s, %s, %s, %s, %s)", vals[0].asText(), vals[1].asInt(), vals[2].asInt(), vals[3].asInt(),
+			vals[4].asInt(), vals[5].asInt(), vals[6].asInt())
+	case "areamobuseskill":
+		return true, unsupported(name, "a cast time, an emotion and a target type of its own, which monster:use_skill does not take")
 	case "areaannounce":
 		// areaannounce "<map>",<x1>,<y1>,<x2>,<y2>,"<text>",<flag>{,...}
 		// (script.cpp 12050). The flag's colors and the font, as

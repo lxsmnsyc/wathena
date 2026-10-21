@@ -22,6 +22,8 @@ export interface Body {
   update(deltaMs: number, cameraSteps: number, towardCamera: Vector3): void;
   /** Multiplies the body's colors and opacity, from 0 to 1. */
   setTint?(r: number, g: number, b: number, a: number): void;
+  /** Draws the body scale times its own size. */
+  setScale?(scale: number): void;
 }
 
 export default class Player {
@@ -38,6 +40,8 @@ export default class Player {
   private body: Body;
   /** How the player's status options make it look. */
   private look: Appearance = PLAIN;
+  /** How much bigger the player draws than its sprites, such as a small or big monster. */
+  private size = 1;
 
   constructor(
     character: Body,
@@ -97,7 +101,18 @@ export default class Player {
     this.applyLook();
   }
 
+  /** How much bigger the player draws than its sprites. 1 draws them as they are. */
+  get scale(): number {
+    return this.size;
+  }
+
+  set scale(scale: number) {
+    this.size = scale;
+    this.body.setScale?.(scale);
+  }
+
   private applyLook(): void {
+    this.body.setScale?.(this.size);
     const [r, g, b] = this.look.color;
     this.body.setTint?.(r, g, b, this.look.opacity);
     this.body.group.visible = this.look.visible;

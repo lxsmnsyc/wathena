@@ -3,7 +3,6 @@ package zone
 import (
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/item"
-	"github.com/lxsmnsyc/wathena/server/modscript"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/rules"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -364,10 +363,10 @@ func (z *Zone) gainExpFlags(p *Player, base, job int64, tax bool) {
 		z.sendSkillList(p)
 	}
 	if g.BaseLevels > 0 {
-		z.scriptEventFor("base_level_up", modscript.Player(int64(p.charID)))
+		z.playerEvent("base_level_up", p)
 	}
 	if g.JobLevels > 0 {
-		z.scriptEventFor("job_level_up", modscript.Player(int64(p.charID)))
+		z.playerEvent("job_level_up", p)
 	}
 }
 

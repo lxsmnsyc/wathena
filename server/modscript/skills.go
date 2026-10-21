@@ -149,6 +149,10 @@ type EntityQuery struct {
 	Sort string
 	// Limit is the most entities to return, 1 to MaxFound.
 	Limit int
+	// Map is another map than the context's, or "" for its own (review
+	// decision 59). On another map, the area is AreaCell, AreaRectangle
+	// or AreaCells, and the query has no entity filters.
+	Map string
 }
 
 // Center is the cell that LineOfSight and the distance orders measure
@@ -678,8 +682,8 @@ func (r *Runtime) readQuery(what string, v script.Value) (EntityQuery, error) {
 			if !ok {
 				return q, bad("map must be a map name, such as prontera")
 			}
-			if m != r.host.Map() {
-				return q, bad("this context runs on %s, and finds entities on its own map only, not on %s", r.host.Map(), m)
+			if m = strings.TrimPrefix(m, "map/"); m != r.host.Map() {
+				q.Map = m
 			}
 		case "x", "y":
 			n, ok := f.Value.AsInt()
@@ -866,6 +870,11 @@ func (r *Runtime) readQuery(what string, v script.Value) (EntityQuery, error) {
 	}
 	if q.EnemiesOf != nil && q.AlliesOf != nil {
 		return q, bad("give enemies_of or allies_of, not both")
+	}
+	if q.Map != "" && (q.Area == AreaAround || q.Area == AreaLine || q.EnemiesOf != nil || q.AlliesOf != nil || q.LineOfSight || len(q.Exclude) > 0) {
+		// Another zone's entities are read from what the world shares,
+		// which has no handles to compare and no cells to see through.
+		return q, bad("on another map, the area is x and y with radius, a rectangle or cells, and the query has no enemies_of, allies_of, line_of_sight or exclude")
 	}
 	return q, nil
 }

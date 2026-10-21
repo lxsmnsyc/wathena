@@ -67,6 +67,9 @@ var Permissions = []Permission{
 	// npcs.control is review decision 58's: showing, hiding, cloaking and
 	// removing another mod's NPCs, and sending them events.
 	{Name: "npcs.control", Approval: true, Allows: "show, hide, cloak and remove other mods' NPCs, core's too, and send them events"},
+	// maps.control is review decision 59's: maps.remove_monsters and
+	// maps.set_cells change a map for every player on it.
+	{Name: "maps.control", Approval: true, Flagged: true, Allows: "kill the monsters of any map and change its cells"},
 }
 
 // LookupPermission returns a permission by name.

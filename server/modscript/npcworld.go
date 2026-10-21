@@ -349,6 +349,29 @@ func (r *Runtime) FireNPCEvent(n *NPC, label string, player int64) (conv *Conver
 	return nil, true, nil
 }
 
+// FireNPCEventAway runs an NPC's npc_event handlers of a label with a
+// player of another zone, as npc_event attaches a player of any map: the
+// event has the player's handle and no conversation, since dialogs show
+// on the player's own map. A disabled NPC runs no event with a player
+// (npc.cpp 1767). It reports whether a handler ran.
+func (r *Runtime) FireNPCEventAway(n *NPC, label string, player int64) bool {
+	c := n.Context()
+	if c == nil || n.Disabled {
+		return false
+	}
+	label = strings.ToLower(label)
+	list := r.npcEventHandlers(c, label)
+	for _, h := range list {
+		if h.removed || c.ended {
+			continue
+		}
+		if err := r.run(c, r.fns.npcEvent.Value(), script.String(label), script.Int(player), script.Nil, h.fn.Value()); err != nil {
+			r.failed(c, "event npc_event "+label, err)
+		}
+	}
+	return len(list) > 0
+}
+
 // NPCEventLabels are the labels of an NPC's npc_event handlers, in lower
 // case, sorted.
 func (r *Runtime) NPCEventLabels(n *NPC) []string {
@@ -393,8 +416,10 @@ func (r *Runtime) FireMonsterTouch(n *NPC, monster int64) {
 
 // playerEvents are the events of one player that rAthena runs for every
 // NPC with the label, but not for a disabled one (npc_script_event and
-// npc_event_sub, npc.cpp 5824 and 1767).
-var playerEvents = map[string]bool{"login": true, "logout": true, "map_enter": true, "base_level_up": true, "job_level_up": true}
+// npc_event_sub, npc.cpp 5824 and 1767). death is OnPCDieEvent when the
+// victim is a player.
+var playerEvents = map[string]bool{"login": true, "logout": true, "map_enter": true, "base_level_up": true, "job_level_up": true,
+	"death": true}
 
 // skipsDisabled reports whether a handler belongs to a disabled NPC that
 // must not hear an event.

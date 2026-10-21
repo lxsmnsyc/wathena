@@ -354,7 +354,7 @@ func TestRefineCalls(t *testing.T) {
 		t.Errorf("successrefitem at MAX_REFINE: %d", got)
 	}
 	handle, _, _ = h.Equipped(int64(a.charID), "right_hand")
-	if err := h.EquippedDestroy(handle); err != nil || a.inventory.Slots[slot].ID != 0 {
+	if err := h.EquippedDestroy(handle, false); err != nil || a.inventory.Slots[slot].ID != 0 {
 		t.Errorf("destroy: %v %+v", err, a.inventory.Slots[slot])
 	}
 }
@@ -370,7 +370,7 @@ func TestMovingTouchArea(t *testing.T) {
 	heard(w)
 	gate := npcNamed(z, "Gate")
 	h := scriptHost{z}
-	if err := h.MoveNPC(gate.npc.handle, 27, 20); err != nil {
+	if err := h.MoveNPC(gate.npc.handle, 27, 20, -1); err != nil {
 		t.Fatal(err)
 	}
 	z.stepAt(z.now + 50)
@@ -383,7 +383,7 @@ func TestMovingTouchArea(t *testing.T) {
 	}
 	walkTo(t, z, a, 20, 25)
 	heard(w)
-	if ok, err := h.WalkNPC(gate.npc.handle, 20, 24); err != nil || !ok {
+	if ok, err := h.WalkNPC(gate.npc.handle, 20, 24, nil); err != nil || !ok {
 		t.Fatalf("walk: %v %v", ok, err)
 	}
 	for end, now := z.now+5000, z.now+50; now <= end; now += 50 {

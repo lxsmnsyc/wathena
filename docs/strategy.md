@@ -15,7 +15,7 @@ Each phase has exit criteria that can be tested. Section 2.3 lists the decisions
 
 ## Where work stands (2026-10-18)
 
-Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred. On 2026-10-20, decision 0054 explained and fixed the extra Jellopy of the restore duplication test, closed L34, and made the Lua wall-clock limit a 30-second backstop. The same day, decision 0062 built group 1 of the NPC API of review decision 58: lookups, NPC visibility, events between NPCs across zones, NPCs without a map, and NPC and temporary server variables. Decision 0063 built group 2 on 2026-10-21: NPC presentation and quest icons. Decision 0064 built group 3 the same day: player calls, items and equipment, and the clock. Decision 0065 built group 4 the same day, the last: maps, areas and monsters.
+Work paused on 2026-10-05 and resumed on 2026-10-12 with the phase 5 review. Phase 6 started the same day, and all 8 steps are built: phase 6 is done. The phase 6 review followed on 2026-10-15, and its changes are built. Phase 7 started on 2026-10-16, and all 8 steps are built: phase 7 is done. Phase 8 started on 2026-10-18 with step 1, guild towns and the release build. Step 2, encrypted backups, step 3, retention jobs and the Compose config, step 4, the load tests, and step 5, the security review, were built the same day. Step 6 part A, classic mode's NPCs, touch areas, bosses and Kafras, was built on 2026-10-19, and part B, touch dialogs, Niflheim's Kafras, gzipped extracts, the kRO checks and the release notes list, the same day. The `skill` command of review decision 57, `player:give_skill`, followed the same day, with the checks that part B deferred. On 2026-10-20, decision 0054 explained and fixed the extra Jellopy of the restore duplication test, closed L34, and made the Lua wall-clock limit a 30-second backstop. The same day, decision 0062 built group 1 of the NPC API of review decision 58: lookups, NPC visibility, events between NPCs across zones, NPCs without a map, and NPC and temporary server variables. Decision 0063 built group 2 on 2026-10-21: NPC presentation and quest icons. Decision 0064 built group 3 the same day: player calls, items and equipment, and the clock. Decision 0065 built group 4 the same day, the last: maps, areas and monsters. Decision 0066 built review decision 59 the same day: players across zones, more calls for parity, `maps.control`, and fixes of group 4's differences from rAthena.
 
 Done:
 
@@ -227,6 +227,13 @@ Done:
   - The protocol gains `MapCells`, which the client applies to its map and its paths.
   - renewal places 6,620 of 7,067 script NPCs, up from 6,213, and 12,900 of 14,865 lines with duplicates, up from 12,168.
   - pre-renewal places 3,639 of 3,754 script NPCs, up from 3,342, and 7,907 of 8,205 lines, up from 7,327.
+- NPC API follow-ups (section 14.2a), on 2026-10-21: review decision 59 ([decision 0066](decisions/0066-npc-api-follow-ups.md), proposal 0002, next step 45):
+  - The world keeps a directory of online players. Player handles reach players of other maps: their actions go to the player's zone, and their reads come from the directory.
+  - The player events reach the NPCs of every map, as `OnPCLoginEvent` and the other labels. A logout waits for them.
+  - Monsters have game IDs, and other zones reach them. New calls cover `classchange`, `unitstopwalk`'s `USW_NONE`, `soundeffectall` around a player, `movenpc`'s direction, `unitwalk`'s label, `playBGMall` everywhere and on an area, `failedrefitem`'s effect, `warpparty`'s targets and range, `areawarp` to `"Random"`, and entity queries on another map.
+  - `maps.control` covers `maps.remove_monsters` and `maps.set_cells`.
+  - Fixed: labels read the counts of their monster's death, labels of another map's NPC run with the killer, map warps move dead players, `setcell` sends nothing, and the client draws the body size effects.
+  - The converter maps the player labels, `attachrid`, and 42 commands on another character. renewal places 6,623 of 7,067 script NPCs, up from 6,620, and 12,905 of 14,865 lines, up from 12,900. pre-renewal stays at 3,639 of 3,754 and 7,907 of 8,205.
 
 Open review items:
 
@@ -243,7 +250,8 @@ Open review items:
 - Decision 0062's details to review: player events of NPCs on every map, which need player handles across zones, the return values of `fire_event` and `fire_npc_event` for zones that have not started, and broadcasts that start zones.
 - Decision 0063's details to review: `classchange` kept for later viewers, waits in events without a player, and the protocol version for the next release.
 - Decision 0064's details to review: the API names it changed from the proposal, the refine costs the extract lacks, the group 2 differences that need new API (`classchange`, `unitstopwalk`'s `USW_NONE`, `soundeffectall` around a player), staff levels by role, and NPC timer labels while a map sleeps.
-- Decision 0065's details to review: the API that 0002b does not name (`maps.count_monsters`, `maps.get_flag`, the label and rectangle options), the API wanted and not built (`warpparty`'s other forms, monster handles by game ID, entity queries on another map), `maps.can_enter`, which needs sieges' flags, and labels that run after the step.
+- Decision 0065's details to review: `maps.can_enter`, which needs sieges' flags. Review decision 59 settled the rest, and decision 0066 built it.
+- Decision 0066's details to review: the forms of the calls that review decision 59 named, `maps.set_cells`' `send` option, the API still wanted (`OnNPCKillEvent`, `killedrid`, `attachrid` without force, reads of another map's player), the copy's lag of one step, the 2-second logout wait, and the nil results of remote calls.
 
 Known issues:
 

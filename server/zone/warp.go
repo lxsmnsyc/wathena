@@ -157,6 +157,10 @@ type handoff struct {
 	social *social.Registry
 	// gmHidden is @hide, which lasts across map changes.
 	gmHidden bool
+	// dead is set for a dead player that a script warped, and deadFor is
+	// how long it has lain dead, in milliseconds.
+	dead    bool
+	deadFor int64
 }
 
 // warp sends a player through a warp, as npc_touch_areanpc and
@@ -216,6 +220,9 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 		statusDelays: map[string]int64{},
 	}
 	h.char.Map, h.char.X, h.char.Y = to.Map, x, y
+	if e := p.entity; e.dead {
+		h.dead, h.deadFor = true, z.now-e.diedAt
+	}
 	for id, until := range p.itemDelays {
 		if until > z.now {
 			h.itemDelays[id] = until - z.now

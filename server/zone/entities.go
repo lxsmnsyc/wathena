@@ -21,6 +21,11 @@ type entitySet struct {
 	// shared counts the monsters and the monsters of each label, for
 	// other zones (maps.go), or is nil.
 	shared *mapShared
+	// mobs are the monsters in the set by serial, for game IDs
+	// (remotemonsters.go). reservedPlaced counts the monsters of reserved
+	// serials it added, for the spawn that placed them (maps.go).
+	mobs           map[int64]*entity
+	reservedPlaced int
 	// free are slots to reuse. freed are the slots of entities removed
 	// since the last compact.
 	free  []int32
@@ -53,11 +58,32 @@ func (s *entitySet) add(e *entity) {
 	e.uid = s.uids
 	s.list = append(s.list, e)
 	s.count++
-	if m := e.monster; m != nil && s.shared != nil {
-		s.shared.monsters.Add(1)
-		if m.label != nil {
-			s.shared.addLabel(m.label.key, 1)
+	if m := e.monster; m != nil {
+		if s.mobs == nil {
+			s.mobs = map[int64]*entity{}
 		}
+		s.mobs[m.serial] = e
+	}
+	if m := e.monster; m != nil && s.shared != nil {
+		sh := s.shared
+		sh.mu.Lock()
+		sh.monsters.Add(1)
+		key := ""
+		if m.label != nil {
+			key = m.label.key
+			sh.addLabelLocked(key, 1)
+		}
+		if m.reserved {
+			// A monster of a spawn that another zone asked for leaves the
+			// spawns that wait as it joins the counts (maps.go).
+			m.reserved = false
+			s.reservedPlaced++
+			sh.addPendingLocked("", -1)
+			if key != "" {
+				sh.addPendingLocked(key, -1)
+			}
+		}
+		sh.mu.Unlock()
 	}
 	if e.item != nil {
 		s.items++
@@ -76,11 +102,17 @@ func (s *entitySet) remove(e *entity) {
 	s.list[e.idx] = nil
 	e.idx = -1
 	s.count--
+	if m := e.monster; m != nil && s.mobs[m.serial] == e {
+		delete(s.mobs, m.serial)
+	}
 	if m := e.monster; m != nil && s.shared != nil {
-		s.shared.monsters.Add(-1)
+		sh := s.shared
+		sh.mu.Lock()
+		sh.monsters.Add(-1)
 		if m.label != nil {
-			s.shared.addLabel(m.label.key, -1)
+			sh.addLabelLocked(m.label.key, -1)
 		}
+		sh.mu.Unlock()
 	}
 	if e.item != nil {
 		s.items--

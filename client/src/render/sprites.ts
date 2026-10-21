@@ -206,6 +206,8 @@ export class SpriteView {
   private readonly layers: { mesh: Mesh; u: LayerUniforms }[] = [];
   /** A color and opacity that multiply every layer, such as for a status. */
   private readonly tint = new Vector4(1, 1, 1, 1);
+  /** How much bigger the sprite draws than its own size, around its origin. */
+  private scale = 1;
 
   constructor(readonly asset: SpriteAsset) {
     this.palette = asset.palette;
@@ -273,6 +275,14 @@ export class SpriteView {
     this.tint.set(r, g, b, a);
   }
 
+  /** Draws the sprite scale times its own size, around its origin. 1 draws it as it is. */
+  setScale(scale: number): void {
+    if (scale !== this.scale) {
+      this.scale = scale;
+      this.shown = '';
+    }
+  }
+
   /**
    * Draws a frame of an action, moved by (dx, dy) pixels with Y down.
    * The frame number wraps around the action's frames. Returns the frame,
@@ -309,8 +319,8 @@ export class SpriteView {
       const u = this.layer(n++).u;
       u.uvRect.value.set(im.x, im.y, im.width, im.height);
       u.pageSize.value.set(page.image.width, page.image.height);
-      u.offset.value.set(l.x + dx, l.y + dy);
-      u.size.value.set(im.width * l.scaleX, im.height * l.scaleY);
+      u.offset.value.set((l.x + dx) * this.scale, (l.y + dy) * this.scale);
+      u.size.value.set(im.width * l.scaleX * this.scale, im.height * l.scaleY * this.scale);
       u.angle.value = (l.rotation * Math.PI) / 180;
       u.mirror.value = l.mirror ? 1 : 0;
       u.page.value = page;

@@ -59,8 +59,6 @@ func TestChatCommandsConvert(t *testing.T) {
 		{`{ channel_delete "#lounge"; end; }`, "channel_delete: the channel API cannot delete a channel"},
 		{`{ channel_setopt "#lounge",1,0; end; }`, "channel_setopt: the channel API cannot change"},
 		{`{ channel_ban "#lounge",150001; end; }`, "channel_ban: the channel API has no bans"},
-		{`{ message "Bob","Hi"; end; }`, "message: to another character"},
-		{`{ dispbottom "Hi",0xFF0000,150001; end; }`, "dispbottom: to another character"},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		_, err := n.npcScript()

@@ -253,6 +253,11 @@ type Player struct {
 	touchAt    int64
 	// rewarp is rAthena's count_rewarp: warps in a row onto warp areas.
 	rewarp int
+	// listed is the player's entry in the world's player directory, and
+	// leaving is set while its logout waits for the NPC handlers of other
+	// zones (playerworld.go).
+	listed  *playerEntry
+	leaving *logoutHold
 	// warpTo is a warp a script asked for. It happens once the script's
 	// event has run.
 	warpTo *scriptWarp
@@ -742,6 +747,23 @@ type Zone struct {
 	npcIn      npcInbox
 	remoteNPCs map[int64]*npcEntry
 	remoteIDs  map[*npcEntry]int64
+	// remotePlayers are the handles of players of other zones, by
+	// handle, with the characters' names, and remotePlayerIDs the
+	// reverse (playerworld.go).
+	remotePlayers   map[int64]string
+	remotePlayerIDs map[string]int64
+	// serial is the zone's serial for game IDs, mobSerials counts the
+	// serials of its monsters, presetSerial is the serial that a spawn of
+	// another zone reserved for the next monster, and remoteMonsters are
+	// the handles of monsters of other zones, by handle, with their game
+	// IDs, and remoteMonsterIDs the reverse (remotemonsters.go).
+	serial                           int64
+	mobSerials                       atomic.Int64
+	presetSerial                     int64
+	remoteMonsters, remoteMonsterIDs map[int64]int64
+	// countView is the monster counts that a monster label's event reads
+	// while it runs (maps.go).
+	countView *labelCounts
 	// touchNPCs are the NPCs with a touch area and a script, in the
 	// order SetNPCs placed them (touch.go).
 	touchNPCs []*entity
@@ -861,6 +883,7 @@ func New(mapName string, grid *path.Grid, rand *rng.Rand, spawns []Spawn) *Zone 
 		stopped:   make(chan struct{}),
 		Metrics:   &metrics.Zone{Name: mapName},
 	}
+	z.serial = zoneSerials.Add(1)
 	z.npcIn.wake = make(chan struct{}, 1)
 	z.entities.shared = &z.shared
 	z.shared.grid.Store(grid)
@@ -1208,6 +1231,12 @@ func (z *Zone) join(p *Player) joinResult {
 	if c.HP <= 0 {
 		e.hp = int64(e.status.MaxHP)
 	}
+	if h != nil && h.dead {
+		// A dead player that a script warped arrives dead, as pc_setpos
+		// keeps pc_isdead, and returns to its save point after the rest
+		// of its wait.
+		e.hp, e.dead, e.diedAt = 0, true, z.now-h.deadFor
+	}
 	e.hpChanged = e.status.MaxHP > 0
 	if e.status.Speed > 0 {
 		e.speed = e.status.Speed
@@ -1263,16 +1292,18 @@ func (z *Zone) join(p *Player) joinResult {
 	}
 	z.chatOnline(p, h)
 	z.socialOnline(p, h, friendsOf(c))
+	// Other zones find the player from now on (playerworld.go).
+	z.listPlayer(p)
 	if h == nil {
 		p.rewarp = 0
 		p.touchOnEnter = true
-		z.scriptEventFor("login", modscript.Player(int64(p.charID)))
+		z.playerEvent("login", p)
 	} else {
 		p.temp = h.temp
 		z.entered(p)
 	}
 	z.startNPCs()
-	z.scriptEventFor("map_enter", modscript.Player(int64(p.charID)))
+	z.playerEvent("map_enter", p)
 	// The player sees itself from the first frame.
 	return joinResult{netID: p.netID(e), tick: z.tick}
 }
@@ -1304,7 +1335,7 @@ func (p *Player) netID(e *entity) uint32 {
 }
 
 func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
-	if p.entity == nil || !z.entities.has(p.entity) {
+	if p.entity == nil || !z.entities.has(p.entity) || p.leaving != nil {
 		return
 	}
 	if reason == wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT && z.detachedLeave(p) {
@@ -1316,17 +1347,44 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 		// statuses that rAthena does not save, and timed bonuses that end
 		// on logout. A tainted player's handlers do not run, since they
 		// could move items that its last saved copy does not have.
+		held := 0
 		if !p.tainted {
 			z.scriptEventFor("logout", modscript.Player(int64(p.charID)))
+			// The NPCs of other maps hear it too (review decision 59), and
+			// the logout waits for them, as npc_script_event runs before
+			// map_quit (map.cpp 2266).
+			held = z.sendPlayerEvent("logout", p, nil, nil, true)
 		}
 		if en := z.statusEngine(); en != nil && p.entity.sc != nil {
 			en.Logout(z.unit(p.entity))
 		}
 		z.endTimedBonuses(p, "logout")
 		z.runScripts()
+		if held > 0 {
+			p.leaving = &logoutHold{pending: held, until: z.now + logoutHoldMs}
+			return
+		}
 		z.chatOffline(p)
 		z.socialOffline(p)
 	}
+	z.leaveMap(p, reason)
+}
+
+// finishLogout ends a logout that waited for the NPC handlers of other
+// zones (playerworld.go): their calls on the player ran first.
+func (z *Zone) finishLogout(p *Player) {
+	if p.leaving == nil {
+		return
+	}
+	p.leaving = nil
+	z.chatOffline(p)
+	z.socialOffline(p)
+	z.leaveMap(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+}
+
+// leaveMap is the end of leave: the player's stores, trades and storage
+// close, it is saved and it vanishes.
+func (z *Zone) leaveMap(p *Player, reason wathenav1.VanishReason) {
 	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
 	z.closeStores(p)
 	if p.autotrade {
@@ -1357,6 +1415,7 @@ func (z *Zone) leave(p *Player, reason wathenav1.VanishReason) {
 // remove takes a player out of the zone. Viewers see it vanish for a
 // reason.
 func (z *Zone) remove(p *Player, reason wathenav1.VanishReason) {
+	z.unlistPlayer(p)
 	z.untouchAll(p)
 	z.entities.remove(p.entity)
 	delete(z.players, p.charID)
@@ -1727,6 +1786,9 @@ func (z *Zone) stepAt(now int64) {
 	clear(z.chats)
 	z.chats = z.chats[:0]
 	z.sharedCells()
+	z.publishPlayers()
+	z.publishMonsters()
+	z.heldLogouts()
 }
 
 // warpTouch is a player that stepped onto a warp this tick.

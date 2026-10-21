@@ -170,7 +170,11 @@ func (h *testHost) PlayerField(id int64, field string) (script.Value, error) {
 	}
 	return script.Nil, fmt.Errorf("player has no field %q", field)
 }
-func (h *testHost) MonsterField(int64, string) (script.Value, error) {
+func (h *testHost) MonsterField(id int64, field string) (script.Value, error) {
+	if field == "game_id" {
+		// The test hosts' handles are their game IDs (mapshost_test.go).
+		return script.Int(id), nil
+	}
 	return script.Nil, errors.New("no monsters")
 }
 func (h *testHost) SendMessage(int64, string) error                    { return nil }

@@ -47,29 +47,35 @@ type mapShared struct {
 	// (no_vending and no_buying_store) by cell index.
 	flags map[string]bool
 	marks map[int]uint8
-	// cells are the players' cells at the end of the last step.
+	// cells are the players' cells at the end of the last step, and mobs
+	// the living monsters (remotemonsters.go).
 	cells [][2]int
+	mobs  []mobSnap
 }
 
-func (s *mapShared) addLabel(key string, n int) {
-	s.mu.Lock()
+// addLabelLocked and addPendingLocked change the counts of a label and of
+// the spawns that wait. The caller holds mu.
+func (s *mapShared) addLabelLocked(key string, n int) {
 	if s.labels == nil {
 		s.labels = map[string]int{}
 	}
 	if s.labels[key] += n; s.labels[key] <= 0 {
 		delete(s.labels, key)
 	}
-	s.mu.Unlock()
 }
 
-func (s *mapShared) addPending(key string, n int) {
-	s.mu.Lock()
+func (s *mapShared) addPendingLocked(key string, n int) {
 	if s.pending == nil {
 		s.pending = map[string]int{}
 	}
 	if s.pending[key] += n; s.pending[key] <= 0 {
 		delete(s.pending, key)
 	}
+}
+
+func (s *mapShared) addPending(key string, n int) {
+	s.mu.Lock()
+	s.addPendingLocked(key, n)
 	s.mu.Unlock()
 }
 
@@ -78,6 +84,7 @@ func (s *mapShared) addPending(key string, n int) {
 func (s *mapShared) countMonsters(key string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// monsters changes under mu too, with the spawns that wait.
 	if key == "" {
 		return int(s.monsters.Load()) + s.pending[""]
 	}
@@ -185,12 +192,17 @@ type spawnSpec struct {
 	s     modscript.SpawnSpec
 	label *monsterLabel
 	owner int64
+	// serials are the monsters' serials that the asking zone reserved,
+	// so it has their handles at once (remotemonsters.go).
+	serials []int64
 }
 
 // SpawnMonsters places monsters that a script context owns
 // (spawning.monsters), as rAthena's monster and areamonster. Monsters
-// of another map spawn in its zone after the current step, belong to no
-// context, and have no handles here.
+// of another map spawn in its zone after the current step and belong to
+// no context. Their serials are reserved now, so the handles come back
+// at once, as monster fills $@mobid (script.cpp 11312). A monster that
+// finds no cell leaves its handle without a monster.
 func (h scriptHost) SpawnMonsters(owner int64, s modscript.SpawnSpec) ([]int64, error) {
 	z := h.z
 	if z.Mods == nil || z.Mods.Monsters == nil {
@@ -236,20 +248,30 @@ func (h scriptHost) SpawnMonsters(owner int64, s modscript.SpawnSpec) ([]int64, 
 		to.shared.addPending(key, s.Amount)
 	}
 	spec.owner = 0
-	undo := func(t *Zone) {
-		t.shared.addPending("", -s.Amount)
+	spec.serials = to.reserveSerials(s.Amount)
+	undo := func(t *Zone, n int) {
+		t.shared.addPending("", -n)
 		if key != "" {
-			t.shared.addPending(key, -s.Amount)
+			t.shared.addPending(key, -n)
 		}
 	}
 	if !to.npcIn.post(npcMessage{kind: npcZoneMessage, zoneRun: func(t *Zone) {
-		undo(t)
+		// Each monster that spawns takes its place in the counts from the
+		// spawns that wait, in one step (entitySet.add), so another zone
+		// never counts it twice or not at all. Those that found no cell
+		// leave the counts after.
+		t.entities.reservedPlaced = 0
 		t.spawnScripted(spec)
+		undo(t, s.Amount-t.entities.reservedPlaced)
 	}}) {
-		undo(to)
+		undo(to, s.Amount)
 		return nil, fmt.Errorf("the zone of %s has too many messages waiting", s.Map)
 	}
-	return nil, nil
+	ids := make([]int64, len(spec.serials))
+	for i, serial := range spec.serials {
+		ids[i] = z.remoteMonsterHandle(to.serial<<32 | serial)
+	}
+	return ids, nil
 }
 
 // spawnScripted places the monsters of a spawn in this zone, as
@@ -313,7 +335,18 @@ func (z *Zone) spawnScripted(spec spawnSpec) []int64 {
 		z.owned[spec.owner] = append(z.owned[spec.owner], &sp)
 	}
 	ids := make([]int64, 0, s.Amount)
+	// The serials another zone reserved go to the monsters of the spawn,
+	// in order. Those of monsters that find no cell stay unused.
+	next := 0
+	preset := func() {
+		if next < len(spec.serials) {
+			z.presetSerial = spec.serials[next]
+		}
+		next++
+	}
+	defer func() { z.presetSerial = 0 }()
 	place := func(x, y int) {
+		preset()
 		if e := z.spawnAt(&sp, x, y); e != nil && spec.owner != 0 {
 			ids = append(ids, z.monsterHandle(e))
 		}
@@ -350,6 +383,7 @@ func (z *Zone) spawnScripted(spec spawnSpec) []int64 {
 			if x <= 0 || x >= w || y <= 0 || y >= h {
 				var ok bool
 				if x, y, ok = z.searchFreeCell(x, y, -1, -1); !ok {
+					next++
 					continue
 				}
 			}
@@ -357,14 +391,17 @@ func (z *Zone) spawnScripted(spec spawnSpec) []int64 {
 		case s.HasCell && s.Area == 0:
 			place(s.X, s.Y)
 		case s.HasCell:
+			preset()
 			if e := z.spawnOne(&sp); e != nil && spec.owner != 0 {
 				ids = append(ids, z.monsterHandle(e))
 			}
+			z.presetSerial = 0
 		default:
 			// mob_once_spawn_sub: no cell is a random one, as
 			// map_search_freecell with the whole map (map.cpp).
 			x, y, ok := z.searchFreeCell(0, 0, -1, -1)
 			if !ok {
+				next++
 				continue
 			}
 			place(x, y)
@@ -374,24 +411,44 @@ func (z *Zone) spawnScripted(spec spawnSpec) []int64 {
 }
 
 // monsterLabelEvent runs a dead monster's label, as mob_dead's
-// npc_event (mob.cpp 3600): with the player that killed it, or else the
-// player that dealt the most damage (first_sd), when the NPC is on this
-// map's zone; with no player otherwise. It runs after the current step.
+// npc_event (mob.cpp 3600 to 3609): with the player that killed it, or
+// else the player that dealt the most damage (first_sd), on any map, as
+// npc_event attaches the player wherever the NPC is. It runs after the
+// current step, with the monster counts of the moment it died, so a
+// label that reads them sees what rAthena's sees inside mob_dead and
+// inside killmonster's loop (script.cpp 11463), where the monsters not
+// killed yet still count.
 func (z *Zone) monsterLabelEvent(e, killer *entity) {
 	m := e.monster
 	l := m.label
 	if l == nil || l.zone == nil || m.labelOff {
 		return
 	}
-	var player int64
-	if l.zone == z {
-		if killer != nil && killer.player != nil {
-			player = int64(killer.player.charID)
-		} else if p := z.topDamage(e); p != nil {
-			player = int64(p.charID)
+	var p *Player
+	if killer != nil && killer.player != nil {
+		p = killer.player
+	} else {
+		p = z.topDamage(e)
+	}
+	msg := npcMessage{kind: npcEventMessage, handle: l.handle, label: l.event,
+		counts: &labelCounts{zone: z, key: l.key, total: z.shared.countMonsters(""), label: z.shared.countMonsters(l.key)}}
+	if p != nil {
+		if l.zone == z {
+			msg.player = int64(p.charID)
+		} else {
+			// The NPC's zone gets a handle of the player of this map.
+			msg.playerName = p.Name
 		}
 	}
-	z.postNPC(l.zone, npcMessage{kind: npcEventMessage, handle: l.handle, label: l.event, player: player})
+	z.postNPC(l.zone, msg)
+}
+
+// labelCounts are the monster counts of a map when a monster of a label
+// died: every monster, and those of the label.
+type labelCounts struct {
+	zone         *Zone
+	key          string
+	total, label int
 }
 
 // topDamage is the player of the zone that dealt a monster the most
@@ -456,11 +513,20 @@ func (h scriptHost) CountPlayers(mapName string, area *modscript.Rect) (int, boo
 }
 
 // CountMonsters is mobcount: the living monsters of a label, or of the
-// map.
+// map. A monster label's event reads the counts of the moment its
+// monster died (monsterLabelEvent).
 func (h scriptHost) CountMonsters(mapName, label string) (int, bool) {
 	to, err := h.z.mapZone(mapName)
 	if err != nil {
 		return 0, false
+	}
+	if v := h.z.countView; v != nil && v.zone == to {
+		switch label {
+		case "":
+			return v.total, true
+		case v.key:
+			return v.label, true
+		}
 	}
 	return to.shared.countMonsters(label), true
 }
@@ -495,13 +561,20 @@ func (h scriptHost) RemoveMonsters(mapName string, r modscript.RemoveMonsters) e
 }
 
 // WarpPlayers is mapwarp and areawarp: the players of the map, of a
-// rectangle, a party or a guild, go to a cell, or to a random walkable
-// cell of a rectangle of the target.
+// rectangle, a party or a guild, go to a cell, to a random walkable cell
+// of a rectangle of the target, or with To "random" to a random cell of
+// their own map, as areawarp's "Random" (buildin_areawarp_sub's
+// pc_randomwarp, script.cpp 5670). Dead players go too: neither
+// buildin_areawarp_sub nor mapwarp's party and guild loops check
+// pc_isdead (script.cpp 5659 and 14340).
 func (h scriptHost) WarpPlayers(mapName string, w modscript.WarpPlayers) error {
 	z := h.z
-	dest, err := z.mapZone(w.To)
-	if err != nil {
-		return err
+	var dest *Zone
+	if w.To != "random" {
+		var err error
+		if dest, err = z.mapZone(w.To); err != nil {
+			return err
+		}
 	}
 	return z.onMap(strings.TrimPrefix(mapName, "map/"), func(z *Zone) {
 		for _, p := range z.playersInOrder() {
@@ -516,11 +589,17 @@ func (h scriptHost) WarpPlayers(mapName string, w modscript.WarpPlayers) error {
 			case w.Guild != 0 && p.guildID() != w.Guild:
 				continue
 			}
+			if dest == nil {
+				if x, y, ok := z.randomCell(); ok {
+					z.scriptWarpDead(p, z, x, y)
+				}
+				continue
+			}
 			x, y := w.X, w.Y
 			if w.ToArea != nil {
 				x, y = z.randomIn(dest, *w.ToArea)
 			}
-			z.scriptWarp(p, dest, x, y)
+			z.scriptWarpDead(p, dest, x, y)
 		}
 	})
 }
@@ -546,33 +625,166 @@ func (z *Zone) randomIn(dest *Zone, r modscript.Rect) (int, int) {
 
 // scriptWarp warps a player of the zone once no script runs, as
 // pc_setpos: a talk ends, and a cell that is not on the map is a random
-// one (arrivalCell).
+// one (arrivalCell). A dead player stays.
 func (z *Zone) scriptWarp(p *Player, to *Zone, x, y int) {
 	p.warpTo = &scriptWarp{to: to, x: x, y: y}
 	z.later(func() { z.afterTalk(p) })
 }
 
-// PartyWarp is warpparty to a map and a cell: the members that live, on
-// every map, as buildin_warpparty's WARPPARTY_RANDOMALLAREA without a
-// range. Map flags that refuse warps do not exist yet.
-func (h scriptHost) PartyWarp(party int64, mapName string, x, y int) error {
+// scriptWarpDead is scriptWarp for the warps that move dead players too,
+// as pc_setpos does when its caller does not check pc_isdead: the
+// player arrives dead and returns to its save point after the rest of
+// its wait.
+func (z *Zone) scriptWarpDead(p *Player, to *Zone, x, y int) {
+	p.warpTo = &scriptWarp{to: to, x: x, y: y, dead: true}
+	z.later(func() { z.afterTalk(p) })
+}
+
+// PartyWarp is warpparty (script.cpp 5781): the members of a party that
+// live, on every map or only on From, go to a map and a cell, with a
+// random cell within a range of it, or to one of warpparty's targets.
+// buildin_warpparty skips dead members (script.cpp 5870). Map flags that
+// refuse warps, and pc_job_can_entermap, do not exist yet.
+func (h scriptHost) PartyWarp(party int64, w modscript.PartyWarp) error {
 	z := h.z
-	dest, err := z.mapZone(mapName)
+	info, err := h.partyInfo(party)
 	if err != nil {
 		return err
 	}
-	if _, err := h.partyInfo(party); err != nil {
-		return err
+	var dest *Zone
+	x, y := w.X, w.Y
+	caller := ""
+	switch w.Target {
+	case "":
+		if dest, err = z.mapZone(w.Map); err != nil {
+			return err
+		}
+	case "save_point", "random_all":
+		// The attached player's save point, or a random cell of its map.
+		p, err := h.player(w.Player)
+		if err != nil {
+			return fmt.Errorf("player: %w", err)
+		}
+		caller = p.Name
+		if w.Target == "save_point" {
+			if dest, x, y = z.savePoint(p); dest == nil {
+				return nil
+			}
+			break
+		}
+		dest = z
+		var ok bool
+		if x, y, ok = z.randomAllCell(); !ok {
+			// buildin_warpparty: "moving player failed".
+			return nil
+		}
+	case "leader":
+		// The leader's map and cell. A leader who is offline moves nobody.
+		d := z.playerDir()
+		if !info.LeaderOnline {
+			return nil
+		}
+		var en *playerEntry
+		if d != nil {
+			en = d.find(info.Leader)
+		}
+		if en == nil {
+			p := z.playerByName(info.Leader)
+			if p == nil {
+				return nil
+			}
+			dest, x, y = z, p.entity.x, p.entity.y
+			break
+		}
+		var s playerSnap
+		var ok bool
+		if dest, _, s, ok = d.read(en); !ok {
+			return nil
+		}
+		x, y = s.x, s.y
+		if p := z.playerByName(info.Leader); p != nil {
+			x, y = p.entity.x, p.entity.y
+		}
 	}
 	z.everyZone(func(z *Zone) {
 		for _, p := range z.playersInOrder() {
 			if p.partyID() != party || p.entity == nil || p.entity.dead {
 				continue
 			}
-			z.scriptWarp(p, dest, x, y)
+			if w.From != "" && strings.TrimPrefix(z.Map, "map/") != w.From {
+				continue
+			}
+			switch w.Target {
+			case "random":
+				if rx, ry, ok := z.randomCell(); ok {
+					z.scriptWarp(p, z, rx, ry)
+				}
+				continue
+			case "save_point_all":
+				if to, sx, sy := z.savePoint(p); to != nil {
+					z.scriptWarp(p, to, sx, sy)
+				}
+				continue
+			case "save_point":
+				z.scriptWarp(p, dest, x, y)
+				continue
+			case "leader":
+				if p.Name == info.Leader {
+					continue
+				}
+			case "random_all":
+				if p.Name == caller {
+					z.scriptWarp(p, dest, x, y)
+					continue
+				}
+			}
+			nx, ny := x, y
+			if w.RangeX != 0 || w.RangeY != 0 {
+				nx, ny = z.partyRangeCell(dest, x, y, w.RangeX, w.RangeY)
+			}
+			z.scriptWarp(p, dest, nx, ny)
 		}
 	})
 	return nil
+}
+
+// partyRangeCell is buildin_warpparty's cell within a range (script.cpp
+// 5903): up to 10 tries for a walkable cell, and the cell itself when the
+// tries run out, as the loop's count reaches 0 on its tenth try whatever
+// that try found.
+func (z *Zone) partyRangeCell(dest *Zone, x, y, rx, ry int) (int, int) {
+	g := dest.shared.grid.Load()
+	if g == nil || dest == z {
+		g = dest.grid
+	}
+	attempts := 10
+	var nx, ny int
+	for {
+		nx, ny = x+z.rndValue(-rx, rx), y+z.rndValue(-ry, ry)
+		attempts--
+		if attempts <= 0 || nx >= 0 && ny >= 0 && nx < g.Width && ny < g.Height && !g.NoPass(nx, ny) {
+			break
+		}
+	}
+	if attempts == 0 {
+		return x, y
+	}
+	return nx, ny
+}
+
+// randomAllCell is warpparty's RandomAll cell (script.cpp 5840): up to
+// 1000 tries of a cell from 1 to the map's size less one, which units
+// can walk on and is not next to a warp (teleport_on_portal is off). The
+// loop's count fails a cell found on a later try.
+func (z *Zone) randomAllCell() (int, int, bool) {
+	w, h := z.grid.Width, z.grid.Height
+	for range 1000 {
+		x, y := z.rndValue(1, w-1), z.rndValue(1, h-1)
+		if x < w && y < h && !z.grid.NoPass(x, y) && !z.warpNear(x, y, 1) {
+			return x, y, true
+		}
+	}
+	return 0, 0, false
 }
 
 // AnnounceArea is areaannounce: the line goes to the players of a
@@ -603,20 +815,24 @@ var cellRefusals = map[string]string{
 }
 
 // SetCells is setcell, in the map's zone. Walkable and shootable change
-// the map's cells, which the map's players get at once and players who
-// enter get then. no_vending and no_buying_store refuse shops on the
-// cells.
-func (h scriptHost) SetCells(mapName string, area modscript.Rect, kind string, on bool) error {
+// the map's cells. no_vending and no_buying_store refuse shops on the
+// cells. rAthena's setcell sends nothing to the players (script.cpp
+// 20631; map_setcell, map.cpp 3404, has no clif call), so their clients
+// keep the old cells.
+// With send, the map's players get the cells at once and players who
+// enter get them then, as setwall's map_iwall_set and map_iwall_get send
+// a wall's cells (clif_changemapcell, map.cpp 3511 and 3538).
+func (h scriptHost) SetCells(mapName string, area modscript.Rect, kind string, on, send bool) error {
 	if why, ok := cellRefusals[kind]; ok {
 		return fmt.Errorf("%s cells cannot be set: %s", kind, why)
 	}
 	if kind == "npc" {
 		return errors.New("npc cells cannot be set: wAthena's touch areas read their NPCs, not a cell flag")
 	}
-	return h.z.onMap(strings.TrimPrefix(mapName, "map/"), func(z *Zone) { z.setCells(area, kind, on) })
+	return h.z.onMap(strings.TrimPrefix(mapName, "map/"), func(z *Zone) { z.setCells(area, kind, on, send) })
 }
 
-func (z *Zone) setCells(area modscript.Rect, kind string, on bool) {
+func (z *Zone) setCells(area modscript.Rect, kind string, on, send bool) {
 	w, h := z.grid.Width, z.grid.Height
 	x1, y1 := max(area.X1, 0), max(area.Y1, 0)
 	x2, y2 := min(area.X2, w-1), min(area.Y2, h-1)
@@ -643,10 +859,12 @@ func (z *Zone) setCells(area modscript.Rect, kind string, on bool) {
 				}
 				z.ensureOwnGrid()
 				z.grid.Cells[i] = v
-				if z.cellChanges == nil {
-					z.cellChanges = map[int]uint8{}
+				if send {
+					if z.cellChanges == nil {
+						z.cellChanges = map[int]uint8{}
+					}
+					z.cellChanges[i] = v
 				}
-				z.cellChanges[i] = v
 				changed = append(changed, packCell(x, y, v))
 			}
 		}
@@ -656,6 +874,9 @@ func (z *Zone) setCells(area modscript.Rect, kind string, on bool) {
 		g := *z.grid
 		g.Cells = slices.Clone(z.grid.Cells)
 		z.shared.grid.Store(&g)
+		if !send {
+			return
+		}
 		for _, p := range z.players {
 			p.pending = append(p.pending, cellEvents(changed)...)
 		}
@@ -972,6 +1193,9 @@ func (h scriptHost) monsterOf(id int64) (*entity, error) {
 // MonsterAct runs the monster methods of area B8.
 func (h scriptHost) MonsterAct(id int64, a modscript.MonsterAction) (bool, error) {
 	z := h.z
+	if isRemoteMonster(id) {
+		return h.remoteMonsterAct(id, a)
+	}
 	e, err := h.monsterOf(id)
 	if err != nil {
 		return false, err

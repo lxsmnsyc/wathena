@@ -249,6 +249,15 @@ var errNoSkills = errors.New("the server has no skill data")
 // FindEntities is maps.find_entities and entity:find_nearby.
 func (h scriptHost) FindEntities(q modscript.EntityQuery) ([]modscript.Entity, error) {
 	z := h.z
+	if q.Map != "" {
+		to, err := z.mapZone(q.Map)
+		if err != nil {
+			return nil, err
+		}
+		if to != z {
+			return h.remoteEntities(to, q)
+		}
+	}
 	zq := &query{sort: q.Sort, limit: q.Limit, circle: q.Circle, lineOfSight: q.LineOfSight}
 	switch q.Area {
 	case modscript.AreaAround:
@@ -316,6 +325,10 @@ func (h scriptHost) FindEntities(q modscript.EntityQuery) ([]modscript.Entity, e
 
 // EntityExists is entity:exists.
 func (h scriptHost) EntityExists(e modscript.Entity) bool {
+	if e.Kind == "monster" && isRemoteMonster(e.ID) {
+		v, err := h.remoteMonsterField(e.ID, "is_alive")
+		return err == nil && v.Truthy()
+	}
 	x, err := h.entityOf(e)
 	return err == nil && h.z.entities.has(x)
 }

@@ -1280,3 +1280,67 @@ describe('view sprites', () => {
     expect(core.mount).toBeUndefined();
   });
 });
+
+describe('body size effects', () => {
+  function effect(entity: number, effectId: number): Event {
+    return create(EventSchema, {
+      body: { case: 'effect', value: { effectId, at: { case: 'entity', value: entity } } },
+    });
+  }
+
+  it('scales small and big monsters and plays no particles for them', async () => {
+    vi.stubGlobal('reportError', () => {});
+    const sprites = {
+      get: async () => {
+        await Promise.resolve();
+        return sprite();
+      },
+    } as unknown as SpriteCache;
+    const o = new Online(1, sprites, {} as Pathfinder);
+    o.setMap(map());
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 1, kind: EntityKind.MONSTER, x: 1, y: 1, look: { body: 1002 } },
+        },
+      }),
+      // The effect comes while the sprite loads.
+      effect(1, 421),
+    ]);
+    await settle();
+    const unit = o.me;
+    expect(unit?.scale).toBe(0.75);
+    const children = o.group.children.length;
+    o.handle([effect(1, 423)]);
+    expect(unit?.scale).toBe(1.25);
+    expect(o.group.children.length).toBe(children);
+  });
+
+  it('leaves the size alone for other effects', async () => {
+    vi.stubGlobal('reportError', () => {});
+    const sprites = {
+      get: async () => {
+        await Promise.resolve();
+        return sprite();
+      },
+    } as unknown as SpriteCache;
+    const o = new Online(1, sprites, {} as Pathfinder);
+    o.setMap(map());
+    o.effects = {
+      cache: {} as EffectCache,
+      textures: { uniform: () => ({ value: new Texture() }) },
+    };
+    o.handle([
+      create(EventSchema, {
+        body: {
+          case: 'appear',
+          value: { id: 1, kind: EntityKind.MONSTER, x: 1, y: 1, look: { body: 1002 } },
+        },
+      }),
+    ]);
+    await settle();
+    o.handle([effect(1, 422), effect(1, 16)]);
+    expect(o.me?.scale).toBe(1);
+  });
+});

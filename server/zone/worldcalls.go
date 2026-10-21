@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -44,6 +45,15 @@ func (z *Zone) monsterHandle(e *entity) int64 {
 // queueDeath queues the death event for a unit that died. A monster's
 // handle stays readable until the event has run.
 func (z *Zone) queueDeath(e, killer *entity) {
+	if p := e.player; p != nil {
+		// A player's death reaches the NPCs of every map, as rAthena's
+		// OnPCDieEvent (status.cpp 1786, review decision 59).
+		var k *Player
+		if killer != nil {
+			k = killer.player
+		}
+		z.sendPlayerEvent("death", p, &modscript.Death{X: e.x, Y: e.y, Map: strings.TrimPrefix(z.Map, "map/")}, k, false)
+	}
 	if z.scripts == nil {
 		return
 	}

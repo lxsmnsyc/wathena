@@ -268,7 +268,6 @@ func TestQuestCommandsConvert(t *testing.T) {
 		}
 	}
 	for _, c := range []struct{ script, want string }{
-		{`{ setquest 1100,150001; end; }`, "setquest: for another character"},
 		{`{ if (checkquest(1100,PLAYTIME,150001)) end; end; }`, "checkquest: for another character"},
 		{`{ .@k = 1; if (checkquest(1100,.@k)) end; end; }`, "checkquest: a check other than HAVEQUEST, PLAYTIME and HUNTING"},
 		{`{ showevent QTYPE_QUEST,QMARK_YELLOW,.@i; end; }`, "showevent: for another character"},

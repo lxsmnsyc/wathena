@@ -566,7 +566,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event onnew_top4 | 1 | 1 | 0 | 0 | 1 |  |
 | event onnew_top5 | 1 | 1 | 0 | 0 | 1 |  |
 | event onon4 | 1 | 1 | 0 | 0 | 1 |  |
-| event onpclogoutevent | 1 | 0 | 0 | 1 | 0 | rAthena runs it for the players of every map, and an NPC hears only the players of its own map (decision 0062) (1) |
+| event onpckillevent | 1 | 0 | 0 | 1 | 0 | a player's kill of a player, which needs PvP, which is not ported (1) |
 | event onready | 1 | 1 | 0 | 0 | 1 |  |
 | event onresetmob | 1 | 1 | 0 | 0 | 1 |  |
 | event onsci | 1 | 1 | 0 | 0 | 1 |  |

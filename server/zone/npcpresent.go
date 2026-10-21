@@ -384,13 +384,51 @@ func (h scriptHost) SetNPCLook(id int64, look modscript.NPCLook) error {
 	})
 }
 
+// SendNPCSprite is classchange (script.cpp 15163): the NPC shows with
+// another view to the players who see it, or to one player, and keeps
+// its own, so players who see it later see the old view.
+// clif_class_change sends nothing for a job's view (clif.cpp 1477).
+func (h scriptHost) SendNPCSprite(id, sprite int64, to modscript.SendTarget) error {
+	var target *Player
+	if to.To == "player" {
+		p, err := h.player(to.Player)
+		if err != nil {
+			return err
+		}
+		target = p
+	}
+	view := uint32(sprite) // #nosec G115 -- checked by the runtime.
+	return h.onNPC(id, false, func(z *Zone, e *entity) {
+		if mod.IsJobView(view) || z.Mods != nil && z.Mods.OwnLookJobs[int(view)] {
+			return
+		}
+		n := *e.npc
+		n.Sprite, n.NoSprite = view, false
+		shown := *e
+		shown.npc = &n
+		for _, p := range z.playersInOrder() {
+			if target != nil && (p != target || z != h.z) {
+				continue
+			}
+			if net, ok := p.netIDs.get(e); ok {
+				p.pending = append(p.pending, z.npcAppear(net, &shown))
+			}
+		}
+	})
+}
+
 // MoveNPC is npc_movenpc (npc.cpp 5046): the cell is capped to the map,
 // the players near the old cell lose sight of the NPC (clif_outsight),
-// and those near the new one see it come (clif_insight).
-func (h scriptHost) MoveNPC(id int64, x, y int) error {
+// and those near the new one see it come (clif_insight). dir is
+// movenpc's direction, 0 north counterclockwise, which it sets before
+// the move (script.cpp 16161), or -1 to keep the NPC's.
+func (h scriptHost) MoveNPC(id int64, x, y, dir int) error {
 	return h.onNPC(id, true, func(z *Zone, e *entity) {
 		if e.npc.floating {
 			return
+		}
+		if dir >= 0 {
+			e.dir = facing(path.Dir(dir % 8))
 		}
 		x = min(max(x, 0), z.grid.Width-1)
 		y = min(max(y, 0), z.grid.Height-1)
@@ -411,17 +449,30 @@ func (h scriptHost) MoveNPC(id int64, x, y int) error {
 // WalkNPC is npcwalkto and unitwalk on an NPC: unit_walktoxy with the
 // NPC's own speed, on cells that are not CELL_CHKNOPASS. An NPC of
 // another zone walks there after the current step, and true comes back.
-func (h scriptHost) WalkNPC(id int64, x, y int) (bool, error) {
+// A label is unitwalk's: its event runs, with no player, when a walk of
+// the NPC ends on the cell it walks to (unit.cpp 650), and it stays
+// until one does, as ud->walk_done_event.
+func (h scriptHost) WalkNPC(id int64, x, y int, label *modscript.MonsterLabel) (bool, error) {
 	t, err := h.npcTarget(id)
 	if err != nil {
 		return false, err
 	}
+	done, err := h.resolveLabel(label)
+	if err != nil {
+		return false, err
+	}
 	walk := func(z *Zone, e *entity) bool {
+		if done != nil {
+			// buildin_unitwalk sets the label whether or not the walk
+			// starts (script.cpp 20049).
+			e.npc.walkDone = done
+		}
 		// buildin_npcwalkto: an NPC without a map, or a cell outside the
 		// map, fails.
 		if e.npc.floating || x >= z.grid.Width || y >= z.grid.Height {
 			return false
 		}
+		e.npc.walkX, e.npc.walkY = x, y
 		if x == e.x && y == e.y && len(e.path) == 0 {
 			return true
 		}
@@ -447,10 +498,20 @@ func (h scriptHost) SetNPCSpeed(id int64, ms int) error {
 // StopNPC is npcstop with its default flags USW_FIXPOS,
 // USW_MOVE_FULL_CELL and USW_FORCE_STOP (script.cpp 16337,
 // unit_stop_walking): an NPC past half of its step finishes the cell,
-// then stands, and the players who see it get its cell.
-func (h scriptHost) StopNPC(id int64) error {
+// then stands, and the players who see it get its cell. Without
+// sendCell it is unitstopwalk's default USW_NONE (script.cpp 20186): the
+// NPC stands on its cell at once, and the players get nothing, so their
+// clients go on drawing the walk (unit.cpp 1725 and 1732).
+func (h scriptHost) StopNPC(id int64, sendCell bool) error {
 	return h.onNPC(id, true, func(z *Zone, e *entity) {
 		if len(e.path) == 0 {
+			return
+		}
+		if !sendCell {
+			e.path = e.path[:0]
+			if dir := z.npcDir(); dir != nil {
+				dir.mirrorPlace(e)
+			}
 			return
 		}
 		d := e.path[0]
@@ -477,6 +538,14 @@ func (z *Zone) npcStepped(e *entity) {
 	n := e.npc
 	if d := z.npcDir(); d != nil {
 		d.mirrorPlace(e)
+	}
+	if l := n.walkDone; l != nil && e.x == n.walkX && e.y == n.walkY {
+		// unit_walktoxy_timer: the walk ended on its cell, so the label
+		// runs once, with the NPC's own ID and no player (unit.cpp 650).
+		n.walkDone = nil
+		if l.zone != nil {
+			z.postNPC(l.zone, npcMessage{kind: npcEventMessage, handle: l.handle, label: l.event})
+		}
 	}
 	if n.invisible || n.Touch == nil || n.script == nil {
 		return
@@ -615,6 +684,17 @@ func (h scriptHost) PlaySound(source modscript.Entity, mapName, name, to string,
 		if err != nil {
 			return err
 		}
+		if to == "area" {
+			// soundeffectall without a map, with an attached player: every
+			// player who sees it hears it, from it (script.cpp 15315,
+			// clif_soundeffect with AREA).
+			for _, o := range z.playersInOrder() {
+				if id, ok := o.netIDs.get(p.entity); ok {
+					o.pending = append(o.pending, soundEvent(name, repeat, id))
+				}
+			}
+			return nil
+		}
 		p.pending = append(p.pending, soundEvent(name, repeat, 0))
 		return nil
 	case "npc":
@@ -636,8 +716,10 @@ func (h scriptHost) PlaySound(source modscript.Entity, mapName, name, to string,
 	return z.onMap(mapName, toMap)
 }
 
-// PlayMusic is playBGM to a player, and playBGMall with a map.
-func (h scriptHost) PlayMusic(player int64, mapName, name string) error {
+// PlayMusic is playBGM to a player, and playBGMall (script.cpp 15253):
+// to the players of a map, of a rectangle of it (map_foreachinallarea),
+// or with no map to every player of the world (map_foreachpc).
+func (h scriptHost) PlayMusic(player int64, mapName, name string, area *modscript.Rect) error {
 	ev := func() *wathenav1.Event {
 		return wathenav1.Event_builder{Music: wathenav1.MusicPlay_builder{Name: "music/" + name}.Build()}.Build()
 	}
@@ -649,11 +731,19 @@ func (h scriptHost) PlayMusic(player int64, mapName, name string) error {
 		p.pending = append(p.pending, ev())
 		return nil
 	}
-	return h.z.onMap(mapName, func(z *Zone) {
+	play := func(z *Zone) {
 		for _, p := range z.playersInOrder() {
+			if e := p.entity; area != nil && (e == nil || !area.Contains(e.x, e.y)) {
+				continue
+			}
 			p.pending = append(p.pending, ev())
 		}
-	})
+	}
+	if mapName == "" {
+		h.z.everyZone(play)
+		return nil
+	}
+	return h.z.onMap(mapName, play)
 }
 
 // SendColoredMessage is dispbottom with a color: clif_messagecolor to

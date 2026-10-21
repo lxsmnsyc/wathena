@@ -97,7 +97,9 @@ type ItemActionHost interface {
 	EquippedRefine(equipped int64, amount int) (int, error)
 	// EquippedDestroy is delequip, and failedrefitem's deletion: the
 	// copy comes off and is gone.
-	EquippedDestroy(equipped int64) error
+	// With refineFailure it is failedrefitem: the copy's refine goes to
+	// 0, and the wearer shows the refine failure effect.
+	EquippedDestroy(equipped int64, refineFailure bool) error
 	// BrokenItems is getbrokenid: the item IDs of the broken copies, in
 	// inventory order.
 	BrokenItems(player int64) ([]int64, error)
@@ -418,7 +420,19 @@ func (r *Runtime) equippedAction(c *script.Call) error {
 		c.Return(script.Int(int64(v)))
 		return nil
 	case "destroy":
-		return wrap(what, h.EquippedDestroy(id))
+		failure := false
+		err := walkOptions(what, c.Arg(2), []string{"refine_failure"}, func(_ string, v script.Value) error {
+			b, ok := v.AsBool()
+			if !ok {
+				return fmt.Errorf("%s: refine_failure must be true or false", what)
+			}
+			failure = b
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		return wrap(what, h.EquippedDestroy(id, failure))
 	}
 	return fmt.Errorf("equipped item has no method %q", op)
 }

@@ -34,7 +34,7 @@ func (h *testHost) DropItem(string, int, int, uint32, int, modscript.ItemSpec) e
 func (h *testHost) CanRefine(modscript.ItemRef) (bool, error)                        { return true, nil }
 func (h *testHost) RefineChance(modscript.ItemRef, int, bool) (int, error)           { return 100, nil }
 func (h *testHost) EquippedRefine(int64, int) (int, error)                           { return 1, nil }
-func (h *testHost) EquippedDestroy(int64) error                                      { return nil }
+func (h *testHost) EquippedDestroy(int64, bool) error                                { return nil }
 func (h *testHost) BrokenItems(int64) ([]int64, error)                               { return nil, nil }
 func (h *testHost) RepairItem(int64, int) (bool, error)                              { return false, nil }
 func (h *testHost) RepairAll(int64) (int, error)                                     { return 0, nil }

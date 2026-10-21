@@ -47,7 +47,13 @@ func TestMapsConvert(t *testing.T) {
 			`R.warp_players("geffen", "prontera", 150, 150, { rectangle = { { 1, 1 }, { 9, 9 } } })`,
 			`R.areawarp("geffen", "prontera", 150, 150, 155, 155, { rectangle = { { 1, 1 }, { 9, 9 } } })`,
 		}},
-		{`{ warpparty "prontera",150,150,getcharid(1); end; }`, []string{`R.warpparty(`, `"prontera", 150, 150)`}},
+		{`{ warpparty "prontera",150,150,getcharid(1); warpparty "Leader",0,0,getcharid(1),"geffen",2,2; end; }`, []string{
+			`R.warpparty(`, `"prontera", 150, 150, player, nil, 0, 0)`, `"Leader", 0, 0, player, "geffen", 2, 2)`}},
+		{`{ areawarp "geffen",1,1,9,9,"Random",0,0; mapwarp "geffen","Random",0,0; end; }`, []string{
+			`R.on_map("geffen", maps.warp_players, "random", 0, 0, { rectangle = { { 1, 1 }, { 9, 9 } } })`, `mapwarp to "Random" moves nobody`}},
+		{`{ monster "this",0,0,"--ja--",1002,1; areamonster "this",1,1,5,5,"--ja--",1002,1; if (mobcount("this","all")) end; end; }`, []string{
+			`R.monster(R.this_map(player), 0, 0`, `R.areamonster(R.this_map(player), 1, 1`, `maps.count_monsters(R.this_map(player))`}},
+		{`{ areapercentheal "geffen",1,1,9,9,100,50; end; }`, []string{`R.areapercentheal("geffen", 1, 1, 9, 9, 100, 50)`}},
 		{`{ setcell "geffen",1,1,5,5,cell_walkable,0; if (checkcell("geffen",1,1,cell_chknopass)) end; end; }`, []string{
 			`R.on_map("geffen", maps.set_cells, 1, 1, 5, 5, "walkable", false)`, `maps.check_cell("geffen", 1, 1, "no_pass")`,
 		}},
@@ -66,7 +72,7 @@ func TestMapsConvert(t *testing.T) {
 		{`{ mes getmonsterinfo(1002,99); end; }`, []string{"!getmonsterinfo: the type 99"}},
 		{`{ if (checkcell("geffen",1,1,cell_chkwater)) end; end; }`, []string{"!checkcell: water cells"}},
 		{`{ removemapflag "geffen",mf_gvg; end; }`, []string{"!removemapflag: the map flag gvg: sieges do not exist"}},
-		{`{ warpparty "prontera",150,150,getcharid(1),"geffen",2,2; end; }`, []string{"!warpparty: from one map or with a range"}},
+		{`{ warpparty "prontera",150,150,getcharid(1),"geffen",2,2,4; end; }`, []string{"!warpparty: arguments"}},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		lua, err := n.npcScript()

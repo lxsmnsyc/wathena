@@ -1282,11 +1282,22 @@ Maps, areas and monsters ([decision 0065](../docs/decisions/0065-npc-api-group-4
 
 - Each zone shares what other zones read of its map: its players' count and cells, its monsters' count and those of each label, its map flags, its cell marks and a copy of its cells. Another zone reads them as of the zone's last step.
 - A spawn, a kill, a warp, a cell change or a flag on another map is a message to that map's zone, which runs after the current step, as decision 0062's NPC messages. A spawn counts its monsters on the target at once, until the target places them.
-- A monster's label is resolved when it spawns: its NPC's zone and handle. Its death posts the NPC's event, with the killer, or the player that dealt the most damage, when the NPC runs in the same zone, and with no player otherwise. A script's kill without labels sets `npc_killmonster`.
-- Cell changes of `maps.set_cells` copy the zone's grid, send `MapCells` to the map's players, and go to each player that joins the zone. The client changes its map's cells and its paths.
+- A monster's label is resolved when it spawns: its NPC's zone and handle. Its death posts the NPC's event, with the killer, or the player that dealt the most damage (decision 0066). A script's kill without labels sets `npc_killmonster`.
+- Cell changes of `maps.set_cells` copy the zone's grid. With `send`, they send `MapCells` to the map's players and go to each player that joins the zone (decision 0066). The client changes its map's cells and its paths.
 - `no_vending` and `no_buying_store` cells refuse to open shops there, with msg 204.
 - `nomemo` set by a script overrides the world layout's flag for Warp Portal's memo.
 - A script monster with an AI and no master follows `battle_check_target`'s rules for such monsters, and monsters without an AI look for it as a target.
+
+Players across zones and decision 59's follow-ups ([decision 0066](../docs/decisions/0066-npc-api-follow-ups.md), review decision 59, mods/README.md, "Players of other maps" and "Maps, areas and monsters"):
+
+- The world keeps a directory of every online player: its zone, its ID there, its names and IDs, and a copy of its fields, which its zone writes at the end of each step. A zone lists a player when it joins and drops it when it leaves.
+- A script reaches a player of another zone through a handle of its own zone, from 2^42, which names the character. Its fields come from the directory. Its methods that act go to the player's zone as messages and run in the calling mod's name. Its reads raise an error.
+- The player events `login`, `logout`, `map_enter`, `base_level_up`, `job_level_up`, and a player's `death`, go to the zones whose NPCs listen to them, as `npc_script_event`. A zone that has not started its NPC scripts gets them when one of its scripts names the event in its source.
+- A logout that other zones heard waits, up to 2 seconds, until each of them answers, so their calls on the player run before its last save.
+- Each monster has a game ID: the zone's serial, then the monster's serial in the zone. A spawn on another map reserves the serials at once and returns the monsters' handles. Each zone shares its living monsters at the end of each step, which other zones read for handles and `maps.find_entities`.
+- Each monster label's event carries the counts of the moment its monster died, which `maps.count_monsters` reads while the event runs. Its player is the killer, or the player that dealt the most damage, on any map.
+- `maps.set_cells` sends `MapCells` only with `send`, as `setwall` does; rAthena's `setcell` sends nothing.
+- `maps.warp_players` moves dead players, who arrive dead on another map and return to their save point after the rest of their wait. `party:warp` skips them, as `warpparty`.
 
 To try them, start in Prontera with some Jellopy to sell and a Butterfly Wing. The sample mods need their permissions approved, in a config file such as:
 

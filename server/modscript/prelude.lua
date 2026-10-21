@@ -688,8 +688,8 @@ new_equipped, equipped_ids = handle_type("equipped item", {
 	add_refine = function(self, amount)
 		return (call(H.equipped_action, equipped_ids[self], "refine", amount))
 	end,
-	destroy = function(self)
-		return (call(H.equipped_action, equipped_ids[self], "destroy"))
+	destroy = function(self, options)
+		return (call(H.equipped_action, equipped_ids[self], "destroy", options))
 	end,
 }, function(id, key)
 	local ok, value = pcall(H.equipped_field, id, key)
@@ -1065,8 +1065,10 @@ end
 npc_methods.set_display_name = function(self, name)
 	return (call(H.npc_present, npc_ids[self], "set_display_name", name))
 end
-npc_methods.set_sprite = function(self, sprite)
-	return (call(H.npc_present, npc_ids[self], "set_sprite", sprite))
+npc_methods.set_sprite = function(self, sprite, options)
+	options = present_options("npc:set_sprite", options, { keep = true, to = true })
+	local to, to_id = send_to("npc:set_sprite", { to = options.to }, { to = true })
+	return (call(H.npc_present, npc_ids[self], "set_sprite", sprite, options.keep, to, to_id))
 end
 npc_methods.set_look = function(self, look)
 	if type(look) ~= "table" then
@@ -1074,17 +1076,19 @@ npc_methods.set_look = function(self, look)
 	end
 	return (call(H.npc_present, npc_ids[self], "set_look", look))
 end
-npc_methods.move_to = function(self, x, y)
-	return (call(H.npc_present, npc_ids[self], "move_to", x, y))
+npc_methods.move_to = function(self, x, y, direction)
+	return (call(H.npc_present, npc_ids[self], "move_to", x, y, direction))
 end
-npc_methods.walk_to = function(self, x, y)
-	return (call(H.npc_present, npc_ids[self], "walk_to", x, y))
+npc_methods.walk_to = function(self, x, y, options)
+	options = present_options("npc:walk_to", options, { label = true })
+	return (call(H.npc_present, npc_ids[self], "walk_to", x, y, options.label))
 end
 npc_methods.set_speed = function(self, milliseconds)
 	return (call(H.npc_present, npc_ids[self], "set_speed", milliseconds))
 end
-npc_methods.stop = function(self)
-	return (call(H.npc_present, npc_ids[self], "stop"))
+npc_methods.stop = function(self, options)
+	options = present_options("npc:stop", options, { send_cell = true })
+	return (call(H.npc_present, npc_ids[self], "stop", options.send_cell))
 end
 npc_methods.show_progress = function(self, seconds, options)
 	options = present_options("npc:show_progress", options, { color = true })
@@ -1121,8 +1125,8 @@ player_methods.remove_effect = function(self, effect)
 	return (call(H.player_present, player_ids[self], "remove_effect", effect))
 end
 player_methods.play_sound = function(self, file, options)
-	options = present_options("player:play_sound", options, { ["repeat"] = true })
-	return (call(H.player_present, player_ids[self], "play_sound", file, options["repeat"]))
+	options = present_options("player:play_sound", options, { ["repeat"] = true, to = true })
+	return (call(H.player_present, player_ids[self], "play_sound", file, options["repeat"], options.to))
 end
 player_methods.play_music = function(self, file)
 	return (call(H.player_present, player_ids[self], "play_music", file))
@@ -1578,8 +1582,8 @@ api["wa.maps"] = readonly("wa.maps", {
 	warp_players = function(map, to_map, x, y, options)
 		return (call(H.maps_call, "warp_players", map, to_map, x, y, options))
 	end,
-	set_cells = function(map, x1, y1, x2, y2, kind, on)
-		return (call(H.maps_call, "set_cells", map, x1, y1, x2, y2, kind, on))
+	set_cells = function(map, x1, y1, x2, y2, kind, on, options)
+		return (call(H.maps_call, "set_cells", map, x1, y1, x2, y2, kind, on, options))
 	end,
 	check_cell = function(map, x, y, kind)
 		return (call(H.maps_call, "check_cell", map, x, y, kind))
@@ -1626,10 +1630,19 @@ api["wa.maps"] = readonly("wa.maps", {
 		end
 		return new_player(p)
 	end,
+	-- A monster of any map by its game ID (review decision 59).
+	find_monster = function(id)
+		check(math_type(id) == "integer", "maps.find_monster: want a monster's game ID, such as monster.game_id")
+		local m = call(H.maps_find_monster, id)
+		if m == nil then
+			return nil
+		end
+		return new_monster(m)
+	end,
 	-- Music, sounds and minimap marks of a map (review decision 58, area
 	-- B5): playBGMall, soundeffectall and viewpointmap.
-	play_music = function(map, file)
-		return (call(H.maps_present, "play_music", map, file))
+	play_music = function(map, file, options)
+		return (call(H.maps_present, "play_music", map, file, options))
 	end,
 	play_sound = function(map, file, options)
 		check(options == nil or type(options) == "table", "maps.play_sound: the options must be a table, such as { [\"repeat\"] = true }")
@@ -1707,6 +1720,10 @@ world_module = readonly("wa.world", {
 		check(type(name) == "string", "world.fire_npc_event: want an event label, such as OnEnable")
 		return (call(H.world_fire_npc_event, name))
 	end,
+	-- playBGMall without a map (review decision 59).
+	play_music = function(file)
+		return (call(H.world_play_music, file))
+	end,
 })
 api["wa.world"] = world_module
 
@@ -1767,8 +1784,19 @@ new_party, party_ids = handle_type("party", {
 		return (call(H.party_call, "get_member_list", party_ids[self]))
 	end,
 	-- warpparty to a map and a cell (review decision 58, area B8).
-	warp = function(self, map, x, y)
-		return (call(H.party_warp, party_ids[self], map, x, y))
+	warp = function(self, map, x, y, options)
+		local pid = nil
+		if type(options) == "table" and options.player ~= nil then
+			pid = player_ids[options.player]
+			check(pid ~= nil, "party:warp: player must be a player handle")
+			local copy = {}
+			for k, v in pairs(options) do
+				copy[k] = v
+			end
+			copy.player = true
+			options = copy
+		end
+		return (call(H.party_warp, party_ids[self], map, x, y, options, pid))
 	end,
 	add = function(self, player)
 		local id = player_ids[player]
@@ -3747,6 +3775,62 @@ new_cast, cast_data = handle_type("cast", {
 	return nil
 end)
 
+-- Players of other maps (review decision 59): a handle of a player of
+-- another zone sends its actions to the player's zone, where they run
+-- after the current step, and its reads raise an error. The arguments
+-- go there as plain values: no handles or functions.
+local REMOTE_PLAYER = 1 << 42
+local function plain_copy(v, depth, budget)
+	local t = type(v)
+	if t == "nil" or t == "boolean" or t == "number" or t == "string" then
+		return v
+	end
+	if t ~= "table" or getmetatable(v) ~= nil or depth > 8 then
+		error("the player is on another map, so the arguments must be plain values and tables, not handles or functions", 0)
+	end
+	local out = {}
+	for k, x in next, v do
+		budget[1] = budget[1] - 1
+		if budget[1] < 0 then
+			error("the player is on another map, so the arguments may hold at most 1024 values", 0)
+		end
+		out[plain_copy(k, depth + 1, budget)] = plain_copy(x, depth + 1, budget)
+	end
+	return out
+end
+for name, fn in pairs(player_methods) do
+	player_methods[name] = function(self, ...)
+		local id = player_ids[self]
+		if id ~= nil and id >= REMOTE_PLAYER then
+			local n = select("#", ...)
+			local args = { ... }
+			local ok, err = pcall(function()
+				local budget = { 1024 }
+				for i = 1, n do
+					args[i] = plain_copy(args[i], 1, budget)
+				end
+			end)
+			if not ok then
+				error("player:" .. name .. ": " .. tostring(err), 2)
+			end
+			local here = call(H.player_remote, id, name, unpack(args, 1, n))
+			if name == "exists" then
+				return here
+			end
+			if here ~= true then
+				return nil
+			end
+		end
+		return fn(self, ...)
+	end
+end
+
+-- player_call runs a player method that another zone sent, on a handle
+-- of this zone's player.
+function R.player_call(id, method, ...)
+	return player_methods[method](new_player(id), ...)
+end
+
 -- status_bonuses runs the bonuses function of a mod status, for a start
 -- that Go makes, such as at login.
 function R.status_bonuses(status, level)
@@ -3784,6 +3868,8 @@ function R.npc_event(label, player_id, conversation_id, ...)
 	local fields = { name = label }
 	if player_id ~= nil then
 		fields.player = new_player(player_id)
+	end
+	if conversation_id ~= nil then
 		fields.conversation = new_conversation(conversation_id)
 	end
 	local event = readonly("npc event", fields)

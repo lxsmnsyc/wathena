@@ -1043,7 +1043,14 @@ func (b *body) command(s *Command) error {
 
 func (b *body) commandErr(name string, args []Expr) error {
 	f := b.n.file
+	if ok, err := b.onOtherCharacter(name, args); ok {
+		return err
+	}
 	switch name {
+	case "attachrid":
+		return b.attachrid(args)
+	case "detachrid":
+		return b.detachrid(args)
 	case "mes":
 		vals, err := b.args(args)
 		if err != nil {

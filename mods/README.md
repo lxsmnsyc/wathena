@@ -250,6 +250,7 @@ Each limit has a range:
 | `mail.send`, `currencies.modify`, `shops.modify` | Needs the owner's approval. They send mail with items and zeny, change another mod's currencies, core's too, and change shops (review decision 30). |
 | `events.control` | Needs the owner's approval. It starts and stops world events at any time with `wa.world_events` (review decision 31). |
 | `npcs.control` | Needs the owner's approval. It shows, hides, cloaks and removes other mods' NPCs, core's too, and sends them events ("NPCs of the world" below, review decision 58). A mod's own NPCs need no permission. |
+| `maps.control` | Needs approval, and is logged as a warning at each start. It kills a map's monsters with `maps.remove_monsters` and changes its cells with `maps.set_cells` ("Maps, areas and monsters" below, review decision 59). |
 | `player.expand_limits` | Needs the owner's approval. It raises and lowers a player's inventory, cart and storage slots with `player:expand`, within the ruleset's limits (review decision 32). |
 | `spawns.modify` | Needs the owner's approval. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
 | `world.generate` | Needs the owner's approval. It adds generation layers and quest templates with `wa.generation`, which add places, objects, bosses and quests to a new procedural world (review decision 46). |
@@ -1406,7 +1407,25 @@ end
 - Its other methods, such as `npc:use_skill`, `npc:show_progress` and `npc:add_quest_icon`, raise "the NPC is on another map".
 - A message starts the NPC scripts of a zone that has not started them, so the NPCs of a map nobody visited still get their events.
 - `npc.full_name` is the name with its `#` part, as `strnpcinfo(0)`: `name`, then `#` and `hidden_name` when the NPC's name has a `#` part: the `display_name` field's, else the record's. `npc:set_display_name("A#b")` sets both, as `setnpcdisplay` sets `nd->name`. `unique_name` is the record's name without the mod's ID, as `strnpcinfo(3)`. `map` is "" for an NPC without a map.
-- `maps.find_player(name)` and `maps.find_player_by_id(id)` find an online player of the context's map, by name, or by account ID and else character ID. A player on another map is nil: a player handle acts in its own zone.
+- `maps.find_player(name)` and `maps.find_player_by_id(id)` find an online player of any map, by name, or by account ID and else character ID (review decision 59). A player on another map is a handle of a player of another map ("Players of other maps" below).
+
+#### Players of other maps
+
+The world keeps a list of every online player (review decision 59). A script gets a handle of a player of another map from `maps.find_player`, `maps.find_player_by_id`, a player event of another map, or a monster label's event.
+
+- The handle names the character, so it follows the player from map to map. It acts as a normal handle once the player is on the context's map.
+- It reads `kind`, `name`, `map`, `x`, `y`, `character_id`, `account_id`, `sex`, `base_level`, `job_level`, `job`, `job_class`, `zeny`, `hp`, `max_hp`, `sp`, `max_sp`, `weight`, `max_weight`, `skill_points`, `party` and `guild`, as of the end of the player's zone's last step. Other fields raise an error.
+- Its methods that need `game.read`, such as `player:count_item`, raise "the player is on another map". `player:exists()` tells whether the player is online.
+- Its other methods go to the player's zone as a message and run there after the current step, in the calling mod's name, with its permissions. They return nil. Their arguments must be plain values and tables: a handle or a function raises an error.
+- A player who went offline gets nothing, as rAthena's commands only log an error for a player that is not found.
+- Dialogs need a conversation, which runs on the player's own map. A handle of another map has none.
+
+The player events `login`, `logout`, `map_enter`, `base_level_up`, `job_level_up`, and `death` with a player victim, reach the NPC handlers of every map, as rAthena's `OnPCLoginEvent` and the other labels of `npc_script_event` (npc.cpp 5824). Mod contexts still hear the players of their own map.
+
+- Another zone gets the event as a message. A zone whose NPC scripts have not started gets it when one of its NPC scripts names the event in its source, such as `events.on("login", ...)`, and the message starts them.
+- A logout waits until the NPCs of the other maps ran their handlers, up to 2 seconds, so their actions on the player run before its last save, as `npc_script_event` runs before `map_quit`.
+- In `death`, a player killer is a handle too, and a monster killer of another map is left out.
+- A disabled NPC hears none of them, as `npc_event_sub` (npc.cpp 1767).
 
 #### Visibility and state
 
@@ -1471,17 +1490,17 @@ These calls are review decision 58's area B5: what players see and hear of NPCs 
 | `entity:show_skill_effect(skill, level)` | `skilleffect` | A skill's effect on a player, monster or NPC, and nothing else. |
 | `npc:set_title(text)` | `setunittitle` | A title of at most 23 bytes, shown with the NPC's name. |
 | `npc:set_display_name(name)` | `setnpcdisplay` | The name players see. `npc.name` reads it. |
-| `npc:set_sprite(sprite)` | `setnpcdisplay`, `classchange` | An NPC sprite, a monster or a job, as `npcs.yml`'s numbers. |
+| `npc:set_sprite(sprite, { keep, to })` | `setnpcdisplay`, `classchange` | An NPC sprite, a monster or a job, as `npcs.yml`'s numbers. With `keep = false` it is `classchange`: the view shows to the players who see the NPC, or to the `to` player, and the NPC keeps its own (review decision 59). |
 | `npc:set_look { sprite, hair_style, hair_color, cloth_color, head_top, head_middle, head_bottom, sex }` | `setunitdata` with `UNPC_` | The fields given change. The look shows when the sprite is a job. |
-| `npc:move_to(x, y)` | `movenpc` | The NPC jumps to a cell, capped to the map. Players near the old cell see it go, and those near the new one see it come. |
-| `npc:walk_to(x, y)` | `npcwalkto`, `unitwalk` | The NPC walks there, and the players it walks into touch it. Returns false when no walk reaches the cell. |
+| `npc:move_to(x, y, direction?)` | `movenpc` | The NPC jumps to a cell, capped to the map, facing the direction when given (0 north, counterclockwise). Players near the old cell see it go, and those near the new one see it come. |
+| `npc:walk_to(x, y, { label })` | `npcwalkto`, `unitwalk` | The NPC walks there, and the players it walks into touch it. Returns false when no walk reaches the cell. The label's event runs, with no player, when a walk ends on its cell, as unitwalk's event. |
 | `npc:set_speed(milliseconds)` | `npcspeed` | 20 to 1000 per cell. NPCs start at 200. |
-| `npc:stop()` | `npcstop`, `unitstopwalk` | Past half of its step, the NPC finishes the cell, then stands. |
+| `npc:stop({ send_cell })` | `npcstop`, `unitstopwalk` | Past half of its step, the NPC finishes the cell, then stands, and the players get its cell. With `send_cell = false`, as unitstopwalk's default, it stands at once and the players get nothing. |
 | `npc:show_progress(seconds, { color })` | `progressbar_npc` | A bar over the NPC for everyone who sees it, and the conversation waits until it is full. It runs only in a conversation's handler. |
 | `npc:use_skill(skill, level, target, { stat, npc_level })` | `npcskill` | The NPC casts at once, with no range check, with every stat at `stat` and its level at `npc_level`. The NPC must be on the context's map. |
 | `npc:play_sound(file, { to, ["repeat"] })` | `soundeffectall` | A sound from the NPC to its area, or to its map. `file` is a sound name of the assets without `sound/`. |
-| `player:play_sound(file, { ["repeat"] })` | `soundeffect` | A sound to the player alone. |
-| `player:play_music(file)`, `maps.play_music(map, file)` | `playBGM`, `playBGMall` | Background music, a music name without `music/`. The map's own comes back with the next map change. |
+| `player:play_sound(file, { ["repeat"], to })` | `soundeffect`, `soundeffectall` | A sound to the player alone, or with `to = "area"` to every player who sees it, from it. |
+| `player:play_music(file)`, `maps.play_music(map, file, { rectangle })`, `world.play_music(file)` | `playBGM`, `playBGMall` | Background music, a music name without `music/`: to a player, a map, a rectangle of a map, or every map. The map's own comes back with the next map change. |
 | `maps.play_sound(map, file, { ["repeat"] })` | `soundeffectall` with a map | A sound to every player of a map. |
 | `player:send_message(text, { color })` | `dispbottom` | A server line in its color. |
 | `player:show_digits(value, kind)` | `showdigit` | A clock at the top of the screen: `"show"` for 5 seconds, `"count_up"`, `"count_down"`, or `"count_down_to_zero"` from at most 99. |
@@ -1553,7 +1572,7 @@ These calls are review decision 58's area B9, as rAthena's item commands:
 | `items.get(item)` | `getiteminfo` | The item's record, or nil. |
 | `items.can_refine(item)`, `items.refine_chance(item, refine?)`, `items.refine_cost(item, refine?, kind?)` | `getequipisenableref`, `getequippercentrefinery`, `getequiprefinecost` | From `refine.yml`. `item` is an item ID with its refine, or a worn copy. The data has the Normal costs alone. |
 | `equipped:add_refine(amount)` | `successrefitem`, `downrefitem` | Needs `player.give_items`. Returns the new refine. |
-| `equipped:destroy()` | `delequip`, `failedrefitem` | Needs `player.give_items`. |
+| `equipped:destroy({ refine_failure })` | `delequip`, `failedrefitem` | Needs `player.give_items`. `refine_failure` sets the refine to 0 first and shows the refine failure effect, as `failedrefitem`. |
 | `player:get_broken_items()`, `player:repair_item(n)`, `player:repair_all()` | `getbrokenid`, `repair`, `repairall` | Repairs cost nothing, as the commands. |
 | `player:run_item_script(item)` | `consumeitem` | The item's script runs, and nothing is spent. |
 | `player:merge_items()` | `mergeitem2` | Joins stacks of one item with the same copy data. |
@@ -1602,29 +1621,31 @@ end
 |---|---|---|
 | `spawning.monsters { map, display_name, size, ai, label, rectangle }` | `monster`, `areamonster` | Any map. `label` is an event label of the NPC, or `"<NPC>::<label>"` of another NPC. Its `npc_event` handler runs when each monster dies. `rectangle` places each monster on a random walkable cell of it. |
 | `monster:kill()`, `monster:remove()` | `unitkill`, `killmonster` | The monster dies with no exp and no drops. `kill` runs its label, and `remove` does not. |
-| `maps.remove_monsters(map, { label, scripted, run_labels })` | `killmonster`, `killmonsterall` | Without options, every monster of the map; those of spawn lines come back. `scripted` is killmonster's `"All"`. Labels run only with `run_labels`. |
+| `maps.remove_monsters(map, { label, scripted, run_labels })` | `killmonster`, `killmonsterall` | Needs `maps.control`. Without options, every monster of the map; those of spawn lines come back. `scripted` is killmonster's `"All"`. Labels run only with `run_labels`. |
 | `maps.count_monsters(map, { label })` | `mobcount` | The living monsters of a label, or of the map. nil for a map that does not run. |
 | `maps.count_players(map, { rectangle })` | `getmapusers`, `getareausers` | nil for a map that does not run. |
-| `maps.warp_players(map, to_map, x, y, { rectangle, to_rectangle, party, guild })` | `mapwarp`, `areawarp` | Needs `player.warp`. `to_rectangle` picks a random walkable cell of the target. Dead players stay. |
-| `party:warp(map, x, y)` | `warpparty` | Needs `player.warp`. Every online member that lives, on any map. |
-| `maps.set_cells(map, x1, y1, x2, y2, kind, on)`, `maps.check_cell(map, x, y, kind)` | `setcell`, `checkcell` | `walkable`, `shootable`, `no_vending` and `no_buying_store`. Cell changes go to the map's players and to players who enter later, as `setwall`'s. |
+| `maps.warp_players(map, to_map, x, y, { rectangle, to_rectangle, party, guild })` | `mapwarp`, `areawarp` | Needs `player.warp`. `to_rectangle` picks a random walkable cell of the target. `to_map` `"random"` moves each player to a random cell of its own map, as areawarp's `"Random"`. Dead players move too, as rAthena's. |
+| `party:warp(map, x, y, { from, range_x, range_y, player })` | `warpparty` | Needs `player.warp`. Every online member that lives, on any map or on `from`. A range picks a random walkable cell near the cell. `map` may be a target: `"random"`, `"save_point"`, `"save_point_all"`, `"leader"` or `"random_all"`. `save_point` and `random_all` need `player`. |
+| `maps.set_cells(map, x1, y1, x2, y2, kind, on, { send })`, `maps.check_cell(map, x, y, kind)` | `setcell`, `checkcell` | `set_cells` needs `maps.control`. `walkable`, `shootable`, `no_vending` and `no_buying_store`. The players' clients learn of the cells only with `send`, as `setwall` sends a wall's cells; rAthena's `setcell` sends nothing. |
 | `maps.set_flag(map, flag, value)`, `maps.get_flag(map, flag)` | `setmapflag`, `removemapflag`, `getmapflag` | `nomemo`. Other flags raise an error that says why. |
 | `maps.find_free_cell(map, { x, y, range_x, range_y, reachable_from })` | `getfreecell` | A random walkable cell, or nil. |
 | `maps.announce(map, text, { rectangle })` | `areaannounce` | The players of the rectangle. |
 | `monsters.get(monster)` | `getmonsterinfo` | The monster's record: level, HP, exp, stats, ranges, size, race, element and modes. |
 | `monster:set_hp(hp)`, `set_damage_immune(immune)`, `set_modes(modes)`, `set_speed(milliseconds)` | `setunitdata` with `UMOB_HP`, `UMOB_DMGIMMUNE`, `UMOB_MODE` and `UMOB_SPEED` | `set_hp` never kills. |
 | `monster:use_skill_at(skill, level, x, y)`, `monster:warp_to(x, y)` | `unitskillusepos`, `unitwarp` | A ground skill on a cell, and a move on the monster's map. |
+| `monster.game_id`, `maps.find_monster(id)` | a GID, `$@mobid` | A monster's game ID, and the monster of any map by it while it lives (review decision 59). |
 
 - A call on another map runs in that map's zone after the current step. Its counts and cells are those of that zone's last step. Monsters that a spawn asked another zone to place count at once.
-- A label's event runs with the killer, or else the player that dealt the most damage, when the NPC runs in the monsters' zone. It runs with no player when the NPC is on another map, or the monster died to a script.
-- Labels run after the step that killed the monsters, as events between NPCs do (decision 0062). rAthena runs each one inside `killmonster`'s loop.
-- Monsters on another map belong to no context: they stay when the NPC's script reloads, and `spawning.monsters` returns no handles for them.
+- A label's event runs with the killer, or else the player that dealt the most damage, on any map, as `npc_event` attaches a player of any map. A player of another map is a handle of a player of another map, with no conversation. It runs with no player when no player hit the monster.
+- Labels run after the step that killed the monsters, as events between NPCs do (decision 0062). Each reads the monster counts of the moment its monster died, so a label that reads `maps.count_monsters` sees what rAthena's sees inside `mob_dead` and inside `killmonster`'s loop.
+- Monsters on another map belong to no context: they stay when the NPC's script reloads. `spawning.monsters` returns their handles at once.
+- A handle of a monster of another map reads `kind`, `id`, `name`, `level`, `hp`, `max_hp`, `map`, `x`, `y`, `is_alive` and `game_id` from what its zone shares at the end of each step. `kill`, `remove`, `set_hp`, `set_damage_immune`, `set_modes`, `set_speed`, `use_skill_at` and `warp_to` go to its zone as messages and return true. Its other methods raise an error.
 - `size` shows the baby or giant body effect. The stats stay, as rAthena's `mob_size_influence` is off by default.
 - A monster with an `ai` and no master fights the monsters without one, and those fight it unless its AI is `wave_mode`. Players may hit it. It gives exp and drops nothing, unless it is a `sphere`.
 - `maps.set_cells` refuses `water`, `npc`, `basilica`, `land_protector`, `no_chat`, `maelstrom` and `ice_wall`: their systems do not exist, or keep no cell flag.
 - `maps.set_flag` refuses every flag but `nomemo`, with the reason: PvP, sieges, battlegrounds, weather and chat rooms do not exist, and the other flags' effects are not built yet. `maps.get_flag` gives false for them.
-- `maps.find_entities` still finds entities of the context's map only, and `maps.can_enter` (`jobcanentermap`) is not built: it needs the WoE:TE map flags of sieges.
-- `maps.count_monsters`, `maps.get_flag` and the options of `maps.remove_monsters` are not named in proposal 0002b. They wait for review.
+- `maps.find_entities { map = "other", ... }` reads the players, monsters and NPCs of another map as of its zone's last step. The area is `x` and `y` with `radius`, `rectangle` or `cells`, with no entity filters.
+- `maps.can_enter` (`jobcanentermap`) is not built: it needs the WoE:TE map flags of sieges.
 
 ### Saved variables: wa.variables
 

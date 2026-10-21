@@ -410,7 +410,7 @@ func TestNPCWalk(t *testing.T) {
 		t.Error("a saw no stop")
 	}
 	// The player stands on 24,21: a walk of the NPC onto 24,21 touches it.
-	if _, err := h.WalkNPC(n.npc.handle, 24, 21); err != nil {
+	if _, err := h.WalkNPC(n.npc.handle, 24, 21, nil); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < 10 && n.npc.title != "touched a"; i++ {
@@ -762,11 +762,11 @@ func TestNPCStopEarly(t *testing.T) {
 	joinAt(z, "a", 24, 21)
 	n := npcNamed(z, "Walker")
 	h := scriptHost{z}
-	if ok, err := h.WalkNPC(n.npc.handle, 26, 20); err != nil || !ok {
+	if ok, err := h.WalkNPC(n.npc.handle, 26, 20, nil); err != nil || !ok {
 		t.Fatal(ok, err)
 	}
 	z.stepAt(z.now + 50)
-	if err := h.StopNPC(n.npc.handle); err != nil {
+	if err := h.StopNPC(n.npc.handle, true); err != nil {
 		t.Fatal(err)
 	}
 	if n.x != 20 || len(n.path) != 0 || !n.stopped {

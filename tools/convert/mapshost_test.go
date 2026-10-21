@@ -31,8 +31,8 @@ func (h *npcHost) RemoveMonsters(_ string, r modscript.RemoveMonsters) error {
 	}
 	return nil
 }
-func (h *npcHost) WarpPlayers(string, modscript.WarpPlayers) error     { return nil }
-func (h *npcHost) SetCells(string, modscript.Rect, string, bool) error { return nil }
+func (h *npcHost) WarpPlayers(string, modscript.WarpPlayers) error           { return nil }
+func (h *npcHost) SetCells(string, modscript.Rect, string, bool, bool) error { return nil }
 func (h *npcHost) CheckCell(_ string, _, _ int, kind string) (bool, error) {
 	return kind == "pass" || kind == "reach", nil
 }
@@ -40,8 +40,12 @@ func (h *npcHost) SetMapFlag(string, string, bool) error                     { r
 func (h *npcHost) MapFlag(string, string) (bool, error)                      { return false, nil }
 func (h *npcHost) AnnounceArea(string, string, string, modscript.Rect) error { return nil }
 func (h *npcHost) MonsterAct(int64, modscript.MonsterAction) (bool, error)   { return true, nil }
-func (h *npcHost) PartyWarp(int64, string, int, int) error                   { return nil }
-func (h *npcHost) LabelOwner(name, mod string) int64                         { id, _ := h.FindNPC(name, mod); return id }
+func (h *npcHost) PartyWarp(int64, modscript.PartyWarp) error                { return nil }
+func (h *npcHost) FindMonster(id int64) (int64, bool) {
+	_, ok := h.spawned[id]
+	return id, ok
+}
+func (h *npcHost) LabelOwner(name, mod string) int64 { id, _ := h.FindNPC(name, mod); return id }
 func (h *npcHost) FindFreeCell(_ string, q modscript.FreeCell) (int, int, bool, error) {
 	return q.X + 1, q.Y, true, nil
 }
