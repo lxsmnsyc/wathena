@@ -1139,6 +1139,13 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Refused:** `atcommand` and `setbattleflag`. The first runs GM commands from a script, and the second changes fixed rules at run time.
     - **`npc.full_name`** fixes `strnpcinfo(0)`, which drops the `#` part today.
 
+59. NPC API follow-ups (decisions 0062 to 0065). The user approved these on 2026-10-21:
+    - **Players across zones.** The world keeps a player directory, as it keeps NPCs (decision 0062). Player events such as `login`, `logout` and `map_enter` reach NPC handlers on every map, as rAthena's `OnPCLoginEvent` and the others do. `maps.find_player`, `attachrid` and actions on a player go to the player's zone.
+    - **Readings of decision 0062, confirmed:** without `npcs.control`, `world.fire_npc_event` reaches only the mod's own NPCs; core is exempt from every variable count limit; mods' NPC and `$@` variables use the 256-value and 1 MiB limits; event names are lower case; an NPC without a map has `map = ""`; events between NPCs do not count against a mod's CPU budget.
+    - **Group 4's calls are kept:** `maps.count_monsters`, `maps.get_flag`, and the `label`, `rectangle`, `to_rectangle`, `remove_monsters` and `find_free_cell` options. They are no longer provisional.
+    - **More calls for parity:** a class change that is sent but not kept (`classchange`); stopping a walk without sending the cell; `to` on `player:play_sound`; a direction for `npc:move_to`; an event when `walk_to` ends; music for every map and for part of a map; a refine failure effect; monster handles by game ID; `maps.find_entities` on another map; `warpparty`'s targets and range; `areawarp` to `"Random"`; and `"this"` as a map.
+    - **`maps.control`**, a new flagged permission, covers `maps.remove_monsters` and `maps.set_cells` instead of `npc.create`.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
