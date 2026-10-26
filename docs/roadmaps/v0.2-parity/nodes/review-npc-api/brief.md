@@ -1,7 +1,7 @@
 ---
 id: review-npc-api
 title: Review the open NPC API and converter questions
-status: todo
+status: active
 priority: must
 type: docs
 outline: false
