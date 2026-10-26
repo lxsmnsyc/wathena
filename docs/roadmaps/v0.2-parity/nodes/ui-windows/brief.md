@@ -54,6 +54,8 @@ Build the stylist, the zeny bank, and the refine, enchant, enchant grade and ite
 
 See the frozen `small-systems` contract.
 
+Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md): Kafra points paying part of a cash shop price is deferred to this node as a product call (G8); no script blocks on it, so it may stay unbuilt.
+
 - Source: proposal 0006 (to write)
 
 ## Acceptance

@@ -38,6 +38,9 @@ depends_on:
   - on: sieges-castles
     kind: hard
     why: ownership changes need castle data in place
+  - on: npc-api-timers
+    kind: hard
+    why: `npc:wake()` ends the waits of `timers.wait`, which npc-api-timers builds
 ---
 
 # War of Emperium: schedule, GvG rules, guardians and the Emperium
@@ -49,6 +52,8 @@ Build the siege itself: schedule and `agitcheck`, GvG and TE map flags with thei
 ## Context
 
 Battle rules under GvG flags change damage, skills and knockback; check against rAthena recordings where they exist.
+
+Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md): `npc:wake()` ends the waits of an NPC's handlers, as `awake` (A3), and `maps.can_enter(map, job)` is `jobcanentermap` (D4).
 
 - Source: proposal 0004 (to write); decision 0065
 

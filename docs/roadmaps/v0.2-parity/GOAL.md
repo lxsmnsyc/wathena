@@ -83,7 +83,7 @@ Proposal 0002 next steps:
 - 28-33 -> review-world-gen.
 - 34-37 -> review-ops-security, then security-fixes.
 - 38 -> review-npc-api.
-- 39 (long string compare, Lua CPU limit) -> review-npc-api.
+- 39 (long string compare, Lua CPU limit) -> review-npc-api; review decision 60 moved the string cost to lua-cost-accounting and refused the thread CPU limit.
 - 40 -> converter-names, converter-commands, npc-api-timers; `OnInterIfInitOnce` -> review-npc-api.
 - 41-45 -> review-npc-api, then npc-api-events and npc-api-timers; `maps.can_enter` -> sieges-war; HD and Enriched refine costs -> ui-windows; `active_transform` -> item-effects; warg -> third-classes.
 

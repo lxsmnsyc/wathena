@@ -45,21 +45,21 @@ depends_on:
 
 ## Goal
 
-Build and convert the 'needed for the rest' commands of proposal 0002 steps 12 to 16 that `review-npc-api` accepts: chat channel options, party result codes and member IDs, `$@party_create_id`, guild calls (`guildskill`, `guildchangegm`, `getguildmasterid`, `getmapguildusers`, `getguildinfo`, `guildstoragedelitem`, `requestguildinfo`), `countbound`, `openstorage2` modes, random options in `give_item`, exact-copy forms, `npcshopitem`, `npcshopattach` with `OnBuyItem`/`OnSellItem`, barter forms, computed `callshop`, `checkweight` with several items, `mesitemlink` without brackets, `isequippedcnt`, `getequiprandomoption`, `setunitdata`, `strnpcinfo(0)`, and the buying-store flag in `data/items.yml`.
+Build and convert the commands review decision 60 accepted: `jobs.name(job)` for `jobname` (E3); `player:take_item` honors `refine` and `cards` for `delitem2` (G5); barter items with refines and any number of cost kinds (G7); computed `callshop` (G10); `freeloop` converts to nothing (G11); `player:count_equipped(item)` for `isequippedcnt` (G12); `getequiprandomoption` (G13); `mesitemlink`'s forms (G14); `setunitdata` (G15); `$@partymember*` outside the function (G16).
 
 ## Context
 
 Each was refused by the converter with a reason in docs/generated/npc-scripts-*.md. Commands that need sieges (`warpguild`, `maprespawnguildid`, castles in `getguildinfo`) go to `sieges-war`.
 
+Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md). Deferred by that decision (no rAthena script uses them): chat channel commands, party result codes and `$@party_create_id`, guild calls without sieges, `countbound`, `openstorage2` modes, `getitembound3/4`, `guildstoragedelitem`, `npcshopitem`, `npcshopattach`, `mail` arrays, `searchstores` on another map. Siege guild calls go to sieges-war.
+
 - Source: proposal 0002 next steps 12-16, 40; npc-scripts-renewal.md command table
 
 ## Steps
 
-- [ ] Party and chat
-- [ ] Guild (non-siege)
-- [ ] Storage and items
-- [ ] Shops and barter
-- [ ] Unit data and NPC info
+- [ ] Items and equipment: E3, G5, G12, G13, G14
+- [ ] Shops and barter: G7, G10
+- [ ] Unit data and party: G11, G15, G16
 
 ## Acceptance
 

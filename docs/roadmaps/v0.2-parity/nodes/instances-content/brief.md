@@ -29,4 +29,6 @@ Make rAthena's memorial dungeon scripts convert and run: work through the `insta
 
 2,860 renewal and 296 pre-renewal script NPCs, plus 10 NPCs on instance maps. This node will likely split by dungeon group once `instances-core` lands; the curator refines it then.
 
+Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md): `monster:use_skill` takes `{ cast_milliseconds, can_cancel, emotion }` for `areamobuseskill` (B7).
+
 - Source: npc-scripts-renewal.md instances folder

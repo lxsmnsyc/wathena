@@ -37,11 +37,13 @@ depends_on:
 
 ## Goal
 
-Build the NPC API that review decision 59 left as still wanted, in the forms `review-npc-api` settles: a death event for monsters without a label (`OnNPCKillEvent`), `killedrid`, `attachrid` without force, reads of a player of another map, `unitexists`, `unittalk` for another game ID, `areamobuseskill` options, statuses on a monster of another map, and `awake`. Convert each.
+Build the cross-map NPC API that review decision 60 accepted, and convert each: a broadcast starts an unstarted zone only when one of its NPC sources names the label (A2); `OnInterIfInitOnce` as `OnInit` once per server start (A5); `unloadnpc` of an NPC with duplicates removes each record (A6); `monster_id` and `monster_game_id` on a monster label's event for `killedrid`/`killedgid` (B4); `unitexists` over `maps.find_monster` (B8); `monster:show_emotion` (B9); `"self"` as `player:say_aloud`'s `to` (B11); `{ to }` on `npc:remove_effect` and `player:remove_effect` (D6); `npc:fire_touch(player)` (E1); NPCs with `sprite: none` take answers from any distance (E5); `getunitdata` and `getunittype` over existing calls (G15).
 
 ## Context
 
 Decision 0066 built the online player directory and remote handles; these extend it. Public Lua API changes need an amendment to proposal 0002 (docs/proposals/README.md).
+
+Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md). Deferred by that decision, not built here: `OnNPCKillEvent`, `attachrid` without force, reads of another map's player, statuses on a monster of another map. `npc:wake()` goes to sieges-war and `areamobuseskill` options to instances-content.
 
 - Source: decision 0066 'Details to review'; proposal 0002 next steps 41, 45; 0002b B1, B3, B8
 
