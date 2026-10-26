@@ -12,7 +12,7 @@ gate: false
 owns:
   - server/companion/homun*.go
   - server/skill/homun*.go
-  - client/src/world/homun*
+  - client/src/viewer/homun*
 shared:
   - server/modscript/luaapi/spec.go
   - server/modscript/prelude.lua

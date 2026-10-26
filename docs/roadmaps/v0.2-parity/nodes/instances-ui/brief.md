@@ -11,7 +11,7 @@ spike: false
 gate: false
 added: 2026-10-27
 owns:
-  - client/src/world/instance*
+  - client/src/viewer/instance*
   - client/src/admin/**
 shared:
   - client/src/net/**

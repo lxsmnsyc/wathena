@@ -29,7 +29,7 @@ depends_on:
 
 ## Goal
 
-Add the NPC folders the extract leaves out (`instances` in full, `guild`, `guild2`, `guild3`, `battleground`, `custom`, `mobs`) to `npcs.json`'s part files for both modes, so the coverage reports count every script rAthena loads. Nothing new has to convert yet; the reports must show the real totals.
+Add the NPC folders the extract leaves out (`instances` in full, `guild`, `guild2`, `guild3`, renewal `re/guild` and `re/guild3`, the mapflag lines, `battleground`, `custom`, `mobs`) to `npcs.json`'s part files for both modes, so the coverage reports count every script rAthena loads. Nothing new has to convert yet; the reports must show the real totals.
 
 ## Context
 

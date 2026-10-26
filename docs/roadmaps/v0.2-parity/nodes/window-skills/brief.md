@@ -11,7 +11,7 @@ spike: false
 gate: false
 owns:
   - server/skill/**
-  - client/src/world/**
+  - client/src/viewer/**
 shared:
   - schema/proto/**
   - schema/gen/**

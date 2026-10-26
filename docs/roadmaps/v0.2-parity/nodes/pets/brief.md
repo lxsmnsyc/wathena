@@ -11,7 +11,7 @@ spike: false
 gate: false
 owns:
   - server/companion/pet*.go
-  - client/src/world/pet*
+  - client/src/viewer/pet*
 shared:
   - server/modscript/luaapi/spec.go
   - server/modscript/prelude.lua

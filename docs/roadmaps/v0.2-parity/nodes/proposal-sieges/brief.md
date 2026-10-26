@@ -1,7 +1,7 @@
 ---
 id: proposal-sieges
 title: Design proposal: castles and sieges
-status: active
+status: done
 priority: must
 type: contract
 outline: false

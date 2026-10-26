@@ -11,7 +11,9 @@ spike: false
 gate: false
 owns:
   - server/refine/**
-  - client/src/world/windows/**
+  - client/src/viewer/refine*
+  - client/src/viewer/stylist*
+  - client/src/viewer/bank*
 shared:
   - server/modscript/luaapi/spec.go
   - server/modscript/prelude.lua

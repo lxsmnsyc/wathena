@@ -11,7 +11,7 @@ spike: false
 gate: false
 owns:
   - server/companion/merc*.go
-  - client/src/world/merc*
+  - client/src/viewer/merc*
 shared:
   - server/modscript/luaapi/spec.go
   - server/modscript/prelude.lua
