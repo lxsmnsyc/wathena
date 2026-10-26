@@ -1,5 +1,7 @@
 # Review: open NPC API and converter items
 
+Approved by the maintainer on 2026-10-27, every recommendation as written.
+
 Review of the items in brief.md "Steps", checked against the code at b9a32ba. Counts come from docs/generated/npc-scripts-renewal.md and npc-scripts-pre-renewal.md (script NPCs that are not duplicates). Those reports leave out the battleground, custom, guild, guild2, guild3, instances and mobs folders, so where a command lives only there, the count is of files in the rAthena fork's `npc/` tree (`grep -rlw`, test folder left out), marked "files".
 
 States: **built** (the code does it), **settled** (a later decision or node already decides it), **open**.
@@ -510,7 +512,7 @@ Most of the "needed for the rest" lists of steps 12 to 16 have no user: the fork
 
 ## Draft review decision 60
 
-60. NPC API and converter review (review-npc-api, decisions 0052 to 0054 and 0062 to 0066, and next steps 11 to 16 and 40). The user approved these on <date>:
+60. NPC API and converter review (review-npc-api, decisions 0052 to 0054 and 0062 to 0066, and next steps 11 to 16 and 40). The user approved these on 2026-10-27:
     - **Kept as built:** `fire_event` and `fire_npc_event` results; the forms of review decision 59's calls; `maps.set_cells`' `send`; the one-step lag of another map's player, the 2-second logout wait and nil results of remote calls; staff levels 99 and 10; `equipped:add_refine`, `items.refine_cost`'s refine, `clock.format`'s time and the block `equip`. `schema.Version` is raised by the release.
     - **Events between NPCs.** A broadcast starts a zone that has not started its NPC scripts only when one of its NPC sources names the label, as player events do. `npc:wake()` ends the waits of an NPC's handlers, as `awake`; it comes with sieges. `OnInterIfInitOnce` converts as `OnInit` run once per server start. `unloadnpc` of an NPC with duplicates converts to removing each record.
     - **Waits without a player.** `timers.wait(milliseconds)`, 0 to 10 minutes, in a handler of an NPC context that runs without a conversation. `R.sleep` uses it.

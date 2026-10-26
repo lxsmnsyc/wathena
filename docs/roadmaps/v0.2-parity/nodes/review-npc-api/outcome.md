@@ -3,6 +3,7 @@
 ## Built
 
 - docs/roadmaps/v0.2-parity/nodes/review-npc-api/review.md: 61 entries grouped by area, with a summary table, and "Draft review decision 60". Review decision number taken: 60 (draft only; proposal 0002 is not edited until the maintainer approves).
+- Review decision 60 is recorded in docs/proposals/0002-lua-api.md ("Decisions taken in review"), approved by the maintainer on 2026-10-27, every recommendation as written. It changes review decision 56's `percentheal -100` rule.
 - Counts: 35 accept, 15 defer, 1 refuse, 10 already built or settled (keep).
 - Accepted items by node:
   - npc-api-events: A2, A5, A6, B4, B8, B9, B11, D6, E1, E5, G15 (`getunitdata`, `getunittype`).
