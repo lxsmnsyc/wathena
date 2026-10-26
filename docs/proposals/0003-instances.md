@@ -116,7 +116,7 @@ This reuses the rotation procedure of decision 0045 (Remove, Evacuate, Retire af
 - **Asset.** The zone gets a new field, `Asset`, the base map's asset name, such as `map/1@tower`. `Welcome.map` and `MapChange.map` send `Asset`, so the client loads the base map and needs no change to show it. For every other zone `Asset` is `Map`.
 - **Zone lookups.** `mapZone` (server/zone/maps.go) adds `map/` to plain names; names with a `:` prefix, `instance:` and `gen:`, are looked up as they are.
 - **Cells.** The copy starts from the base map's shared grid. A `set_cells` change copies it for that zone only (`ensureOwnGrid`), so instances never change each other's cells.
-- **Map flags.** With `copy_map_flags`, the copy starts with the base map's flags from the extract. Flags wAthena builds (only `nomemo` today) work; the rest stay refused as now. Instance maps are `nomemo` always. Base maps carry `noteleport`, `nowarpto`, `nobranch`, `partylock`, `restricted 6` and `monster_noteleport` in rAthena (113 to 115 maps each); building their effects is content work (section 13).
+- **Map flags.** With `copy_map_flags`, the copy starts with the base map's flags from the extract. Flags wAthena builds (only `nomemo` today) work; the rest stay refused as now. Instance maps are `nomemo` always. Base maps carry `noteleport`, `nowarpto`, `nobranch`, `partylock`, `restricted 6` and `monster_noteleport` in rAthena (113 to 115 maps each); instances-content builds the effects of `noteleport`, `nobranch` and `partylock`, which the dungeons depend on; the others follow the map flag work (review decision 13).
 - **Spawns.** None. Monsters come from the copied NPCs' scripts, as in rAthena.
 - **Sleep.** An instance zone sleeps without players, as every zone does. The idle timeout and the time limit run on the registry's server clock, not the zone clock. Converted NPC timers use the server clock (review decision 60), so they wake the zone as they do now.
 - **Limits.** In the server config, `instances` block:
@@ -386,7 +386,7 @@ message InstanceDestroy {
 ### 10. Admin and observability
 
 - `GET /world` (admin.proto `WorldView`) gains `repeated InstanceView instances = 7`, every pending and running instance: `id`, `name`, `mode`, `owner_name` (character, party or guild name; empty for none), `state`, `maps`, `players`, `created_at`, `ends_at`. `ZoneView` gains `uint64 instance = 10`, set for an instance map's zone. The World screen shows the count of running and pending instances against `max_running`, and the list. It needs `world.read`.
-- `POST /instances/{id}/destroy` ends an instance with the reason `staff`. It needs a new staff permission, `world.instances` ("end instances"), which `admin` has through `world.*`. It writes a GM audit row with the action `instances.destroy`, the instance's ID, record and owner, and the staff reason.
+- `POST /instances/{id}/destroy` ends an instance with the reason `staff`. It needs a new staff permission, `world.instances` ("end instances"), which `admin` has through `world.*` and `game_master` holds by default (review decision 9). It writes a GM audit row with the action `instances.destroy`, the instance's ID, record and owner, and the staff reason.
 - Logs: one info line at create, running and end, with the ID, the record, the owner and the reason.
 - Metrics: instance zones register their zone metrics as other zones do, labeled by their map ID, and are removed at retire, as rotation does (`reg.RemoveZone`). The registry adds two gauges, running and pending instances, and a counter of ends by reason.
 
@@ -452,23 +452,25 @@ instances-content adds an e2e run of two converted dungeons (Faceworm's Nest and
 - **Copy rAthena's map names (`0001#00000042`).** Opaque in logs and admin screens, and they hide the base map. Scripts never parse them. Not chosen.
 - **Hidden instance in the context for `'x`.** `'x` would read the context's instance without an argument, as rAthena. Proposal 0002 keeps owners of a scope explicit (`variables.npc_*` takes the NPC), and an NPC outside an instance would fail only at run time either way. Not chosen; the converter supplies `R.instance()`.
 - **Keep base maps running.** rAthena keeps them, and their NPCs' `OnInit` runs there once. Nothing should reach them, and running them costs a zone and a Lua state each. Not chosen.
-- **Per-instance NPC variables for copies.** Would make each instance's `.x` its own, which is cleaner but breaks the few scripts that count across instances with `.x`, as rAthena's duplicates share. Not chosen; listed as a question.
+- **Per-instance NPC variables for copies.** Would make each instance's `.x` its own, which is cleaner but breaks the few scripts that count across instances with `.x`, as rAthena's duplicates share. Not chosen (review decision 3).
 - **Build instances on the calling zone's goroutine.** Simple, but a build makes zones and Lua states, which would stall the caller's tick well past 10 ms. Not chosen.
 - **Clans.** Not a system in wAthena; adding one is out of scope for v0.2.0.
 
-## Questions for review
+## Decisions in review
 
-1. **Instances are lost on restart** (section 2). Recommendation: accept, as rAthena.
-2. **IDs restart at 1 at each start**, and reconnect relies on the owner and map checks, as rAthena. The other choice is a counter that goes on across starts, from the database, which needs a migration. Recommendation: restart at 1.
-3. **NPC variables of copies are shared** with the base record and every other instance, as rAthena's duplicates. Recommendation: share, for parity; per-instance state is `'x`.
-4. **Base maps do not run as zones**, and warps to them by name are refused. Recommendation: yes.
-5. **The module name `wa.instances`** next to `context:get_instance()`, which means a script instance. Recommendation: keep `wa.instances`, rAthena's word for the system, and have the API reference call the other "script instance".
-6. **`instances.max_running` defaults to 100** until instances-core measures the heap per instance map, then to what fits in 1 GB. Recommendation: yes, with the measurement in instances-core's decision record.
-7. **One build at a time**, with the queue position sent to the client, as rAthena's queue. Recommendation: yes.
-8. **Mod permission `instances.manage`**, approval needed, not flagged. Recommendation: yes; ending another mod's instance needs `npcs.control` too.
-9. **Staff permission `world.instances`**, held by `admin`. Recommendation: give it to `game_master` too, since ending a stuck instance is support work.
-10. **The four block rules and `instance_allow_reconnect` as ruleset rules**, with rAthena's defaults per mode. Recommendation: yes.
-11. **Mode `none`** (anyone may enter), unused by rAthena's scripts. Recommendation: support it; it costs one branch.
-12. **Clans**: `IM_CLAN` and `instance_check_clan` refused. Recommendation: yes.
-13. **Map flags of base maps** (`noteleport`, `nowarpto`, `nobranch`, `partylock`, `restricted`, `monster_noteleport`): copied but not enforced until their effects are built. Recommendation: instances-content builds `noteleport`, `nobranch` and `partylock`, which the dungeons depend on; the rest follow the map flag work.
-14. **No countdown warnings before an end**, unlike rotation's 10, 5 and 1 minutes, since the window shows the time left. Recommendation: none, as rAthena.
+The maintainer accepted these on 2026-10-27.
+
+1. Instances are lost on restart, as in rAthena.
+2. Instance IDs restart at 1 at each start; reconnect relies on the owner and map checks.
+3. NPC copies share their NPC variables with the base record and every other instance; per-instance state is `'x`.
+4. Base maps do not run as zones, and warps to them by name are refused.
+5. The module is `wa.instances`; the API reference calls the object of `context:get_instance()` a script instance.
+6. `instances.max_running` defaults to 100 until instances-core measures the heap per instance map, then to what fits in 1 GB, recorded in its decision record.
+7. The registry builds one instance at a time and sends the queue position to the client.
+8. Mods need `instances.manage` (approval, not flagged); acting on another mod's instance also needs `npcs.control`.
+9. Staff permission `world.instances` is held by `admin` and `game_master`.
+10. The four block rules and `instance_allow_reconnect` are ruleset rules with rAthena's defaults per mode.
+11. Owner mode `none` is supported.
+12. Clans are refused: `IM_CLAN` and `instance_check_clan`.
+13. Base map flags are copied; instances-content builds `noteleport`, `nobranch` and `partylock`, and the rest follow the map flag work.
+14. No countdown warnings before an instance ends.

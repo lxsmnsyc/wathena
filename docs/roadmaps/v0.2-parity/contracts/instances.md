@@ -1,7 +1,7 @@
 ---
 name: instances
 version: 1
-status: draft
+status: frozen
 defined_by: proposal-instances
 ---
 
@@ -9,7 +9,7 @@ defined_by: proposal-instances
 
 ## Purpose
 
-The interface between the instances design and the nodes that build on it. `proposal-instances` freezes it when design proposal 0003 is accepted.
+The interface between the instances design and the nodes that build on it. Frozen 2026-10-27, when the maintainer accepted design proposal 0003.
 
 Source: [docs/proposals/0003-instances.md](../../../proposals/0003-instances.md). Section numbers below are the proposal's.
 
@@ -41,7 +41,7 @@ Converter helpers in `tools/convert/rathena.lua` (section 8): `R.instance_create
 
 Protocol (section 9): events `InstanceStatus` (`id`, `name`, `state`, `queue_position`, `ends_at_ms`, `idle_ends_at_ms`, `can_destroy`), `InstanceEnded` (`id`, `name`, `reason`), enums `InstanceState`, `InstanceEndReason`; command `InstanceDestroy` (`id`). `Welcome.map` and `MapChange.map` carry the zone's `Asset`.
 
-Admin (section 10): `WorldView.instances` (`InstanceView`: `id`, `name`, `mode`, `owner_name`, `state`, `maps`, `players`, `created_at`, `ends_at`), `ZoneView.instance`; `POST /instances/{id}/destroy`; staff permission `world.instances`; audit action `instances.destroy`.
+Admin (section 10): `WorldView.instances` (`InstanceView`: `id`, `name`, `mode`, `owner_name`, `state`, `maps`, `players`, `created_at`, `ends_at`), `ZoneView.instance`; `POST /instances/{id}/destroy`; staff permission `world.instances` (held by `admin` and `game_master`); audit action `instances.destroy`.
 
 Database (section 11): none. No migration.
 
@@ -56,6 +56,8 @@ Database (section 11): none. No migration.
 - Reconnect on: saved on the instance map ID; login enters it when it runs, has the map and the player belongs, else the save point. Off: saved at the save point. Instance maps are never save or memo points.
 - Instances are lost on restart. IDs start at 1 at each start.
 - Clans do not exist: `IM_CLAN` and `instance_check_clan` refuse.
+- Base map flags are copied; only `nomemo` has an effect until instances-content builds `noteleport`, `nobranch` and `partylock`.
+- `max_running` is 100 until instances-core measures the heap per instance map, then what fits in 1 GB.
 
 ## Stub
 
@@ -71,3 +73,4 @@ Named in proposal 0003 section 13, owned by instances-core:
 ## Changes
 
 - v1: initial draft, filled from proposal 0003.
+- v1: frozen 2026-10-27 with proposal 0003.

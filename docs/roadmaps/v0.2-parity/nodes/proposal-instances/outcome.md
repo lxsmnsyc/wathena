@@ -6,6 +6,8 @@
 - docs/roadmaps/v0.2-parity/contracts/instances.md: Interface, Behavior, Stub and Contract tests filled from the proposal. Still `status: draft`, version 1, for the orchestrator to freeze after the maintainer accepts.
 - Numbers taken: proposal 0003. No decision, review decision or migration number used (the design needs no migration; next migration stays 00043).
 
+- Accepted: the maintainer accepted every recommendation on 2026-10-27. The proposal's "Questions for review" became "Decisions in review" (game_master also holds `world.instances`), and the contract is frozen at version 1.
+
 ## Deviations
 
 - None from the brief. The brief asks to freeze the contract; per the worker instructions it stays draft until the maintainer accepts.
