@@ -452,7 +452,7 @@ message CastleTeleport { uint32 id = 1; }
 
 - `EntityAppear.guild` and `EntityGuild` carry NPC and monster badges too (section 7). `GuildBadge.position` is the castle's name for a guardian.
 - Attacks on players use the existing attack command; the server checks `isEnemy`, so an older client that sends one off a GvG map is refused as now.
-- The client: a castle list in the guild window with the teleport button and the economy and defense view, emblems on flag NPCs, the attack cursor and click to attack on enemy players while `MapRules.gvg` is set. It needs no change to show siege announcements: they are announce lines.
+- The client (sieges-ui): a castle list in the guild window with the teleport button and the economy and defense view, emblems on flag NPCs, the attack cursor and click to attack on enemy players while `MapRules.gvg` is set. It needs no change to show siege announcements: they are announce lines.
 
 ### 11. Admin and observability
 
@@ -469,7 +469,7 @@ message CastleTeleport { uint32 id = 1; }
 - Core's castle records name classic castle maps, and their NPCs are classic converted NPCs, so they load only in classic worlds, as the rest of rAthena's fixed content (strategy section 11.4).
 - A procedural world has no castles unless a mod adds records on maps it ships (after mod-assets-gaps). A generated castle (a floor type, a generated Emperium room, a placement in the world layout) is new content and needs its own design; it is not part of v0.2.0.
 
-Recommendation: build mode-independent, load core's castles in classic worlds only, and leave generated castles to a later node.
+Decision 17: build mode-independent, load core's castles in classic worlds only, and leave generated castles to a later node.
 
 ### 13. Performance
 
@@ -485,9 +485,11 @@ What sieges-war measures, with a new `wabots` scenario `siege` (two guilds of bo
 
 Unit and golden tests:
 
-- sieges-castles: record loading (core's 44 and 34, a mod record, `id` and `map` refused on another mod's record, an unknown map left out); the registry's writes, side effects and saves against PostgreSQL; a restart keeps every field; guild break runs `OnGuildBreak` and clears the owner; `castle_change`; flag emblems and their updates on a new emblem; `CastleTeleport`'s outcomes; converter golden files for the castle rows.
-- sieges-war: `isEnemy` on `vs` maps for parties, guilds, allies, enemies, guardians and the Emperium; the predicates under each flag and siege state; each damage rate and its exceptions; nocast, noequip and `restricted` zones; knockback, movement skills, revival, Dead Branch and Fly Wing refusals; respawn after 1 second; the guild action blocks; Emergency Call's bits during and outside sieges; guardian stats with and without Guardian Up; the Emperium's hit rules; `maps.respawn_guild`'s flags; `maps.can_enter`; `npc:wake()`; converter golden files for the siege rows.
-- Golden against rAthena: the fork's recorder gains `record_gvg`, as `record_guild` (reference/rathena/README.md, "Guilds"): normal attacks and a set of weapon, magic and misc skills between players and on guardians and the Emperium, on a map with `MF_GVG` and with `MF_GVG_CASTLE` inside and outside a siege; guardian stats at defense 0, 50 and 100 with Guard Up 0 to 3; flee with the penalty; nocast and noequip refusals; knockback. Both modes.
+- sieges-castles: record loading (core's 44 and 34, a mod record, `id` and `map` refused on another mod's record, an unknown map left out); the registry's writes, side effects and saves against PostgreSQL; a restart keeps every field; guild break runs `OnGuildBreak` and clears the owner; `castle_change`; flag emblems and their updates on a new emblem; converter golden files for the castle rows.
+- gvg-rules: `isEnemy` on `vs` maps for parties, guilds, allies and enemies; the predicates under each flag and siege state; each damage rate and its exceptions; nocast, noequip and `restricted` zones; knockback, movement skills, revival, Dead Branch and Fly Wing refusals; respawn after 1 second; the guild action blocks; Emergency Call's bits during and outside sieges; the Emperium's hit rules.
+- sieges-war: siege start, end and the `OnAgitInit` broadcast at boot; guardian ownership and stats with and without Guardian Up; the Emperium's castle data; `maps.respawn_guild`'s flags; `guild:warp`; `maps.can_enter`; `guilds.relation`; `npc:wake()`; the admin endpoints and their audit rows; converter golden files for the siege rows.
+- sieges-ui: `MapRules`, `GuildCastles`, `CastleInfo` and `CastleTeleport`'s outcomes on the server; the client's castle list, teleport button, economy and defense view, flag emblems and the attack on enemy players, with unit tests and a browser check.
+- Golden against rAthena (gvg-rules): the fork's recorder gains `record_gvg`, as `record_guild` (reference/rathena/README.md, "Guilds"): normal attacks and a set of weapon, magic and misc skills between players and on guardians and the Emperium, on a map with `MF_GVG` and with `MF_GVG_CASTLE` inside and outside a siege; guardian stats at defense 0, 50 and 100 with Guard Up 0 to 3; flee with the penalty; nocast and noequip refusals; knockback. Both modes.
 
 e2e (`e2e/`, a classic world with the kRO assets, PostgreSQL, two guilds of headless bots), the acceptance test of sieges-war:
 
@@ -499,6 +501,14 @@ e2e (`e2e/`, a classic world with the kRO assets, PostgreSQL, two guilds of head
 6. Restart the server: the castle is still B's, the guardian respawns at full HP, and `castle:get_guardian(0).installed` is true.
 
 sieges-content adds an e2e run of converted castles of each edition (one FE, one SE with its stones and barricades, one TE with the job check), from the controller's schedule on the dev clock to a capture and the next day's treasure.
+
+### 15. Who builds what
+
+- **sieges-castles**: section 1 (records and extracts), section 2 (registry, migration 00043, guild break), section 3, section 7's `npc:set_guild` and NPC and guardian badges, the castle part of section 8 (`wa.castles` reads, `set_owner`, `set`, `set_guardian`, `get_guardian`, `castle_change`, `castles.manage`), and the castle rows of section 9.
+- **gvg-rules**: section 5 whole, its ruleset rules and its `record_gvg` goldens, `MapRules` on the server.
+- **sieges-war**: section 4 (siege state, events, `OnAgitInit` at boot, restart), section 6, the rest of section 8 (`start_siege`, `end_siege`, `spawn_guardian`, `maps.can_enter`, `maps.respawn_guild`, `guild:warp`, `guilds.relation`, `npc:wake()`), the siege rows of section 9, section 11, section 13's measurement and the e2e bot siege.
+- **sieges-ui**: section 10's castle messages and commands (`GuildCastles`, `CastleInfo`, `CastleTeleport`), the client's castle window, teleport, flag emblems and attacks on enemy players, and the World screen's castles and sieges.
+- **sieges-content**: the `guild`, `guild2`, `re/guild`, `re/guild3`, `re/quests/woe_te` scripts and the castle warps, and their e2e run.
 
 ## Breaks
 
@@ -523,24 +533,26 @@ sieges-content adds an e2e run of converted castles of each edition (one FE, one
 - **Start castle zones lazily.** Saves memory at boot, but `OnClock0001` treasure, guardian respawns and flags would not run in castles nobody visited, and sieges would start zones in the same tick as their first fight. Not chosen.
 - **PvP first.** GvG needs player versus player targeting; PvP maps would use the same code. PvP is not ported and is not in v0.2.0's scope; this proposal builds only the `vs` parts GvG needs, so PvP can add its flags later.
 
-## Questions for review
+## Decisions in review
 
-1. **Labels and events.** Converted scripts keep rAthena's labels (`OnAgitStart`, `OnAgitInit`, `OnGuildBreak` and the 2 and 3 forms), which the world sends as NPC events; new Lua uses `siege_start`, `siege_end`, `castles_ready` and `castle_change`. Recommendation: both, as proposed.
-2. **Schedule.** rAthena's converted controllers hold the schedule; no config setting. Recommendation: yes; staff use the admin screens, owners who want other hours replace the controller in a mod.
-3. **Restart.** Siege state is not saved; the controllers restart a siege inside its window; castle values are saved on each write. Recommendation: yes, as rAthena.
-4. **Castle zones at boot.** `OnAgitInit` starts the castle zones and flag towns at world start (about 60 zones in renewal). Recommendation: yes; sieges-war measures the heap and the start time.
-5. **Records.** `data/castles.yml` with fixed `id` and `map`, rows keyed by record name, mod IDs from 10,000, teleport costs as economy fields. Recommendation: yes.
-6. **No castle storage, no saved guardian HP.** Recommendation: as rAthena.
-7. **Owner on guild break.** Run `OnGuildBreak` on the record's NPC, then clear the owner; the foreign key clears it in the database too. Recommendation: yes.
-8. **GvG flags need `maps.control`.** Setting `gvg` and the others from a script needs the flagged permission. Recommendation: yes; core holds it.
-9. **Mod permission `castles.manage`** (approval, not flagged), and `npcs.control` too for another mod's castle. Recommendation: yes.
-10. **Staff permissions.** `world.sieges` (start and end) for `admin` and `game_master`; `world.castles` (set an owner) for `admin` only. Recommendation: yes.
-11. **Ruleset rules** with rAthena's defaults: the five GvG damage rates, `gvg_flee_penalty`, `guild_max_castles`, `guild_leaderchange_woe`, `gvg_traps_target_all`, and `emergency_call` with its siege bit. Recommendation: yes.
-12. **Respawn.** 1 second on GvG ground, as rAthena; wAthena's 3 seconds elsewhere. Recommendation: yes.
-13. **`restricted` zones.** Build their effect on nocast, noequip and `maps.can_enter` only, since SE castles (zone 4) and TE dungeons (zone 8) need it; the rest of the flag waits for the map flag work. Recommendation: yes.
-14. **`skill_nocast_db` and `item_noequip` everywhere.** Turning them on applies them to normal maps too (flag 1). Recommendation: yes, as rAthena; sieges-war lists the skills and items that change.
-15. **`bc_woe`** converts as a world announce. Recommendation: yes.
-16. **Castle teleport and the castle window** are in v0.2.0 (renewal's `WarpEnabled` castles). Recommendation: yes; it is small and the data is there.
-17. **Procedural worlds.** No core castles there; mods may add them; generated castles later. Recommendation: yes.
-18. **Performance gate.** sieges-war measures the `siege` scenario; if 100 against 100 in one castle is over budget, decision 0055 comes before the documented siege capacity. Recommendation: yes.
-19. **Node split.** sieges-war as briefed holds the battle rules, the siege, guardians, the converter, the admin tools and the e2e test, more than one L node. Recommendation: split the GvG rules (section 5 and its goldens) into their own node before sieges-war (see the outcome of proposal-sieges).
+The maintainer accepted these on 2026-10-27.
+
+1. Converted scripts keep rAthena's labels, sent as NPC events; new Lua uses `siege_start`, `siege_end`, `castles_ready` and `castle_change`.
+2. The schedule is rAthena's converted controllers; no config setting. Staff start and end sieges from the admin screens; owners replace the controller in a mod.
+3. Siege state is not saved; the controllers restart a siege inside its window; castle values are saved on each write.
+4. `OnAgitInit` starts the castle zones and flag towns at world start; sieges-war measures the heap and the start time.
+5. `data/castles.yml` has fixed `id` and `map`, rows keyed by record name, mod IDs from 10,000, and teleport costs as economy fields.
+6. No castle storage and no saved guardian HP, as rAthena.
+7. A guild break runs `OnGuildBreak` on the record's NPC, then clears the owner; the foreign key clears it in the database too.
+8. Setting a GvG flag from a script needs `maps.control`; core holds it.
+9. Mod permission `castles.manage` (approval, not flagged); another mod's castle also needs `npcs.control`.
+10. Staff permission `world.sieges` is held by `admin` and `game_master`; `world.castles` by `admin` only.
+11. The GvG damage rates, `gvg_flee_penalty`, `guild_max_castles`, `guild_leaderchange_woe`, `gvg_traps_target_all` and `emergency_call` with its siege bit are ruleset rules with rAthena's defaults.
+12. Respawn is 1 second on GvG ground and stays 3 seconds elsewhere.
+13. `restricted` zones are built for nocast, noequip and `maps.can_enter` only.
+14. `skill_nocast_db` and `item_noequip` apply on every map, normal maps included, as rAthena; gvg-rules lists what changes in its decision record.
+15. `bc_woe` converts as a world announce.
+16. Castle teleport and the castle window are in v0.2.0, built by sieges-ui after sieges-war.
+17. Procedural worlds have no core castles; mods may add them; generated castles come later.
+18. sieges-war measures the `siege` scenario; if 100 against 100 in one castle is over budget, decision 0055 comes before the documented siege capacity.
+19. The work splits into gvg-rules, sieges-castles, sieges-war, sieges-ui and sieges-content (section 15).

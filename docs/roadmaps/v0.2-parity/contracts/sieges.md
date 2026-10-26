@@ -1,7 +1,7 @@
 ---
 name: sieges
 version: 1
-status: draft
+status: frozen
 defined_by: proposal-sieges
 ---
 
@@ -9,7 +9,7 @@ defined_by: proposal-sieges
 
 ## Purpose
 
-The interface between the sieges design and the nodes that build on it. `proposal-sieges` freezes it when design proposal 0004 is accepted.
+The interface between the sieges design and the nodes that build on it: gvg-rules, sieges-castles, sieges-war, sieges-ui and sieges-content. Frozen 2026-10-27, when the maintainer accepted design proposal 0004 with every recommendation ("Decisions in review" 1 to 19).
 
 Source: [docs/proposals/0004-sieges.md](../../../proposals/0004-sieges.md). Section numbers below are the proposal's.
 
@@ -23,7 +23,7 @@ Data (section 1):
 
 Database (section 2): migration 00043, table `castles` (`castle` text PK, `owner_id` bigint FK guilds ON DELETE SET NULL, `economy`, `defense`, `invested_economy`, `invested_defense`, `next_time`, `pay_time`, `create_time` integers, `kafra` boolean, `guardians` smallint bits 0 to 7, `updated_at`). Game role: SELECT, INSERT, UPDATE.
 
-Map flags (section 5): `maps.set_flag` and `get_flag` accept `gvg`, `gvg_noparty`, `gvg_castle`, `gvg_dungeon`, `gvg_te`, `gvg_te_castle`, `restricted`; setting them needs `maps.control`. Zone predicates `gvg` (map_flag_gvg), `gvgGround` (map_flag_gvg2), `vs`, `mapType` replace `Zone.GvG`.
+Map flags (section 5, gvg-rules): `maps.set_flag` and `get_flag` accept `gvg`, `gvg_noparty`, `gvg_castle`, `gvg_dungeon`, `gvg_te`, `gvg_te_castle`, `restricted`; setting them needs `maps.control`. Zone predicates `gvg` (map_flag_gvg), `gvgGround` (map_flag_gvg2), `vs`, `mapType` replace `Zone.GvG`.
 
 Lua (section 8), module `wa.castles`:
 
@@ -53,6 +53,8 @@ Admin (section 11): `WorldView.castles` (`CastleView`) and `WorldView.sieges` (`
 - Battle rules of section 5 hold on GvG ground or GvG maps as listed: player targeting on `vs` maps, damage rates, Emperium rules, flee penalty, nocast, noequip, no revival, no knockback, movement skills, cast cancel, respawn after 1 s, guild action blocks, Emergency Call bits.
 - Guardians belong to the castle owner, get castle stats with Guard Up, and clear their installed bit at death. Guardian HP is not saved. The Emperium on a castle map gets castle data with slot 8.
 - No castle storage. Core castles in classic worlds only.
+- Respawn is 1 s on GvG ground, 3 s elsewhere. `skill_nocast_db` and `item_noequip` apply on every map.
+- If 100 against 100 in one castle is over the tick budget, decision 0055 comes before the documented siege capacity.
 
 ## Stub
 
@@ -63,10 +65,13 @@ None. Nodes build on sieges-castles' real registry.
 Named in proposal 0004 section 14:
 
 - sieges-castles: record loading, registry writes and saves (PostgreSQL), restart, guild break, `castle_change`, flag emblems, `CastleTeleport`, converter goldens for the castle rows.
-- sieges-war (or the GvG rules node, if split): targeting, predicates, damage rates, nocast and noequip, movement and revival rules, respawn, guild blocks, Emergency Call, guardian stats, Emperium rules, `maps.respawn_guild`, `maps.can_enter`, `npc:wake()`, converter goldens for siege rows, `record_gvg` goldens against rAthena in both modes.
-- e2e: two guilds of bots; staff owner set with audit row; siege start with `MapRules`; Emperium break changes owner, flags and guardians; guardian install; siege end; restart keeps owner and guardian.
-- Performance: the `siege` wabots scenario at 50 to 300 bots in one castle and 20 castles of 50.
+- gvg-rules: targeting, predicates, damage rates, nocast and noequip on every map, `restricted` zones, movement and revival rules, respawn, guild blocks, Emergency Call, Emperium hit rules, `record_gvg` goldens against rAthena in both modes.
+- sieges-war: siege start and end, `OnAgitInit` at boot, guardian ownership and stats, `maps.respawn_guild`, `guild:warp`, `maps.can_enter`, `guilds.relation`, `npc:wake()`, admin endpoints and audit rows, converter goldens for siege rows.
+- sieges-ui: castle messages and commands, the client castle window, teleport, flag emblems and attacks on enemy players.
+- e2e (sieges-war): two guilds of bots; staff owner set with audit row; siege start with `MapRules`; Emperium break changes owner, flags and guardians; guardian install; siege end; restart keeps owner and guardian.
+- Performance (sieges-war): the `siege` wabots scenario at 50 to 300 bots in one castle and 20 castles of 50.
 
 ## Changes
 
 - v1: initial draft, filled from proposal 0004.
+- v1: frozen 2026-10-27 with proposal 0004.
