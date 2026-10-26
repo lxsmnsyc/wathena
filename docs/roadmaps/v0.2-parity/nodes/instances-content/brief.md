@@ -23,7 +23,7 @@ depends_on:
 
 ## Goal
 
-Make rAthena's memorial dungeon scripts convert and run: work through the `instances` folder by dungeon, fix converter and API gaps each one shows, and add an e2e run of at least two dungeons.
+Make rAthena's memorial dungeon scripts convert and run: work through the `instances` folder by dungeon, fix converter and API gaps each one shows, and add an e2e run of at least two dungeons. Build the map flags `noteleport`, `nobranch` and `partylock` that the dungeons rely on (proposal 0003, decision 13); `nowarpto`, `restricted` and `monster_noteleport` stay copied but not enforced.
 
 ## Context
 
