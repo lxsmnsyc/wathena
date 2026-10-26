@@ -1,7 +1,7 @@
 ---
 id: extract-sync
 title: Check the extracts reproduce from the rAthena fork and fix the README
-status: todo
+status: active
 priority: must
 type: chore
 outline: false
