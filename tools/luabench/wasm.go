@@ -149,14 +149,14 @@ func newWasm(h *Host, l Limits) (Engine, error) {
 }
 
 func (e *wasmEngine) alloc(n int) (uint32, error) {
-	e.stack[0] = uint64(n)
+	e.stack[0] = uint64(n) // #nosec G115 -- a non-negative size.
 	if err := e.malloc.CallWithStack(e.ctx, e.stack); err != nil {
 		return 0, err
 	}
 	if e.stack[0] == 0 {
 		return 0, errors.New("glue_malloc: out of memory")
 	}
-	return uint32(e.stack[0]), nil
+	return uint32(e.stack[0]), nil // #nosec G115 -- a wasm32 address.
 }
 
 // cstring copies s into WebAssembly memory with a trailing zero byte.
@@ -181,7 +181,7 @@ func (e *wasmEngine) luaError(status uint64) error {
 		return err
 	}
 	n, _ := e.mem.ReadUint32Le(e.out)
-	msg, _ := e.mem.Read(uint32(e.stack[0]), n)
+	msg, _ := e.mem.Read(uint32(e.stack[0]), n) // #nosec G115 -- a wasm32 address.
 	return fmt.Errorf("lua error %d: %s", status, msg)
 }
 
@@ -215,7 +215,7 @@ func (e *wasmEngine) Call(fn string, arg int64) (int64, error) {
 		}
 		e.names[fn] = np
 	}
-	e.stack[0], e.stack[1], e.stack[2], e.stack[3] = e.L, uint64(np), uint64(arg), uint64(e.out)
+	e.stack[0], e.stack[1], e.stack[2], e.stack[3] = e.L, uint64(np), uint64(arg), uint64(e.out) // #nosec G115 -- bits are kept as they are.
 	if err := e.call.CallWithStack(e.ctx, e.stack); err != nil {
 		return 0, err
 	}
@@ -223,7 +223,7 @@ func (e *wasmEngine) Call(fn string, arg int64) (int64, error) {
 		return 0, e.luaError(status)
 	}
 	v, _ := e.mem.ReadUint64Le(e.out)
-	return int64(v), nil
+	return int64(v), nil // #nosec G115 -- bits are kept as they are.
 }
 
 // Memory returns the bytes the Lua state has allocated.
@@ -232,7 +232,7 @@ func (e *wasmEngine) Memory() int64 {
 	if err := e.memf.CallWithStack(e.ctx, e.stack); err != nil {
 		return -1
 	}
-	return int64(e.stack[0])
+	return int64(e.stack[0]) // #nosec G115 -- a byte count.
 }
 
 func (e *wasmEngine) Close() {

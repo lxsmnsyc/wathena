@@ -21,9 +21,8 @@ Planned work and its status live in one place, the roadmap at [roadmaps/v0.2-par
 
 Working notes:
 
-- Keep at least 10 GB of disk free. A build or check can use more than 20 GB, so work runs one build at a time. Test PostgreSQL containers that are killed leave unnamed Docker volumes behind; `docker volume prune` removes them.
+- Keep at least 10 GB of disk free. A build or check can use more than 20 GB, so work runs one build at a time. Test PostgreSQL containers that are killed before their cleanup runs leave unnamed Docker volumes behind; `docker volume prune` removes them.
 - The kRO client is extracted at `data/kro/client` (gitignored), and the original zip is deleted. It is the only copy. Build assets with `wactl assets build` and the source `grf:data/kro/client`.
-- Go is 1.27.2. gosec is built from `tools/gosec` until a gosec release reads Go 1.27.2's export data.
 - The repository has no CI ([decision 0026](decisions/0026-local-checks.md)). Run `scripts/check.sh quick` before each commit and `scripts/check.sh` before a push.
 
 ## 1. Current state

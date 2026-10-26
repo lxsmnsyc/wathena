@@ -88,15 +88,14 @@
 #       2082c4762fea6d5cc4cd1f4a243eaacf07b12f576717d4c6b74828bd163cb563
 #   - wasmtime 49.0.1, x86_64-linux archive:
 #       c71f7e0d30a92e418f0d17db7c6d8f6664c1ad764340a1278678f4209deab534
-#   - buf, sqlc, golangci-lint and govulncheck: the variables below.
-#     The script runs them with go run at those versions.
-#   - gosec: tools/gosec/go.mod. The script builds it from there.
+#   - buf, sqlc, golangci-lint, govulncheck and gosec: the variables
+#     below. The script runs them with go run at those versions.
 #
 # Rules:
 #   - Tests that need PostgreSQL read WATHENA_TEST_DATABASE_URL, and so
 #     does the browsers step's exit check. When it is not set and Docker
 #     runs, the script starts a postgres:18 container for the run and
-#     removes it at the end.
+#     removes it and its data volume at the end.
 #     CHECK_NO_DOCKER=1 turns that off, and those tests skip.
 #   - A check of generated files compares them before and after the
 #     generator runs, so uncommitted changes do not fail it.
@@ -113,8 +112,7 @@ buf_version=v1.73.0
 sqlc_version=v1.31.1
 golangci_version=2.14.0
 govulncheck_version=v1.8.0
-# gosec is pinned in tools/gosec/go.mod, with a newer golang.org/x/tools
-# than its own go.mod asks for.
+gosec_version=v2.30.0
 
 default_steps="vet test mods lua loadtest schema queries lint security fuzz client tinygo gen"
 all_steps="$default_steps compose browsers"
@@ -147,7 +145,9 @@ work=$(mktemp -d)
 pg_container=""
 cleanup() {
 	if [ -n "$pg_container" ]; then
-		docker rm -f "$pg_container" >/dev/null 2>&1 || true
+		# -v removes the anonymous volume of the image's data folder,
+		# which Docker keeps otherwise.
+		docker rm -f -v "$pg_container" >/dev/null 2>&1 || true
 	fi
 	rm -rf "$work"
 }
@@ -376,8 +376,7 @@ step_lint() {
 
 step_security() {
 	go run "golang.org/x/vuln/cmd/govulncheck@$govulncheck_version" ./...
-	go build -C tools/gosec -o "$work/gosec" github.com/securego/gosec/v2/cmd/gosec
-	"$work/gosec" -exclude-generated ./...
+	go run "github.com/securego/gosec/v2/cmd/gosec@$gosec_version" -exclude-generated ./...
 	scripts/sqlcheck.sh
 	# The client's dependencies, build tools too (review 2026-10). It
 	# needs the network, as govulncheck does.
