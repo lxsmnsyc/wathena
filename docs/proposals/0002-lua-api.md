@@ -1152,6 +1152,8 @@ The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that inc
 
 ## Next steps
 
+On 2026-10-26 the open items of this list moved to the roadmap at [roadmaps/v0.2-parity/](../roadmaps/v0.2-parity/GOAL.md), which maps every step below in its "Coverage" section. The list stays as the record of steps 1 to 45; new work is planned in the roadmap, not added here. Review decisions are still recorded in this proposal.
+
 1. Build phase 3 step 2, the mod loader, with this context model. Done.
 2. Build the modules in the order the phase 3 steps need them: `wa.context`, `wa.events`, and `wa.timers` with the loader, `wa.bonuses` with item scripts, `wa.variables` with NPCs, and `wa.hooks`, `wa.spawning` and `wa.schedules` with world events. Done for these steps. `wa.storage` and `wa.exports` come later.
 3. Review the API that step 4 added. Done: review decision 14.
