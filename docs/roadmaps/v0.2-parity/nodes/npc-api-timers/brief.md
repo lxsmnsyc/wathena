@@ -1,6 +1,6 @@
 ---
 id: npc-api-timers
-title: NPC API: player timers, yearly schedules and NPC timer gaps
+title: NPC API: waits, server clock timers and player timers
 status: todo
 priority: must
 type: feature
@@ -32,7 +32,7 @@ depends_on:
     why: the sleeping-map timer rule is a review item
 ---
 
-# NPC API: player timers, yearly schedules and NPC timer gaps
+# NPC API: waits, server clock timers and player timers
 
 ## Goal
 
