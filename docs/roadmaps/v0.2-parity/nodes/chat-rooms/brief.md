@@ -28,9 +28,9 @@ shared:
   - client/src/net/**
   - server/zone/**
   - server/modscript/**
-  - server/store/migrations/**
-  - server/store/queries/**
-  - server/store/db/**
+  - server/chat/**
+  - server/rules/**
+  - tools/convert/npc*.go
 provides: []
 depends_on:
   - on: proposal-small-systems
@@ -42,19 +42,22 @@ depends_on:
 
 ## Goal
 
-Build chat rooms for players and NPCs as proposal 0006 describes, with the client window, and convert `waitingroom`, `warpwaitingpc`, `enablewaitingroomevent`, `disablewaitingroomevent` and `getwaitingroomstate`.
+Build chat rooms as proposal 0006 section 2 and the room rows of sections 12 to 19 describe: zone-local rooms for players and NPCs, not saved, with rAthena's limits and triggers, the `CHAT_CHANNEL_ROOM` channel and the client window. Convert `waitingroom`, `delwaitingroom`, `warpwaitingpc`, `enablewaitingroomevent`, `disablewaitingroomevent`, `getwaitingroomstate` and `kickwaitingroomall`, and lift the `nochat` and `no_chat` refusals.
 
 ## Context
 
-See the frozen `small-systems` contract.
+See the frozen `small-systems` contract and proposal 0006, "Decisions in review". The gotchas for this node are in nodes/proposal-small-systems/outcome.md.
 
-- Source: proposal 0006 (to write)
+- A member of a player room who walks leaves it (decision 10).
+- Mod permission `chat_rooms.manage` (decision 14).
+- Source: proposal 0006 section 23
 
 ## Acceptance
 
-- [ ] The command rows drop in the reports; tests cover each system.
+- [ ] The room command rows convert in npc-scripts-*.md in both modes.
+- [ ] Tests cover limits, triggers, `warpwaitingpc` and kicks; an e2e test runs an NPC room that warps its members.
 - [ ] Fast check passes: `scripts/check.sh quick`
 
 ## Sizing
 
-One system per node.
+M: one zone-local system with a window.

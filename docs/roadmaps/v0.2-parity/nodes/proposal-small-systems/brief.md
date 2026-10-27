@@ -1,7 +1,7 @@
 ---
 id: proposal-small-systems
 title: Design proposal: chat rooms, marriage, achievements and windows
-status: active
+status: done
 priority: must
 type: contract
 outline: false
