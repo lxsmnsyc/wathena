@@ -454,19 +454,21 @@ e2e (`e2e/`, a classic world with kRO assets, PostgreSQL, headless bots), accept
 - **Build adoption now.** Needs baby classes (tier 3) and unreachable jobs. Not chosen.
 - **Fake the enchants as cards.** Cards list only filled slots, so an enchant at position 3 of an item with no card slots cannot be told from a card. Not chosen; `Extra.Enchants` keeps positions.
 
-## Questions for review
+## Decisions in review
 
-1. Adoption, the baby skills and the family columns move to v0.3.0 with the baby classes (`tier3-systems`). Recommended: yes. Nothing in the scripts needs them and no baby job is reachable.
-2. Kafra points in cash shop prices (G8) move to `tier3-systems` with the cash shop. Recommended: yes.
-3. Split `marriage-and-navigation` into `marriage` and `navigation`. Recommended: yes (section 23).
-4. Split `ui-windows` into `ui-windows` (refine, stylist, bank) and `item-windows` (enchant, enchant grade, reform). Recommended: yes.
-5. Achievements are data (`data/achievements.yml`, `data/titles.yml`) plus converted Lua functions, with score computed from the records at load. Recommended: yes.
-6. Title text comes from the granting achievement's name until a client data node extracts `TitleTable`. Recommended: yes.
-7. Navigation routes over warp NPCs only in v0.2.0; airship, Kafra and scroll edges come from an optional `data/navi.yml` that core does not fill. Recommended: yes.
-8. Marriage is two tied rows in `character_partners` (00048), not columns on `characters`. Recommended: yes.
-9. The bank is a core account currency `bank` with no migration, and `bank_state_enforce` defaults to 1 (rAthena's 0). Recommended: yes.
-10. A member of a player room who walks leaves it (rAthena lets a modified client walk). Recommended: yes.
-11. Item windows are `must` for v0.2.0 as the brief says, and the first to become `should` if the release is late. Recommended: keep `must`; the 130 reform items and 4 enchant NPCs are renewal rows.
-12. The recorder files and extracts of section 22 are added by the node that needs them, in the fork's local branch, until the open question on pushing it is settled. Recommended: yes.
-13. The converter's `getbattleflag("feature.refineui")` and its two siblings become rule reads once the window exists, so every refine NPC takes the window branch in both modes. Recommended: yes, as rAthena's default is on.
-14. The three new mod permissions (`chat_rooms.manage`, `marriage.manage`, `achievements.manage`) need approval and are not flagged; the staff permissions are `players.marriage`, `players.achievements` (`admin`, `game_master`) and `players.bank` (`admin`). Recommended: yes.
+The maintainer accepted every recommendation on 2026-10-27.
+
+1. Adoption, the baby skills and the family columns move to v0.3.0 with the baby classes (`tier3-systems`). Nothing in the scripts needs them and no baby job is reachable.
+2. Kafra points in cash shop prices (G8) move to `tier3-systems` with the cash shop.
+3. Split `marriage-and-navigation` into `marriage` and `navigation` (section 23).
+4. Split `ui-windows` into `ui-windows` (refine, stylist, bank) and `item-windows` (enchant, enchant grade, reform).
+5. Achievements are data (`data/achievements.yml`, `data/titles.yml`) plus converted Lua functions, with score computed from the records at load.
+6. Title text comes from the granting achievement's name until a client data node extracts `TitleTable`.
+7. Navigation routes over warp NPCs only in v0.2.0; airship, Kafra and scroll edges come from an optional `data/navi.yml` that core does not fill.
+8. Marriage is two tied rows in `character_partners` (00048), not columns on `characters`.
+9. The bank is a core account currency `bank` with no migration, and `bank_state_enforce` defaults to 1 (rAthena's 0).
+10. A member of a player room who walks leaves it (rAthena lets a modified client walk).
+11. Item windows are `must` for v0.2.0 as the brief says, and the first to become `should` if the release is late. They stay `must`; the 130 reform items and 4 enchant NPCs are renewal rows.
+12. The recorder files and extracts of section 22 are added by the node that needs them, in the fork's local branch, until the open question on pushing it is settled.
+13. The converter's `getbattleflag("feature.refineui")` and its two siblings become rule reads once the window exists, so every refine NPC takes the window branch in both modes. rAthena's default is on.
+14. The three new mod permissions (`chat_rooms.manage`, `marriage.manage`, `achievements.manage`) need approval and are not flagged; the staff permissions are `players.marriage`, `players.achievements` (`admin`, `game_master`) and `players.bank` (`admin`).

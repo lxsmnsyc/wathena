@@ -5,6 +5,7 @@
 - docs/proposals/0006-small-systems.md: design proposal 0006 (Problem, Change sections 1 to 23, Breaks, Alternatives, 14 questions for review).
 - docs/roadmaps/v0.2-parity/contracts/small-systems.md: Interface, Behavior, Stub and Contract tests filled. Still `status: draft`, version 1, for the orchestrator to freeze after the maintainer accepts.
 - Numbers: proposal 0006. Migrations named 00048 (`character_partners`), 00049 (`character_achievements`, `characters.title`), 00050 (`enchant_grade`, `enchants` on four item tables), after 0005's 00047; numbers are taken in merge order. Protocol events start at 128. No decision or review decision number used.
+- Accepted: the maintainer accepted every recommendation on 2026-10-27. The questions became "Decisions in review"; the contract is frozen at version 1.
 - No builds, tests or Docker. Read-only greps and reads of the repo and of the rAthena fork (branch wathena-reference, untouched).
 
 ## Deviations

@@ -1,7 +1,7 @@
 ---
 name: small-systems
 version: 1
-status: draft
+status: frozen
 defined_by: proposal-small-systems
 ---
 
@@ -9,9 +9,9 @@ defined_by: proposal-small-systems
 
 ## Purpose
 
-The interface between the small-systems design and the nodes that build on it: chat-rooms, marriage (split from marriage-and-navigation), navigation, achievements, ui-windows and item-windows. `proposal-small-systems` freezes it when design proposal 0006 is accepted.
+The interface between the small-systems design and the nodes that build on it: chat-rooms, marriage (split from marriage-and-navigation), navigation, achievements, ui-windows and item-windows. Frozen 2026-10-27, when the maintainer accepted design proposal 0006 with every recommendation ("Decisions in review" 1 to 14).
 
-Source: [docs/proposals/0006-small-systems.md](../../../proposals/0006-small-systems.md). Section numbers below are the proposal's. Draft: the maintainer's answers to its "Questions for review" may change it.
+Source: [docs/proposals/0006-small-systems.md](../../../proposals/0006-small-systems.md). Section numbers below are the proposal's.
 
 ## Interface
 
@@ -71,4 +71,4 @@ Named in proposal 0006 section 22:
 
 ## Changes
 
-- v1: initial draft from proposal 0006.
+- v1: filled from proposal 0006 and frozen with the maintainer's decisions.
