@@ -1372,7 +1372,7 @@ func (b *body) showdigit(args []Expr) error {
 	if kind < 0 || kind >= int64(len(names)) {
 		return unsupported(what, "type %d", kind)
 	}
-	b.line("player:show_digits(%s, %s)", v.asInt(), luaString(names[kind]))
+	b.line("player:show_digits(%s, %s)", v.asInt(), luaString(names[kind])) // #nosec G602 -- kind is checked against len(names) above.
 	return nil
 }
 
