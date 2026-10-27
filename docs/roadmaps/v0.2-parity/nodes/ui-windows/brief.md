@@ -1,6 +1,6 @@
 ---
 id: ui-windows
-title: Stylist, bank, refine, enchant and item reform windows
+title: Refine, stylist and bank windows
 status: todo
 priority: must
 type: feature
@@ -11,6 +11,8 @@ spike: false
 gate: false
 owns:
   - server/refine/**
+  - server/stylist/**
+  - server/bank/**
   - client/src/viewer/refine*
   - client/src/viewer/stylist*
   - client/src/viewer/bank*
@@ -30,12 +32,14 @@ shared:
   - client/src/net/**
   - server/zone/**
   - server/modscript/**
-  - server/store/migrations/**
-  - server/store/queries/**
-  - server/store/db/**
+  - server/status/**
+  - server/currency/**
+  - server/transfer/**
+  - server/item/**
+  - server/rules/**
+  - reference/rathena/**
   - docs/generated/item-scripts-*.md
   - tools/convert/use.go
-  - tools/convert/output.go
 provides: []
 depends_on:
   - on: proposal-small-systems
@@ -43,28 +47,28 @@ depends_on:
     via: small-systems
   - on: extract-sync
     kind: hard
-    why: the HD and Enriched refine costs need the extractor
+    why: the extended refine extract needs the fork's extractor
 ---
 
-# Stylist, bank, refine, enchant and item reform windows
+# Refine, stylist and bank windows
 
 ## Goal
 
-Build the stylist, the zeny bank, and the refine, enchant, enchant grade and item reform windows as proposal 0006 describes, and convert `openstylist`, `openbank`, `refineui`, `item_enchant`, `item_reform`, `enchantgradeui`. Include the HD and Enriched refine costs the extract lacks (decision 0064).
+Build the refine window (proposal 0006 section 8), the stylist (section 6) and the zeny bank (section 7). Refine: the extract gains Normal, HD and Enriched costs, `blessing` and the broadcast flags; `server/refine` replaces the Normal-only reads and decision 0064's HD and Enriched error goes; pre-renewal HD refuses. Stylist: renewal data, charges in rAthena's order, accessories by mail. Bank: core account currency `bank` with no migration, `bank_state_enforce` 1, staff `players.bank`. Convert `refineui`, `openstylist` and `openbank`; `feature.refineui`, `feature.stylist` and `feature.banking` become rule reads (decision 13).
 
 ## Context
 
-See the frozen `small-systems` contract.
+See the frozen `small-systems` contract and proposal 0006, "Decisions in review". The gotchas for this node are in nodes/proposal-small-systems/outcome.md.
 
-Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md): Kafra points paying part of a cash shop price is deferred to this node as a product call (G8); no script blocks on it, so it may stay unbuilt.
-
-- Source: proposal 0006 (to write)
+- Scope cut by decision 4: enchant, enchant grade and reform are item-windows. Kafra points in the cash shop moved to tier3-systems (decision 2).
+- Source: proposal 0006 section 23
 
 ## Acceptance
 
-- [ ] The command rows drop in the reports; tests cover each system.
+- [ ] The three command rows convert; refine NPCs take the window branch in both modes.
+- [ ] Refine costs and results for all three types match `refine_ui` recordings; stylist and bank have tests; the bank moves zeny with an audit row (PostgreSQL).
 - [ ] Fast check passes: `scripts/check.sh quick`
 
 ## Sizing
 
-L: four windows with client and server; split per window if it grows.
+L: three windows with client and server.

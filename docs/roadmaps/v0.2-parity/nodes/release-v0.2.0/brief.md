@@ -47,7 +47,13 @@ depends_on:
   - on: homunculus
     kind: hard
     why: must be in the release
-  - on: marriage-and-navigation
+  - on: marriage
+    kind: hard
+    why: must be in the release
+  - on: navigation
+    kind: hard
+    why: must be in the release
+  - on: item-windows
     kind: hard
     why: must be in the release
   - on: achievements

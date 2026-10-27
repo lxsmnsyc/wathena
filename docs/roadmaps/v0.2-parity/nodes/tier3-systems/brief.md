@@ -20,7 +20,7 @@ depends_on:
 
 ## Goal
 
-Systems strategy section 11 left to mods, which full parity needs: VIP (84 items), Laphine synthesis and upgrade (381 items), reputation, clans (`getcharid(5)`), roulette, cash shop with Kafra points. Decide per system whether core or a sample mod builds it.
+Systems strategy section 11 left to mods, which full parity needs: VIP (84 items), Laphine synthesis and upgrade (381 items), reputation, clans (`getcharid(5)`), roulette, cash shop with Kafra points (review decision 60 G8, proposal 0006 decision 2), adoption with the baby classes and skills WE_BABY, WE_CALLPARENT, WE_CALLBABY, WE_CHEERUP and the `child`, `father`, `mother` columns (proposal 0006 decision 1). Decide per system whether core or a sample mod builds it.
 
 ## Context
 

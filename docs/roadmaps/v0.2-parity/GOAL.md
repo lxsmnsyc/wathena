@@ -51,7 +51,7 @@ Nodes run one at a time, so each worker takes the next free number when it start
 
 - Decision records: docs/decisions/NNNN-*.md, next 0067.
 - Review decisions (in proposal 0002): next 61.
-- Design proposals: docs/proposals/NNNN-*.md, next 0006. Planned: 0003 instances, 0004 sieges, 0005 companions, 0006 small systems.
+- Design proposals: docs/proposals/NNNN-*.md, next 0007 (0003 to 0006 are written).
 - Migrations: server/store/migrations/NNNNN_*.sql, next 00043.
 - `schema.Version` is 1; `release-v0.2.0` raises it.
 
@@ -90,7 +90,7 @@ Proposal 0002 next steps:
 Proposal 0002b:
 
 - B1-B10 built (decisions 0062-0066); leftovers as in steps 41-45 above.
-- Category C: instances -> proposal-instances, instances-core, instances-content; sieges -> proposal-sieges, sieges-*; battlegrounds -> battlegrounds; chat rooms, navigation, marriage, achievements, stylist, bank, enchant and reform windows -> proposal-small-systems and its nodes; homunculus, mercenaries -> proposal-companions, companion-units, homunculus, mercenaries (pets -> pets; Homunculus S -> homunculus-s in v0.3.0, proposal 0005 decision 8); reputation -> tier3-systems; auctions -> dropped (strategy 11.3, replaced by vending search and mail).
+- Category C: instances -> proposal-instances, instances-core, instances-content; sieges -> proposal-sieges, sieges-*; battlegrounds -> battlegrounds; chat rooms, navigation, marriage, achievements, stylist, bank, enchant and reform windows -> proposal-small-systems, chat-rooms, marriage, navigation, achievements, ui-windows, item-windows (adoption -> tier3-systems, proposal 0006 decision 1); homunculus, mercenaries -> proposal-companions, companion-units, homunculus, mercenaries (pets -> pets; Homunculus S -> homunculus-s in v0.3.0, proposal 0005 decision 8); reputation -> tier3-systems; auctions -> dropped (strategy 11.3, replaced by vending search and mail).
 - Category D (`query_sql`, `setbattleflag`, `atcommand`) -> dropped: refused by decisions.
 
 strategy.md:
