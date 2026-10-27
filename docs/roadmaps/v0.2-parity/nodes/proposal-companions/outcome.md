@@ -5,6 +5,7 @@
 - docs/proposals/0005-companions.md: design proposal 0005 (Problem, Change sections 1 to 17, Breaks, Alternatives, 18 questions for review).
 - docs/roadmaps/v0.2-parity/contracts/companions.md: Interface, Behavior, Stub and Contract tests filled from the proposal. Still `status: draft`, version 1, for the orchestrator to freeze after the maintainer accepts.
 - Numbers: proposal 0005. Migrations named 00044 (`character_followers`), 00045 (`pets`), 00046 (`character_homunculi`), 00047 (`character_mercenary_guilds`), after 0004's 00043; numbers are taken in merge order. No decision or review decision number used. Protocol field numbers start at 121 for events and move with merge order.
+- Accepted: the maintainer accepted the recommendations on 2026-10-27 except decisions 8 and 13. Homunculus S needs the Geneticist (a third class, not built), so homunculus-s is a v0.3.0 outline that depends on third-classes, and `homunculus_s_max_level` is decided there. The questions became "Decisions in review"; the contract is frozen at version 1.
 - No builds, tests or Docker. Read-only greps and reads of the repo and of the rAthena fork (branch wathena-reference, untouched).
 
 ## Deviations

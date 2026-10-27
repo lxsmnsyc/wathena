@@ -138,7 +138,7 @@ The server applies the highest tier whose threshold the pet's intimacy meets (a 
 
 **3.8 Evolution.** `homevolution` and the item `Stone_Of_Intelligence_` convert to `homunculus:evolve()`. It needs `homunculus_evo_intimacy_need`, an active unit and an unevolved class. Intimacy is reset to `homunculus_evo_intimacy_reset`.
 
-**3.9 Mutation and Homunculus S.** `morphembryo`, `hommutate` and the S records, skills and growth rules: they are a separate node (section 17): `homunculus-s`. They need the S classes' data, the 42 `MH_*` skills with goldens and `npc/re/quests/homun_s.txt`. Renewal only: pre-renewal's data has no S class. The data and the state field `prev_class` are in the base node so saves do not change later.
+**3.9 Mutation and Homunculus S.** `morphembryo`, `hommutate` and the S records, skills and growth rules: they are a separate node (section 17): `homunculus-s`. They need the S classes' data, the 42 `MH_*` skills with goldens and `npc/re/quests/homun_s.txt`. Renewal only: pre-renewal's data has no S class. The data and the state field `prev_class` are in the base node so saves do not change later. Mutation needs a Geneticist owner, a third class, so homunculus-s is in v0.3.0 after third-classes (decision 8); until then the mutation calls are refused with a reason.
 
 **3.10 Death and revive.** At 0 HP the unit stays saved, leaves the map, and its hunger timer stops (as `hom_dead`). `AM_RESURRECTHOMUN` brings it back at its owner's cell. The owner's death vaporizes an active unit at 80% HP or more (`homunculus_auto_vapor`); under 80 it stays on the map and follows when the owner revives.
 
@@ -444,7 +444,7 @@ All text goes through the client's locale tables. Windows follow `windows.ts` co
 One of each follower per player, as rAthena. No follower count limit beyond that. Rules (`server/rules/limits.go`, with rAthena's shipped conf values; booleans are 0 or 1):
 
 - Pets: `pet_catch_rate` 100, `pet_legacy_formula` 0, `pet_distance_check` 5, `pet_hide_check` 1, `pet_rename` 0, `pet_friendly_rate` 100, `pet_hungry_delay_rate` 100, `pet_equip_required` 1, `pet_unequip_destroy` 1, `pet_attack_support` 0, `pet_damage_support` 0, `pet_support_min_friendly` 900, `pet_status_support` 0, `pet_support_rate` 100, `pet_attack_exp_to_master` 0, `pet_attack_exp_rate` 100, `pet_lv_rate` 0, `pet_max_stats` 99, `pet_max_atk1` 500, `pet_max_atk2` 1000, `pet_disable_in_gvg` 0, `pet_ignore_infinite_def` 1, `pet_master_dead` 0, `pet_walk_speed` 1, `pet_evolution` 1, `pet_autofeed` 1, `pet_autofeed_rate` 89.
-- Homunculi: `hom_setting` 0x3D, `homunculus_friendly_rate` 100, `hom_rename` 0, `homunculus_evo_intimacy_need` 91100, `homunculus_evo_intimacy_reset` 1000, `hvan_explosion_intimate` 45000, `homunculus_auto_vapor` 80, `homunculus_max_level` 99, `homunculus_s_max_level` 275, `homunculus_s_growth_level` 99, `homunculus_exp_gain` 10, `homunculus_starving_rate` 10, `homunculus_starving_delay` 20000, `homunculus_autoloot` 0, `homunculus_autofeed` 1, `homunculus_autofeed_rate` 30, `hom_delay_reset_vaporize` 1.
+- Homunculi: `hom_setting` 0x3D, `homunculus_friendly_rate` 100, `hom_rename` 0, `homunculus_evo_intimacy_need` 91100, `homunculus_evo_intimacy_reset` 1000, `hvan_explosion_intimate` 45000, `homunculus_auto_vapor` 80, `homunculus_max_level` 99 (`homunculus_s_max_level` and `homunculus_s_growth_level` come with homunculus-s in v0.3.0, decision 13), `homunculus_exp_gain` 10, `homunculus_starving_rate` 10, `homunculus_starving_delay` 20000, `homunculus_autoloot` 0, `homunculus_autofeed` 1, `homunculus_autofeed_rate` 30, `hom_delay_reset_vaporize` 1.
 - Mercenaries: `mercenary_autoloot` 0, `mer_idle_no_share` 0, `mercenary_kill_faith` 50 (kills for +1 faith and the buff, rAthena's constant).
 - Follower AI: `follower_follow_range` 3, `follower_chase_range` 12, `follower_teleport_delay` 3000 (wAthena's, from rAthena's constants, so servers can tune them).
 - Flag `homunculus` gets its effects (3.3, 3.4, 3.5, section 1.3). It sits beside the other flags in `mod.flagValues` (already there).
@@ -507,8 +507,8 @@ e2e (`e2e/`, a classic world with kRO assets, PostgreSQL, headless bots), accept
 - **pets**: sections 2, the pet parts of 5, 6, 7, 8, 9 (00045), 10, 12, 13, 16. Needs `server/item/**` (`Extra.PetID`), `server/progression/**` (egg drop), `server/zone/loot.go`, `server/zone/itemactions.go`, `server/mod/**`, `server/gamedata/**`, `server/rules/**`, `server/character/**`, `server/store/*.go`, `reference/rathena/extracts/**`, and the fork's `extract.py`. Owned: `server/companion/pet*.go`, `server/companion/core/data/pets.yml`, `server/zone/pet*.go`, `client/src/viewer/pet*`.
 - **mercenaries**: sections 4 and the mercenary parts of 5 to 13, 16 (the recorder's `mercenary_life` and `follower_skill` for mercenary skills). Its brief lacks the skills and the goldens: add owned `server/skill/merc*.go`, `server/zone/merc*.go`, `server/companion/core/data/mercenaries.yml`, and shared `server/battle/testdata/**`, `reference/rathena/**`, `server/skill/**`, `server/character/**`, `server/store/*.go`, `server/mod/**`, `server/gamedata/**`. Depends on extract-sync (soft: the recorder's new files come from the fork) in addition to companion-units. Size M (L if the 41 skills need most of the work; see the split in question 8).
 - **homunculus**: sections 3 (without 3.9), the homunculus parts of 5 to 13 and 16: the 16 regular skills and the three Alchemist skills, creation, levels, evolution, hunger, the exp share and the flag. Needs `server/progression/**`, `server/status/**`, `server/statuschange/**`, `server/rules/**`, `server/character/**`, `server/store/*.go`, `server/mod/**`, `server/gamedata/**`, `reference/rathena/extracts/**`. Owned: `server/companion/homun*.go`, `server/skill/homun*.go`, `server/zone/homun*.go`, `server/companion/core/data/homunculi.yml`, `client/src/viewer/homun*`. Size L, as its brief says.
-- **homunculus-s** (new node): section 3.9: `morphembryo`, `hommutate`, `homshuffle`, the five S records and growth rules, the 42 `MH_*` skills with goldens, the S state in the window, and `npc/re/quests/homun_s.txt` conversion. Owned: `server/companion/homun_s*.go`, `server/skill/homun_s*.go`. Depends on homunculus. Priority: should (v0.2.0 ships without Homunculus S if needed, as strategy section 11.2 calls it tier 3); renewal only.
-- The three system nodes do not need each other. They can run in any order after companion-units; the sequential rule picks pets, mercenaries, homunculus, homunculus-s, because pets are smallest and homunculus-s is optional.
+- **homunculus-s** (new node): section 3.9: `morphembryo`, `hommutate`, `homshuffle`, the five S records and growth rules, the 42 `MH_*` skills with goldens, the S state in the window, and `npc/re/quests/homun_s.txt` conversion. Owned: `server/companion/homun_s*.go`, `server/skill/homun_s*.go`. Depends on homunculus and third-classes (the Geneticist). Milestone v0.3.0 (decision 8); renewal only.
+- The three system nodes do not need each other. They can run in any order after companion-units; the sequential rule picks pets, mercenaries, homunculus, because pets are smallest. homunculus-s waits for v0.3.0.
 
 ## Breaks
 
@@ -532,23 +532,25 @@ e2e (`e2e/`, a classic world with kRO assets, PostgreSQL, headless bots), accept
 - **Build Homunculus S inside homunculus.** One node, but it adds 42 skills with goldens, an NPC quest and a separate priority to an L node. Not chosen.
 - **Elementals.** Strategy section 11.2 lists them and they need third classes. Out of scope; the follower base has room for a fourth kind.
 
-## Questions for review
+## Decisions in review
 
-1. Followers are entities of their own (`entity.follower`), not monsters. Recommended: yes.
-2. The monster's walking state moves into an embedded `walkState` shared with followers, as a mechanical change guarded by the existing `mob_ai.json` goldens. Recommended: yes.
-3. The server runs the follower AI with wAthena's own rules (orders, follow, defend the owner, default skill rules), because rAthena's AI is the kRO client's and cannot be recorded. Recommended: yes, and each system's decision record lists its skill use rules.
-4. Pets are never targets and never enemies, as rAthena. Recommended: yes.
-5. Pets, homunculi and mercenaries never save skill cooldowns or statuses, as players' do not. Recommended: yes.
-6. Pet state is a `pets` table referenced by `pet_id` on item rows, with a retention reaper for orphans, and an egg made before the change is repaired at load. Recommended: yes.
-7. The small mercenary state and the base's test kind use a generic `character_followers` table (00044); pets (00045), homunculi (00046) and mercenary guild counters (00047) use typed tables. Recommended: yes.
-8. Homunculus S (mutation, five S classes, 42 `MH_*` skills, `homun_s.txt`) is a separate node `homunculus-s`, priority should, renewal only. Recommended: yes. If the maintainer wants it in v0.2.0, the node moves to must.
-9. Pet bonuses are data tiers by intimacy with procs, converted from the `Script` pattern, and a script that does not match is refused with a reason. Recommended: yes.
-10. `SupportScript` (`petloot`, `petskill*`, `petrecovery`, `petheal`) is built as a record block behind `pet_status_support` (default 0), though no core record uses it. Recommended: yes, since mods can use it, but as the last item of the pets node and cut first if the node runs long.
-11. One new mod permission, `companions.manage` (approval, not flagged), covers creating, hatching, calling, hiring, evolving and removing followers and changing their values. Recommended: yes.
-12. Staff get `players.companions` (create and remove a player's followers, audited, `admin` and `game_master`) and GM commands under `commands.companions`. Recommended: yes; the endpoints and commands go to companion-units so each system node only registers its kind.
-13. `homunculus_s_max_level` is 275 (the shipped conf), not the code default 150. Recommended: 275, with a note in the homunculus-s decision record.
-14. Mercenary contract time counts only while the owner is online, as rAthena. Recommended: yes.
-15. The mercenary guild NPC, taming quests and the homunculus quest are classic content only; procedural towns get them from a later template node. Recommended: yes.
-16. companion-units measures the `companions` scenario, and if 500 bots with three followers each are over budget, decision 0055 comes before the documented capacity. Recommended: yes.
-17. The follower AI tunables (`follower_follow_range`, `follower_chase_range`, `follower_teleport_delay`) are ruleset rules with rAthena's constants. Recommended: yes.
-18. The work splits into companion-units, pets, mercenaries, homunculus and homunculus-s, with the owned path changes of section 17. Recommended: yes; mercenaries' skills (41, with goldens) stay in mercenaries unless the node's estimate grows, then they split into `mercenary-skills`.
+The maintainer accepted these on 2026-10-27. Decisions 8 and 13 differ from the recommendation: Homunculus S needs the Geneticist, a third class.
+
+1. Followers are entities of their own (`entity.follower`), not monsters.
+2. The monster's walking state moves into an embedded `walkState` shared with followers, guarded by the existing `mob_ai.json` goldens.
+3. The server runs the follower AI with wAthena's own rules, because rAthena's AI is the kRO client's. Each system's decision record lists its skill use rules.
+4. Pets are never targets and never enemies.
+5. Followers never save skill cooldowns or statuses.
+6. Pet state is a `pets` table referenced by `pet_id` on item rows, with a retention reaper for orphans; an egg made before the change is repaired at load.
+7. `character_followers` (00044) holds the mercenary state and the base's test kind; pets (00045), homunculi (00046) and mercenary guild counters (00047) use typed tables.
+8. Homunculus S (mutation, the five S classes, 42 `MH_*` skills, `homun_s.txt`) is not in v0.2.0. rAthena's mutation quest (`npc/re/quests/homun_s.txt`) requires a Geneticist with Bioethics, the S level cap of 275 is above v0.2.0's level 99, and wAthena has no third classes. The node `homunculus-s` is a v0.3.0 outline that depends on third-classes. The homunculus node keeps the S data and `prev_class` in its saves; `homunculus:mutate()`, `homunculus:morph()`, `homunculus:shuffle()`, `morphembryo`, `hommutate` and `homshuffle` are refused with a reason until then.
+9. Pet bonuses are data tiers by intimacy with procs; a script that does not match is refused with a reason.
+10. `SupportScript` is built behind `pet_status_support` (default 0), as the last item of the pets node, and is cut first if the node runs long.
+11. One new mod permission, `companions.manage` (approval, not flagged).
+12. Staff permission `players.companions` (`admin` and `game_master`) and GM commands under `commands.companions`, built by companion-units.
+13. `homunculus_s_max_level` is decided by homunculus-s in v0.3.0; the rule is not added in v0.2.0.
+14. Mercenary contract time counts only while the owner is online.
+15. The mercenary guild NPC, taming quests and the homunculus quest are classic content only; procedural towns get them from a later template node.
+16. companion-units measures the `companions` scenario; if 500 bots with three followers each are over budget, decision 0055 comes before the documented capacity.
+17. `follower_follow_range`, `follower_chase_range` and `follower_teleport_delay` are ruleset rules with rAthena's constants.
+18. The v0.2.0 work splits into companion-units, pets, mercenaries and homunculus with the owned path changes of section 17; homunculus-s follows in v0.3.0. Mercenaries' 41 skills split into `mercenary-skills` only if the node's estimate grows.
