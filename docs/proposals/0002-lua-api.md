@@ -1175,6 +1175,31 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Refused:** removing `staff.owners`; documenting 500 players from the v0.1.0 runs; placing bots without a database URL.
     - No Lua API or protocol change.
 
+62. World generation and content review (review-world-gen, decisions 0040 to 0047, and next steps 4, 5, 17 and 28 to 33). The user approved these on 2026-10-27:
+    - **Settled, nothing to build:**
+      - Test worlds make a town per template and a dungeon per style; a floor's band is `place:get_band`; two dungeons of one style are `crypt` and `crypt-2`; the band formula is decision 0042's.
+      - Quest calls for another character convert (decision 0066); `setquestinfo` is not an rAthena command; `questinfo`, `open_quest_ui` and the minimap mark are built (decision 0063).
+      - `player:give_exp`, `weight` and `skill_points` are public (decision 0064).
+      - A freed jailed player whose return map is gone goes to the save point.
+      - Economy checks after hooks run as `wactl sim economy --config`.
+      - Guild towns follow decision 0047; the archives item is dropped.
+      - `respawn_milliseconds` and the `new_player` fields are final (review decision 24); steps 4 and 5 are done.
+    - **Kept as built:** the info line for an NPC placed by tag with no match; the model player and the targets of decision 0046.
+    - **Built in world-gen-fixes (v0.2.0):**
+      - Typed events' `level_band` picks generated fields.
+      - `spawns.modify` and `world.generate` are flagged permissions.
+      - `set_staff_role`, `plan_restart`, `rotate` and `change_region` of `wa.testing` are stable.
+      - The data export holds each character's entered maps and memo points, format version 1.
+      - Core's scripts use the public calls, and `skill_points`, `weight` and `give_exp` leave `wa.internal`.
+      - Tests: `monsters.get` in hooks and layers, and the release of a jailed player whose return map is gone.
+    - **Built in the modding milestone:**
+      - world-gen-api: `towns.get_distance(a, b)`, `towns.get_teleport_price(from, to)`, a `spawn` field in `monsters.get`'s record, `player:get_quests(state?)`, `quests.get(quest)`, `world.get_quests(options?)`, `map:is_walkable(x, y)` in layers, the places scope `field:any`, `world.get_rotation(dungeon)` and `town:get_season()`. All need `game.read`.
+      - world-gen-rules: the dungeon style field `spawn_biome`; the quest template fields `repeat` and `time_limit`, with defaults that keep today's behavior; `spawn_table` hooks at rotations and region changes; `procedural.layout.rotating`, the number of rotating dungeons, 1 by default; `rewards` of automatic events as a list.
+      - mod-assets-gaps: test worlds run a mod's map folders, home maps included; records that add props to a tileset for layers' objects.
+    - **Deferred to later:** mods' own tilesets (generator version 4 and a proposal first); a Lua read of a map's stored spawns; the theme chance as a setting; a cancel for a forced world change; locale text and a banner for the change warnings.
+    - **Refused:** a record field for server services on NPCs; longer `@renametown` names; options for quest events; layers on rotating floors and changed fields; stored forced changes; new level bands at a world change; an automatic economy re-check after hooks and a mod's own targets; a Lua read of simulated rates; `content.GuildLevel` as a setting; a general map type in map data.
+    - Additions to API 1.0 only; no protocol or schema change.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
