@@ -1,7 +1,7 @@
 ---
 id: review-world-gen
 title: Review the open world generation and content questions
-status: todo
+status: active
 priority: should
 type: docs
 outline: false
