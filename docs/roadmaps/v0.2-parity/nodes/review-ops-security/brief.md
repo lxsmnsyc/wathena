@@ -1,7 +1,7 @@
 ---
 id: review-ops-security
 title: Review the open operations and security questions
-status: todo
+status: done
 priority: must
 type: docs
 outline: false

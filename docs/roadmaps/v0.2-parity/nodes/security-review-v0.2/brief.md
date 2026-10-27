@@ -54,7 +54,7 @@ depends_on:
 
 ## Goal
 
-Review the new attack surface of v0.2.0 against section 7's threat model: instances, sieges, companions, chat rooms, the bank and the new NPC API across zones. Fix high and critical findings. Run the hour-long fuzz tests (`scripts/fuzz.sh 1h`) that v0.1.0 left.
+Review the new attack surface of v0.2.0 against section 7's threat model: instances, sieges, companions, chat rooms, the bank and the new NPC API across zones. Fix high and critical findings. Run the hour-long fuzz tests (`scripts/fuzz.sh 1h`) that v0.1.0 left. Also, from review decision 61: check that no v0.2.0 migration grants `wathena_account` more than `SELECT, INSERT` on `characters` and `INSERT` on `inventory`; check that the new admin endpoints (instances, sieges) write their audit rows after the zone change with a context that outlives the request; list the accepted risks and known issues (account role start values, secret file modes, Compose database TLS, unsigned backups) for the release notes.
 
 ## Context
 

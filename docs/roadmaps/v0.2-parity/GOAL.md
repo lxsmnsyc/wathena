@@ -50,7 +50,7 @@ v0.2.0 is tagged with 1:1 parity with rAthena (strategy.md section 14.2a) for ev
 Nodes run one at a time, so each worker takes the next free number when it starts and notes it in its outcome:
 
 - Decision records: docs/decisions/NNNN-*.md, next 0067.
-- Review decisions (in proposal 0002): next 61.
+- Review decisions (in proposal 0002): next 62.
 - Design proposals: docs/proposals/NNNN-*.md, next 0007 (0003 to 0006 are written).
 - Migrations: server/store/migrations/NNNNN_*.sql, next 00043.
 - `schema.Version` is 1; `release-v0.2.0` raises it.

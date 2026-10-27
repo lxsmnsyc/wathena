@@ -1161,6 +1161,20 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Refused:** a CPU time limit on the Lua thread, since wasi has no thread clock.
     - All of these add to API 1.0, except `heal_percent` at -100, which changes review decision 56's `percentheal -100` rule: -100 now kills.
 
+61. Operations and security review (review-ops-security, decisions 0048, 0049, 0050 and 0054, the security review of 2026-10, and next steps 19 and 34 to 37). The user approved these on 2026-10-27:
+    - **Kept as built:** `world.read` for `GET /retention`; the scheduled verify checks the newest backup each interval, also an unchanged one; bot placement needs a database URL; step 19's permission names are all in use.
+    - **Built in security-fixes:**
+      - A passkey reauth needs user verification in every case.
+      - `waserver` refuses to start when a `staff.owners` name has no account, except with `--dev`. `staff.owners` stays for more than one owner.
+      - `scripts/release.sh` checks the versions of Go, zig, Node and pnpm and runs `go mod verify`, with a `--check-tools` flag that `scripts/check.sh all` runs.
+      - After a zone applies an admin change, its audit and sanction rows are written with a context that outlives the request.
+      - The retention job takes its cutoffs from the database clock.
+    - **Capacity:** the release documents the highest count at which every run of every scenario but Crowd meets decision 0050's rule, found from 250 in steps of 250, on the machine it names. It claims no more.
+    - **Deferred:** `--at` and other Prometheus measurements to later; 1,000 players in one town, a dedicated machine for the load test and database TLS to distributed-mode; unsigned backups to signed-releases; the account role's start values to a new node `character-start-function`, with proposal 0007 first.
+    - **Accepted risk:** the secret files stay mode 644 in their 0700 folder.
+    - **Refused:** removing `staff.owners`; documenting 500 players from the v0.1.0 runs; placing bots without a database URL.
+    - No Lua API or protocol change.
+
 ## Version
 
 The API is version 1.0, and a mod's manifest says `api: 1.0` or a range that includes it, such as `">=1.0 <2.0"` (strategy section 6.12). Manifests said `api: experimental` through phases 3 and 4, since phase 4 changed parts of the API, such as monster stats, and moved to `api: 1.0` after the phase 4 exit check.
