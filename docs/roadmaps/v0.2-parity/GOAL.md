@@ -27,7 +27,7 @@ v0.2.0 is tagged with 1:1 parity with rAthena (strategy.md section 14.2a) for ev
 
 ## Constraints
 
-- **Strictly sequential.** Run check-hygiene first: it stops the disk leak every later check run would add to. One node, one worker, one worktree, one build at a time. A build or check can use more than 20 GB of disk. Run `plan.py` with `--max-parallel 1`. Read-only research agents are fine.
+- **Strictly sequential.** Run check-hygiene first: it stops the disk leak every later check run would add to. One node, one worker, one build at a time. No git worktrees: the worker runs in the main checkout on the branch the orchestrator names (maintainer, 2026-10-27). A build or check can use more than 20 GB of disk. Run `plan.py` with `--max-parallel 1`. Read-only research agents are fine.
 - Keep at least 10 GB of disk free. Run `docker volume prune` after check runs.
 - Changes to the protocol, the public Lua API, the map format, the seed spec or the database schema need a design proposal first (docs/proposals/README.md). Small API additions go in as amendments to proposal 0002.
 - Commits are signed off (`git commit -s`) and use Conventional Commits. No CI (decision 0026); checks run locally.
