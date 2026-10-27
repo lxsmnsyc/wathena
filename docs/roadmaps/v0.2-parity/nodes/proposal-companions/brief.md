@@ -1,7 +1,7 @@
 ---
 id: proposal-companions
 title: Design proposal: pets, homunculus and mercenaries
-status: active
+status: done
 priority: must
 type: contract
 outline: false
