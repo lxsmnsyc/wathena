@@ -440,7 +440,10 @@ These are proposals for the orchestrator. This node edits no other brief.
 - **mod-assets-gaps** (existing, modding). Add two steps: (a) test worlds run a mod's map folders, home maps included, and `world:new_player { map }` takes `gen:home:<id>` (B3); (b) records that add props to a tileset for layers' objects, with the model of the mod's art (E4).
 - **Inbox, no node:** theme chance setting (C4), `content.GuildLevel` setting (H1), stored spawns read (C2), cancel of a forced change (F4), locale text and banner for warnings (F7), mods' own tilesets with generator v4 (A2). Today's inbox lines for the other phase 7 "Left" items stay.
 
-## Draft review decision 62
+## Review decision 62
+
+Accepted by the maintainer on 2026-10-27 with every recommendation, and recorded in docs/proposals/0002-lua-api.md.
+
 
 62. World generation and content review (review-world-gen, decisions 0040 to 0047, and next steps 4, 5, 17 and 28 to 33). The user approved these on (date):
     - **Settled, nothing to build:**

@@ -20,7 +20,7 @@ depends_on:
 
 ## Goal
 
-Review decision 41's leftovers: Ogg and MP3 sounds, pack map folders, zones that run mods' maps, and map record fields (music, minimap).
+Review decision 41's leftovers: Ogg and MP3 sounds, pack map folders, zones that run mods' maps, and map record fields (music, minimap). From review decision 62: test worlds run a mod's map folders, home maps included, and `world:new_player { map }` takes `gen:home:<id>` (B3); records that add props to a tileset for layers' objects, with the mod's own art (E4).
 
 ## Context
 

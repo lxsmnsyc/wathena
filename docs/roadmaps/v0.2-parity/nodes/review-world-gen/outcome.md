@@ -2,6 +2,8 @@
 
 ## Built
 
+- Accepted: the maintainer accepted all 15 recommendations on 2026-10-27; recorded as review decision 62 in docs/proposals/0002-lua-api.md.
+
 - review.md: 46 entries by source decision (0040 to 0047 and proposal 0002 steps 4, 5 and 17), a summary table, 15 questions for the maintainer with recommended answers, the proposed nodes and "Draft review decision 62". Review decision number taken: none (the orchestrator records 62 after approval). Decision record number taken: none.
 - Counts: 19 accept, 13 settled, 7 refuse, 5 defer, 2 keep.
 - Accepted work by node: world-gen-fixes 5 plus 3 checks (v0.2.0, should); world-gen-api 7 and world-gen-rules 5 (modding, could); mod-assets-gaps 2 (existing).
