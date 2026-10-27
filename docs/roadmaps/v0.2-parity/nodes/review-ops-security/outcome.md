@@ -2,6 +2,8 @@
 
 ## Built
 
+- Accepted: the maintainer accepted all 12 recommendations on 2026-10-27; recorded as review decision 61 in docs/proposals/0002-lua-api.md.
+
 - review.md: 19 entries by source decision, a summary table, 12 questions for the maintainer with recommended answers, the list security-fixes builds, proposed brief changes and "Draft review decision 61". Review decision number taken: none yet (the orchestrator records 61 after approval). Decision record number taken: none.
 - Counts: 5 accept (B3, D1, D2 hardening, D5, E1), 7 defer (A2, B2, C2, C4, D3, D6, D7), 4 refuse (A1, C1, C3, D4; D2 refuses the removal), 3 keep or settled (B1, E2, F1).
 - security-fixes builds: D1 passkey reauth needs user verification; D2 `waserver` refuses a `staff.owners` name with no account (not with `--dev`); D5 `release.sh` version checks and `--check-tools`; E1 audit and sanction rows after a zone change use a context that outlives the request; B3 retention cutoffs from the database clock; the review-2026-10.md statuses and one deploy guide line.

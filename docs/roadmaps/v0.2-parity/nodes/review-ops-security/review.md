@@ -284,7 +284,10 @@ These are proposals for the orchestrator. This node edits no other brief.
 - **New node `character-start-function`** (type feature, milestone later, priority later, size M, depends on release-v0.2.0). Goal: a SECURITY DEFINER `create_character` that sets the start values from a start config in the database and logs the start items, and `INSERT` taken from the account role (D3). First step: design proposal 0007.
 - **Inbox, no node:** other Prometheus measurements (B2), `--at` (A2).
 
-## Draft review decision 61
+## Review decision 61
+
+Accepted by the maintainer on 2026-10-27 with every recommendation, and recorded in docs/proposals/0002-lua-api.md.
+
 
 61. Operations and security review (review-ops-security, decisions 0048, 0049, 0050 and 0054, the security review of 2026-10, and next steps 19 and 34 to 37). The user approved these on (date):
     - **Kept as built:** `world.read` for `GET /retention`; the scheduled verify checks the newest backup each interval, also an unchanged one; bot placement needs a database URL; step 19's permission names are all in use.

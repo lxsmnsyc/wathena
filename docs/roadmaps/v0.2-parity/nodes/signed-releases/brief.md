@@ -20,7 +20,7 @@ depends_on:
 
 ## Goal
 
-Phase 9: signed mod packages and server checks with trusted keys (review decision 41's leftover), and signed backups if the ops review asks.
+Phase 9: signed mod packages and server checks with trusted keys (review decision 41's leftover), and signed backup manifests (review decision 61, D7; where the signing key lives is an open question).
 
 ## Context
 

@@ -90,7 +90,8 @@ Section 14.2a: every rAthena system in scope runs in both rulesets, and every NP
 - [ ] Regenerate reports; list every remaining unconverted script with its reason.
 - [ ] Raise `schema.Version` (decisions 0063-0065).
 - [ ] `scripts/check.sh all`, `e2e`, `economy`, load tests at the documented count.
-- [ ] Release notes, SECURITY.md supported versions, deploy guide.
+- [ ] Load test capacity (review decision 61): run from 250 upward in steps of 250, three runs near the limit, on the shared Mac, named in the notes; document the highest count at which every run of every scenario but Crowd meets decision 0050's rule, and nothing above it.
+- [ ] Release notes, SECURITY.md supported versions, deploy guide. Known issues: account role start values, secret file modes (accepted risk), Compose database TLS, unsigned backups, Crowd and 1,000 players in one town. The deploy guide gets the `--at` workaround (one manual backup at the wanted hour) and says that the scheduled verify repeats an unchanged backup on purpose.
 - [ ] Tag on the commit that passed every check.
 
 ## Acceptance

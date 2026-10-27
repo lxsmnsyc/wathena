@@ -20,7 +20,7 @@ depends_on:
 
 ## Goal
 
-Phase 10 item 5: the distributed mode, the network forms of `admin.World` and `account.Game`, the send cost of 1,000 players in one town (decision 0050), load tests at 7,500 bots.
+Phase 10 item 5: the distributed mode, the network forms of `admin.World` and `account.Game`, the send cost of 1,000 players in one town (decision 0050), load tests at 7,500 bots, database TLS between hosts and a load run on a dedicated machine (review decision 61, D6 and C4).
 
 ## Context
 

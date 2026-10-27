@@ -14,3 +14,5 @@ Ideas and parked items. The curator looks at this list at every checkpoint.
 - 2026-10-26: Mod switches after start reaching added zones; world quests after a change (decision 0045 "Left").
 - 2026-10-26: `MemoryDenyWriteExecute` in the systemd unit, pending wazero testing (deploy/README.md).
 - 2026-10-27: Deferred by review decision 60 to later: `OnNPCKillEvent`, `attachrid` without force, reads of another map's player, statuses on a monster of another map, `schedules.yearly`, a level per staff role, reading a limit without permission, chat channel commands, party result codes, guild calls without sieges, `countbound`, `openstorage2` modes, `getitembound3/4`, `guildstoragedelitem`, `npcshopitem`, `npcshopattach`, `mail` arrays, `searchstores` on another map. No rAthena NPC script uses them; mods may ask.
+- 2026-10-27: `--at`, a time of day for the backup schedule (review decision 61, A2). Workaround in the deploy guide.
+- 2026-10-27: Other Prometheus measurements (review decision 61, B2).
