@@ -1,7 +1,7 @@
 ---
 id: check-hygiene
 title: Check script hygiene: leaked volumes and tool pins
-status: active
+status: done
 priority: must
 type: chore
 outline: false
