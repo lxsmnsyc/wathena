@@ -27,7 +27,7 @@ v0.2.0 is tagged with 1:1 parity with rAthena (strategy.md section 14.2a) for ev
 
 ## Constraints
 
-- **Strictly sequential.** Run check-hygiene first: it stops the disk leak every later check run would add to. One node, one worker, one worktree, one build at a time. A build or check can use more than 20 GB of disk. Run `plan.py` with `--max-parallel 1`. Read-only research agents are fine.
+- **Strictly sequential.** Run check-hygiene first: it stops the disk leak every later check run would add to. One node, one worker, one build at a time. No git worktrees: the worker runs in the main checkout on the branch the orchestrator names (maintainer, 2026-10-27). A build or check can use more than 20 GB of disk. Run `plan.py` with `--max-parallel 1`. Read-only research agents are fine.
 - Keep at least 10 GB of disk free. Run `docker volume prune` after check runs.
 - Changes to the protocol, the public Lua API, the map format, the seed spec or the database schema need a design proposal first (docs/proposals/README.md). Small API additions go in as amendments to proposal 0002.
 - Commits are signed off (`git commit -s`) and use Conventional Commits. No CI (decision 0026); checks run locally.
@@ -50,8 +50,8 @@ v0.2.0 is tagged with 1:1 parity with rAthena (strategy.md section 14.2a) for ev
 Nodes run one at a time, so each worker takes the next free number when it starts and notes it in its outcome:
 
 - Decision records: docs/decisions/NNNN-*.md, next 0067.
-- Review decisions (in proposal 0002): next 60.
-- Design proposals: docs/proposals/NNNN-*.md, next 0003. Planned: 0003 instances, 0004 sieges, 0005 companions, 0006 small systems.
+- Review decisions (in proposal 0002): next 61.
+- Design proposals: docs/proposals/NNNN-*.md, next 0006. Planned: 0003 instances, 0004 sieges, 0005 companions, 0006 small systems.
 - Migrations: server/store/migrations/NNNNN_*.sql, next 00043.
 - `schema.Version` is 1; `release-v0.2.0` raises it.
 
@@ -83,14 +83,14 @@ Proposal 0002 next steps:
 - 28-33 -> review-world-gen.
 - 34-37 -> review-ops-security, then security-fixes.
 - 38 -> review-npc-api.
-- 39 (long string compare, Lua CPU limit) -> review-npc-api.
+- 39 (long string compare, Lua CPU limit) -> review-npc-api; review decision 60 moved the string cost to lua-cost-accounting and refused the thread CPU limit.
 - 40 -> converter-names, converter-commands, npc-api-timers; `OnInterIfInitOnce` -> review-npc-api.
 - 41-45 -> review-npc-api, then npc-api-events and npc-api-timers; `maps.can_enter` -> sieges-war; HD and Enriched refine costs -> ui-windows; `active_transform` -> item-effects; warg -> third-classes.
 
 Proposal 0002b:
 
 - B1-B10 built (decisions 0062-0066); leftovers as in steps 41-45 above.
-- Category C: instances -> proposal-instances, instances-core, instances-content; sieges -> proposal-sieges, sieges-*; battlegrounds -> battlegrounds; chat rooms, navigation, marriage, achievements, stylist, bank, enchant and reform windows -> proposal-small-systems and its nodes; homunculus, mercenaries -> proposal-companions, companion-units, homunculus, mercenaries (pets -> pets); reputation -> tier3-systems; auctions -> dropped (strategy 11.3, replaced by vending search and mail).
+- Category C: instances -> proposal-instances, instances-core, instances-content; sieges -> proposal-sieges, sieges-*; battlegrounds -> battlegrounds; chat rooms, navigation, marriage, achievements, stylist, bank, enchant and reform windows -> proposal-small-systems and its nodes; homunculus, mercenaries -> proposal-companions, companion-units, homunculus, mercenaries (pets -> pets; Homunculus S -> homunculus-s in v0.3.0, proposal 0005 decision 8); reputation -> tier3-systems; auctions -> dropped (strategy 11.3, replaced by vending search and mail).
 - Category D (`query_sql`, `setbattleflag`, `atcommand`) -> dropped: refused by decisions.
 
 strategy.md:

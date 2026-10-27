@@ -23,10 +23,12 @@ depends_on:
 
 ## Goal
 
-Make rAthena's memorial dungeon scripts convert and run: work through the `instances` folder by dungeon, fix converter and API gaps each one shows, and add an e2e run of at least two dungeons.
+Make rAthena's memorial dungeon scripts convert and run: work through the `instances` folder by dungeon, fix converter and API gaps each one shows, and add an e2e run of at least two dungeons. Build the map flags `noteleport`, `nobranch` and `partylock` that the dungeons rely on (proposal 0003, decision 13); `nowarpto`, `restricted` and `monster_noteleport` stay copied but not enforced.
 
 ## Context
 
 2,860 renewal and 296 pre-renewal script NPCs, plus 10 NPCs on instance maps. This node will likely split by dungeon group once `instances-core` lands; the curator refines it then.
+
+Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md): `monster:use_skill` takes `{ cast_milliseconds, can_cancel, emotion }` for `areamobuseskill` (B7).
 
 - Source: npc-scripts-renewal.md instances folder

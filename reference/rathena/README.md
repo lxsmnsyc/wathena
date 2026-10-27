@@ -8,8 +8,11 @@ Go code loads these files with the `internal/reference` package. Its tests check
 
 ## Source
 
-- rAthena commit: `e98500617` (full hash in each file's `rathena_git_hash` field).
-- Recorded with the `wathena-reference` branch of a rAthena fork, which adds a recorder to `map-server-generator` and two scripts.
+- rAthena data: commit `e98500617` ("6th rebalance - Meister - Part 1", #9997). The `wathena-reference` branch of the fork is based on it and changes no data. The recordings carry it in `rathena_git_hash`.
+- Everything reproduces from fork commit `39de3053d` (checked on 2026-10-27). The fork's `wathena-reference` branch holds the whole recorder (`src/map/wathena_recorder.cpp`, `tools/wathena/record.sh`) and every extract function of `tools/wathena/extract.py`. Its commits, oldest first: `575d83531` extract script, `3f5534394` inventory script, `83616e3c3` exp tables and drops, `84dbe9b2f` job stats, `e9dceb60e` item weights and heals, `27ad000bc` warps, `f4641e37b` script constants, item scripts and groups, `003599e1c` NPCs, shops and item prices, `eac0a7e75` equipment, refine and monster groups, `2eb1327f4` status, `e92917ccc` skills, skill trees and casting, `784fce3ec` second class recordings and job change NPCs, `ecf13b511` monsters, `8e1c56558` random options, `5e50b7ad9` mounts, `50df331ca` party sharing, `f30328d04` guilds, `4214647ba` item trade, `3e45adbd3` barter shops and shop settings, `60bed4ccf` quests, `28488df04` refine costs, `39de3053d` part files for quest, warp and event NPCs.
+- `python3 tools/wathena/extract.py` at `39de3053d` writes every file in `extracts/` with the same content as this folder. Only `rathena_git_hash` differs: in `extracts/` it is the fork commit that last wrote the file, and a run writes `39de3053d`. The files were not copied again.
+- The recordings (`renewal/`, `pre-renewal/`) need `record.sh` and a built map server. The 2026-10-27 check did not rebuild them.
+- The fork's branch has no upstream and is not on its remote yet.
 - The recorder and scripts stay in the rAthena fork. This repository keeps only their output, so it does not need a C++ toolchain.
 
 ## Folders
@@ -18,7 +21,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. `random_options.json` is what random options read, described below. `guilds.json` is what guilds read, described below. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. `random_options.json` is what random options read, described below. `guilds.json` is what guilds read, described below. `quests.json` is what quests read, described below. `item_trade.json` holds the Trade flags of each item that sets one, and `shops.json` the barter shops, the items for buying stores, and the vending, store search and mail settings. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -88,7 +91,7 @@ The converter also reads two extracts per mode for NPCs ([decision 0008](../../d
 | renewal | 6,870 | 358 | 5.3 MB | 2.0 MB |
 | pre-renewal | 4,190 | 185 | 3.2 MB | 0.4 MB |
 
-The part files, from rAthena fork commit `28488df04` with a change to `extract.py` that the fork does not have yet (below):
+The part files, from rAthena fork commit `28488df04` (`PART_FOLDERS` is in the fork since `39de3053d`):
 
 | Mode | `quests` | `warps` | `events` | Files | Size |
 |---|---:|---:|---:|---:|---:|
@@ -97,7 +100,7 @@ The part files, from rAthena fork commit `28488df04` with a change to `extract.p
 
 Each count is of script NPC lines, duplicates too. The largest file is 1.9 MB. `npcs.json` itself was already above 2 MB, at 8.3 MB and 4.8 MB, and only its header changed.
 
-The change to `tools/wathena/extract.py` adds `PART_FOLDERS` and the part files to `build_npcs`, and `extract.py npcs`, which writes `warps.json`, `npcs.json`, its part files and `item_prices.json` alone:
+`PART_FOLDERS` and the part files are in `build_npcs` of `tools/wathena/extract.py`, with `extract.py npcs`, which writes `warps.json`, `npcs.json`, its part files and `item_prices.json` alone:
 
 ```text
 python3 tools/wathena/extract.py npcs
@@ -105,14 +108,14 @@ python3 tools/wathena/extract.py npcs
 
 Two runs give the same files. `warps.json` and `item_prices.json` come out the same but for `rathena_git_hash`, so they were not copied again.
 
-They were first extracted at rAthena fork commit `003599e1c`. The `jobs` folder came at commit `e92917ccc`, with a change to `extract.py` that the fork does not have yet: `0002-extract-job-change-npcs.patch` (see "Second class recordings").
+They were first extracted at rAthena fork commit `003599e1c`. The `jobs` folder came at commit `784fce3ec`.
 
 ## Equipment
 
 Equipment reads three extracts per mode ([decision 0009](../../docs/decisions/0009-stats-as-totals-of-modifiers.md)):
 
 - `equipment.json`: the equipment fields of every weapon, armor, ammunition, shadow gear and card in `item_db_*.yml`, with `ItemDatabase::parseBodyNode`'s defaults and caps and `loadingFinished`'s fixes: type and subtype, location (`EQP_` bits), ATK, MATK, DEF, range, card slots, weapon and armor level, level range, refineable, view, `class_base` from `Jobs` through `itemdb_jobid2mapid`, `class_upper` from `Classes`, sex after `defaultGender`, and the `item_noequip.txt` restriction. Type names are read without case, as rAthena reads them through script constants.
-- `refine_db.json`: `refine.yml` as `RefineDatabase` loads it, without costs and chances: the bonus and random bonus of each refine level, by group and item level.
+- `refine_db.json`: `refine.yml` as `RefineDatabase` loads it, without chances: the bonus and random bonus of each refine level, by group and item level, and the Normal refine costs (since `28488df04`).
 - `monster_groups.json`: each monster's `RaceGroups` as `RC2_` values.
 
 | Mode | Equipment items | Refine levels | Monsters with race groups |
@@ -120,7 +123,7 @@ Equipment reads three extracts per mode ([decision 0009](../../docs/decisions/00
 | renewal | 18,504 | 160 | 454 |
 | pre-renewal | 2,539 | 70 | 93 |
 
-They were extracted at rAthena fork commit `003599e1c`, with three functions that the fork's `tools/wathena/extract.py` does not have yet: `build_equipment`, `build_refine` and `build_monster_groups`. Their output was checked byte for byte against these files. Until the fork gains them, regenerating with `extract.py` leaves these three files as they are.
+They come from `build_equipment`, `build_refine` and `build_monster_groups` in the fork's `tools/wathena/extract.py`, added at rAthena fork commit `eac0a7e75`.
 
 ## Status effects
 
@@ -133,7 +136,7 @@ Status effects read one extract per mode ([decision 0010](../../docs/decisions/0
 | renewal | 1,018 | 168 |
 | pre-renewal | 699 | 67 |
 
-It was extracted at rAthena fork commit `eac0a7e75`, with a function that the fork's `tools/wathena/extract.py` does not have yet: `build_status`. Until the fork gains it, regenerating with `extract.py` leaves this file as it is.
+It comes from `build_status` in the fork's `tools/wathena/extract.py`, added at rAthena fork commit `2eb1327f4`.
 
 ## Skills
 
@@ -147,7 +150,7 @@ Skills read two extracts per mode ([decision 0011](../../docs/decisions/0011-ski
 | renewal | 1,635 | 175 | 8,122 |
 | pre-renewal | 1,228 | 77 | 2,121 |
 
-They were extracted at rAthena fork commit `2eb1327f4`, with a function that the fork's `tools/wathena/extract.py` does not have yet: `build_skills`. Until the fork gains it, regenerating with `extract.py` leaves these files as they are. The same holds for the recorder fix below and `record_skill_casting`.
+They come from `build_skills` in the fork's `tools/wathena/extract.py`, added at rAthena fork commit `e92917ccc`, which also adds the recorder fix below and `record_skill_casting`.
 
 `pc_damage.json` and `skill_damage.json` were recorded again with the recorder fix for ranged attacks: the recorder now sets `arrow_atk` for a bow or gun with ammunition equipped, as `battle_calc_attack` callers do, and for skills that need ammunition. `skill_casting.json` is new. The other formula files did not change.
 
@@ -164,7 +167,7 @@ They were extracted at rAthena fork commit `2eb1327f4`, with a function that the
 | renewal | 129 skills, 1.2 MB | 6,078 cases, 2.5 MB | 622 cases, 1.2 MB |
 | pre-renewal | 129 skills, 1.2 MB | 6,096 cases, 2.5 MB | 512 cases, 0.9 MB |
 
-The recorder changes are not in the fork yet. They are in two patches against fork commit `e92917ccc`, kept outside this repository: `0001-record-second-class-skills.patch` (the recorder, `record_skill_status`, and `WATHENA_RECORD_ONLY` to record only some files) and `0002-extract-job-change-npcs.patch` (the `jobs` folder in `npcs.json`). With them applied, the recordings come from:
+The recorder changes are in the fork since commit `784fce3ec`: the recorder, `record_skill_status`, and `WATHENA_RECORD_ONLY` to record only some files, with the `jobs` folder in `npcs.json`. The recordings come from:
 
 ```text
 WATHENA_RECORD_ONLY=skill_damage,skill_casting,skill_status bash tools/wathena/record.sh renewal pre-renewal

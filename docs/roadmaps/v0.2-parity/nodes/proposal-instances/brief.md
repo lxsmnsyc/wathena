@@ -1,7 +1,7 @@
 ---
 id: proposal-instances
 title: Design proposal: instances
-status: todo
+status: done
 priority: must
 type: contract
 outline: false

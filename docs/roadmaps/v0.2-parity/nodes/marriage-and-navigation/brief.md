@@ -11,7 +11,7 @@ spike: false
 gate: false
 owns:
   - server/social/marriage*.go
-  - client/src/world/navi*
+  - client/src/viewer/navi*
 shared:
   - server/modscript/luaapi/spec.go
   - server/modscript/prelude.lua

@@ -15,12 +15,18 @@ owns:
   - tools/convert/npclua.go
   - tools/convert/ast.go
   - tools/convert/expr.go
+  - tools/convert/npc.go
 shared:
   - tools/convert/rathena.lua
   - tools/convert/npcexpr.go
   - docs/generated/npc-scripts-*.md
   - docs/generated/classic-coverage.md
   - tools/convert/output.go
+  - server/modscript/variables.go
+  - server/modscript/luaapi/spec.go
+  - server/modscript/prelude.lua
+  - docs/generated/lua-api.md
+  - docs/generated/lua/**
 provides: []
 depends_on:
   - on: review-npc-api
@@ -32,11 +38,13 @@ depends_on:
 
 ## Goal
 
-Close the converter's parse and naming gaps that need no new Lua API: variable names rAthena accepts but the converter refuses (221 renewal and 47 pre-renewal NPCs, for example `$@3rdgc_room02`), names that start with a digit, `getarg` outside a function (64), an assignment used as a value (8), labels inside a block (6), `getd`/`setd` of computed names, and `sscanf`.
+Close the converter's parse and naming gaps: `wa.variables` names may start with a digit (F1, an API amendment in server/modscript/variables.go:78); an assignment used as a value becomes an inline function that assigns and returns (F2); computed `getd`/`setd` names keep `.@` variables in a table, make `.` variables NPC variables, and declare other scopes at run time (F3); an NPC with a touch area and no touch label clicks on touch, as rAthena (E2); plus the rows that need no decision: other variable names rAthena accepts (221 renewal and 47 pre-renewal NPCs), `getarg` outside a function (64), labels inside a block (6), and `sscanf`.
 
 ## Context
 
 Proposal 0002 next step 40 lists these as left. Variables are kept by name at run time for computed names; decide how they count toward limits (decision 0062 says core has no count limit).
+
+Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md). E2: rAthena skips the click while the player talks (`sd->npc_id == 0`); wAthena queues touches while talking, so the converted handler must not click for a touch that waited. Check whether a player read of 'is talking' exists before adding API.
 
 - Source: proposal 0002 next step 40; npc-scripts-renewal.md command table
 

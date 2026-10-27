@@ -18,6 +18,12 @@ depends_on:
   - on: instances-content
     kind: hard
     why: reviews the finished system
+  - on: instances-ui
+    kind: hard
+    why: reviews the staff endpoint and client commands
+  - on: sieges-ui
+    kind: hard
+    why: reviews the castle teleport and admin endpoints
   - on: sieges-content
     kind: hard
     why: reviews the finished system

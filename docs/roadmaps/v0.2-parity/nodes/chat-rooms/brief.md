@@ -11,7 +11,7 @@ spike: false
 gate: false
 owns:
   - server/chatroom/**
-  - client/src/world/chatroom*
+  - client/src/viewer/chatroom*
 shared:
   - server/modscript/luaapi/spec.go
   - server/modscript/prelude.lua

@@ -22,6 +22,9 @@ shared:
   - docs/proposals/0002-lua-api.md
   - server/zone/**
   - server/modscript/**
+  - schema/proto/**
+  - schema/gen/**
+  - client/src/**
 provides: []
 depends_on:
   - on: item-effects
@@ -33,11 +36,13 @@ depends_on:
 
 ## Goal
 
-Make items that cast skills work: `itemskill` (110 delayed-use items in renewal, 61 in pre-renewal, plus usable items), `unitskilluseid` (18), and the skill names the converter does not know (`DC_FORTUNEKISS2`, `BA_POEMBRAGI2`). Delayed-use items become usable once their skill casts.
+Make items that cast skills work: `itemskill` (110 delayed-use items in renewal, 61 in pre-renewal, plus usable items), `unitskilluseid` (18), and the skill names the converter does not know (`DC_FORTUNEKISS2`, `BA_POEMBRAGI2`). Also E6 and E7 of review decision 60. Delayed-use items become usable once their skill casts.
 
 ## Context
 
 Delayed use is 2.4% full in renewal and 17.1% in pre-renewal, almost all `itemskill`. Laphine and item reform are other nodes.
+
+Review decision 60 (docs/proposals/0002-lua-api.md, 2026-10-27; details in nodes/review-npc-api/review.md): `player:get_skill_level` counts item and temporary levels, as `getskilllv` (E7), and `SkillInfo.granted_level` shows item skills in the client's skill list (E6, a protocol change; the release raises `schema.Version`).
 
 - Source: item-scripts-*.md 'Delayed use'
 
