@@ -625,7 +625,7 @@ function wa_Player:show_effect(effect, options) end
 ---@param effect integer An effect from wa.effects.
 function wa_Player:remove_effect(effect) end
 
----Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself is bc_self: only the player hears it. The chat filter and the chat hooks do not see it.
+---Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself, or "self", is bc_self: only the player hears it. "self" also works on a player of another map. The chat filter and the chat hooks do not see it.
 ---@param text string 1 to 255 bytes. Players see the player's name before it.
 ---@param options? wa.SayAloudOptions Only to: a player's line has no color.
 function wa_Player:say_aloud(text, options) end
@@ -1093,6 +1093,10 @@ function wa_Monster:set_modes(modes) end
 ---Sets the monster's walk speed, as setunitdata's UMOB_SPEED.
 ---@param milliseconds integer Per cell, 20 to 1000.
 function wa_Monster:set_speed(milliseconds) end
+
+---Shows an emotion over the monster to everyone who sees it, as emotion on a monster's game ID (review decision 60). A monster of another map shows it after the current step.
+---@param emotion integer An emotion from wa.emotions.
+function wa_Monster:show_emotion(emotion) end
 
 ---The monster uses a ground skill on a cell with the skill's own cast time, as unitskillusepos. Returns false when the cast does not start, and for a skill that is not a ground skill.
 ---@param skill integer A ground skill from skills.id.
@@ -2006,7 +2010,7 @@ local wa_FireEventOptions = {}
 
 ---The options of npc:say_aloud and player:say_aloud (review decision 58).
 ---@class wa.SayAloudOptions
----@field to "area"|"map"|"world"|wa.Player|nil Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self).
+---@field to "area"|"map"|"world"|"self"|wa.Player|nil Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self). "self" is the speaking player alone, for player:say_aloud only (review decision 60).
 ---@field color integer? 0xRRGGBB, as npctalk's color. The chat's own color by default. NPC lines only.
 local wa_SayAloudOptions = {}
 

@@ -434,15 +434,25 @@ func (b *body) unittalk(args []Expr) error {
 		if err != nil {
 			return err
 		}
+		// script.cpp 20229 reads only bc_self, which a player's line
+		// takes as "self" (review decision 60, B11); any other flag is
+		// AREA.
+		self := ""
 		if len(args) == 3 {
-			return unsupported(what, "a flag with a game ID other than the attached player's")
+			flag, err := b.fixed(what, "flag", args[2])
+			if err != nil {
+				return err
+			}
+			if flag == bcSelf {
+				self = ", true"
+			}
 		}
 		text, err := b.expr(args[1])
 		if err != nil {
 			return err
 		}
 		gid := strings.TrimSuffix(strings.TrimPrefix(mob, "R.unit_monster("), ")")
-		b.line("R.unittalk(%s, %s)", gid, text.asText())
+		b.line("R.unittalk(%s, %s%s)", gid, text.asText(), self)
 		return nil
 	}
 	kind, _, err := b.gidRef(what, args[0])
@@ -482,6 +492,16 @@ func (b *body) emotion(args []Expr) error {
 	}
 	if len(args) == 1 {
 		b.line("npc:show_emotion(%s)", e)
+		return nil
+	}
+	if mob, ok, err := b.mobGID(what, args[1]); ok || err != nil {
+		// Another game ID: a player by account ID or a monster, on any
+		// map (review decision 60, B9).
+		if err != nil {
+			return err
+		}
+		gid := strings.TrimSuffix(strings.TrimPrefix(mob, "R.unit_monster("), ")")
+		b.line("R.unit_emotion(%s, %s)", gid, e)
 		return nil
 	}
 	kind, code, err := b.gidRef(what, args[1])

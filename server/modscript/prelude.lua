@@ -936,6 +936,9 @@ end
 monster_methods.set_modes = function(self, modes)
 	call(H.monster_call, "set_modes", monster_ids[self], modes)
 end
+monster_methods.show_emotion = function(self, emotion)
+	call(H.monster_call, "show_emotion", monster_ids[self], emotion)
+end
 monster_methods.set_speed = function(self, milliseconds)
 	call(H.monster_call, "set_speed", monster_ids[self], milliseconds)
 end

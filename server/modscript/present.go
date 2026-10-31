@@ -574,7 +574,9 @@ func (r *Runtime) playerPresent(c *script.Call) error {
 		if err != nil {
 			return err
 		}
-		to, err := sendTarget(what, arg(1), arg(2), "area", "map", "world", "player")
+		// "self" is bc_self on the player's own line (review decision 60,
+		// B11): a plain value, so a handle of another map takes it.
+		to, err := sendTarget(what, arg(1), arg(2), "area", "map", "world", "player", "self")
 		if err != nil {
 			return err
 		}

@@ -136,7 +136,8 @@ func TestPresentConvert(t *testing.T) {
 			"player:show_emotion(emotions.ok)", `R.npc_view("Guard#" .. npc.hidden_name, "show_emotion", emotions.hng)`,
 		}},
 		{`{ unittalk .@aid,"Hi"; unittalk $@mobid[0],"Grr"; end; }`, []string{"R.unittalk(", `"Hi")`, `"Grr")`}},
-		{`{ unittalk .@aid,"Hi",bc_self; end; }`, []string{"!unittalk: a flag with a game ID other than"}},
+		{`{ unittalk .@aid,"Hi",bc_self; unittalk .@aid,"Yo",bc_area; end; }`, []string{`R.unittalk(aid, "Hi", true)`, `R.unittalk(aid, "Yo")`}},
+		{`{ emotion ET_HNG,$@mobid[0]; end; }`, []string{"R.unit_emotion(", ", emotions.hng)"}},
 		{`{ emotion ET_SMILE, getnpcid(0, "Other#t"); emotion ET_OK, getcharid(3); emotion ET_HNG, getnpcid(0); end; }`, []string{
 			`R.npc_view("Other#t", "show_emotion", emotions.smile)`, "player:show_emotion(emotions.ok)", "npc:show_emotion(emotions.hng)",
 		}},

@@ -580,7 +580,7 @@ var Classes = []Class{
 			{Name: "show_effect", Params: []Param{{"effect", "integer", "An effect from wa.effects."}, {"options", "wa.EffectOptions?", ""}}, Doc: "Plays an effect on the player, as specialeffect2: for everyone who sees the player, or as the to option says (review decision 58)."},
 			{Name: "remove_effect", Params: []Param{{"effect", "integer", "An effect from wa.effects."}}, Doc: "Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2."},
 			{Name: "say_aloud", Params: []Param{{"text", "string", "1 to 255 bytes. Players see the player's name before it."}, {"options", "wa.SayAloudOptions?", "Only to: a player's line has no color."}},
-				Doc: "Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself is bc_self: only the player hears it. The chat filter and the chat hooks do not see it."},
+				Doc: "Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself, or \"self\", is bc_self: only the player hears it. \"self\" also works on a player of another map. The chat filter and the chat hooks do not see it."},
 			{Name: "show_emotion", Params: []Param{{"emotion", "integer", "An emotion from wa.emotions."}}, Doc: "Shows an emotion over the player to everyone who sees it, as emotion on a player's game ID."},
 			{Name: "play_sound", Params: []Param{{"file", "string", "A sound name of the assets, without sound/, such as effect/ef_hit1."}, {"options", "wa.PlayerSoundOptions?", ""}}, Doc: "Plays a sound to the player alone, as soundeffect, or with to \"area\" to every player who sees it, from it, as soundeffectall without a map with an attached player."},
 			{Name: "play_music", Params: []Param{{"file", "string", "A music name of the assets, without music/, such as 08."}}, Doc: "Plays background music to the player, as playBGM. The map's own music comes back with the next map change."},
@@ -711,6 +711,7 @@ var Classes = []Class{
 			{Name: "set_damage_immune", Params: []Param{{"immune", "boolean", ""}}, Doc: "true: no unit can target the monster, as setunitdata's UMOB_DMGIMMUNE."},
 			{Name: "set_modes", Params: []Param{{"modes", "wa.MonsterMode[]", "The modes it has from now on."}}, Doc: "Replaces the monster's modes, as setunitdata's UMOB_MODE."},
 			{Name: "set_speed", Params: []Param{{"milliseconds", "integer", "Per cell, 20 to 1000."}}, Doc: "Sets the monster's walk speed, as setunitdata's UMOB_SPEED."},
+			{Name: "show_emotion", Params: []Param{{"emotion", "integer", "An emotion from wa.emotions."}}, Doc: "Shows an emotion over the monster to everyone who sees it, as emotion on a monster's game ID (review decision 60). A monster of another map shows it after the current step."},
 			{Name: "use_skill_at", Params: []Param{{"skill", "integer", "A ground skill from skills.id."}, {"level", "integer", "1 to 100."}, {"x", "integer", ""}, {"y", "integer", ""}}, Returns: "boolean",
 				Doc: "The monster uses a ground skill on a cell with the skill's own cast time, as unitskillusepos. Returns false when the cast does not start, and for a skill that is not a ground skill."},
 			{Name: "warp_to", Params: []Param{{"x", "integer", ""}, {"y", "integer", ""}}, Returns: "boolean",
@@ -1185,7 +1186,7 @@ var Classes = []Class{
 	{
 		Name: "wa.SayAloudOptions", Doc: "The options of npc:say_aloud and player:say_aloud (review decision 58).",
 		Fields: []Field{
-			{"to", `"area"|"map"|"world"|wa.Player|nil`, "Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self)."},
+			{"to", `"area"|"map"|"world"|"self"|wa.Player|nil`, "Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self). \"self\" is the speaking player alone, for player:say_aloud only (review decision 60)."},
 			{"color", "integer?", "0xRRGGBB, as npctalk's color. The chat's own color by default. NPC lines only."},
 		},
 	},

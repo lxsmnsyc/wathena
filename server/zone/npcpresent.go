@@ -192,6 +192,8 @@ func (h scriptHost) SayAloud(speaker modscript.Entity, text string, to modscript
 			z.chats = append(z.chats, chatLine{speaker: e, name: p.Name, text: text})
 		case "player":
 			lineTo(target, e, p.Name, text, 0)
+		case "self":
+			lineTo(p, e, p.Name, text, 0)
 		default:
 			sayToZones(z, e, p.Name, text, 0, to.To == "world")
 		}

@@ -521,20 +521,32 @@ end
 -- unittalk is unittalk of a game ID other than the attached player's
 -- or an NPC's (script.cpp 20216): a player of any map by account ID, as
 -- player:say_aloud, or a monster, as monster:talk. The line keeps the
--- speaker's name that the script wrote, as rAthena sends it whole.
-function R.unittalk(gid, text)
+-- speaker's name that the script wrote, as rAthena sends it whole. self
+-- is bc_self: the player alone hears it, and a monster says nothing, as
+-- script.cpp 20229 refuses bc_self for a unit that is not a player.
+function R.unittalk(gid, text, self)
 	text = R.text(text)
 	if text == "" then
 		return
 	end
 	local p = R.by_account(gid)
 	if p ~= nil then
-		p:say_aloud(text)
+		p:say_aloud(text, self and { to = "self" } or nil)
 		return
 	end
 	local m = R.unit_monster(gid)
-	if m ~= nil then
+	if m ~= nil and not self then
 		m:talk(text)
+	end
+end
+
+-- unit_emotion is emotion on a game ID other than the attached player's
+-- or an NPC's: a player of any map by account ID, or a monster of any
+-- map (review decision 60).
+function R.unit_emotion(gid, emotion)
+	local unit = R.by_gid(gid)
+	if unit ~= nil then
+		unit:show_emotion(emotion)
 	end
 end
 

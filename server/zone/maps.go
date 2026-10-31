@@ -1211,6 +1211,11 @@ func (h scriptHost) MonsterAct(id int64, a modscript.MonsterAction) (bool, error
 		// reads (battle.cpp 7928).
 		m.immune = a.On
 		return true, nil
+	case "show_emotion":
+		// emotion on a monster's game ID: clif_emotion to the area
+		// (review decision 60, B9).
+		z.emotions = append(z.emotions, npcEmotion{e, uint32(a.Value)}) // #nosec G115 -- checked by the runtime.
+		return true, nil
 	}
 	if e.status == nil {
 		return false, errors.New("the monster has no stats")

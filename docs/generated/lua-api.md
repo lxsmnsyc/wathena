@@ -1888,7 +1888,7 @@ Stops an effect that plays on the player, for everyone who sees the player, as r
 
 #### `player:say_aloud(text, options?)`
 
-Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself is bc_self: only the player hears it. The chat filter and the chat hooks do not see it.
+Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself, or "self", is bc_self: only the player hears it. "self" also works on a player of another map. The chat filter and the chat hooks do not see it.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2585,6 +2585,14 @@ Sets the monster's walk speed, as setunitdata's UMOB_SPEED.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `milliseconds` | `integer` | Per cell, 20 to 1000. |
+
+#### `monster:show_emotion(emotion)`
+
+Shows an emotion over the monster to everyone who sees it, as emotion on a monster's game ID (review decision 60). A monster of another map shows it after the current step.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `emotion` | `integer` | An emotion from wa.emotions. |
 
 #### `monster:use_skill_at(skill, level, x, y) → boolean`
 
@@ -3872,7 +3880,7 @@ The options of npc:say_aloud and player:say_aloud (review decision 58).
 
 | Field | Type | Meaning |
 |---|---|---|
-| `to` | `"area"\|"map"\|"world"\|wa.Player\|nil` | Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self). |
+| `to` | `"area"\|"map"\|"world"\|"self"\|wa.Player\|nil` | Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self). "self" is the speaking player alone, for player:say_aloud only (review decision 60). |
 | `color` | `integer?` | 0xRRGGBB, as npctalk's color. The chat's own color by default. NPC lines only. |
 
 ### wa.EffectOptions
