@@ -108,11 +108,12 @@ func TestNPCsAcrossZones(t *testing.T) {
 	if got := logs(); got[0] != "all;" || got[1] != want || got[2] != "all;" {
 		t.Fatalf("logs:\n%q\nwant the Listener#l1's %q", got, want)
 	}
-	// fire_event to a zone that has not started its NPCs is true, and
-	// fire_npc_event counts the NPCs of the zones that started: the
-	// Caller.
+	// fire_event to a zone that has not started its NPCs is false, since
+	// its sources name no OnE1 in quotes (review decision 60, A2); the
+	// events still reach it. fire_npc_event counts the NPCs of the zones
+	// that started: the Caller.
 	v, _ := temp.Get(variables.TempKey{Mod: "example.test", Name: "results"})
-	if got := strings.Trim(v, `"`); got != "true,true b Listener#l1 1" {
+	if got := strings.Trim(v, `"`); got != "false,false b Listener#l1 1" {
 		t.Fatalf("results: %q", got)
 	}
 }
@@ -189,5 +190,70 @@ func TestNPCPresentAcrossZones(t *testing.T) {
 	}
 	if got := get("read"); got != "Renamed 7,8" {
 		t.Errorf("the Teller read the Sign as %q", got)
+	}
+}
+
+const pingCaller = `
+local world = require "wa.world"
+return function() world.fire_npc_event("OnPing") end`
+
+const pingListener = `
+local events = require "wa.events"
+local variables = require "wa.variables"
+local log = variables.server_temporary_string("log")
+return function()
+  log:set(log:get() .. "setup;")
+  events.on("npc_event", function() log:set(log:get() .. "ping;") end, { name = "OnPing" })
+end`
+
+const quietListener = `
+local variables = require "wa.variables"
+local quiet = variables.server_temporary_string("quiet")
+return function() quiet:set("started") end`
+
+// TestBroadcastStartsNamingZones checks review decision 60's A2: a
+// broadcast starts a zone that has not started only when one of its NPC
+// sources names the label.
+func TestBroadcastStartsNamingZones(t *testing.T) {
+	a, b, c := testZone("map/a"), testZone("map/b"), testZone("map/c")
+	sc := &mod.Scripts{Mod: "example.test", Files: map[string]string{"scripts/caller.lua": pingCaller,
+		"scripts/ping.lua": pingListener, "scripts/quiet.lua": quietListener}, Grants: mod.Grants{}, Visible: []string{"example.test"}}
+	for _, p := range mod.Permissions {
+		sc.Grants[p.Name] = true
+	}
+	temp := variables.NewTemporary()
+	mods := &zone.Mods{Scripts: []*mod.Scripts{sc}, IDs: []string{"core", "example.test"}, Log: slog.New(slog.DiscardHandler),
+		Server: variables.NewServer(nil, nil), Temporary: temp}
+	a.SetNPCs([]zone.NPC{{Name: "example.test:Caller", DisplayName: "Caller", Script: "example.test:scripts/caller.lua", Floating: true}})
+	b.SetNPCs([]zone.NPC{{Name: "example.test:Ping", DisplayName: "Ping", X: 5, Y: 5, Sprite: 112, Script: "example.test:scripts/ping.lua"}})
+	c.SetNPCs([]zone.NPC{{Name: "example.test:Quiet", DisplayName: "Quiet", X: 5, Y: 5, Sprite: 112, Script: "example.test:scripts/quiet.lua"}})
+	for _, z := range []*zone.Zone{a, b, c} {
+		z.Mods = mods
+	}
+	w, err := New("map/a", a, b, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	go w.Run(ctx)
+	defer func() {
+		cancel()
+		<-w.Stopped()
+	}()
+	get := func(name string) string {
+		v, _ := temp.Get(variables.TempKey{Mod: "example.test", Name: name})
+		return strings.Trim(v, `"`)
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) && get("log") != "setup;ping;" {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := get("log"); got != "setup;ping;" {
+		t.Fatalf("the naming zone: %q", got)
+	}
+	// The other zone's step has had time to run a message.
+	time.Sleep(100 * time.Millisecond)
+	if got := get("quiet"); got != "" {
+		t.Errorf("a zone whose sources do not name OnPing started: %q", got)
 	}
 }

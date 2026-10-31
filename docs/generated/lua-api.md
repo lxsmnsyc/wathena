@@ -681,7 +681,7 @@ Permission: `game.read`.
 
 #### `world.fire_npc_event(name) → integer`
 
-Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent "::OnX" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs.
+Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent "::OnX" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs, when one of the zone's NPC sources names the label in quotes, without regard to case (review decision 60). A label built at run time, such as "OnE" .. i, does not start a zone.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2743,7 +2743,7 @@ Removes the NPC until the server restarts, as unloadnpc: it vanishes, its contex
 
 #### `npc:fire_event(name, options?) → boolean`
 
-Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; true for an NPC whose zone has not started its scripts. Another mod's NPC needs npcs.control.
+Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; for an NPC whose zone has not started its scripts, whether one of the zone's NPC sources names the label in quotes (review decision 60). Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|

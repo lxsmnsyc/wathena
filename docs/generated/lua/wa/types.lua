@@ -1198,7 +1198,7 @@ function wa_Npc:is_cloaked(player) end
 ---Removes the NPC until the server restarts, as unloadnpc: it vanishes, its context ends after the current step, and its NPC variables go. Another mod's NPC needs npcs.control.
 function wa_Npc:remove() end
 
----Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; true for an NPC whose zone has not started its scripts. Another mod's NPC needs npcs.control.
+---Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; for an NPC whose zone has not started its scripts, whether one of the zone's NPC sources names the label in quotes (review decision 60). Another mod's NPC needs npcs.control.
 ---@param name string An event label, such as OnEnable, without regard to case.
 ---@param options? wa.FireEventOptions
 ---@return boolean
