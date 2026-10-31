@@ -2683,6 +2683,14 @@ Shows an emotion over the NPC, as emotion.
 |---|---|---|
 | `emotion` | `integer` | An emotion from wa.emotions. |
 
+#### `npc:fire_touch(player) → boolean`
+
+Runs the NPC's touch handlers for a player who stands in its touch area, in a conversation, as a step in would: after the current step, waiting while the player talks. It is npc_touchnext_areanpc's touch of the next player in the area (review decision 60). false when the player is not in the area. An NPC of another map raises an error. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player of the NPC's map. |
+
 #### `npc:say_aloud(text, options?)`
 
 Says a line as the NPC, as npctalk (script.cpp 16193): by default to every player who sees the NPC, as AREA. The to option sends it to the NPC's map, the world, or one player, as bc_map, bc_all and bc_self. A line from an NPC that a player does not see shows with the NPC's name and no speaker. An NPC without a map says nothing to its area or map. Another mod's NPC needs npcs.control.

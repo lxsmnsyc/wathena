@@ -513,6 +513,7 @@ func (r *Runtime) init() error {
 		{"constants", r.constantsTable},
 		{"npc_field", r.npcField},
 		{"npc_emotion", r.npcEmotion},
+		{"npc_fire_touch", r.npcFireTouch},
 		{"npc_present", r.npcPresent},
 		{"player_present", r.playerPresent},
 		{"maps_present", r.mapsPresent},

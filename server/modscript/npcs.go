@@ -34,6 +34,10 @@ type NPCHost interface {
 	NPCField(npc int64, field string) (script.Value, error)
 	// NPCEmotion shows an emotion over an NPC, as rAthena's emotion.
 	NPCEmotion(npc int64, emotion int64) error
+	// FireTouch runs an NPC's touch handlers for a player who stands in
+	// its touch area, as a step in would (review decision 60, E1). It
+	// reports false when the player is not in the area.
+	FireTouch(npc, player int64) (bool, error)
 	// NPCSay says a line aloud as an NPC, as rAthena's npctalk.
 	NPCSay(npc int64, text string) error
 	// Converse shows one step of a conversation to its player. A step
@@ -624,6 +628,38 @@ func (r *Runtime) npcEmotion(c *script.Call) error {
 		return errors.New("npc:show_emotion: want an emotion from wa.emotions")
 	}
 	return h.NPCEmotion(id, e)
+}
+
+// npcFireTouch is npc:fire_touch(player): npc_touchnext_areanpc's
+// touch of the next player in the area.
+func (r *Runtime) npcFireTouch(c *script.Call) error {
+	const what = "npc:fire_touch"
+	h, err := r.npcHost()
+	if err != nil {
+		return err
+	}
+	id, err := npcID(c)
+	if err != nil {
+		return err
+	}
+	if err := r.mutating(what); err != nil {
+		return err
+	}
+	if w, ok := r.host.(NPCWorldHost); ok {
+		if err := r.controls(what, w, id); err != nil {
+			return err
+		}
+	}
+	player, ok := c.Arg(1).AsInt()
+	if !ok {
+		return errors.New(what + ": want a player handle")
+	}
+	in, err := h.FireTouch(id, player)
+	if err != nil {
+		return fmt.Errorf("%s: %w", what, err)
+	}
+	c.Return(script.Bool(in))
+	return nil
 }
 
 // Conversations returns how many conversations have not ended, for

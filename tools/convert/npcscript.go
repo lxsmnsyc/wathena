@@ -691,9 +691,9 @@ func (n *npcConv) npcScript() (string, error) {
 	}
 	switch {
 	case touch == "ontouch_" && touchDialog:
-		f.line("R.touch_one(%s, true)", n.eventFns[touch])
+		f.line("R.touch_one(npc, %s, true)", n.eventFns[touch])
 	case touch == "ontouch_":
-		f.line("R.touch_one(%s)", n.eventFns[touch])
+		f.line("R.touch_one(npc, %s)", n.eventFns[touch])
 	case touch == "ontouch":
 		f.need("events")
 		f.line(`events.on("touch", %s)`, n.eventFns[touch])

@@ -776,6 +776,13 @@ new_npc, npc_ids = handle_type("npc", {
 	show_emotion = function(self, emotion)
 		return (call(H.npc_emotion, npc_ids[self], emotion))
 	end,
+	fire_touch = function(self, player)
+		local id = player_ids[player]
+		if id == nil then
+			error("npc:fire_touch: want a player handle", 2)
+		end
+		return (call(H.npc_fire_touch, npc_ids[self], id))
+	end,
 	say_aloud = function(self, text, options)
 		local to, to_id = send_to("npc:say_aloud", options, { to = true, color = true })
 		return (call(H.npc_present, npc_ids[self], "say_aloud", text, to, to_id, options ~= nil and options.color or nil))

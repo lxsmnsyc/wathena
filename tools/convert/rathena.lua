@@ -1861,15 +1861,22 @@ end
 --
 -- dialog is set when fn shows a dialog. The next player then has no
 -- conversation, since it did not touch the NPC just now, so touch_one
--- leaves the NPC free and runs fn for the next player who comes in.
--- rAthena would show the dialog to the player already in the area.
-function R.touch_one(fn, dialog)
+-- runs the NPC's touch again for it with npc:fire_touch, which gives it
+-- one, as rAthena shows the dialog to the player already in the area
+-- (review decision 60, E1).
+function R.touch_one(npc, fn, dialog)
 	local inside, touching = {}, nil
 	local function can(player)
 		return player.hp > 0 and not R.hiding(player)
 	end
 	events.on("touch", function(player, conversation)
-		inside[#inside + 1] = player
+		local known = false
+		for _, p in ipairs(inside) do
+			known = known or p == player
+		end
+		if not known then
+			inside[#inside + 1] = player
+		end
 		if touching == nil and can(player) then
 			touching = player
 			fn(player, conversation)
@@ -1886,14 +1893,20 @@ function R.touch_one(fn, dialog)
 			return
 		end
 		touching = nil
-		if dialog then
-			return
-		end
 		for _, p in ipairs(inside) do
 			if can(p) then
-				touching = p
-				fn(p)
-				return
+				if dialog then
+					-- A dialog needs the player's conversation: the touch
+					-- runs again for the next player, as a step in would
+					-- (review decision 60, E1).
+					if npc:fire_touch(p) then
+						return
+					end
+				else
+					touching = p
+					fn(p)
+					return
+				end
 			end
 		end
 	end)

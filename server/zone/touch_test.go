@@ -391,8 +391,9 @@ end`)
 
 // TestTouchDialogConverted runs a converted OnTouch_ label with a dialog
 // (review decision 56): the player who steps in sees it, and when that
-// player leaves, R.touch_one does not run it for a player already in the
-// area, who has no conversation, but for the next player who comes in.
+// player leaves, R.touch_one runs it for the player already in the area
+// through npc:fire_touch, as npc_touchnext_areanpc (review decision 60,
+// E1). A player who comes in meanwhile waits for its turn.
 func TestTouchDialogConverted(t *testing.T) {
 	lua := convertedTouch(t, `{ end; OnTouch_: mes "[Gate]"; mes "Halt, " + strcharinfo(0) + "."; close; }`)
 	z, _ := touchZone(t, "return function() end")
@@ -424,13 +425,22 @@ func TestTouchDialogConverted(t *testing.T) {
 	for range 3 {
 		z.stepAt(z.now + 50)
 	}
-	if got := lines(events(b)); got != "" || b.talk != nil {
-		t.Fatalf("the player in the area got the dialog: %q", got)
+	ev = events(b)
+	if got := lines(ev); got != "[Gate]|Halt, b." {
+		t.Fatalf("the player in the area: %q: %s", got, logs)
 	}
 	c := joinAt(z, "c", 10, 19)
 	walkTo(t, z, c, 19, 19)
+	if got := lines(events(c)); got != "" {
+		t.Fatalf("a player who came in while b has the NPC: %q", got)
+	}
+	answer(z, b, reply(lastDialog(ev).GetDialog(), func(b *wathenav1.NpcReply_builder) { b.Close = new(true) }))
+	walkTo(t, z, b, 10, 21)
+	for range 3 {
+		z.stepAt(z.now + 50)
+	}
 	if got := lines(events(c)); got != "[Gate]|Halt, c." {
-		t.Fatalf("the next player who came in: %q", got)
+		t.Fatalf("the next player in the area: %q", got)
 	}
 	if strings.Contains(logs.String(), "level=WARN") {
 		t.Fatalf("logs: %s", logs)

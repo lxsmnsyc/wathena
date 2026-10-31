@@ -112,6 +112,28 @@ func (z *Zone) queueTouch(n *entity, p *Player, untouch bool) {
 	z.scriptEvents = append(z.scriptEvents, scriptEvent{touch: &touchEvent{npc: n, player: p, untouch: untouch}})
 }
 
+// FireTouch is npc:fire_touch: the NPC's touch handlers run for a
+// player in its touch area, as when the player stepped in, after the
+// current step and waiting while the player talks (review decision 60,
+// E1). It reports false for a player outside the area, or an NPC of
+// another map.
+func (h scriptHost) FireTouch(id, player int64) (bool, error) {
+	z := h.z
+	e, err := h.localNPC(id)
+	if err != nil {
+		return false, err
+	}
+	p, err := h.player(player)
+	if err != nil {
+		return false, err
+	}
+	if e.npc.Touch == nil || !slices.Contains(p.touching, e) {
+		return false, nil
+	}
+	z.queueTouch(e, p, false)
+	return true, nil
+}
+
 // runTouch runs an NPC's touch or untouch handlers.
 func (z *Zone) runTouch(t *touchEvent) {
 	n := t.npc.npc

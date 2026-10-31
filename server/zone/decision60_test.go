@@ -33,6 +33,10 @@ return function()
   on("OnMyMobDead", function(event)
     note("dead " .. tostring(event.monster_id) .. " " .. tostring(event.monster_game_id))
   end)
+  on("OnTouchCheck", function()
+    local npc = require("wa.context"):get_instance()
+    note("touch " .. tostring(npc:fire_touch(maps.find_player("a"))))
+  end)
   on("OnPlain", function(event) note("plain " .. tostring(event.monster_id)) end)
   on("OnSelf", function() maps.find_player("a"):say_aloud("hush", { to = "self" }) end)
   on("OnUnEffect", function()
@@ -167,5 +171,16 @@ func TestAnswerNoSpriteFromAfar(t *testing.T) {
 	z.handle(command{player: p, npcReply: reply(d, func(b *wathenav1.NpcReply_builder) { b.Menu = new(uint32(1)) })})
 	if p.talk == first && first.dialog == d {
 		t.Fatal("the answer to an NPC without a view was dropped")
+	}
+}
+
+// TestFireTouchOutside checks that npc:fire_touch reports false for a
+// player outside the NPC's touch area (review decision 60, E1); the
+// touch tests run it for the player inside.
+func TestFireTouchOutside(t *testing.T) {
+	z, _, n := followupZoneWith(t, decision60Script)
+	fire(t, z, n, "OnTouchCheck")
+	if got := seen(t, z); got != "touch false;" {
+		t.Errorf("got %q", got)
 	}
 }

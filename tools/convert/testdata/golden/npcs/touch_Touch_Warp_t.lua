@@ -21,5 +21,5 @@ return function()
     end)
   end
   events.on("npc_event", function(event) event_ontouch_(event.player, event.conversation, event) end, { name = "OnTouch_" })
-  R.touch_one(event_ontouch_)
+  R.touch_one(npc, event_ontouch_)
 end
