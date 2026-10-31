@@ -713,6 +713,13 @@ func (n *npcConv) npcScript() (string, error) {
 	if fn, ok := n.eventFns["oninit"]; ok {
 		f.line("%s()", fn)
 	}
+	if fn, ok := n.eventFns["oninterifinitonce"]; ok {
+		// OnInterIfInitOnce runs as OnInit, once per server start: rAthena
+		// runs it when the map server first reaches the character server
+		// (review decision 60, A5). A reload of the mod does not run it
+		// again.
+		f.line("if R.once(%s) then %s() end", luaString("oninterifinitonce "+n.line.Name), fn)
+	}
 	f.indent = 0
 	f.line("end")
 	return n.finish(n.header()), nil

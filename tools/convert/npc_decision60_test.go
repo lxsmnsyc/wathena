@@ -21,6 +21,7 @@ func TestDecision60Convert(t *testing.T) {
 			"R.unit_exists(", "t = R.unit_type(", "p = 1",
 		}},
 		{`{ if (unitexists(getnpcid(0,"Other#t"))) end; .@n = getunittype(getnpcid(0)); end; }`, []string{`R.npc_exists("Other#t")`, "n = 128"}},
+		{`{ end; OnInterIfInitOnce: donpcevent "Other#t::OnStart"; end; }`, []string{`if R.once("oninterifinitonce X#t") then event_oninterifinitonce() end`}},
 		{`{ getunitdata $@mobid[0],.@data; mes "" + .@data[UMOB_HP]; end; }`, []string{"R.unit_data(", ", data)", "data[2]"}},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})

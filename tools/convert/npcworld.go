@@ -52,7 +52,7 @@ var playerLabelRefused = map[string]string{
 // systemLabels are labels that rAthena runs on its own for systems
 // wAthena does not have, or not yet as labels: they stay unsupported.
 var systemLabels = map[string]bool{
-	"oninterifinit": true, "oninterifinitonce": true, "onwhisperglobal": true, "onbuyitem": true, "onsellitem": true,
+	"oninterifinit": true, "onwhisperglobal": true, "onbuyitem": true, "onsellitem": true,
 	"onagitinit": true, "onagitstart": true, "onagitend": true, "onagitinit2": true, "onagitstart2": true,
 	"onagitend2": true, "onagitinit3": true, "onagitstart3": true, "onagitend3": true, "onguildbreak": true,
 	"oninstanceinit": true, "oninstancedestroy": true, "onagiteliminate": true, "onagitbreak": true,

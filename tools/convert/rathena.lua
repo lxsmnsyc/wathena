@@ -1424,6 +1424,19 @@ end
 -- npc_view is enablenpc, disablenpc, hideonnpc and hideoffnpc, the
 -- cloaks for everyone, and the presentation commands of review decision
 -- 58, area B5: a method of the NPC's handle, and what it returns.
+-- once reports true the first time it runs with a key since the server
+-- started, and false after, also after a reload of the mod: the key is a
+-- temporary server variable, which every zone shares and nobody saves.
+function R.once(key)
+	local name = "once_" .. key:lower():gsub("[^%w_]", "_")
+	local flag = variables.server_temporary_integer(name:sub(1, 64))
+	if flag:get() ~= 0 then
+		return false
+	end
+	flag:set(1)
+	return true
+end
+
 -- npc_exists is unitexists of an NPC's getnpcid: 1 when the NPC exists.
 function R.npc_exists(target)
 	return npc_named(target) ~= nil and 1 or 0
