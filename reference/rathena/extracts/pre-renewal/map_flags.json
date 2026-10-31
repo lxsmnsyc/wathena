@@ -1,0 +1,1240 @@
+{
+	"rathena_git_hash": "48a84111923ba2c70bc613a011a1fa3349c6ebd0",
+	"mode": "pre-renewal",
+	"note": "The mapflag lines of gvg, gvg_noparty, gvg_castle, gvg_dungeon, gvg_te, gvg_te_castle, restricted in the NPC files npc/pre-re/scripts_main.conf loads, in load order, as npc_parse_mapflag reads them. A line whose fourth field is off turns the flag off; for restricted it clears every zone. restricted lists the zones a map has (map_setmapflag_sub sets bit (zone + 1) << 3 of mapdata->zone for each). Lines on maps the map server does not load are left out and their maps listed in unknown_maps. Setting gvg or gvg_te at run time removes pvp and battleground from the map (map_setmapflag_sub); those flags are not in this file.",
+	"maps": [
+		{
+			"map": "1@cata",
+			"flags": [],
+			"restricted": [
+				5
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "1@nyd",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "1@orcs",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "1@tower",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "2009rwc_01",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2009rwc_02",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2009rwc_03",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2009rwc_04",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2009rwc_05",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2009rwc_06",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2009rwc_07",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2009rwc_08",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2009rwc_f01",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2012rwc_01",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2012rwc_02",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2012rwc_03",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2012rwc_04",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2012rwc_05",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2012rwc_06",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2012rwc_07",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2012rwc_08",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "2@cata",
+			"flags": [],
+			"restricted": [
+				5
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "2@nyd",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "2@orcs",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "2@tower",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "3@tower",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "4@tower",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "5@tower",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "6@tower",
+			"flags": [],
+			"restricted": [
+				6
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "alberta",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "alde_tt02",
+			"flags": [],
+			"restricted": [
+				1
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "aldebaran",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "aldeg_cas01",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "aldeg_cas02",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "aldeg_cas03",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "aldeg_cas04",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "aldeg_cas05",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "amatsu",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "arug_cas01",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "arug_cas02",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "arug_cas03",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "arug_cas04",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "arug_cas05",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "arug_dun01",
+			"flags": [
+				"gvg_dungeon"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "ayothaya",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "brasilis",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "comodo",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "einbech",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "einbroch",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "force_1-1",
+			"flags": [],
+			"restricted": [
+				3
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "force_1-2",
+			"flags": [],
+			"restricted": [
+				3
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "force_1-3",
+			"flags": [],
+			"restricted": [
+				3
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "force_2-1",
+			"flags": [],
+			"restricted": [
+				3
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "force_3-1",
+			"flags": [],
+			"restricted": [
+				3
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "force_4-1",
+			"flags": [],
+			"restricted": [
+				3
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "force_5-1",
+			"flags": [],
+			"restricted": [
+				3
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "geffen",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "gefg_cas01",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gefg_cas02",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gefg_cas03",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gefg_cas04",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gefg_cas05",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gld_dun01",
+			"flags": [
+				"gvg_dungeon"
+			],
+			"files": [
+				"npc/pre-re/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gld_dun02",
+			"flags": [
+				"gvg_dungeon"
+			],
+			"files": [
+				"npc/pre-re/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gld_dun03",
+			"flags": [
+				"gvg_dungeon"
+			],
+			"files": [
+				"npc/pre-re/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gld_dun04",
+			"flags": [
+				"gvg_dungeon"
+			],
+			"files": [
+				"npc/pre-re/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "gonryun",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "guild_vs1",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "guild_vs2",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "guild_vs3",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "guild_vs4",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "guild_vs5",
+			"flags": [
+				"gvg",
+				"gvg_noparty"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/gvg_noparty.txt"
+			]
+		},
+		{
+			"map": "hugel",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "izlude",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "jawaii",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "lighthalzen",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "louyang",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "manuk",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "mid_camp",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "moc_ruins",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "morocc",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "moscovia",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "nguild_alde",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "nguild_gef",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "nguild_pay",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "nguild_prt",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "niflheim",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "pay_arche",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "payg_cas01",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "payg_cas02",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "payg_cas03",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "payg_cas04",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "payg_cas05",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "payon",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "prontera",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "prt_are_in",
+			"flags": [],
+			"restricted": [
+				3
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "prtg_cas01",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "prtg_cas02",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "prtg_cas03",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "prtg_cas04",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "prtg_cas05",
+			"flags": [
+				"gvg_castle"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "rachel",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "schg_cas01",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "schg_cas02",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "schg_cas03",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "schg_cas04",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "schg_cas05",
+			"flags": [
+				"gvg_castle"
+			],
+			"restricted": [
+				4
+			],
+			"files": [
+				"npc/mapflag/gvg.txt",
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "schg_dun01",
+			"flags": [
+				"gvg_dungeon"
+			],
+			"files": [
+				"npc/mapflag/gvg.txt"
+			]
+		},
+		{
+			"map": "sec_pri",
+			"flags": [],
+			"restricted": [
+				2
+			],
+			"files": [
+				"npc/mapflag/jail.txt"
+			]
+		},
+		{
+			"map": "splendide",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "turbo_e_16",
+			"flags": [],
+			"restricted": [
+				1
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "turbo_e_4",
+			"flags": [],
+			"restricted": [
+				1
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "turbo_e_8",
+			"flags": [],
+			"restricted": [
+				1
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "turbo_n_1",
+			"flags": [],
+			"restricted": [
+				1
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "turbo_n_16",
+			"flags": [],
+			"restricted": [
+				1
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "turbo_n_4",
+			"flags": [],
+			"restricted": [
+				1
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "turbo_n_8",
+			"flags": [],
+			"restricted": [
+				1
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "umbala",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "veins",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "xmas",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		},
+		{
+			"map": "yuno",
+			"flags": [],
+			"restricted": [
+				7
+			],
+			"files": [
+				"npc/mapflag/restricted.txt"
+			]
+		}
+	],
+	"unknown_maps": []
+}
