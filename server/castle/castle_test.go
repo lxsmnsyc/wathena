@@ -26,7 +26,6 @@ func TestFind(t *testing.T) {
 	r := New(records(), nil)
 	for _, c := range []struct{ name, local, want string }{
 		{"Kriemhild", "", "Kriemhild"},
-		{"Kriemhild", "", "Kriemhild"},
 		{"prtg_cas01", "", "Kriemhild"},
 		{"keep", "example.keep", "example.keep:keep"},
 		{"keep", "", ""},

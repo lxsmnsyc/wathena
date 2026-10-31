@@ -211,6 +211,17 @@ func (r *Runtime) castleCall(c *script.Call) error {
 		if guild < 0 {
 			return errors.New(what + ": want a guild handle or nil")
 		}
+		if guild > 0 {
+			// A handle of a guild that broke up would save as no owner
+			// while memory kept it.
+			h, err := r.guildHost(what)
+			if err != nil {
+				return err
+			}
+			if !h.FindGuild(guild) {
+				return errors.New(what + ": the guild has broken up")
+			}
+		}
 		c.Return(script.Bool(reg.SetOwner(rec.Name, guild, castle.SourceScript)))
 		return nil
 	case "set":
