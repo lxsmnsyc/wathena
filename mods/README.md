@@ -369,7 +369,7 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 - A record with `shop` and no `map` is a shop that only scripts open, with `player:open_shop`.
 - `touch: {x_span, y_span}` gives the NPC a touch area: the cells within `x_span` and `y_span` of its cell, each 0 to 100, as rAthena's `OnTouch` area (review decision 55). It needs a `script`, whose `touch` and `untouch` handlers run ("NPC scripts" below).
 - `state` is how the NPC starts, as rAthena's `script(DISABLED)`, `(HIDDEN)` and `(CLOAKED)` lines (review decision 58): `disabled`, `hidden` or `cloaked`. A script shows it later ("Visibility and state" below).
-- `sprite: none` is an NPC without a view, as rAthena's view -1: players cannot see or click it, and its events and touch area work.
+- `sprite: none` is an NPC without a view, as rAthena's view -1: players cannot see or click it, and its events and touch area work. A player answers its dialogs from any distance, as `npc_checknear` lets a class-less NPC through (review decision 60).
 - `sprite` takes the number of a monster or a job too, as rAthena takes any class as an NPC's view (review decision 58). A monster's number shows its sprite, and a job's shows a character, whose hair, colors and headgear `npc:set_look` sets.
 - A record with `script` and no `map` or `place` is an NPC without a map, as rAthena's floating NPCs (review decision 58). It runs only through events, schedules and timers, in the zone of the world's start map. It takes `display_name`, and no `x`, `y`, `direction`, `sprite`, `touch` or `state`.
 

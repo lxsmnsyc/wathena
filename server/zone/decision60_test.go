@@ -148,3 +148,24 @@ func TestLabelMonster(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+// TestAnswerNoSpriteFromAfar checks review decision 60's E5: an answer
+// to an NPC without a view goes through from any distance, as
+// npc_checknear lets a class-less NPC through (npc.cpp 2155).
+func TestAnswerNoSpriteFromAfar(t *testing.T) {
+	z, p, n, _ := npcZone(t, chooser)
+	click(z, p, n)
+	first := p.talk
+	if first == nil {
+		t.Fatal("no conversation")
+	}
+	// Its view goes, as a script's setnpcdisplay to -1 would, and the
+	// player walks far away.
+	n.npc.NoSprite = true
+	p.entity.x = n.x + npcClickRange + 10
+	d := first.dialog
+	z.handle(command{player: p, npcReply: reply(d, func(b *wathenav1.NpcReply_builder) { b.Menu = new(uint32(1)) })})
+	if p.talk == first && first.dialog == d {
+		t.Fatal("the answer to an NPC without a view was dropped")
+	}
+}
