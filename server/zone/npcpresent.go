@@ -310,11 +310,22 @@ func (h scriptHost) ShowEffectTo(ref modscript.Entity, effectID int64, to modscr
 }
 
 // RemoveEffect is removespecialeffect: everyone who sees the entity
-// stops the effect.
-func (h scriptHost) RemoveEffect(ref modscript.Entity, effectID int64) error {
+// stops the effect, or one player with SELF (review decision 60, D6).
+func (h scriptHost) RemoveEffect(ref modscript.Entity, effectID int64, to modscript.SendTarget) error {
 	ef := uint32(effectID) // #nosec G115 -- checked by the runtime.
+	var target *Player
+	if to.To == "player" {
+		p, err := h.player(to.Player)
+		if err != nil {
+			return err
+		}
+		target = p
+	}
 	remove := func(z *Zone, e *entity) {
 		for _, p := range z.playersInOrder() {
+			if target != nil && (p != target || z != h.z) {
+				continue
+			}
 			if id, ok := p.netIDs.get(e); ok {
 				p.pending = append(p.pending, wathenav1.Event_builder{EffectRemove: wathenav1.EffectRemove_builder{Entity: id, EffectId: ef}.Build()}.Build())
 			}

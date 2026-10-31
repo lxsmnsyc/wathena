@@ -51,7 +51,7 @@ type PresentHost interface {
 	// target.
 	ShowEffectTo(e Entity, effect int64, to SendTarget) error
 	// RemoveEffect is removespecialeffect.
-	RemoveEffect(e Entity, effect int64) error
+	RemoveEffect(e Entity, effect int64, to SendTarget) error
 	// SetNPCTitle is setunittitle on an NPC.
 	SetNPCTitle(npc int64, title string) error
 	// SetNPCGuild is flagemblem: the NPC shows a guild's badge, or none
@@ -272,7 +272,11 @@ func (r *Runtime) npcPresent(c *script.Call) error {
 		if err != nil {
 			return err
 		}
-		return wrap(what, h.RemoveEffect(npc, effect))
+		to, err := sendTarget(what, arg(1), arg(2), "area", "map", "player")
+		if err != nil {
+			return err
+		}
+		return wrap(what, h.RemoveEffect(npc, effect, to))
 	case "set_guild":
 		guild, ok := arg(0).AsInt()
 		if !ok || guild < 0 {
@@ -602,7 +606,11 @@ func (r *Runtime) playerPresent(c *script.Call) error {
 		if err != nil {
 			return err
 		}
-		return wrap(what, h.RemoveEffect(player, effect))
+		to, err := sendTarget(what, arg(1), arg(2), "area", "map", "player")
+		if err != nil {
+			return err
+		}
+		return wrap(what, h.RemoveEffect(player, effect, to))
 	case "play_sound":
 		name, err := checkAsset(what, "sound", arg(0))
 		if err != nil {

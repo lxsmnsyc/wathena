@@ -621,9 +621,10 @@ function wa_Player:set_save_point(map, x, y) end
 ---@param options? wa.EffectOptions
 function wa_Player:show_effect(effect, options) end
 
----Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2.
+---Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2. to = a player stops it for that player alone, as SELF (review decision 60).
 ---@param effect integer An effect from wa.effects.
-function wa_Player:remove_effect(effect) end
+---@param options? wa.EffectOptions to, as player:show_effect's.
+function wa_Player:remove_effect(effect, options) end
 
 ---Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself, or "self", is bc_self: only the player hears it. "self" also works on a player of another map. The chat filter and the chat hooks do not see it.
 ---@param text string 1 to 255 bytes. Players see the player's name before it.
@@ -1208,9 +1209,10 @@ function wa_Npc:fire_event(name, options) end
 ---@param options? wa.EffectOptions
 function wa_Npc:show_effect(effect, options) end
 
----Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. Another mod's NPC needs npcs.control.
+---Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. to = a player stops it for that player alone, as SELF (review decision 60). Another mod's NPC needs npcs.control.
 ---@param effect integer An effect from wa.effects.
-function wa_Npc:remove_effect(effect) end
+---@param options? wa.EffectOptions to, as npc:show_effect's.
+function wa_Npc:remove_effect(effect, options) end
 
 ---Shows a title with the NPC's name, as setunittitle. Another mod's NPC needs npcs.control.
 ---@param text string At most 23 bytes. "" removes the title.

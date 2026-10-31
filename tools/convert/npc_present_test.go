@@ -30,7 +30,7 @@ func (h *npcHost) ShowEffectTo(e modscript.Entity, effect int64, to modscript.Se
 	}
 	return h.present("effect %s %d %d %s", e.Kind, e.ID, effect, to.To)
 }
-func (h *npcHost) RemoveEffect(e modscript.Entity, effect int64) error {
+func (h *npcHost) RemoveEffect(e modscript.Entity, effect int64, _ modscript.SendTarget) error {
 	return h.present("remove effect %s %d %d", e.Kind, e.ID, effect)
 }
 func (h *npcHost) SetNPCTitle(id int64, title string) error {
@@ -146,7 +146,7 @@ func TestPresentConvert(t *testing.T) {
 		{`{ removespecialeffect EF_HEAL; removespecialeffect EF_HEAL,AREA,"Other#t"; removespecialeffect2 EF_HEAL; end; }`, []string{
 			"npc:remove_effect(effects.heal)", `R.npc_view("Other#t", "remove_effect", effects.heal)`, "player:remove_effect(effects.heal)",
 		}},
-		{`{ removespecialeffect EF_HEAL,SELF; end; }`, []string{"!removespecialeffect: a send target other than AREA"}},
+		{`{ removespecialeffect EF_HEAL,SELF; removespecialeffect2 EF_HEAL,ALL_SAMEMAP; end; }`, []string{"npc:remove_effect(effects.heal, { to = player })", `player:remove_effect(effects.heal, { to = "map" })`}},
 		{`{ setunittitle getnpcid(0), "<Society>"; end; }`, []string{`npc:set_title("<Society>")`}},
 		{`{ setunittitle getcharid(3), "x"; end; }`, []string{"!setunittitle: on a player"}},
 		{`{ setunittitle getnpcid(0), "<Subspace Vending Machine>"; setunittitle getnpcid(0), .@t$; end; }`, []string{

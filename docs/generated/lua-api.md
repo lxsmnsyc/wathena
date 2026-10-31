@@ -1878,13 +1878,14 @@ Plays an effect on the player, as specialeffect2: for everyone who sees the play
 | `effect` | `integer` | An effect from wa.effects. |
 | `options` | `wa.EffectOptions?` |  |
 
-#### `player:remove_effect(effect)`
+#### `player:remove_effect(effect, options?)`
 
-Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2.
+Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2. to = a player stops it for that player alone, as SELF (review decision 60).
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `effect` | `integer` | An effect from wa.effects. |
+| `options` | `wa.EffectOptions?` | to, as player:show_effect's. |
 
 #### `player:say_aloud(text, options?)`
 
@@ -2758,13 +2759,14 @@ Plays an effect on the NPC, as specialeffect: for everyone who sees the NPC, or 
 | `effect` | `integer` | An effect from wa.effects. |
 | `options` | `wa.EffectOptions?` |  |
 
-#### `npc:remove_effect(effect)`
+#### `npc:remove_effect(effect, options?)`
 
-Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. Another mod's NPC needs npcs.control.
+Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. to = a player stops it for that player alone, as SELF (review decision 60). Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `effect` | `integer` | An effect from wa.effects. |
+| `options` | `wa.EffectOptions?` | to, as npc:show_effect's. |
 
 #### `npc:set_title(text)`
 

@@ -624,19 +624,20 @@ func (b *body) removespecialeffect(what string, args []Expr) error {
 	if len(args) < 1 || len(args) > 3 {
 		return unsupported(what, "arguments")
 	}
+	// AREA, ALL_SAMEMAP or SELF, as specialeffect's (review decision
+	// 60, D6).
+	var opts []string
 	if len(args) >= 2 {
-		t, err := b.fixed(what, "send target", args[1])
-		if err != nil {
+		var err error
+		if opts, err = b.effectTarget(what, args[1]); err != nil {
 			return err
-		}
-		if t != sendAREA {
-			return unsupported(what, "a send target other than AREA")
 		}
 	}
 	e, err := b.fixedEffect(what, args[0])
 	if err != nil {
 		return err
 	}
+	call := strings.Join(withOptions([]string{e}, opts), ", ")
 	if what == "removespecialeffect2" {
 		if len(args) == 3 {
 			p, err := b.expr(args[2])
@@ -647,7 +648,7 @@ func (b *body) removespecialeffect(what string, args []Expr) error {
 				return unsupported(what, "on another character")
 			}
 		}
-		b.line("player:remove_effect(%s)", e)
+		b.line("player:remove_effect(%s)", call)
 		return nil
 	}
 	target := "npc"
@@ -656,7 +657,7 @@ func (b *body) removespecialeffect(what string, args []Expr) error {
 			return err
 		}
 	}
-	b.line("%s", b.onNPC(target, "remove_effect", e))
+	b.line("%s", b.onNPC(target, "remove_effect", call))
 	return nil
 }
 

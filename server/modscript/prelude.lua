@@ -1062,8 +1062,9 @@ npc_methods.show_effect = function(self, effect, options)
 	local to, to_id = send_to("npc:show_effect", options, { to = true })
 	return (call(H.npc_present, npc_ids[self], "show_effect", effect, to, to_id))
 end
-npc_methods.remove_effect = function(self, effect)
-	return (call(H.npc_present, npc_ids[self], "remove_effect", effect))
+npc_methods.remove_effect = function(self, effect, options)
+	local to, to_id = send_to("npc:remove_effect", options, { to = true })
+	return (call(H.npc_present, npc_ids[self], "remove_effect", effect, to, to_id))
 end
 npc_methods.set_guild = function(self, guild)
 	local id = 0
@@ -1137,8 +1138,9 @@ end
 player_methods.show_emotion = function(self, emotion)
 	return (call(H.player_present, player_ids[self], "show_emotion", emotion))
 end
-player_methods.remove_effect = function(self, effect)
-	return (call(H.player_present, player_ids[self], "remove_effect", effect))
+player_methods.remove_effect = function(self, effect, options)
+	local to, to_id = send_to("player:remove_effect", options, { to = true })
+	return (call(H.player_present, player_ids[self], "remove_effect", effect, to, to_id))
 end
 player_methods.play_sound = function(self, file, options)
 	options = present_options("player:play_sound", options, { ["repeat"] = true, to = true })

@@ -25,6 +25,11 @@ return function()
     note("bad " .. tostring(pcall(kept.show_emotion, kept, 300)))
   end)
   on("OnSelf", function() maps.find_player("a"):say_aloud("hush", { to = "self" }) end)
+  on("OnUnEffect", function()
+    local npc = require("wa.context"):get_instance()
+    npc:remove_effect(10, { to = maps.find_player("a") })
+    maps.find_player("a"):remove_effect(11, { to = "map" })
+  end)
 end`
 
 func emotionsOf(evs []*wathenav1.Event) map[uint32]uint32 {
@@ -84,5 +89,34 @@ func TestSayAloudSelf(t *testing.T) {
 	}
 	if got := chatTexts(events(other)); len(got) != 0 {
 		t.Errorf("another player heard %q", got)
+	}
+}
+
+func effectRemovals(evs []*wathenav1.Event) []uint32 {
+	var out []uint32
+	for _, e := range evs {
+		if r := e.GetEffectRemove(); r != nil {
+			out = append(out, r.GetEffectId())
+		}
+	}
+	return out
+}
+
+// TestRemoveEffectTo checks remove_effect's to (review decision 60, D6):
+// a player alone, or every player of the map who sees the entity.
+func TestRemoveEffectTo(t *testing.T) {
+	z, p, n := followupZoneWith(t, decision60Script)
+	other := add(z, "b")
+	other.entity.x, other.entity.y = 21, 21
+	z.stepAt(z.now + 50)
+	events(p)
+	events(other)
+	fire(t, z, n, "OnUnEffect")
+	z.stepAt(z.now + 50)
+	if got := effectRemovals(events(p)); len(got) != 2 || got[0] != 10 || got[1] != 11 {
+		t.Errorf("the player got %v", got)
+	}
+	if got := effectRemovals(events(other)); len(got) != 1 || got[0] != 11 {
+		t.Errorf("another player got %v", got)
 	}
 }
