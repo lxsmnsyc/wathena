@@ -17,6 +17,7 @@ import (
 	"github.com/lxsmnsyc/wathena/schema"
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 	"github.com/lxsmnsyc/wathena/server/battle"
+	"github.com/lxsmnsyc/wathena/server/castle"
 	"github.com/lxsmnsyc/wathena/server/character"
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
@@ -599,6 +600,10 @@ type Zone struct {
 	// booking (party.go). Without it, the zone makes its own on first
 	// use. Set it before Run.
 	Social *social.Registry
+	// Castles is the world's castle registry (castles.go). Without it,
+	// castle calls raise an error. Set it before Run.
+	Castles    *castle.Registry
+	castleFeed *castle.Feed
 	// txStorageRefs are the guild storages the transfers since the last
 	// commit changed, and txStorages the storages a guild that broke up
 	// left (guild.go).
@@ -904,6 +909,10 @@ func (z *Zone) Run(ctx context.Context) {
 	z.startSender()
 	z.startScripts()
 	defer z.stopScripts()
+	if z.Castles != nil {
+		z.castleFeed = z.Castles.Subscribe(z.npcIn.signal)
+		defer z.Castles.Unsubscribe(z.castleFeed)
+	}
 	var t *time.Ticker
 	var ticks <-chan time.Time
 	// sched wakes a sleeping zone for its scripts' schedules, which
@@ -1940,7 +1949,10 @@ func (z *Zone) viewEvents(p *Player, events []*wathenav1.Event) []*wathenav1.Eve
 					events = append(events, z.npcBarEvents(id, e)...)
 				}
 				if known && e.guildChanged && e.player != nil {
-					events = append(events, entityGuild(id, e.player))
+					events = append(events, entityGuild(id, e.player.guild.badge))
+				}
+				if known && e.guildChanged && e.npc != nil {
+					events = append(events, entityGuild(id, e.npc.badge))
 				}
 				if known && e.shopChanged && e.player != nil {
 					events = append(events, entityShop(id, e.player))

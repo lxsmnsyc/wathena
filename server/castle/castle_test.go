@@ -53,7 +53,7 @@ func TestWritesSave(t *testing.T) {
 	st := &fakeStore{}
 	r := New(records(), map[string]State{"Kriemhild": {Owner: 7, Economy: 30}})
 	r.Store = st
-	feed := r.Subscribe()
+	feed := r.Subscribe(nil)
 	if s, _ := r.State("Kriemhild"); s.Owner != 7 || s.Economy != 30 {
 		t.Fatalf("saved state not loaded: %+v", s)
 	}
@@ -107,7 +107,7 @@ func TestGuildBroken(t *testing.T) {
 			t.Error("the owner was cleared before OnGuildBreak")
 		}
 	}
-	feed := r.Subscribe()
+	feed := r.Subscribe(nil)
 	r.GuildBroken(7)
 	if !slices.Equal(events, []string{"Agit#prtg_cas01::OnGuildBreak", "example.keep:steward::OnGuildBreak"}) {
 		t.Errorf("events %v", events)

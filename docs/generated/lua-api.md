@@ -28,7 +28,8 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.world_events`](#waworld_events) | Starting and stopping world events of data/events.yml (review decision 31). A request takes effect within a second, on the scheduler's next check. |
 | [`wa.channels`](#wachannels) | Chat channels, as rAthena's channel system. Core's channels are the records of data/channels.yml, such as #global and #trade. A channel is one for the whole world. |
 | [`wa.parties`](#waparties) | Parties, as rAthena's party system (review decision 27). A party is one for the whole world. The write calls replace party_create, party_addmember, party_delmember, party_changeleader, party_changeoption and party_destroy, and skip the leader's rights and the invite, as those commands do. |
-| [`wa.guilds`](#waguilds) | Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later. |
+| [`wa.guilds`](#waguilds) | Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles are in wa.castles. |
+| [`wa.castles`](#wacastles) | Guild castles (proposal 0004): the records of data/castles.yml, such as core's Kriemhild, and their saved state, as rAthena's castle_db and getcastledata. A castle is one for the whole world, and each change saves at once. |
 | [`wa.clock`](#waclock) | The server clock (review decision 58), as rAthena's gettimetick, gettime and gettimestr. Fields and formats are in the server's time zone (time_zone in the config). Its calls need no permission. |
 | [`wa.rules`](#warules) | The world's ruleset (strategy section 3.6, review decisions 27 and 32). Read-only. Its calls need no permission. An unknown name raises an error that lists the valid names. |
 | [`wa.places`](#waplaces) | Named places of generated maps (review decision 42): cells with tags, such as blacksmith, square, gate, entrance, exit or boss_room, that the map generator records. Content finds places by tag, not by coordinates. A classic world has no places: find returns an empty list and nearest nil. |
@@ -785,7 +786,7 @@ Permission: `game.read`.
 local guilds = require "wa.guilds"
 ```
 
-Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later.
+Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles are in wa.castles.
 
 #### `guilds.create(master, name) → wa.Guild?`
 
@@ -817,6 +818,44 @@ Permission: `game.read`.
 | Parameter | Type | Meaning |
 |---|---|---|
 | `name` | `string` | A guild's name, without regard to case. |
+
+### wa.castles
+
+```lua
+local castles = require "wa.castles"
+```
+
+Guild castles (proposal 0004): the records of data/castles.yml, such as core's Kriemhild, and their saved state, as rAthena's castle_db and getcastledata. A castle is one for the whole world, and each change saves at once.
+
+#### `castles.get(name) → wa.Castle?`
+
+A castle, or nil.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A record's full name, a plain name (the calling mod's, then core's), or a castle's map, such as "prtg_cas01", as rAthena's castle commands take. |
+
+#### `castles.list(options?) → wa.Castle[]`
+
+The castles by ID, as castle_db.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `options` | `wa.CastleListOptions?` |  |
+
+#### `castles.of(guild) → wa.Castle[]`
+
+The castles a guild owns, by ID.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `guild` | `wa.Guild` |  |
 
 ### wa.clock
 
@@ -2621,6 +2660,7 @@ An NPC: the instance of an NPC context, or what world.get_npc returns. A handle 
 | `full_name` | `string` | The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the NPC's name has a # part (review decision 58). |
 | `hidden_name` | `string` | The part after # of the NPC's name, as strnpcinfo(2): the display_name field's, else the record's, or "". npc:set_display_name("A#b") changes it. |
 | `unique_name` | `string` | The record's name without the mod's ID, as strnpcinfo(3). world.get_npc finds the NPC by it in the same mod. |
+| `guild` | `wa.Guild?` | The guild whose badge the NPC shows, from npc:set_guild, or nil (proposal 0004). nil on an NPC of another map. |
 | `map` | `string` | The map's name, as strnpcinfo(4). "" for an NPC without a map, which runs in the start map's zone. |
 | `x` | `integer` |  |
 | `y` | `integer` |  |
@@ -2725,6 +2765,14 @@ Shows a title with the NPC's name, as setunittitle. Another mod's NPC needs npcs
 | Parameter | Type | Meaning |
 |---|---|---|
 | `text` | `string` | At most 23 bytes. "" removes the title. |
+
+#### `npc:set_guild(guild?)`
+
+Shows a guild's badge on the NPC, its name and emblem, as flagemblem on a castle's flags (proposal 0004). The badge follows the guild's emblem, and goes when the guild breaks up. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `guild` | `wa.Guild?` | nil removes the badge. |
 
 #### `npc:set_display_name(name)`
 
@@ -3571,6 +3619,124 @@ The object of the guild_join and guild_leave events.
 | `guild` | `wa.Guild` | The guild. After it broke up, its fields still read. |
 | `player` | `wa.Player` | The player who joined or left. |
 | `reason` | `"invited"\|"create"\|"left"\|"expelled"\|"disbanded"\|"script"` | Why: an accepted invite, a guild the player made from the client, a leave, an expel, a break up, or a wa.guilds call. |
+
+### wa.Castle
+
+A guild castle, from wa.castles (proposal 0004). Two handles of one castle are equal. Its fields read the current state.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | `integer` | rAthena's castle ID; mods' castles have IDs from 10,000. |
+| `name` | `string` | The record's full name, such as Kriemhild or example.keep:keep. |
+| `display_name` | `string` | The castle's name, as getcastlename. |
+| `map` | `string` |  |
+| `edition` | `"fe"\|"se"\|"te"` | rAthena's WoE type: First Edition, Second Edition or Training Edition. |
+| `npc` | `string` | The record name of the NPC whose OnGuildBreak label runs when the owner's guild breaks up. |
+| `owner` | `wa.Guild?` | The owning guild, as getcastledata CD_GUILD_ID. |
+| `owner_id` | `integer` | The owning guild's ID, 0 for none. |
+| `economy` | `integer` | CD_CURRENT_ECONOMY. Scripts cap it at 100. |
+| `defense` | `integer` | CD_CURRENT_DEFENSE. |
+| `invested_economy` | `integer` | CD_INVESTED_ECONOMY: the day's investments. |
+| `invested_defense` | `integer` | CD_INVESTED_DEFENSE. |
+| `next_time` | `integer` | CD_NEXT_TIME, unused by rAthena's scripts. |
+| `pay_time` | `integer` | CD_PAY_TIME, unused by rAthena's scripts. |
+| `create_time` | `integer` | CD_CREATE_TIME, unused by rAthena's scripts. |
+| `kafra` | `boolean` | CD_ENABLED_KAFRA: the castle's Kafra is hired. |
+| `teleport` | `wa.CastleTeleport?` | Where the guild window's teleport arrives, and its costs, or nil. |
+
+#### `castle:set_owner(guild?) → boolean`
+
+Sets the owner, as setcastledata CD_GUILD_ID, and saves it. false when the owner is already that guild. castle_change follows in every zone. Nothing else happens: scripts warp players and change flags. Another mod's castle, core's too, also needs npcs.control.
+
+Permission: `castles.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `guild` | `wa.Guild?` | nil for none. |
+
+#### `castle:set(values)`
+
+Changes the named values in one write, as setcastledata 2 to 9, and saves them. A negative value raises an error. Another mod's castle also needs npcs.control.
+
+Permission: `castles.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `values` | `wa.CastleValues` |  |
+
+#### `castle:set_guardian(index, installed)`
+
+Sets or clears a guardian slot's installed bit, as setcastledata 10 to 17, and saves it. Another mod's castle also needs npcs.control.
+
+Permission: `castles.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `index` | `integer` | 0 to 7. |
+| `installed` | `boolean` |  |
+
+#### `castle:get_guardian(index) → wa.Guardian`
+
+A guardian slot, as getcastledata 10 to 17.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `index` | `integer` | 0 to 7. |
+
+### wa.CastleTeleport
+
+A castle's teleport cell and costs, from castle.teleport.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `x` | `integer` |  |
+| `y` | `integer` |  |
+| `cost` | `integer` | Zeny outside the castle's siege, rAthena's WarpCost. |
+| `siege_cost` | `integer` | Zeny during the castle's siege, rAthena's WarpCostSiege. |
+
+### wa.CastleValues
+
+The values castle:set changes. A value left out stays as it is.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `economy` | `integer?` |  |
+| `defense` | `integer?` |  |
+| `invested_economy` | `integer?` |  |
+| `invested_defense` | `integer?` |  |
+| `next_time` | `integer?` |  |
+| `pay_time` | `integer?` |  |
+| `create_time` | `integer?` |  |
+| `kafra` | `boolean?` |  |
+
+### wa.CastleListOptions
+
+What castles.list keeps.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `edition` | `"fe"\|"se"\|"te"?` | Only castles of the edition. |
+| `owner` | `wa.Guild\|false?` | Only the guild's castles, or false for castles without an owner. |
+
+### wa.Guardian
+
+A castle's guardian slot, from castle:get_guardian.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `index` | `integer` | 0 to 7. |
+| `installed` | `boolean` | The slot's guardian is installed, as the castle's visibleG bit: not whether it lives. |
+
+### wa.CastleChange
+
+The object of the castle_change event.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `castle` | `wa.Castle` | The castle, whose owner is the new one. |
+| `previous_owner_id` | `integer` | The previous owner's guild ID, 0 for none. |
 
 ### wa.GuildChange
 
@@ -5530,6 +5696,7 @@ Changes the NPC's value.
 | `mail` | mod, npc, event | `mail: wa.Mail` | A mail went out from the context's map: a player's, or a script's player:send_mail. |
 | `world_event_start` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event started, on any map. Every zone's handlers run. |
 | `world_event_end` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event ended, on any map, with its result. Every zone's handlers run. |
+| `castle_change` | mod, npc, event | `change: wa.CastleChange` | A castle's owner changed: castle:set_owner, staff, or a guild that broke up. Every zone's handlers run (proposal 0004). |
 | `restart_planned` | mod, npc, event | `restart: wa.RestartPlan` | Staff planned a server restart from the admin screens, or cancelled it. Every zone's handlers run. At the restart time the server saves every character, disconnects every player and stops, so a handler can end a mod's event in time. |
 | `dungeon_rotated` | mod, npc, event | `rotation: wa.DungeonRotation` | A rotating dungeon got new floors, on schedule or because staff forced it. Every zone's handlers run, after the players and points of the old floors moved to the nearest town. |
 | `region_changed` | mod, npc, event | `change: wa.RegionChange` | A region's fields generated again with a new biome at the end of a season, or because staff forced it. Every zone's handlers run, after the players and points of its fields moved to the region's town. |
@@ -5549,7 +5716,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `untouch`, `npc_event`, `monster_touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `untouch`, `npc_event`, `monster_touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `castle_change`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
 
 ### wa.BonusName
 

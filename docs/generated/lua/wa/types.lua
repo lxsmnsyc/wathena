@@ -47,6 +47,7 @@
 ---| "mail"
 ---| "world_event_start"
 ---| "world_event_end"
+---| "castle_change"
 ---| "restart_planned"
 ---| "dungeon_rotated"
 ---| "region_changed"
@@ -1145,6 +1146,7 @@ function wa_Monster:get_statuses() end
 ---@field full_name string The name with its # part, as strnpcinfo(0): name, then # and hidden_name when the NPC's name has a # part (review decision 58).
 ---@field hidden_name string The part after # of the NPC's name, as strnpcinfo(2): the display_name field's, else the record's, or "". npc:set_display_name("A#b") changes it.
 ---@field unique_name string The record's name without the mod's ID, as strnpcinfo(3). world.get_npc finds the NPC by it in the same mod.
+---@field guild wa.Guild? The guild whose badge the NPC shows, from npc:set_guild, or nil (proposal 0004). nil on an NPC of another map.
 ---@field map string The map's name, as strnpcinfo(4). "" for an NPC without a map, which runs in the start map's zone.
 ---@field x integer
 ---@field y integer
@@ -1209,6 +1211,10 @@ function wa_Npc:remove_effect(effect) end
 ---Shows a title with the NPC's name, as setunittitle. Another mod's NPC needs npcs.control.
 ---@param text string At most 23 bytes. "" removes the title.
 function wa_Npc:set_title(text) end
+
+---Shows a guild's badge on the NPC, its name and emblem, as flagemblem on a castle's flags (proposal 0004). The badge follows the guild's emblem, and goes when the guild breaks up. Another mod's NPC needs npcs.control.
+---@param guild? wa.Guild nil removes the badge.
+function wa_Npc:set_guild(guild) end
 
 ---Changes the name players see, as setnpcdisplay. npc.name reads it. Another mod's NPC needs npcs.control.
 ---@param name string 1 to 50 bytes.
@@ -1819,6 +1825,92 @@ local wa_GuildPosition = {}
 ---@field player wa.Player The player who joined or left.
 ---@field reason "invited"|"create"|"left"|"expelled"|"disbanded"|"script" Why: an accepted invite, a guild the player made from the client, a leave, an expel, a break up, or a wa.guilds call.
 local wa_GuildMembership = {}
+
+---A guild castle, from wa.castles (proposal 0004). Two handles of one castle are equal. Its fields read the current state.
+---@class wa.Castle
+---@field id integer rAthena's castle ID; mods' castles have IDs from 10,000.
+---@field name string The record's full name, such as Kriemhild or example.keep:keep.
+---@field display_name string The castle's name, as getcastlename.
+---@field map string
+---@field edition "fe"|"se"|"te" rAthena's WoE type: First Edition, Second Edition or Training Edition.
+---@field npc string The record name of the NPC whose OnGuildBreak label runs when the owner's guild breaks up.
+---@field owner wa.Guild? The owning guild, as getcastledata CD_GUILD_ID.
+---@field owner_id integer The owning guild's ID, 0 for none.
+---@field economy integer CD_CURRENT_ECONOMY. Scripts cap it at 100.
+---@field defense integer CD_CURRENT_DEFENSE.
+---@field invested_economy integer CD_INVESTED_ECONOMY: the day's investments.
+---@field invested_defense integer CD_INVESTED_DEFENSE.
+---@field next_time integer CD_NEXT_TIME, unused by rAthena's scripts.
+---@field pay_time integer CD_PAY_TIME, unused by rAthena's scripts.
+---@field create_time integer CD_CREATE_TIME, unused by rAthena's scripts.
+---@field kafra boolean CD_ENABLED_KAFRA: the castle's Kafra is hired.
+---@field teleport wa.CastleTeleport? Where the guild window's teleport arrives, and its costs, or nil.
+local wa_Castle = {}
+
+---Sets the owner, as setcastledata CD_GUILD_ID, and saves it. false when the owner is already that guild. castle_change follows in every zone. Nothing else happens: scripts warp players and change flags. Another mod's castle, core's too, also needs npcs.control.
+---
+---Needs the permission `castles.manage`.
+---@param guild? wa.Guild nil for none.
+---@return boolean
+function wa_Castle:set_owner(guild) end
+
+---Changes the named values in one write, as setcastledata 2 to 9, and saves them. A negative value raises an error. Another mod's castle also needs npcs.control.
+---
+---Needs the permission `castles.manage`.
+---@param values wa.CastleValues
+function wa_Castle:set(values) end
+
+---Sets or clears a guardian slot's installed bit, as setcastledata 10 to 17, and saves it. Another mod's castle also needs npcs.control.
+---
+---Needs the permission `castles.manage`.
+---@param index integer 0 to 7.
+---@param installed boolean
+function wa_Castle:set_guardian(index, installed) end
+
+---A guardian slot, as getcastledata 10 to 17.
+---
+---Needs the permission `game.read`.
+---@param index integer 0 to 7.
+---@return wa.Guardian
+function wa_Castle:get_guardian(index) end
+
+---A castle's teleport cell and costs, from castle.teleport.
+---@class wa.CastleTeleport
+---@field x integer
+---@field y integer
+---@field cost integer Zeny outside the castle's siege, rAthena's WarpCost.
+---@field siege_cost integer Zeny during the castle's siege, rAthena's WarpCostSiege.
+local wa_CastleTeleport = {}
+
+---The values castle:set changes. A value left out stays as it is.
+---@class wa.CastleValues
+---@field economy integer?
+---@field defense integer?
+---@field invested_economy integer?
+---@field invested_defense integer?
+---@field next_time integer?
+---@field pay_time integer?
+---@field create_time integer?
+---@field kafra boolean?
+local wa_CastleValues = {}
+
+---What castles.list keeps.
+---@class wa.CastleListOptions
+---@field edition "fe"|"se"|"te"? Only castles of the edition.
+---@field owner wa.Guild|false? Only the guild's castles, or false for castles without an owner.
+local wa_CastleListOptions = {}
+
+---A castle's guardian slot, from castle:get_guardian.
+---@class wa.Guardian
+---@field index integer 0 to 7.
+---@field installed boolean The slot's guardian is installed, as the castle's visibleG bit: not whether it lives.
+local wa_Guardian = {}
+
+---The object of the castle_change event.
+---@class wa.CastleChange
+---@field castle wa.Castle The castle, whose owner is the new one.
+---@field previous_owner_id integer The previous owner's guild ID, 0 for none.
+local wa_CastleChange = {}
 
 ---The object of the guild_change event.
 ---@class wa.GuildChange

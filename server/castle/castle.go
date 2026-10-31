@@ -118,6 +118,7 @@ type Change struct {
 // Feed holds a zone's notices until the zone takes them. Any goroutine
 // may push; the zone drains it at each step.
 type Feed struct {
+	wake    func()
 	mu      sync.Mutex
 	notices []Notice
 }
@@ -126,6 +127,9 @@ func (f *Feed) push(n Notice) {
 	f.mu.Lock()
 	f.notices = append(f.notices, n)
 	f.mu.Unlock()
+	if f.wake != nil {
+		f.wake()
+	}
 }
 
 // Take returns the notices since the last Take, oldest first.
@@ -175,9 +179,10 @@ func New(recs []*Record, saved map[string]State) *Registry {
 	return r
 }
 
-// Subscribe returns a new feed that gets every later notice.
-func (r *Registry) Subscribe() *Feed {
-	f := &Feed{}
+// Subscribe returns a new feed that gets every later notice. wake, when
+// set, runs after each push; it must not block or call the registry.
+func (r *Registry) Subscribe(wake func()) *Feed {
+	f := &Feed{wake: wake}
 	r.mu.Lock()
 	r.feeds = append(r.feeds, f)
 	r.mu.Unlock()
@@ -236,6 +241,21 @@ func (r *Registry) Records() []*Record {
 		out[i] = c.rec
 	}
 	return out
+}
+
+// ByID returns a castle's record by ID, or nil.
+func (r *Registry) ByID(id uint32) *Record {
+	if r == nil {
+		return nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, c := range r.list {
+		if c.rec.ID == id {
+			return c.rec
+		}
+	}
+	return nil
 }
 
 // State returns a castle's state by record name.

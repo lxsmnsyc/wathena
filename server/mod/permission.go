@@ -70,6 +70,10 @@ var Permissions = []Permission{
 	// maps.control is review decision 59's: maps.remove_monsters and
 	// maps.set_cells change a map for every player on it.
 	{Name: "maps.control", Approval: true, Flagged: true, Allows: "kill the monsters of any map and change its cells"},
+	// castles.manage is proposal 0004's (section 8): changing castle
+	// owners and values, placing guardians, and starting and ending
+	// sieges. Another mod's castle, core's too, also needs npcs.control.
+	{Name: "castles.manage", Approval: true, Allows: "change castle owners and values, place guardians, and start and end sieges"},
 }
 
 // LookupPermission returns a permission by name.

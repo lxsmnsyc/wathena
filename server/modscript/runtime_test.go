@@ -382,7 +382,7 @@ end`))
 
 func TestEventNamesChecked(t *testing.T) {
 	cases := map[string]string{
-		`events.on("logn", function() end)`:  `there is no event "logn"; a mod context can listen to base_level_up, buying_store_sale, chat, death, dungeon_rotated, guild_change, guild_join, guild_leave, job_change, job_level_up, login, logout, mail, map_enter`,
+		`events.on("logn", function() end)`:  `there is no event "logn"; a mod context can listen to base_level_up, buying_store_sale, castle_change, chat, death, dungeon_rotated, guild_change, guild_join, guild_leave, job_change, job_level_up, login, logout, mail, map_enter`,
 		`events.on("click", function() end)`: `"click" is an event of npc contexts, and this is a mod context`,
 		`events.on("login", 3)`:              "the handler must be a function",
 	}

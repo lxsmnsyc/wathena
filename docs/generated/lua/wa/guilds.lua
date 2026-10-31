@@ -1,7 +1,7 @@
 ---@meta wa.guilds
 -- Generated from server/modscript/luaapi. Do not edit: wactl mod types writes it again.
 
----Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles, sieges and guardians come later.
+---Guilds, as rAthena's guild system (review decision 28). A guild is one for the whole world. The write calls skip the position permissions and the invite, as rAthena's guild script commands. Castles are in wa.castles.
 ---@class wa.guilds
 local guilds = {}
 

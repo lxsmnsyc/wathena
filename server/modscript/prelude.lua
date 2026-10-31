@@ -864,6 +864,9 @@ new_npc, npc_ids = handle_type("npc", {
 	if not ok then
 		error(value, 3)
 	end
+	if key == "guild" and value ~= nil then
+		return new_guild(value)
+	end
 	return value
 end, false, "npc")
 
@@ -1058,6 +1061,16 @@ npc_methods.show_effect = function(self, effect, options)
 end
 npc_methods.remove_effect = function(self, effect)
 	return (call(H.npc_present, npc_ids[self], "remove_effect", effect))
+end
+npc_methods.set_guild = function(self, guild)
+	local id = 0
+	if guild ~= nil then
+		id = guild_ids[guild]
+		if id == nil then
+			error("npc:set_guild: want a guild handle or nil", 2)
+		end
+	end
+	return (call(H.npc_present, npc_ids[self], "set_guild", id))
 end
 npc_methods.set_title = function(self, text)
 	return (call(H.npc_present, npc_ids[self], "set_title", text))
@@ -1967,6 +1980,109 @@ api["wa.guilds"] = readonly("wa.guilds", {
 			return nil
 		end
 		return new_guild(guild)
+	end,
+})
+
+-- Castles (proposal 0004, section 8). A castle is one for the whole
+-- world; its handle's ID is the castle's record ID.
+local castle_value_fields = {
+	"economy", "defense", "invested_economy", "invested_defense", "next_time", "pay_time", "create_time",
+}
+local castle_value_names = { kafra = true }
+for _, name in ipairs(castle_value_fields) do
+	castle_value_names[name] = true
+end
+
+local new_castle, castle_ids
+new_castle, castle_ids = handle_type("castle", {
+	set_owner = function(self, guild)
+		local id = 0
+		if guild ~= nil then
+			id = guild_ids[guild]
+			check(id ~= nil, "castle:set_owner: want a guild handle or nil")
+		end
+		return (call(H.castle_call, "set_owner", castle_ids[self], id))
+	end,
+	set = function(self, values)
+		check(type(values) == "table", "castle:set: want a table of values, such as { economy = 10 }")
+		local args = {}
+		for i, name in ipairs(castle_value_fields) do
+			local v = values[name]
+			check(v == nil or math_type(v) == "integer", "castle:set: " .. name .. " must be an integer")
+			check(v == nil or v >= 0, "castle:set: " .. name .. " cannot be negative")
+			args[i] = v
+		end
+		local kafra = values.kafra
+		check(kafra == nil or type(kafra) == "boolean", "castle:set: kafra must be a boolean")
+		for name in pairs(values) do
+			check(castle_value_names[name], "castle:set: " .. tostring(name) .. " is not a castle value")
+		end
+		call(H.castle_call, "set", castle_ids[self], args[1], args[2], args[3], args[4], args[5], args[6], args[7], kafra)
+	end,
+	set_guardian = function(self, index, installed)
+		check(math_type(index) == "integer" and index >= 0 and index <= 7, "castle:set_guardian: the index is 0 to 7")
+		check(type(installed) == "boolean", "castle:set_guardian: installed must be a boolean")
+		call(H.castle_call, "set_guardian", castle_ids[self], index, installed)
+	end,
+	get_guardian = function(self, index)
+		check(math_type(index) == "integer" and index >= 0 and index <= 7, "castle:get_guardian: the index is 0 to 7")
+		local installed = call(H.castle_call, "get_guardian", castle_ids[self], index)
+		return readonly("guardian", { index = index, installed = installed })
+	end,
+}, function(id, key)
+	local ok, value = pcall(H.castle_field, id, key)
+	if not ok then
+		error(value, 3)
+	end
+	if key == "owner" then
+		if value == 0 then
+			return nil
+		end
+		return new_guild(value)
+	end
+	if key == "teleport" and value ~= nil then
+		return readonly("castle teleport", value)
+	end
+	return value
+end, true)
+
+local function castle_list(ids)
+	local out = {}
+	for i, id in ipairs(ids) do
+		out[i] = new_castle(id)
+	end
+	return out
+end
+
+local castle_editions = { fe = true, se = true, te = true }
+
+api["wa.castles"] = readonly("wa.castles", {
+	get = function(name)
+		check(type(name) == "string", "castles.get: want a castle's name or map")
+		local id = call(H.castles_find, "get", name)
+		if id == nil then
+			return nil
+		end
+		return new_castle(id)
+	end,
+	list = function(options)
+		options = options or {}
+		check(type(options) == "table", "castles.list: the options must be a table")
+		local edition = options.edition
+		check(edition == nil or castle_editions[edition], "castles.list: edition is \"fe\", \"se\" or \"te\"")
+		local owner = -1
+		if options.owner == false then
+			owner = 0
+		elseif options.owner ~= nil then
+			owner = guild_ids[options.owner]
+			check(owner ~= nil, "castles.list: owner is a guild handle, or false for castles without one")
+		end
+		return castle_list(call(H.castles_find, "list", edition or "", owner))
+	end,
+	of = function(guild)
+		local id = guild_ids[guild]
+		check(id ~= nil, "castles.of: want a guild handle")
+		return castle_list(call(H.castles_find, "of", id))
 	end,
 })
 
@@ -3072,6 +3188,9 @@ function R.invoke(fn, ...)
 				fields.options = readonly("party options", value.options)
 			end
 			value = readonly("party event", fields)
+		elseif kind == "castle_change" then
+			-- castle_change (proposal 0004): castle is a handle.
+			value = readonly("castle change", { castle = new_castle(value.castle), previous_owner_id = value.previous_owner_id })
 		elseif kind == "guild_event" then
 			-- The guild_join, guild_leave and guild_change objects: guild
 			-- and player are handles.
