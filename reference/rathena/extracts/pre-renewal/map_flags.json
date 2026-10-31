@@ -1,5 +1,5 @@
 {
-	"rathena_git_hash": "48a84111923ba2c70bc613a011a1fa3349c6ebd0",
+	"rathena_git_hash": "f99a928d1eda44656befb8f4e61107ca6acbcbc2",
 	"mode": "pre-renewal",
 	"note": "The mapflag lines of gvg, gvg_noparty, gvg_castle, gvg_dungeon, gvg_te, gvg_te_castle, restricted in the NPC files npc/pre-re/scripts_main.conf loads, in load order, as npc_parse_mapflag reads them. A line whose fourth field is off turns the flag off; for restricted it clears every zone. restricted lists the zones a map has (map_setmapflag_sub sets bit (zone + 1) << 3 of mapdata->zone for each). Lines on maps the map server does not load are left out and their maps listed in unknown_maps. Setting gvg or gvg_te at run time removes pvp and battleground from the map (map_setmapflag_sub); those flags are not in this file.",
 	"maps": [

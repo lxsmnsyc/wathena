@@ -9,8 +9,8 @@ Go code loads these files with the `internal/reference` package. Its tests check
 ## Source
 
 - rAthena data: commit `e98500617` ("6th rebalance - Meister - Part 1", #9997). The `wathena-reference` branch of the fork is based on it and changes no data. The recordings carry it in `rathena_git_hash`.
-- Everything reproduces from fork commit `48a841119` (checked on 2026-10-27; castles and map flags added on 2026-10-31). The fork's `wathena-reference` branch holds the whole recorder (`src/map/wathena_recorder.cpp`, `tools/wathena/record.sh`) and every extract function of `tools/wathena/extract.py`. Its commits, oldest first: `575d83531` extract script, `3f5534394` inventory script, `83616e3c3` exp tables and drops, `84dbe9b2f` job stats, `e9dceb60e` item weights and heals, `27ad000bc` warps, `f4641e37b` script constants, item scripts and groups, `003599e1c` NPCs, shops and item prices, `eac0a7e75` equipment, refine and monster groups, `2eb1327f4` status, `e92917ccc` skills, skill trees and casting, `784fce3ec` second class recordings and job change NPCs, `ecf13b511` monsters, `8e1c56558` random options, `5e50b7ad9` mounts, `50df331ca` party sharing, `f30328d04` guilds, `4214647ba` item trade, `3e45adbd3` barter shops and shop settings, `60bed4ccf` quests, `28488df04` refine costs, `39de3053d` part files for quest, warp and event NPCs, `48a841119` castles and GvG map flags.
-- `python3 tools/wathena/extract.py` at `48a841119` writes every file in `extracts/` with the same content as this folder. Only `rathena_git_hash` differs: in `extracts/` it is the fork commit that last wrote the file, and a run writes `48a841119`. The files were not copied again.
+- Everything reproduces from fork commit `f99a928d1` (checked on 2026-10-27; castles and map flags added on 2026-10-31). The fork's `wathena-reference` branch holds the whole recorder (`src/map/wathena_recorder.cpp`, `tools/wathena/record.sh`) and every extract function of `tools/wathena/extract.py`. Its commits, oldest first: `575d83531` extract script, `3f5534394` inventory script, `83616e3c3` exp tables and drops, `84dbe9b2f` job stats, `e9dceb60e` item weights and heals, `27ad000bc` warps, `f4641e37b` script constants, item scripts and groups, `003599e1c` NPCs, shops and item prices, `eac0a7e75` equipment, refine and monster groups, `2eb1327f4` status, `e92917ccc` skills, skill trees and casting, `784fce3ec` second class recordings and job change NPCs, `ecf13b511` monsters, `8e1c56558` random options, `5e50b7ad9` mounts, `50df331ca` party sharing, `f30328d04` guilds, `4214647ba` item trade, `3e45adbd3` barter shops and shop settings, `60bed4ccf` quests, `28488df04` refine costs, `39de3053d` part files for quest, warp and event NPCs, `f99a928d1` castles and GvG map flags.
+- `python3 tools/wathena/extract.py` at `f99a928d1` writes every file in `extracts/` with the same content as this folder. Only `rathena_git_hash` differs: in `extracts/` it is the fork commit that last wrote the file, and a run writes `f99a928d1`. The files were not copied again.
 - The recordings (`renewal/`, `pre-renewal/`) need `record.sh` and a built map server. The 2026-10-27 check did not rebuild them.
 - The fork's branch has no upstream and is not on its remote yet.
 - The recorder and scripts stay in the rAthena fork. This repository keeps only their output, so it does not need a C++ toolchain.
@@ -331,7 +331,7 @@ python3 tools/wathena/extract.py quests
 | renewal | 44 | 24 | 10 | 10 | 30 | 249 | 187 |
 | pre-renewal | 34 | 24 | 10 | 0 | 0 | 121 | 69 |
 
-They come from rAthena fork commit `48a841119`, which adds `build_castles` and `build_map_flags` to `tools/wathena/extract.py`. With it:
+They come from rAthena fork commit `f99a928d1`, which adds `build_castles` and `build_map_flags` to `tools/wathena/extract.py`. With it:
 
 ```text
 python3 tools/wathena/extract.py castles map_flags

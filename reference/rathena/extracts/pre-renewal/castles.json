@@ -1,5 +1,5 @@
 {
-	"rathena_git_hash": "48a84111923ba2c70bc613a011a1fa3349c6ebd0",
+	"rathena_git_hash": "f99a928d1eda44656befb8f4e61107ca6acbcbc2",
 	"mode": "pre-renewal",
 	"note": "castle_db.yml of the mode and db/import/castle_db.yml when it exists, as CastleDatabase::parseBodyNode loads them, by Id. edition is Type: fe for First_Edition (agitstart), se for Second_Edition (agitstart2), te for Third_Edition (agitstart3); fe when Type is absent. npc is the NPC whose OnGuildBreak runs when the owner guild breaks. client_id is 0 when absent. teleport is set when WarpEnabled is true and loadingFinished keeps it: it is turned off without a ClientId, WarpX or WarpY. cost is WarpCost (100 when absent) and siege_cost WarpCostSiege (100000 when absent), the zeny a guild member pays outside and during the castle's siege. A row whose Map is not in map_index.txt, whose Npc is longer than 24 characters, whose Type is unknown, whose WarpX or WarpY is 0 or outside a loaded map, or whose cost is over MAX_ZENY is skipped, as parseBodyNode returns 0. map_loaded is false when maps_athena.conf or the map cache does not have the map.",
 	"files": [

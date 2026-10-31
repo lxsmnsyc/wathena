@@ -70,12 +70,12 @@ func referenceReader(mode reference.Mode) func(string) ([]byte, error) {
 
 // extractNames are the extracts that LoadCore reads, in the order of
 // coreInputs.files. npcs.json names more files, the NPC parts.
-var extractNames = []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills", "random_options", "shops", "quests"}
+var extractNames = []string{"item_scripts", "script_constants", "item_groups", "client_tables", "npcs", "monsters", "skills", "random_options", "shops", "quests", "castles"}
 
 // coreInputs are the extracts that LoadCore reads.
 type coreInputs struct {
 	// files are extractNames' contents, in their order.
-	files [10][]byte
+	files [11][]byte
 	// partNames and parts are the NPC part files that npcs.json lists.
 	partNames []string
 	parts     [][]byte
@@ -118,6 +118,10 @@ func convertCore(in *coreInputs) (*Core, error) {
 	if err != nil {
 		return nil, err
 	}
+	castles, err := ConvertCastles(bytes.NewReader(in.files[10]))
+	if err != nil {
+		return nil, err
+	}
 	parts := make([]io.Reader, len(in.parts))
 	for i, p := range in.parts {
 		parts[i] = bytes.NewReader(p)
@@ -140,7 +144,7 @@ func convertCore(in *coreInputs) (*Core, error) {
 		return nil, err
 	}
 	files := fstest.MapFS{}
-	for _, part := range []map[string]string{res.Files(), npcs.Files(), mobs.Files(), opts.Files(), quests.Files()} {
+	for _, part := range []map[string]string{res.Files(), npcs.Files(), mobs.Files(), opts.Files(), quests.Files(), castles.Files()} {
 		for path, content := range part {
 			files[path] = &fstest.MapFile{Data: []byte(content), Mode: 0o444}
 		}
