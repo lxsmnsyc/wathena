@@ -4,8 +4,10 @@
 -- need: arrays that start at 0, menus written as "A:B", and the end of a
 -- script from inside a function.
 
+local castles = require "wa.castles"
 local clock = require "wa.clock"
 local events = require "wa.events"
+local guilds = require "wa.guilds"
 local items = require "wa.items"
 local maps = require "wa.maps"
 local monsters = require "wa.monsters"
@@ -290,9 +292,11 @@ function R.mail_items(ids, amounts)
 end
 
 -- Maps, areas and monsters (review decision 58, area B8). rAthena does
--- nothing for a map that does not run: map_runs checks it first.
+-- nothing for a map that does not run: map_runs checks it first. An
+-- empty name, which a script can build, is a map that does not run, as
+-- map_mapname2mapid finds none.
 local function map_runs(map)
-	return maps.count_players(map) ~= nil
+	return map ~= "" and maps.count_players(map) ~= nil
 end
 
 -- on_map runs f on a map that runs, as killmonster, setcell and
@@ -2122,6 +2126,70 @@ function R.inventory_list(player, vars)
 			store(var, player, arrays[field])
 		end
 	end
+end
+
+-- Castles (proposal 0004, section 9). rAthena's scripts name a castle by
+-- its map; the CD_ indexes are castle_db's fields.
+local castle_values = {
+	[2] = "economy", [3] = "defense", [4] = "invested_economy", [5] = "invested_defense",
+	[6] = "next_time", [7] = "pay_time", [8] = "create_time",
+}
+
+-- castle_data is getcastledata: the field of a CD_ index, 1 or 0 for the
+-- Kafra and the guardians' installed bits (10 to 17), and 0 for an
+-- unknown castle or index (script.cpp 14029).
+function R.castle_data(map, index)
+	local castle = castles.get(map)
+	if castle == nil then
+		return 0
+	end
+	if index == 1 then
+		return castle.owner_id
+	elseif castle_values[index] ~= nil then
+		return castle[castle_values[index]]
+	elseif index == 9 then
+		return castle.kafra and 1 or 0
+	elseif index >= 10 and index <= 17 then
+		return castle:get_guardian(index - 10).installed and 1 or 0
+	end
+	return 0
+end
+
+-- set_castle_data is setcastledata (guild_castledatasave): 1 sets the
+-- owner, 0 for none; 2 to 8 a value; 9 the Kafra and 10 to 17 a
+-- guardian's installed bit, set by any value but 0. An unknown castle or
+-- index does nothing. rAthena keeps a negative value, which no script
+-- writes; the API saves 0 instead. An owner whose guild does not exist
+-- saves as none.
+function R.set_castle_data(map, index, value)
+	local castle = castles.get(map)
+	if castle == nil then
+		return
+	end
+	if index == 1 then
+		castle:set_owner(value > 0 and guilds.get(value) or nil)
+	elseif castle_values[index] ~= nil then
+		castle:set { [castle_values[index]] = math.max(value, 0) }
+	elseif index == 9 then
+		castle:set { kafra = value ~= 0 }
+	elseif index >= 10 and index <= 17 then
+		castle:set_guardian(index - 10, value ~= 0)
+	end
+end
+
+-- castle_name is getcastlename: the castle's name, or "".
+function R.castle_name(map)
+	local castle = castles.get(map)
+	return castle ~= nil and castle.display_name or ""
+end
+
+-- flag_emblem is flagemblem: the NPC shows the guild's badge, 0 removes
+-- it, and a negative ID does nothing (script.cpp 13994).
+function R.flag_emblem(npc, id)
+	if id < 0 then
+		return
+	end
+	npc:set_guild(id > 0 and guilds.get(id) or nil)
 end
 
 return R

@@ -118,6 +118,21 @@ func (b *body) guildRead(name string, args []Expr) (v val, ok bool, err error) {
 		return val{code: "R.guild_storage(conversation, player)", t: tInt}, true, nil
 	case "guildgetexp", "guildopenstorage_log":
 		return val{}, true, unsupported(name, "its result")
+	case "getcastlename":
+		if len(args) != 1 {
+			return val{}, true, unsupported(name, "arguments")
+		}
+		m, err := b.expr(args[0])
+		if err != nil {
+			return val{}, true, err
+		}
+		return val{code: "R.castle_name(" + m.asText() + ")", t: tStr}, true, nil
+	case "getcastledata":
+		if len(args) != 2 {
+			return val{}, true, unsupported(name, "arguments")
+		}
+		code, err := b.castleArgs(args)
+		return val{code: "R.castle_data(" + code + ")", t: tInt}, true, err
 	}
 	if why := guildUnsupported(name); why != "" {
 		return val{}, true, unsupported(name, "%s", why)
@@ -156,6 +171,31 @@ func (b *body) guildCommand(name string, args []Expr) (ok bool, err error) {
 	case "getguildmember":
 		_, err := b.getguildmember(args)
 		return true, err
+	case "setcastledata":
+		// setcastledata "<map>",<index>,<value>.
+		if len(args) != 3 {
+			return true, unsupported(name, "arguments")
+		}
+		code, err := b.castleArgs(args)
+		if err != nil {
+			return true, err
+		}
+		b.line("R.set_castle_data(%s)", code)
+		return true, nil
+	case "flagemblem":
+		// flagemblem <guild id> changes the running NPC (st->oid).
+		if len(args) != 1 {
+			return true, unsupported(name, "arguments")
+		}
+		if b.n.isFunction {
+			return true, unsupported(name, "in a function")
+		}
+		id, err := b.expr(args[0])
+		if err != nil {
+			return true, err
+		}
+		b.line("R.flag_emblem(npc, %s)", id.asInt())
+		return true, nil
 	}
 	if why := guildUnsupported(name); why != "" {
 		return true, unsupported(name, "%s", why)
@@ -185,12 +225,31 @@ func guildUnsupported(name string) string {
 		return "the guild API cannot count a guild's members on a map"
 	case "maprespawnguildid":
 		return "the guild API cannot warp a guild's members off a map or remove its monsters"
-	case "getcastlename", "getcastledata", "setcastledata", "gvgon", "gvgoff", "gvgon3", "gvgoff3",
+	case "gvgon", "gvgoff", "gvgon3", "gvgoff3",
 		"agitstart", "agitend", "agitcheck", "agitstart2", "agitend2", "agitcheck2", "agitstart3", "agitend3", "agitcheck3",
-		"guardian", "guardianinfo", "flagemblem", "getguildemblem", "setwall", "delwall", "checkwall":
+		"guardian", "guardianinfo", "getguildemblem", "setwall", "delwall", "checkwall":
 		return "castles, sieges and guardians are not in the API yet"
 	}
 	return ""
+}
+
+// castleArgs converts a castle command's map and the rest of its
+// arguments, which are numbers: getcastledata's index, and
+// setcastledata's index and value.
+func (b *body) castleArgs(args []Expr) (string, error) {
+	m, err := b.expr(args[0])
+	if err != nil {
+		return "", err
+	}
+	parts := []string{m.asText()}
+	for _, a := range args[1:] {
+		v, err := b.expr(a)
+		if err != nil {
+			return "", err
+		}
+		parts = append(parts, v.asInt())
+	}
+	return strings.Join(parts, ", "), nil
 }
 
 // getgdskilllv converts getgdskilllv(<guild id>,<skill id or "name">).

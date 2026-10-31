@@ -136,7 +136,7 @@ type Options struct {
 	// bands of places (review decision 43). A classic world has none.
 	Atlas *layout.Atlas
 	// Castles is the world's castle registry (proposal 0004). Without
-	// it every castle call raises an error.
+	// it the world has no castles.
 	Castles *castle.Registry
 	// Quests are the quests of data/quests.yml (review decision 45).
 	// Without them every quest call raises an error.

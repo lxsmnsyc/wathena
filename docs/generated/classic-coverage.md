@@ -6,7 +6,7 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 13187 of 15337 NPC lines are placed, duplicates too: 282 shops and 12905 of 14865 script NPCs.
+- 13304 of 15337 NPC lines are placed, duplicates too: 282 shops and 13022 of 14865 script NPCs.
 - 16 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
 - 55 of 55 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
 - 650 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
@@ -28,7 +28,7 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | kafras | 97 | 97 | 0 |
 | merchants | 690 | 463 | 227 |
 | other | 3466 | 3065 | 401 |
-| quests | 6622 | 6125 | 497 |
+| quests | 6622 | 6242 | 380 |
 | warps | 250 | 238 | 12 |
 
 The extract leaves out the script NPCs of these folders, so none of them load:
@@ -45,7 +45,7 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 
 ## What blocks the rest
 
-444 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+437 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|
@@ -58,7 +58,6 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 | add_reputation_points | 10 | add_reputation_points |
 | callshop | 10 | callshop: a computed shop |
 | instance | 10 | instance: 1@mist is an instance map, which wAthena does not have yet |
-| getcastledata | 9 | getcastledata: castles, sieges and guardians are not in the API yet |
 | getmercinfo | 9 | getmercinfo |
 | instance_create | 9 | instance_create |
 | mesitemlink | 9 | mesitemlink: without brackets or with a name of its own |
@@ -79,6 +78,7 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 | getequiprefinecost | 4 | getequiprefinecost: a cost other than REFINE_COST_NORMAL, which the refine data lacks |
 | initnpctimer | 4 | initnpctimer: a timer attached to the player |
 | isequippedcnt | 4 | isequippedcnt |
+| item_enchant | 4 | item_enchant |
 
 - `event <label>` is a label that rAthena runs on its own for a system that does not exist, such as `OnAgitStart`, or for an event the API does not have, such as `OnPCKillEvent`. Every other label converts to an `npc_event` handler (review decision 58), and the player labels, such as `OnPCLoginEvent`, to handlers of the player events of every map too (review decision 59).
 - `parameter <name>` reads or changes a player parameter that does not convert, such as `MaxWeight`.

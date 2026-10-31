@@ -36,6 +36,9 @@ func (h *npcHost) RemoveEffect(e modscript.Entity, effect int64) error {
 func (h *npcHost) SetNPCTitle(id int64, title string) error {
 	return h.present("title %d %q", id, title)
 }
+func (h *npcHost) SetNPCGuild(id, guild int64) error {
+	return h.present("guild %d %d", id, guild)
+}
 func (h *npcHost) SetNPCDisplayName(id int64, name string) error {
 	return h.present("name %d %q", id, name)
 }

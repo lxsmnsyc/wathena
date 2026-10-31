@@ -28,9 +28,13 @@ func CastleChangeArg(e CastleChange) Arg {
 		script.KV("castle", script.Int(int64(e.Castle))), script.KV("previous_owner_id", script.Int(e.Previous)))}
 }
 
-func (r *Runtime) castles(what string) (*castle.Registry, error) {
+// noCastles is the registry of a runtime without one: a world with no
+// castles, such as a procedural world or a test.
+var noCastles = castle.New(nil, nil)
+
+func (r *Runtime) castles(string) (*castle.Registry, error) {
 	if r.opts.Castles == nil {
-		return nil, errors.New(what + ": castles do not exist here")
+		return noCastles, nil
 	}
 	return r.opts.Castles, nil
 }
