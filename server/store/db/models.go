@@ -122,6 +122,21 @@ type AccountWebauthnUser struct {
 	CreatedAt  pgtype.Timestamptz
 }
 
+type Castle struct {
+	Castle          string
+	OwnerID         pgtype.Int8
+	Economy         int
+	Defense         int
+	InvestedEconomy int
+	InvestedDefense int
+	NextTime        int
+	PayTime         int
+	CreateTime      int
+	Kafra           bool
+	Guardians       int
+	UpdatedAt       pgtype.Timestamptz
+}
+
 type Character struct {
 	ID             int64
 	AccountID      int64

@@ -663,6 +663,9 @@ func (r *Registry) guildBreak(g *Guild) {
 			r.guildChanged(o)
 		}
 	}
+	if r.Castles != nil {
+		r.Castles.GuildBroken(g.ID)
+	}
 	g.ended = true
 	delete(r.guilds, g.ID)
 	if r.guildNames[Key(g.Name)] == g {
@@ -1244,6 +1247,9 @@ func (r *Registry) SetEmblem(id int64, png []byte) (int, *GuildChange, error) {
 	g.broadcast(Notice{Kind: NoticeGuildResult, GuildOutcome: GuildEmblemChanged, Name: g.Name})
 	r.guildChanged(g)
 	g.broadcast(Notice{Kind: NoticeGuildBadge})
+	if r.Castles != nil {
+		r.Castles.BadgeChanged(id)
+	}
 	ch := &GuildChange{Guild: g.ID, What: ChangeEmblem}
 	// A change made outside a zone runs its event in the zone of the
 	// master, or of the first online member.

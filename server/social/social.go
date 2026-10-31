@@ -103,6 +103,12 @@ type Registry struct {
 	Blocks func(target, from string) bool
 	// Clock is the server clock. time.Now when nil.
 	Clock func() time.Time
+	// Castles hears guild breaks and badge changes (proposal 0004,
+	// section 2): a broken guild's castles run OnGuildBreak and lose
+	// their owner, and NPCs that show a guild's badge follow its emblem.
+	// The registry calls it with its lock held. Without it, nothing
+	// hears them.
+	Castles Castles
 
 	limits      rules.Limits
 	rules       rules.Party
@@ -123,6 +129,12 @@ type Registry struct {
 	endedGuilds   map[int64]*Guild
 	endedGuildIDs []int64
 	nextGuild     int64
+}
+
+// Castles is what the registry tells the castle registry.
+type Castles interface {
+	GuildBroken(guild int64)
+	BadgeChanged(guild int64)
 }
 
 // maxEnded is how many broken up parties stay readable, so a handle in
