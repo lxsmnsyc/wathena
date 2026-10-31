@@ -15,12 +15,19 @@ local castles = require "wa.castles"
 return function()
   local npc = require("wa.context"):get_instance()
   local castle = castles.get("prtg_cas01")
+  local kept
   npc:set_guild(castle.owner)
   events.on("castle_change", function(change)
     if change.castle == castle then
+      kept = castle.owner or kept
       npc:set_guild(castle.owner)
     end
   end)
+  -- OnRetake gives the castle back to the last owner the flag saw.
+  events.on("npc_event", function()
+    local ok = pcall(castle.set_owner, castle, kept)
+    npc:set_title(ok and "taken" or "refused")
+  end, { name = "OnRetake" })
 end`
 
 func entityBadges(evs []*wathenav1.Event, id uint32) (appear, change []*wathenav1.GuildBadge, changed bool) {
@@ -83,5 +90,15 @@ func TestCastleFlags(t *testing.T) {
 	}
 	if s, _ := reg.State("Kriemhild"); s.Owner != 0 {
 		t.Errorf("the castle kept its owner: %+v", s)
+	}
+
+	// The broken guild's handle cannot take the castle back: the save
+	// would store no owner while memory kept one.
+	if _, _, err := z.scripts.FireNPCEvent(n.npc.script, "OnRetake", 0); err != nil {
+		t.Fatal(err)
+	}
+	z.stepAt(z.now + 50)
+	if s, _ := reg.State("Kriemhild"); s.Owner != 0 || n.npc.title != "refused" {
+		t.Errorf("set_owner with a broken guild: owner %d, title %q, logs %s", s.Owner, n.npc.title, logs)
 	}
 }
