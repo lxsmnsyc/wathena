@@ -360,10 +360,17 @@ func (b *body) unloadnpc(args []Expr) error {
 		// buildin_unloadnpc: "You cannot self-unload NPC".
 		b.line("-- unloadnpc of the NPC itself does nothing, as in rAthena.")
 		return nil
-	case len(b.n.c.dups[s.Value]) > 0:
-		return unsupported(what, "an NPC with duplicates, which rAthena unloads with it")
 	}
 	b.line("R.npc_view(%s, \"remove\")", luaString(b.n.c.recordFor(s.Value)))
+	// npc_unload unloads the NPC's duplicates with it (npc.cpp 2400,
+	// review decision 60, A6). The NPC that runs the script is left: its
+	// handler is running.
+	for _, d := range b.n.c.dups[s.Value] {
+		if d == b.n.line.Name && !b.n.isFunction {
+			continue
+		}
+		b.line("R.npc_view(%s, \"remove\")", luaString(b.n.c.recordFor(d)))
+	}
 	return nil
 }
 

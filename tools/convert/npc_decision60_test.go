@@ -47,3 +47,33 @@ func TestDecision60Convert(t *testing.T) {
 		}
 	}
 }
+
+// TestUnloadDuplicates checks unloadnpc of an NPC with duplicates
+// (review decision 60, A6): each duplicate goes too, but the NPC that
+// runs the script.
+func TestUnloadDuplicates(t *testing.T) {
+	res := eventResult(t)
+	c := res.conv
+	prev, had := c.dups["Sign#t"]
+	c.dups["Sign#t"] = []string{"Sign#t2", "X#t"}
+	defer func() {
+		if had {
+			c.dups["Sign#t"] = prev
+		} else {
+			delete(c.dups, "Sign#t")
+		}
+	}()
+	n := c.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: `{ unloadnpc "Sign#t"; end; }`})
+	lua, err := n.npcScript()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, w := range []string{`R.npc_view("Sign#t", "remove")`, `R.npc_view("Sign#t2", "remove")`} {
+		if !strings.Contains(lua, w) {
+			t.Errorf("got\n%s\nwant %q", lua, w)
+		}
+	}
+	if strings.Contains(lua, `R.npc_view("X#t", "remove")`) {
+		t.Errorf("the running NPC unloads itself:\n%s", lua)
+	}
+}
