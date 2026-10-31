@@ -468,19 +468,23 @@ func (z *Zone) runNPCMessage(m npcMessage) {
 		prev := z.countView
 		z.countView = m.counts
 		defer func() { z.countView = prev }()
+		var killed *modscript.LabelMonster
+		if m.counts != nil {
+			killed = &m.counts.killed
+		}
 		if m.playerName != "" {
-			z.runNPCEventAway(e, m.label, m.playerName)
+			z.runNPCEventAway(e, m.label, m.playerName, killed)
 			return
 		}
 		if m.player == 0 {
-			_, _, _ = r.FireNPCEvent(n.script, m.label, 0)
+			_, _, _ = r.FireMonsterLabel(n.script, m.label, 0, killed)
 			return
 		}
 		p := z.players[uint32(m.player)] // #nosec G115 -- a zone player ID.
 		if p == nil || p.gone() {
 			return
 		}
-		z.runNPCEvent(&touchEvent{npc: e, player: p, label: m.label})
+		z.runNPCEvent(&touchEvent{npc: e, player: p, label: m.label, killed: killed})
 	case npcControlMessage:
 		z.controlNPC(e, m.control, m.charID)
 	case npcEndMessage:
@@ -496,7 +500,7 @@ func (z *Zone) runNPCMessage(m npcMessage) {
 // a handle of the player, and no conversation, since the player talks on
 // its own map. A player who came to this zone runs it as runNPCEvent. A
 // player who went offline runs it with no player.
-func (z *Zone) runNPCEventAway(e *entity, label, name string) {
+func (z *Zone) runNPCEventAway(e *entity, label, name string, killed *modscript.LabelMonster) {
 	n := e.npc
 	d := z.playerDir()
 	var en *playerEntry
@@ -504,16 +508,16 @@ func (z *Zone) runNPCEventAway(e *entity, label, name string) {
 		en = d.find(name)
 	}
 	if en == nil {
-		_, _, _ = z.scripts.FireNPCEvent(n.script, label, 0)
+		_, _, _ = z.scripts.FireMonsterLabel(n.script, label, 0, killed)
 		return
 	}
 	if en.zone == z {
 		if p := z.players[en.id]; p != nil && !p.gone() {
-			z.runNPCEvent(&touchEvent{npc: e, player: p, label: label})
+			z.runNPCEvent(&touchEvent{npc: e, player: p, label: label, killed: killed})
 		}
 		return
 	}
-	z.scripts.FireNPCEventAway(n.script, label, z.remotePlayerHandle(en.name))
+	z.scripts.FireNPCEventAway(n.script, label, z.remotePlayerHandle(en.name), killed)
 }
 
 // npcsInOrder are the zone's NPCs with a script handle, in handle order.
@@ -544,7 +548,7 @@ func (z *Zone) runNPCEvent(t *touchEvent) {
 		}
 		return
 	}
-	conv, _, err := z.scripts.FireNPCEvent(n.script, t.label, int64(p.charID))
+	conv, _, err := z.scripts.FireMonsterLabel(n.script, t.label, int64(p.charID), t.killed)
 	if err != nil {
 		if z.Mods != nil && z.Mods.Log != nil {
 			z.Mods.Log.Warn("NPC event failed", "map", z.Map, "npc", n.Name, "label", t.label, "err", err)

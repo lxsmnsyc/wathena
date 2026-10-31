@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"strings"
 	"testing"
 
 	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
@@ -24,6 +25,15 @@ return function()
     kept:show_emotion(9) -- ET_HNG
     note("bad " .. tostring(pcall(kept.show_emotion, kept, 300)))
   end)
+  on("OnSpawnLabeled", function()
+    kept = spawning.monsters { monster = 1002, x = 30, y = 30, label = "OnMyMobDead" }[1]
+    note("gid " .. kept.game_id)
+    kept:kill()
+  end)
+  on("OnMyMobDead", function(event)
+    note("dead " .. tostring(event.monster_id) .. " " .. tostring(event.monster_game_id))
+  end)
+  on("OnPlain", function(event) note("plain " .. tostring(event.monster_id)) end)
   on("OnSelf", function() maps.find_player("a"):say_aloud("hush", { to = "self" }) end)
   on("OnUnEffect", function()
     local npc = require("wa.context"):get_instance()
@@ -118,5 +128,23 @@ func TestRemoveEffectTo(t *testing.T) {
 	}
 	if got := effectRemovals(events(other)); len(got) != 1 || got[0] != 11 {
 		t.Errorf("another player got %v", got)
+	}
+}
+
+// TestLabelMonster checks monster_id and monster_game_id on a monster
+// label's event (review decision 60, B4), and nil on other events.
+func TestLabelMonster(t *testing.T) {
+	z, _, n := followupZoneWith(t, decision60Script)
+	fire(t, z, n, "OnSpawnLabeled")
+	z.stepAt(z.now + 50)
+	z.runScripts()
+	got := seen(t, z)
+	gid := strings.TrimSuffix(strings.TrimPrefix(strings.SplitN(got, ";", 2)[0], "gid "), "")
+	if want := "gid " + gid + ";dead 1002 " + gid + ";"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+	fire(t, z, n, "OnPlain")
+	if got := seen(t, z); got != "plain nil;" {
+		t.Errorf("got %q", got)
 	}
 }

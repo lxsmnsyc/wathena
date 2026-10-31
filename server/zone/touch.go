@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/lxsmnsyc/wathena/server/modscript"
 	"slices"
 )
 
@@ -51,8 +52,9 @@ type touchEvent struct {
 	player  *Player
 	untouch bool
 	// label is set for an NPC event with a player (doevent), which waits
-	// in the same queue (npcworld.go).
-	label string
+	// in the same queue (npcworld.go), and killed for a monster label's.
+	label  string
+	killed *modscript.LabelMonster
 }
 
 // touches reports whether an NPC's touch area holds a cell.

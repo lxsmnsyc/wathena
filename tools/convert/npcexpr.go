@@ -107,6 +107,19 @@ func castleGuardianConstant(name string) (int64, bool) {
 func (b *body) param(name string) (val, error) {
 	f := b.n.file
 	switch strings.ToLower(name) {
+	case "killedrid", "killedgid":
+		// mob_dead sets them on the killer before the monster's label runs
+		// (review decision 60, B4): the label's event names the monster.
+		// Elsewhere they are the player's last kill, which the API does
+		// not keep.
+		if !b.event {
+			return val{}, unsupported(name, "outside the code of a monster's label")
+		}
+		field := "monster_id"
+		if strings.EqualFold(name, "killedgid") {
+			field = "monster_game_id"
+		}
+		return val{code: "(event and event." + field + " or 0)", t: tInt}, nil
 	case "zeny":
 		return val{code: "player.zeny", t: tInt}, nil
 	case "baselevel":

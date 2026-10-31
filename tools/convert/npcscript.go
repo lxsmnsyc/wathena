@@ -312,6 +312,7 @@ func emptyScript(stmts []Stmt) bool {
 func (n *npcConv) writeBody(stmts []Stmt, indent int, main, hasArgs bool) ([]string, error) {
 	b := n.newBody(indent)
 	b.main, b.hasArgs = main, hasArgs
+	b.event = main && n.inEvent
 	if hasArgs {
 		b.line("local args = table.pack(...)")
 	}
@@ -638,7 +639,7 @@ func (n *npcConv) npcScript() (string, error) {
 		}
 		f.line("local %s", strings.Join(names, ", "))
 		for _, e := range n.eventOrder {
-			f.line("%s = function(player, conversation)", n.eventFns[e])
+			f.line("%s = function(player, conversation, event)", n.eventFns[e])
 			f.line("  R.run(function()")
 			f.indent = 0
 			for _, l := range bodies[e] {
@@ -660,7 +661,7 @@ func (n *npcConv) npcScript() (string, error) {
 		if name == "" {
 			name = e
 		}
-		f.line(`events.on("npc_event", function(event) %s(event.player, event.conversation) end, { name = %s })`, n.eventFns[e], luaString(name))
+		f.line(`events.on("npc_event", function(event) %s(event.player, event.conversation, event) end, { name = %s })`, n.eventFns[e], luaString(name))
 		if e == "ontouchnpc" {
 			// OnTouchNPC runs with the monster attached in rAthena, which a
 			// converted script cannot read.

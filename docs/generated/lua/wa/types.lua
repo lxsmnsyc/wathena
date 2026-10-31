@@ -2003,6 +2003,8 @@ local wa_NpcEventOptions = {}
 ---@field name string The label, in lower case.
 ---@field player wa.Player? The player of npc:fire_event's player option, the killer of a monster's label, or nil. A player of another map is a handle that acts on its own map (review decision 59).
 ---@field conversation wa.Conversation? The conversation with the player, or nil without one, and for a player of another map.
+---@field monster_id integer? On a monster's label, the dead monster's ID, as monsters.id and rAthena's killedrid. nil on other events (review decision 60).
+---@field monster_game_id integer? On a monster's label, the dead monster's game ID, as killedgid. maps.find_monster no longer finds it.
 local wa_NpcEvent = {}
 
 ---The options of npc:fire_event.

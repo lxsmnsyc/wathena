@@ -3988,8 +3988,12 @@ end
 -- npc_event runs an NPC's npc_event handlers of a label with the event
 -- object: in a conversation's thread when a player is attached, as
 -- doevent, or without one, as donpcevent (review decision 58).
-function R.npc_event(label, player_id, conversation_id, ...)
+function R.npc_event(label, monster, player_id, conversation_id, ...)
 	local fields = { name = label }
+	if monster ~= nil then
+		-- The monster whose death runs its label (review decision 60).
+		fields.monster_id, fields.monster_game_id = monster.id, monster.game_id
+	end
 	if player_id ~= nil then
 		fields.player = new_player(player_id)
 	end

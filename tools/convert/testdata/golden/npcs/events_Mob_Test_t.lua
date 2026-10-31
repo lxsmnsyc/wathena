@@ -31,7 +31,7 @@ local PORING = monsters.id "PORING"
 return function()
   local npc = context:get_instance()
   local event_oninit, event_onmymobdead, event_onother
-  event_oninit = function(player, conversation)
+  event_oninit = function(player, conversation, event)
     R.run(function()
       R.monster("prontera", 0, 0, "--ja--", PORING, 2, { label = "OnMyMobDead" })
       R.monster("prontera", 150, 160, "Poring", PORING, 1, { label = "OnMyMobDead" })
@@ -39,7 +39,7 @@ return function()
       do return end
     end)
   end
-  event_onmymobdead = function(player, conversation)
+  event_onmymobdead = function(player, conversation, event)
     R.run(function()
       if ((maps.count_monsters("prontera", { label = "OnMyMobDead" }) or -1) < 1) then
         world.announce("All dead")
@@ -48,15 +48,15 @@ return function()
       do return end
     end)
   end
-  event_onother = function(player, conversation)
+  event_onother = function(player, conversation, event)
     R.run(function()
       player:send_message("Killed the last one")
       do return end
     end)
   end
-  events.on("npc_event", function(event) event_oninit(event.player, event.conversation) end, { name = "OnInit" })
-  events.on("npc_event", function(event) event_onmymobdead(event.player, event.conversation) end, { name = "OnMyMobDead" })
-  events.on("npc_event", function(event) event_onother(event.player, event.conversation) end, { name = "OnOther" })
+  events.on("npc_event", function(event) event_oninit(event.player, event.conversation, event) end, { name = "OnInit" })
+  events.on("npc_event", function(event) event_onmymobdead(event.player, event.conversation, event) end, { name = "OnMyMobDead" })
+  events.on("npc_event", function(event) event_onother(event.player, event.conversation, event) end, { name = "OnOther" })
   events.on("click", function(player, conversation)
     R.run(function()
       conversation:say("[Mobs]", "There are " .. (maps.count_monsters("prontera", { label = "OnMyMobDead" }) or -1) .. " left.")

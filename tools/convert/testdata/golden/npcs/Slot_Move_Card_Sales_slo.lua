@@ -32,13 +32,13 @@ local CHANGE_SLOT_CARD = items.id "Change_Slot_Card"
 return function()
   local npc = context:get_instance()
   local event_onmon0000
-  event_onmon0000 = function(player, conversation)
+  event_onmon0000 = function(player, conversation, event)
     R.run(function()
       world.get_shop("change_slot#slo"):set_stock(CHANGE_SLOT_CARD, 9999)
       do return end
     end)
   end
-  events.on("npc_event", function(event) event_onmon0000(event.player, event.conversation) end, { name = "OnMon0000" })
+  events.on("npc_event", function(event) event_onmon0000(event.player, event.conversation, event) end, { name = "OnMon0000" })
   schedules.weekly("monday", "00:00", event_onmon0000)
   events.on("click", function(player, conversation)
     R.run(function()

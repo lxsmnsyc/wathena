@@ -9,12 +9,12 @@ local R = require "core.lib.rathena"
 return function()
   local npc = context:get_instance()
   local event_ontouch
-  event_ontouch = function(player, conversation)
+  event_ontouch = function(player, conversation, event)
     R.run(function()
       conversation:say("Hello.")
       do return end
     end)
   end
-  events.on("npc_event", function(event) event_ontouch(event.player, event.conversation) end, { name = "OnTouch" })
+  events.on("npc_event", function(event) event_ontouch(event.player, event.conversation, event) end, { name = "OnTouch" })
   events.on("touch", event_ontouch)
 end

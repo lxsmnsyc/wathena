@@ -431,7 +431,8 @@ func (z *Zone) monsterLabelEvent(e, killer *entity) {
 		p = z.topDamage(e)
 	}
 	msg := npcMessage{kind: npcEventMessage, handle: l.handle, label: l.event,
-		counts: &labelCounts{zone: z, key: l.key, total: z.shared.countMonsters(""), label: z.shared.countMonsters(l.key)}}
+		counts: &labelCounts{zone: z, key: l.key, total: z.shared.countMonsters(""), label: z.shared.countMonsters(l.key),
+			killed: modscript.LabelMonster{ID: m.spawn.Mob, GameID: z.gameID(e)}}}
 	if p != nil {
 		if l.zone == z {
 			msg.player = int64(p.charID)
@@ -449,6 +450,9 @@ type labelCounts struct {
 	zone         *Zone
 	key          string
 	total, label int
+	// killed is the monster that died, for the event's monster_id and
+	// monster_game_id.
+	killed modscript.LabelMonster
 }
 
 // topDamage is the player of the zone that dealt a monster the most
