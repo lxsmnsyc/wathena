@@ -1,7 +1,7 @@
 ---
 id: sieges-castles
 title: Castles: records, registry, ownership and badges
-status: active
+status: done
 priority: must
 type: feature
 outline: false
