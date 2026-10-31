@@ -264,6 +264,8 @@ func (b *body) presentCommand(name string, args []Expr) (ok bool, err error) {
 		return true, b.unitwarp(args)
 	case "unitkill":
 		return true, b.unitkill(args)
+	case "getunitdata":
+		return true, b.getunitdata(args)
 	case "unitskillusepos":
 		return true, b.unitskillusepos(args)
 	case "unitstopwalk":
@@ -310,8 +312,75 @@ func (b *body) presentRead(name string, args []Expr) (v val, ok bool, err error)
 		return v, true, err
 	case "getnpcid":
 		return val{}, true, unsupported(name, "the game ID of an NPC, which only the unit commands take")
+	case "unitexists", "getunittype":
+		v, err := b.unitKind(name, args)
+		return v, true, err
 	}
 	return val{}, false, nil
+}
+
+// unitKind converts unitexists(<game ID>) and getunittype(<game ID>)
+// (review decision 60, B8 and G15): the attached player and an NPC of
+// getnpcid exist; another game ID is a player of any map by account ID
+// or a monster of any map. getunittype gives rAthena's BL_ type, or -1
+// for a unit that does not exist (script.cpp 19032).
+func (b *body) unitKind(what string, args []Expr) (val, error) {
+	if len(args) != 1 {
+		return val{}, unsupported(what, "arguments")
+	}
+	if mob, ok, err := b.mobGID(what, args[0]); ok || err != nil {
+		if err != nil {
+			return val{}, err
+		}
+		gid := strings.TrimSuffix(strings.TrimPrefix(mob, "R.unit_monster("), ")")
+		if what == "unitexists" {
+			return val{code: "R.unit_exists(" + gid + ")", t: tInt}, nil
+		}
+		return val{code: "R.unit_type(" + gid + ")", t: tInt}, nil
+	}
+	kind, code, err := b.gidRef(what, args[0])
+	if err != nil {
+		return val{}, err
+	}
+	pc, _, _ := b.n.c.consts.Lookup("BL_PC")
+	npc, _, _ := b.n.c.consts.Lookup("BL_NPC")
+	switch {
+	case kind == "player" && what == "unitexists", kind == "npc" && code == "npc" && what == "unitexists":
+		return intVal(1), nil
+	case kind == "player":
+		return intVal(pc), nil
+	case code == "npc":
+		return intVal(npc), nil
+	case what == "unitexists":
+		return val{code: "R.npc_exists(" + code + ")", t: tInt}, nil
+	}
+	return val{code: fmt.Sprintf("(R.npc_exists(%s) == 1 and %d or -1)", code, npc), t: tInt}, nil
+}
+
+// getunitdata converts getunitdata <game ID>,<array> of a monster
+// (review decision 60, G15): the UMOB_ indexes that monster handles read,
+// UMOB_LEVEL, UMOB_HP, UMOB_MAXHP, UMOB_X, UMOB_Y and UMOB_CLASS. The
+// other indexes keep their values; scripts read only these and
+// UMOB_TARGETID.
+func (b *body) getunitdata(args []Expr) error {
+	const what = "getunitdata"
+	if len(args) != 2 {
+		return unsupported(what, "arguments")
+	}
+	mob, ok, err := b.mobGID(what, args[0])
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return unsupported(what, "of the attached player or an NPC, whose UPC_ and UNPC_ types the API does not read")
+	}
+	arr, _, err := b.scriptArray(what, args[1])
+	if err != nil {
+		return err
+	}
+	gid := strings.TrimSuffix(strings.TrimPrefix(mob, "R.unit_monster("), ")")
+	b.line("R.unit_data(%s, %s)", gid, arr)
+	return nil
 }
 
 // stripSpeaker drops strcharinfo(0) + " : " from the start of a line

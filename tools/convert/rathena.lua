@@ -540,6 +540,36 @@ function R.unittalk(gid, text, self)
 	end
 end
 
+-- unit_exists is unitexists of a game ID other than the attached
+-- player's or an NPC's (map_id2bl): 1 for a player of any map by account
+-- ID or a monster of any map, else 0.
+function R.unit_exists(gid)
+	return R.by_gid(gid) ~= nil and 1 or 0
+end
+
+-- unit_type is getunittype of such a game ID: BL_PC (1), BL_MOB (2), or
+-- -1 (script.cpp 19032).
+function R.unit_type(gid)
+	if R.by_account(gid) ~= nil then
+		return 1
+	elseif R.unit_monster(gid) ~= nil then
+		return 2
+	end
+	return -1
+end
+
+-- unit_data is getunitdata of a monster (script.cpp 19062): the UMOB_
+-- indexes the API reads, UMOB_LEVEL (1), UMOB_HP (2), UMOB_MAXHP (3),
+-- UMOB_X (6), UMOB_Y (7) and UMOB_CLASS (13). A game ID that is not a
+-- monster's changes nothing.
+function R.unit_data(gid, data)
+	local m = R.unit_monster(gid)
+	if m == nil then
+		return
+	end
+	data[1], data[2], data[3], data[6], data[7], data[13] = m.level, m.hp, m.max_hp, m.x, m.y, m.id
+end
+
 -- unit_emotion is emotion on a game ID other than the attached player's
 -- or an NPC's: a player of any map by account ID, or a monster of any
 -- map (review decision 60).
@@ -1394,6 +1424,11 @@ end
 -- npc_view is enablenpc, disablenpc, hideonnpc and hideoffnpc, the
 -- cloaks for everyone, and the presentation commands of review decision
 -- 58, area B5: a method of the NPC's handle, and what it returns.
+-- npc_exists is unitexists of an NPC's getnpcid: 1 when the NPC exists.
+function R.npc_exists(target)
+	return npc_named(target) ~= nil and 1 or 0
+end
+
 function R.npc_view(target, method, ...)
 	local n = npc_named(target)
 	if n ~= nil then

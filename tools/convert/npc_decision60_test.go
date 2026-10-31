@@ -17,6 +17,11 @@ func TestDecision60Convert(t *testing.T) {
 			"event_onmymobdead = function(player, conversation, event)",
 			"id = (event and event.monster_id or 0)", "gid = (event and event.monster_game_id or 0)",
 		}},
+		{`{ if (unitexists($@mobid[0])) end; if (unitexists(getcharid(3))) end; .@t = getunittype($@mobid[0]); .@p = getunittype(getcharid(3)); end; }`, []string{
+			"R.unit_exists(", "t = R.unit_type(", "p = 1",
+		}},
+		{`{ if (unitexists(getnpcid(0,"Other#t"))) end; .@n = getunittype(getnpcid(0)); end; }`, []string{`R.npc_exists("Other#t")`, "n = 128"}},
+		{`{ getunitdata $@mobid[0],.@data; mes "" + .@data[UMOB_HP]; end; }`, []string{"R.unit_data(", ", data)", "data[2]"}},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		lua, err := n.npcScript()
@@ -32,6 +37,7 @@ func TestDecision60Convert(t *testing.T) {
 	}
 	for _, c := range []struct{ script, want string }{
 		{`{ .@id = killedrid; end; }`, "killedrid: outside the code of a monster's label"},
+		{`{ getunitdata getcharid(3),.@data; end; }`, "getunitdata: of the attached player or an NPC"},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		_, err := n.npcScript()
