@@ -57,6 +57,9 @@ type NPCDirectory struct {
 	named  map[*Zone]map[string]bool
 	// sources are the NPC sources of a zone that has not started, in
 	// lower case, for the labels they name (review decision 60, A2).
+	// They are read once, from the mods as they loaded, as named is, and
+	// dropped when the zone starts or leaves. A quoted label that is not
+	// a handler's, such as one in a comment, only starts the zone.
 	sources map[*Zone]string
 }
 
@@ -180,6 +183,7 @@ func fullNames(name, modID string) []string {
 func (d *NPCDirectory) markStarted(z *Zone) {
 	d.mu.Lock()
 	d.started[z] = true
+	delete(d.sources, z)
 	d.mu.Unlock()
 }
 

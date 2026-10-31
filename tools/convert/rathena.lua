@@ -1427,6 +1427,8 @@ end
 -- once reports true the first time it runs with a key since the server
 -- started, and false after, also after a reload of the mod: the key is a
 -- temporary server variable, which every zone shares and nobody saves.
+-- A converted key is "oninterifinitonce " and an NPC's unique name, at
+-- most 24 characters, so the variable name stays within 64.
 function R.once(key)
 	local name = "once_" .. key:lower():gsub("[^%w_]", "_")
 	local flag = variables.server_temporary_integer(name:sub(1, 64))
@@ -1870,6 +1872,7 @@ function R.touch_one(npc, fn, dialog)
 		return player.hp > 0 and not R.hiding(player)
 	end
 	events.on("touch", function(player, conversation)
+		-- Player handles are cached, so one player is one handle.
 		local known = false
 		for _, p in ipairs(inside) do
 			known = known or p == player
