@@ -54,6 +54,9 @@ type PresentHost interface {
 	RemoveEffect(e Entity, effect int64) error
 	// SetNPCTitle is setunittitle on an NPC.
 	SetNPCTitle(npc int64, title string) error
+	// SetNPCGuild is flagemblem: the NPC shows a guild's badge, or none
+	// for 0 (proposal 0004, section 7).
+	SetNPCGuild(npc, guild int64) error
 	// SetNPCDisplayName is setnpcdisplay's name.
 	SetNPCDisplayName(npc int64, name string) error
 	// SetNPCLook is setnpcdisplay's class and setunitdata's UNPC_ looks.
@@ -270,6 +273,12 @@ func (r *Runtime) npcPresent(c *script.Call) error {
 			return err
 		}
 		return wrap(what, h.RemoveEffect(npc, effect))
+	case "set_guild":
+		guild, ok := arg(0).AsInt()
+		if !ok || guild < 0 {
+			return fmt.Errorf("%s: want a guild handle or nil", what)
+		}
+		return wrap(what, h.SetNPCGuild(id, guild))
 	case "set_title":
 		title, ok := arg(0).AsString()
 		if !ok || len(title) > MaxTitle || !utf8.ValidString(title) {

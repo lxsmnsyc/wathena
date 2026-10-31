@@ -173,7 +173,11 @@ type npc struct {
 	invisible, hide, cloak bool
 	cloakFor               map[int64]bool
 	removed, floating      bool
-	entry                  *npcEntry
+	// guild is the guild whose badge the NPC shows (npc:set_guild,
+	// flagemblem), 0 for none, and badge the badge viewers see.
+	guild int64
+	badge *wathenav1.GuildBadge
+	entry *npcEntry
 	// The presentation of review decision 58, area B5 (npcpresent.go):
 	// the title of setunittitle, the look of a job view (setunitdata's
 	// UNPC_ looks), the end and color of progressbar_npc's bar in zone
@@ -240,6 +244,7 @@ func (z *Zone) npcAppear(id uint32, e *entity) *wathenav1.Event {
 		Name:   n.DisplayName,
 		Title:  n.title,
 		WalkMs: uint32(max(e.speed, 0)), // #nosec G115 -- 20 to 1000.
+		Guild:  n.badge,
 	}.Build()}.Build()
 }
 
@@ -335,7 +340,7 @@ func (z *Zone) itemScripts() *modscript.Runtime {
 	opts := modscript.Options{Host: scriptHost{z}, Log: log, Limits: z.Mods.Limits, Mods: z.Mods.IDs, Constants: z.Mods.Constants, Server: z.Mods.Server,
 		Testing: z.Mods.Testing, DeferStart: z.Mods.Testing, Clock: z.wallClock, Location: z.Mods.Location, Rules: z.worldRules(),
 		Off: z.offList(), Errors: z.modErrors, Places: z.Mods.Places, Atlas: z.Mods.Atlas, Quests: z.Mods.Quests,
-		Temporary: z.Mods.Temporary, NPCLabels: z.npcLabel, NPCEvents: z.npcEventListener}
+		Castles: z.Castles, Temporary: z.Mods.Temporary, NPCLabels: z.npcLabel, NPCEvents: z.npcEventListener}
 	// The job tables are read at each call: a headless zone gets them
 	// after its Lua state is made.
 	opts.Jobs = zoneJobs{z}
@@ -372,6 +377,7 @@ func (z *Zone) scriptEventFor(name string, args ...modscript.Arg) {
 // npcRounds batches of them here, and the rest at its next pass.
 func (z *Zone) runScripts() {
 	z.flushDeferred()
+	z.castleNotices()
 	for round := 0; ; round++ {
 		for len(z.scriptEvents) > 0 {
 			ev := z.scriptEvents[0]

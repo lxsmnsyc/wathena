@@ -85,7 +85,22 @@ func (b *body) ident(name string) (val, error) {
 	if _, ok := c.consts.Skill(name); ok {
 		return strVal(name), nil
 	}
+	if v, ok := castleGuardianConstant(name); ok {
+		return intVal(v), nil
+	}
 	return b.readVar(name, nil)
+}
+
+// castleGuardianConstant reads CD_ENABLED_GUARDIAN00 to 07, the castle
+// data indexes 10 to 17. script_constants.hpp makes them in a loop, so
+// the script_constants extract does not have them (proposal 0004,
+// section 9).
+func castleGuardianConstant(name string) (int64, bool) {
+	rest, ok := strings.CutPrefix(strings.ToUpper(name), "CD_ENABLED_GUARDIAN")
+	if !ok || len(rest) != 2 || rest[0] != '0' || rest[1] < '0' || rest[1] > '7' {
+		return 0, false
+	}
+	return 10 + int64(rest[1]-'0'), true
 }
 
 // param reads a parameter of the player, as rAthena's readparam.

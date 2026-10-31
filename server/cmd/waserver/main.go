@@ -485,6 +485,16 @@ func runAll(name string, args []string) error {
 		return err
 	}
 	grids = append(grids, fieldGrids(proc)...)
+	// One castle registry for the world (proposal 0004): castles load
+	// before any zone runs, and save through the social store's queue.
+	castles, err := castleRegistry(ctx, pool, loaded.all.Castles, names, grids, log)
+	if err != nil {
+		return fmt.Errorf("castles: %w", err)
+	}
+	if socialStore != nil {
+		castles.Store = socialStore
+	}
+	socials.Castles = castles
 	if proc.set != nil {
 		// The warps of the world layout's links, the places of its maps
 		// for wa.places and the NPCs placed by tag, the atlas, and the
@@ -556,7 +566,7 @@ func runAll(name string, args []string) error {
 		if n == name && proc.hasSpawn {
 			z.Spawn, z.HasSpawn = proc.spawn, true
 		}
-		z.Chat, z.Jail, z.Clock, z.Social, z.Storages = hub, jail, clock, socials, storages
+		z.Chat, z.Jail, z.Clock, z.Social, z.Storages, z.Castles = hub, jail, clock, socials, storages, castles
 		z.Mail, z.Market, z.Autotraders = mails, stores, autotraders
 		z.Staff, z.Moved = staffRoles, moved
 		z.SetWarps(ws)
@@ -586,6 +596,11 @@ func runAll(name string, args []string) error {
 	w, err := world.New(name, zones...)
 	if err != nil {
 		return err
+	}
+	castles.GuildBreak = func(npc, label string) {
+		if !w.NPCs().FireEvent(npc, label) {
+			log.Warn("castle NPC event not sent: no such NPC, or its zone is far behind", "npc", npc, "label", label)
+		}
 	}
 	// Rotations and world changes (decision 0045): the changes that came
 	// while the server was stopped are recorded before anyone joins, and

@@ -47,6 +47,7 @@ local events = {}
 ---@overload fun(name: "mail", handler: fun(mail: wa.Mail)): wa.EventHandle
 ---@overload fun(name: "world_event_start", handler: fun(event: wa.WorldEvent)): wa.EventHandle
 ---@overload fun(name: "world_event_end", handler: fun(event: wa.WorldEvent)): wa.EventHandle
+---@overload fun(name: "castle_change", handler: fun(change: wa.CastleChange)): wa.EventHandle
 ---@overload fun(name: "restart_planned", handler: fun(restart: wa.RestartPlan)): wa.EventHandle
 ---@overload fun(name: "dungeon_rotated", handler: fun(rotation: wa.DungeonRotation)): wa.EventHandle
 ---@overload fun(name: "region_changed", handler: fun(change: wa.RegionChange)): wa.EventHandle

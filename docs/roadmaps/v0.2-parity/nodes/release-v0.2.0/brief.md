@@ -9,6 +9,8 @@ milestone: v0.2.0
 size: M
 spike: false
 gate: true
+from: main
+target: main
 exclusive:
   - loadtest
 owns:

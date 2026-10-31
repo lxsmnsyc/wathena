@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/lxsmnsyc/wathena/internal/script"
+	"github.com/lxsmnsyc/wathena/server/castle"
 	"github.com/lxsmnsyc/wathena/server/constants"
 	"github.com/lxsmnsyc/wathena/server/content"
 	"github.com/lxsmnsyc/wathena/server/layout"
@@ -134,6 +135,9 @@ type Options struct {
 	// Atlas is the world layout, for wa.towns, display names and the
 	// bands of places (review decision 43). A classic world has none.
 	Atlas *layout.Atlas
+	// Castles is the world's castle registry (proposal 0004). Without
+	// it the world has no castles.
+	Castles *castle.Registry
 	// Quests are the quests of data/quests.yml (review decision 45).
 	// Without them every quest call raises an error.
 	Quests *quest.Table
@@ -609,6 +613,9 @@ func (r *Runtime) init() error {
 		{"guild_call", r.guildCall},
 		{"guilds_create", r.guildsCreate},
 		{"guilds_find", r.guildsFind},
+		{"castles_find", r.castlesFind},
+		{"castle_field", r.castleField},
+		{"castle_call", r.castleCall},
 		{"context_event", r.contextEvent},
 		{"event_run_call", r.eventRunCall},
 		{"world_events_request", r.worldEventsRequest},
@@ -1152,6 +1159,8 @@ var Events = map[string][]string{
 	// A restart was planned or cancelled, in every zone (review decision
 	// 36).
 	"restart_planned": {KindMod, KindNPC, KindEvent},
+	// A castle's owner changed, in every zone (proposal 0004).
+	"castle_change": {KindMod, KindNPC, KindEvent},
 	// A rotating dungeon rotated, or a region changed, in every zone
 	// (review decision 47).
 	"dungeon_rotated": {KindMod, KindNPC, KindEvent},

@@ -9,8 +9,8 @@ Go code loads these files with the `internal/reference` package. Its tests check
 ## Source
 
 - rAthena data: commit `e98500617` ("6th rebalance - Meister - Part 1", #9997). The `wathena-reference` branch of the fork is based on it and changes no data. The recordings carry it in `rathena_git_hash`.
-- Everything reproduces from fork commit `39de3053d` (checked on 2026-10-27). The fork's `wathena-reference` branch holds the whole recorder (`src/map/wathena_recorder.cpp`, `tools/wathena/record.sh`) and every extract function of `tools/wathena/extract.py`. Its commits, oldest first: `575d83531` extract script, `3f5534394` inventory script, `83616e3c3` exp tables and drops, `84dbe9b2f` job stats, `e9dceb60e` item weights and heals, `27ad000bc` warps, `f4641e37b` script constants, item scripts and groups, `003599e1c` NPCs, shops and item prices, `eac0a7e75` equipment, refine and monster groups, `2eb1327f4` status, `e92917ccc` skills, skill trees and casting, `784fce3ec` second class recordings and job change NPCs, `ecf13b511` monsters, `8e1c56558` random options, `5e50b7ad9` mounts, `50df331ca` party sharing, `f30328d04` guilds, `4214647ba` item trade, `3e45adbd3` barter shops and shop settings, `60bed4ccf` quests, `28488df04` refine costs, `39de3053d` part files for quest, warp and event NPCs.
-- `python3 tools/wathena/extract.py` at `39de3053d` writes every file in `extracts/` with the same content as this folder. Only `rathena_git_hash` differs: in `extracts/` it is the fork commit that last wrote the file, and a run writes `39de3053d`. The files were not copied again.
+- Everything reproduces from fork commit `f99a928d1` (checked on 2026-10-27; castles and map flags added on 2026-10-31). The fork's `wathena-reference` branch holds the whole recorder (`src/map/wathena_recorder.cpp`, `tools/wathena/record.sh`) and every extract function of `tools/wathena/extract.py`. Its commits, oldest first: `575d83531` extract script, `3f5534394` inventory script, `83616e3c3` exp tables and drops, `84dbe9b2f` job stats, `e9dceb60e` item weights and heals, `27ad000bc` warps, `f4641e37b` script constants, item scripts and groups, `003599e1c` NPCs, shops and item prices, `eac0a7e75` equipment, refine and monster groups, `2eb1327f4` status, `e92917ccc` skills, skill trees and casting, `784fce3ec` second class recordings and job change NPCs, `ecf13b511` monsters, `8e1c56558` random options, `5e50b7ad9` mounts, `50df331ca` party sharing, `f30328d04` guilds, `4214647ba` item trade, `3e45adbd3` barter shops and shop settings, `60bed4ccf` quests, `28488df04` refine costs, `39de3053d` part files for quest, warp and event NPCs, `f99a928d1` castles and GvG map flags.
+- `python3 tools/wathena/extract.py` at `f99a928d1` writes every file in `extracts/` with the same content as this folder. Only `rathena_git_hash` differs: in `extracts/` it is the fork commit that last wrote the file, and a run writes `f99a928d1`. The files were not copied again.
 - The recordings (`renewal/`, `pre-renewal/`) need `record.sh` and a built map server. The 2026-10-27 check did not rebuild them.
 - The fork's branch has no upstream and is not on its remote yet.
 - The recorder and scripts stay in the rAthena fork. This repository keeps only their output, so it does not need a C++ toolchain.
@@ -21,7 +21,7 @@ Go code loads these files with the `internal/reference` package. Its tests check
 |---|---|---|
 | `renewal/`, `pre-renewal/` | Formula results for each mode, listed below. | `tools/wathena/record.sh` |
 | `inventory/` | Skills, script commands, RENEWAL sites, and feature inventory gaps. | `tools/wathena/inventory.py` |
-| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. `random_options.json` is what random options read, described below. `guilds.json` is what guilds read, described below. `quests.json` is what quests read, described below. `item_trade.json` holds the Trade flags of each item that sets one, and `shops.json` the barter shops, the items for buying stores, and the vending, store search and mail settings. | `tools/wathena/extract.py` |
+| `extracts/` | Monster spawns, spawn tags, minimum client tables, progression data (exp tables, status points, level penalty, and monster drops), job stats (weight, HP and SP tables, base ASPD, job bonus stats, and map job IDs), and items (type, weight, stacking, use and drop limits, and the heal of scripts that are only `itemheal` or `percentheal`), per mode. `items.json` lists the heal scripts it could not read in `unparsed_heal_scripts`. `warps.json` lists warp NPCs, described below. `script_constants.json`, `item_scripts.json` and `item_groups.json` are what the item script converter reads, described below. `equipment.json`, `refine_db.json` and `monster_groups.json` are what equipment reads, described below. `status.json` is what status effects read, described below. `skills.json` and `skill_trees.json` are what skills read, described below. `monsters.json` is what monster stats, skills and AI read, described below. `random_options.json` is what random options read, described below. `guilds.json` is what guilds read, described below. `quests.json` is what quests read, described below. `castles.json` and `map_flags.json` are what castles and GvG maps read, described below. `item_trade.json` holds the Trade flags of each item that sets one, and `shops.json` the barter shops, the items for buying stores, and the vending, store search and mail settings. | `tools/wathena/extract.py` |
 
 ## Formula files
 
@@ -316,6 +316,28 @@ python3 tools/wathena/extract.py quests
 ```
 
 `extract.py quests` writes only `quests.json`, so the other extracts stay as they are.
+
+## Castles
+
+`extracts/<mode>/castles.json` is `castle_db.yml` of the mode, as `CastleDatabase::parseBodyNode` and `loadingFinished` load it ([proposal 0004](../../docs/proposals/0004-sieges.md), section 1). The converter makes core's `data/castles.yml` from it.
+
+- Each castle has its ID, map, name, the NPC that hears `OnGuildBreak`, its edition (`fe`, `se` or `te` for rAthena's `Type`) and its client ID. `teleport` is set only when `loadingFinished` keeps `WarpEnabled`, with `WarpCost` (100 by default) and `WarpCostSiege` (100,000 by default).
+- Pre-renewal's `castle_db.yml` enables no teleport, so no pre-renewal castle has one.
+
+`extracts/<mode>/map_flags.json` holds the `gvg`, `gvg_noparty`, `gvg_castle`, `gvg_dungeon`, `gvg_te`, `gvg_te_castle` and `restricted` mapflag lines of the NPC files the mode loads, as `npc_parse_mapflag` reads them. A `restricted` map lists its zones. gvg-rules and instances-core read it.
+
+| Mode | Castles | fe | se | te | With a teleport | Maps with flags | With `restricted` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| renewal | 44 | 24 | 10 | 10 | 30 | 249 | 187 |
+| pre-renewal | 34 | 24 | 10 | 0 | 0 | 121 | 69 |
+
+They come from rAthena fork commit `f99a928d1`, which adds `build_castles` and `build_map_flags` to `tools/wathena/extract.py`. With it:
+
+```text
+python3 tools/wathena/extract.py castles map_flags
+```
+
+That writes only these two files, so the other extracts stay as they are.
 
 ## Spawns
 

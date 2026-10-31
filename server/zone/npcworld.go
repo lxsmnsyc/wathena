@@ -149,6 +149,18 @@ func (d *NPCDirectory) find(name, modID string) *npcEntry {
 	return nil
 }
 
+// FireEvent runs an NPC's label with no player, after the current step
+// of the NPC's zone, as world.fire_npc_event does. name is a record
+// name; a plain name is core's. It reports false when no NPC has the
+// name or its zone's inbox is full. Any goroutine may call it.
+func (d *NPCDirectory) FireEvent(name, label string) bool {
+	en := d.find(name, mod.Core)
+	if en == nil {
+		return false
+	}
+	return en.zone.npcIn.post(npcMessage{kind: npcEventMessage, handle: en.handle, label: label})
+}
+
 // fullNames are the record names a name may mean.
 func fullNames(name, modID string) []string {
 	if strings.Contains(name, ":") {

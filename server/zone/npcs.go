@@ -518,8 +518,9 @@ func (h scriptHost) NPCField(id int64, field string) (script.Value, error) {
 // npcFields are the fields of NPC handles. server/modscript/luaapi
 // defines the same names, and a test checks both.
 var npcFields = map[string]func(h scriptHost, e *entity) script.Value{
-	"kind": func(scriptHost, *entity) script.Value { return script.String("npc") },
-	"name": func(_ scriptHost, e *entity) script.Value { return script.String(e.npc.DisplayName) },
+	"kind":  func(scriptHost, *entity) script.Value { return script.String("npc") },
+	"guild": npcGuild,
+	"name":  func(_ scriptHost, e *entity) script.Value { return script.String(e.npc.DisplayName) },
 	"full_name": func(_ scriptHost, e *entity) script.Value {
 		_, _, full := npcNames(e.npc.Name, e.npc.DisplayName, e.npc.Hidden)
 		return script.String(full)

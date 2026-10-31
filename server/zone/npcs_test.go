@@ -27,6 +27,13 @@ func npcMod(src string) *mod.Scripts {
 // it. The player's first frame is already read.
 func npcZone(t *testing.T, src string) (*Zone, *Player, *entity, *syncBuffer) {
 	t.Helper()
+	return npcZoneWith(t, src, nil)
+}
+
+// npcZoneWith is npcZone with setup run on the zone before its scripts
+// start.
+func npcZoneWith(t *testing.T, src string, setup func(z *Zone)) (*Zone, *Player, *entity, *syncBuffer) {
+	t.Helper()
 	z := New("map/test", open(40), rng.FromKey([32]byte{5}).Stream(), nil)
 	z.Items = testItems()
 	z.Progress = testTables()
@@ -37,6 +44,9 @@ func npcZone(t *testing.T, src string) (*Zone, *Player, *entity, *syncBuffer) {
 		Log: slog.New(slog.NewTextHandler(logs, nil)), Server: variables.NewServer(nil, nil), Shops: shop.NewRegistry(nil)}
 	z.SetNPCs([]NPC{{Name: "example.test:Guide", DisplayName: "Guide", X: 20, Y: 20, Sprite: 112, Script: "example.test:scripts/npc.lua"}})
 	t.Cleanup(z.stopScripts)
+	if setup != nil {
+		setup(z)
+	}
 	p := add(z, "a")
 	p.entity.x, p.entity.y = 21, 20
 	z.stepAt(50)

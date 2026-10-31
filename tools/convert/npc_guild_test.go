@@ -84,12 +84,41 @@ func TestGuildCommandsConvert(t *testing.T) {
 		{`{ .@n = getmapguildusers("prontera",1); end; }`, "getmapguildusers: the guild API cannot count"},
 		{`{ maprespawnguildid "prontera",1,3; end; }`, "maprespawnguildid: the guild API cannot warp"},
 		{`{ agitstart; end; }`, "agitstart: castles, sieges and guardians are not in the API yet"},
-		{`{ .@n = getcastledata("prtg_cas01",1); end; }`, "getcastledata: castles, sieges and guardians are not in the API yet"},
+		{`{ .@n = getcastledata("prtg_cas01"); end; }`, "getcastledata: arguments"},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		_, err := n.npcScript()
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: got %v, want %q", c.script, err, c.want)
+		}
+	}
+}
+
+// TestCastleCommandsConvert checks the castle rows of proposal 0004's
+// section 9.
+func TestCastleCommandsConvert(t *testing.T) {
+	res := eventResult(t)
+	for _, c := range []struct {
+		script string
+		want   []string
+	}{
+		{`{ .@g = getcastledata("prtg_cas01",CD_GUILD_ID); end; }`, []string{`g = R.castle_data("prtg_cas01", 1)`}},
+		{`{ .@e = getcastledata(strnpcinfo(2),2) - 5; end; }`, []string{`R.castle_data(`, `, 2) - 5`}},
+		{`{ setcastledata "prtg_cas01",CD_GUILD_ID,getcharid(2); end; }`, []string{`R.set_castle_data("prtg_cas01", 1, (player.guild and player.guild.id or 0))`}},
+		{`{ setcastledata .@map$,CD_ENABLED_GUARDIAN00+.@i,1; end; }`, []string{`R.set_castle_data(map, (10 + i), 1)`}},
+		{`{ mes getcastlename("prtg_cas01"); end; }`, []string{`conversation:say(R.castle_name("prtg_cas01"))`}},
+		{`{ flagemblem getcastledata("prtg_cas01",1); end; }`, []string{`R.flag_emblem(npc, R.castle_data("prtg_cas01", 1))`}},
+	} {
+		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
+		lua, err := n.npcScript()
+		if err != nil {
+			t.Errorf("%s: %v", c.script, err)
+			continue
+		}
+		for _, w := range c.want {
+			if !strings.Contains(lua, w) {
+				t.Errorf("%s: got\n%s\nwant %q", c.script, lua, w)
+			}
 		}
 	}
 }

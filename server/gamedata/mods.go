@@ -12,6 +12,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/reference"
 	"github.com/lxsmnsyc/wathena/server/bonus"
+	"github.com/lxsmnsyc/wathena/server/castle"
 	"github.com/lxsmnsyc/wathena/server/chat"
 	"github.com/lxsmnsyc/wathena/server/companion"
 	"github.com/lxsmnsyc/wathena/server/constants"
@@ -104,6 +105,11 @@ type Mods struct {
 	// StorageOverlay their merge.
 	Storages       []*storage.Record
 	StorageOverlay *mod.Overlay
+	// Castles are the castles of data/castles.yml, by ID: core's,
+	// converted from rAthena's castle_db.yml, with the mods' records
+	// (proposal 0004). CastleOverlay is their merge.
+	Castles       []*castle.Record
+	CastleOverlay *mod.Overlay
 	// Currencies are the currencies: core's with the mods'
 	// data/currencies.yml. CurrencyOverlay is their merge.
 	Currencies      *currency.Table
@@ -345,9 +351,15 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 	for _, n := range out.StorageOverlay.Notes {
 		log.Warn("mods: " + n)
 	}
+	if out.Castles, out.CastleOverlay, err = modCastles(ctx, set, assigned, mode); err != nil {
+		return nil, err
+	}
+	for _, n := range out.CastleOverlay.Notes {
+		log.Warn("mods: " + n)
+	}
 	for _, a := range assigned.Assigned {
 		if a.Kind == mod.SkillIDs.Kind || a.Kind == mod.CompanionIDs.Kind || a.Kind == mod.MountIDs.Kind || a.Kind == mod.StorageIDs.Kind ||
-			a.Kind == mod.CurrencyIDs.Kind {
+			a.Kind == mod.CurrencyIDs.Kind || a.Kind == mod.CastleIDs.Kind {
 			log.Info("mods: new ID", "kind", a.Kind, "name", a.Name, "id", a.ID, "mod", a.Mod)
 		}
 	}

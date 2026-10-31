@@ -1,0 +1,587 @@
+{
+	"rathena_git_hash": "f99a928d1eda44656befb8f4e61107ca6acbcbc2",
+	"mode": "renewal",
+	"note": "castle_db.yml of the mode and db/import/castle_db.yml when it exists, as CastleDatabase::parseBodyNode loads them, by Id. edition is Type: fe for First_Edition (agitstart), se for Second_Edition (agitstart2), te for Third_Edition (agitstart3); fe when Type is absent. npc is the NPC whose OnGuildBreak runs when the owner guild breaks. client_id is 0 when absent. teleport is set when WarpEnabled is true and loadingFinished keeps it: it is turned off without a ClientId, WarpX or WarpY. cost is WarpCost (100 when absent) and siege_cost WarpCostSiege (100000 when absent), the zeny a guild member pays outside and during the castle's siege. A row whose Map is not in map_index.txt, whose Npc is longer than 24 characters, whose Type is unknown, whose WarpX or WarpY is 0 or outside a loaded map, or whose cost is over MAX_ZENY is skipped, as parseBodyNode returns 0. map_loaded is false when maps_athena.conf or the map cache does not have the map.",
+	"files": [
+		"db/re/castle_db.yml"
+	],
+	"castles": [
+		{
+			"id": 0,
+			"map": "aldeg_cas01",
+			"name": "Neuschwanstein",
+			"npc": "Agit#aldeg_cas01",
+			"edition": "fe",
+			"client_id": 6,
+			"teleport": {
+				"x": 212,
+				"y": 175,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 1,
+			"map": "aldeg_cas02",
+			"name": "Hohenschwangau",
+			"npc": "Agit#aldeg_cas02",
+			"edition": "fe",
+			"client_id": 7,
+			"teleport": {
+				"x": 82,
+				"y": 71,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 2,
+			"map": "aldeg_cas03",
+			"name": "Nuernberg",
+			"npc": "Agit#aldeg_cas03",
+			"edition": "fe",
+			"client_id": 8,
+			"teleport": {
+				"x": 109,
+				"y": 112,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 3,
+			"map": "aldeg_cas04",
+			"name": "Wuerzburg",
+			"npc": "Agit#aldeg_cas04",
+			"edition": "fe",
+			"client_id": 9,
+			"teleport": {
+				"x": 60,
+				"y": 116,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 4,
+			"map": "aldeg_cas05",
+			"name": "Rothenburg",
+			"npc": "Agit#aldeg_cas05",
+			"edition": "fe",
+			"client_id": 10,
+			"teleport": {
+				"x": 61,
+				"y": 185,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 5,
+			"map": "gefg_cas01",
+			"name": "Repherion",
+			"npc": "Agit#gefg_cas01",
+			"edition": "fe",
+			"client_id": 11,
+			"teleport": {
+				"x": 40,
+				"y": 43,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 6,
+			"map": "gefg_cas02",
+			"name": "Eeyolbriggar",
+			"npc": "Agit#gefg_cas02",
+			"edition": "fe",
+			"client_id": 12,
+			"teleport": {
+				"x": 22,
+				"y": 66,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 7,
+			"map": "gefg_cas03",
+			"name": "Yesnelph",
+			"npc": "Agit#gefg_cas03",
+			"edition": "fe",
+			"client_id": 13,
+			"teleport": {
+				"x": 112,
+				"y": 23,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 8,
+			"map": "gefg_cas04",
+			"name": "Bergel",
+			"npc": "Agit#gefg_cas04",
+			"edition": "fe",
+			"client_id": 14,
+			"teleport": {
+				"x": 58,
+				"y": 46,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 9,
+			"map": "gefg_cas05",
+			"name": "Mersetzdeitz",
+			"npc": "Agit#gefg_cas05",
+			"edition": "fe",
+			"client_id": 15,
+			"teleport": {
+				"x": 66,
+				"y": 48,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 10,
+			"map": "payg_cas01",
+			"name": "Bright Arbor",
+			"npc": "Agit#payg_cas01",
+			"edition": "fe",
+			"client_id": 16,
+			"teleport": {
+				"x": 115,
+				"y": 57,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 11,
+			"map": "payg_cas02",
+			"name": "Scarlet Palace",
+			"npc": "Agit#payg_cas02",
+			"edition": "fe",
+			"client_id": 17,
+			"teleport": {
+				"x": 26,
+				"y": 265,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 12,
+			"map": "payg_cas03",
+			"name": "Holy Shadow",
+			"npc": "Agit#payg_cas03",
+			"edition": "fe",
+			"client_id": 18,
+			"teleport": {
+				"x": 43,
+				"y": 264,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 13,
+			"map": "payg_cas04",
+			"name": "Sacred Altar",
+			"npc": "Agit#payg_cas04",
+			"edition": "fe",
+			"client_id": 19,
+			"teleport": {
+				"x": 36,
+				"y": 272,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 14,
+			"map": "payg_cas05",
+			"name": "Bamboo Grove Hill",
+			"npc": "Agit#payg_cas05",
+			"edition": "fe",
+			"client_id": 20,
+			"teleport": {
+				"x": 274,
+				"y": 246,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 15,
+			"map": "prtg_cas01",
+			"name": "Kriemhild",
+			"npc": "Agit#prtg_cas01",
+			"edition": "fe",
+			"client_id": 1,
+			"teleport": {
+				"x": 107,
+				"y": 180,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 16,
+			"map": "prtg_cas02",
+			"name": "Swanhild",
+			"npc": "Agit#prtg_cas02",
+			"edition": "fe",
+			"client_id": 2,
+			"teleport": {
+				"x": 94,
+				"y": 56,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 17,
+			"map": "prtg_cas03",
+			"name": "Fadhgridh",
+			"npc": "Agit#prtg_cas03",
+			"edition": "fe",
+			"client_id": 3,
+			"teleport": {
+				"x": 46,
+				"y": 97,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 18,
+			"map": "prtg_cas04",
+			"name": "Skoegul",
+			"npc": "Agit#prtg_cas04",
+			"edition": "fe",
+			"client_id": 4,
+			"teleport": {
+				"x": 260,
+				"y": 262,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 19,
+			"map": "prtg_cas05",
+			"name": "Gondul",
+			"npc": "Agit#prtg_cas05",
+			"edition": "fe",
+			"client_id": 5,
+			"teleport": {
+				"x": 26,
+				"y": 38,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 20,
+			"map": "nguild_alde",
+			"name": "Earth",
+			"npc": "Agit_N01",
+			"edition": "fe",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 21,
+			"map": "nguild_gef",
+			"name": "Air",
+			"npc": "Agit_N02",
+			"edition": "fe",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 22,
+			"map": "nguild_pay",
+			"name": "Water",
+			"npc": "Agit_N03",
+			"edition": "fe",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 23,
+			"map": "nguild_prt",
+			"name": "Fire",
+			"npc": "Agit_N04",
+			"edition": "fe",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 24,
+			"map": "schg_cas01",
+			"name": "Himinn",
+			"npc": "Manager#schg_cas01",
+			"edition": "se",
+			"client_id": 26,
+			"teleport": {
+				"x": 233,
+				"y": 300,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 25,
+			"map": "schg_cas02",
+			"name": "Andlangr",
+			"npc": "Manager#schg_cas02",
+			"edition": "se",
+			"client_id": 27,
+			"teleport": {
+				"x": 101,
+				"y": 372,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 26,
+			"map": "schg_cas03",
+			"name": "Viblainn",
+			"npc": "Manager#schg_cas03",
+			"edition": "se",
+			"client_id": 28,
+			"teleport": {
+				"x": 81,
+				"y": 94,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 27,
+			"map": "schg_cas04",
+			"name": "Hljod",
+			"npc": "Manager#schg_cas04",
+			"edition": "se",
+			"client_id": 29,
+			"teleport": {
+				"x": 233,
+				"y": 300,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 28,
+			"map": "schg_cas05",
+			"name": "Skidbladnir",
+			"npc": "Manager#schg_cas05",
+			"edition": "se",
+			"client_id": 30,
+			"teleport": {
+				"x": 233,
+				"y": 300,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 29,
+			"map": "arug_cas01",
+			"name": "Mardol",
+			"npc": "Manager#arug_cas01",
+			"edition": "se",
+			"client_id": 21,
+			"teleport": {
+				"x": 77,
+				"y": 371,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 30,
+			"map": "arug_cas02",
+			"name": "Cyr",
+			"npc": "Manager#arug_cas02",
+			"edition": "se",
+			"client_id": 22,
+			"teleport": {
+				"x": 301,
+				"y": 332,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 31,
+			"map": "arug_cas03",
+			"name": "Horn",
+			"npc": "Manager#arug_cas03",
+			"edition": "se",
+			"client_id": 23,
+			"teleport": {
+				"x": 322,
+				"y": 91,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 32,
+			"map": "arug_cas04",
+			"name": "Gefn",
+			"npc": "Manager#arug_cas04",
+			"edition": "se",
+			"client_id": 24,
+			"teleport": {
+				"x": 322,
+				"y": 91,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 33,
+			"map": "arug_cas05",
+			"name": "Bandis",
+			"npc": "Manager#arug_cas05",
+			"edition": "se",
+			"client_id": 25,
+			"teleport": {
+				"x": 322,
+				"y": 91,
+				"cost": 100,
+				"siege_cost": 100000
+			},
+			"map_loaded": true
+		},
+		{
+			"id": 34,
+			"map": "te_aldecas1",
+			"name": "Kafragarten 1",
+			"npc": "Manager_TE#Glaris",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 35,
+			"map": "te_aldecas2",
+			"name": "Kafragarten 2",
+			"npc": "Manager_TE#Defolty",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 36,
+			"map": "te_aldecas3",
+			"name": "Kafragarten 3",
+			"npc": "Manager_TE#Sorin",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 37,
+			"map": "te_aldecas4",
+			"name": "Kafragarten 4",
+			"npc": "Manager_TE#Bennit",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 38,
+			"map": "te_aldecas5",
+			"name": "Kafragarten 5",
+			"npc": "Manager_TE#W",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 39,
+			"map": "te_prtcas01",
+			"name": "Gloria 1",
+			"npc": "Manager_TE#Gaebolg",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 40,
+			"map": "te_prtcas02",
+			"name": "Gloria 2",
+			"npc": "Manager_TE#Richard",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 41,
+			"map": "te_prtcas03",
+			"name": "Gloria 3",
+			"npc": "Manager_TE#Wigner",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 42,
+			"map": "te_prtcas04",
+			"name": "Gloria 4",
+			"npc": "Manager_TE#Heine",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		},
+		{
+			"id": 43,
+			"map": "te_prtcas05",
+			"name": "Gloria 5",
+			"npc": "Manager_TE#Nerious",
+			"edition": "te",
+			"client_id": 0,
+			"map_loaded": true
+		}
+	],
+	"skipped": []
+}

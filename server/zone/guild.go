@@ -426,8 +426,8 @@ func sameBadge(a, b *wathenav1.GuildBadge) bool {
 
 // entityGuild is the event that tells a viewer an entity's guild badge
 // changed.
-func entityGuild(id uint32, p *Player) *wathenav1.Event {
-	return wathenav1.Event_builder{EntityGuild: wathenav1.EntityGuild_builder{Id: id, Guild: p.guild.badge}.Build()}.Build()
+func entityGuild(id uint32, b *wathenav1.GuildBadge) *wathenav1.Event {
+	return wathenav1.Event_builder{EntityGuild: wathenav1.EntityGuild_builder{Id: id, Guild: b}.Build()}.Build()
 }
 
 func guildMember(m social.GuildMemberView) *wathenav1.GuildMember {
