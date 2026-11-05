@@ -6,10 +6,10 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 13607 of 19892 NPC lines are placed, duplicates too: 282 shops and 13325 of 19420 script NPCs.
+- 13634 of 19892 NPC lines are placed, duplicates too: 282 shops and 13352 of 19420 script NPCs.
 - 7 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
 - 55 of 56 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
-- 674 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
+- 675 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
 - Pre-renewal classic is experimental until `core.ruleset.pre_renewal` matches rAthena's pre-renewal (phase 10 item 1). `waserver` warns at start.
 
 ## Folders
@@ -28,17 +28,17 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | guild2 | 478 | 0 | 478 |
 | guild3 | 255 | 0 | 255 |
 | instances | 3531 | 4 | 3527 |
-| jobs | 1804 | 1726 | 78 |
+| jobs | 1804 | 1727 | 77 |
 | kafras | 97 | 97 | 0 |
-| merchants | 690 | 479 | 211 |
+| merchants | 690 | 493 | 197 |
 | mobs | 13 | 12 | 1 |
 | other | 3466 | 3075 | 391 |
-| quests | 6622 | 6345 | 277 |
+| quests | 6622 | 6357 | 265 |
 | warps | 250 | 238 | 12 |
 
 ## What blocks the rest
 
-2359 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+2345 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|
@@ -59,7 +59,6 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | questinfo | 16 | questinfo: a computed condition |
 | instance_mapname | 15 | instance_mapname |
 | achievementinfo | 14 | achievementinfo |
-| callshop | 12 | callshop: a computed shop |
 | add_reputation_points | 10 | add_reputation_points |
 | instance | 10 | instance: 1@mist is an instance map, which wAthena does not have yet |
 | getmercinfo | 9 | getmercinfo |
@@ -71,7 +70,8 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | getarraysize | 5 | getarraysize: not of a variable |
 | instance_check_party | 5 | instance_check_party |
 | open_quest_ui | 5 | open_quest_ui: a computed quest |
-| setunitdata | 5 | setunitdata: a type other than UNPC_CLASS, UNPC_SEX and the UNPC_ looks |
+| setunitdata | 5 | setunitdata: UNPC_GROUP_ID, the group mark the client shows by the name, which NPC handles do not have |
+| bg_get_data | 4 | bg_get_data |
 
 - `event <label>` is a label that rAthena runs on its own for a system that does not exist, such as `OnAgitStart`, or for an event the API does not have, such as `OnPCKillEvent`. Every other label converts to an `npc_event` handler (review decision 58), and the player labels, such as `OnPCLoginEvent`, to handlers of the player events of every map too (review decision 59).
 - `parameter <name>` reads or changes a player parameter that does not convert, such as `MaxWeight`.

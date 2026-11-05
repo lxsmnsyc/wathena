@@ -33,6 +33,7 @@ const (
 	unpcHairStyle, unpcHairCl = 34, 35
 	unpcHeadBottom, unpcHeadM = 36, 37
 	unpcHeadTop, unpcCloth    = 38, 39
+	unpcGroupID               = 45
 	sexMale                   = 1
 	qtypeNone                 = 9999
 )
@@ -901,6 +902,11 @@ func (b *body) setunitdata(args []Expr) error {
 		if v.static != nil {
 			value = map[bool]string{true: `"male"`, false: `"female"`}[*v.static == sexMale]
 		}
+	case t == unpcGroupID:
+		// The client shows the group's mark by the NPC's name
+		// (clif_name's groupId). The NPC API has no such field (decision
+		// 0072).
+		return unsupported(what, "UNPC_GROUP_ID, the group mark the client shows by the name, which NPC handles do not have")
 	case field == "":
 		return unsupported(what, "a type other than UNPC_CLASS, UNPC_SEX and the UNPC_ looks")
 	}

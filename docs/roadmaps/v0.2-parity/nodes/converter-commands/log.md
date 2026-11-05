@@ -11,3 +11,7 @@
 - countitem2 now goes through `matchOptions` too (one edit in npcgroup3.go), so the sign quest's countitem2 runs.
 - count_item with a refine now also matches the signer (0 = unsigned) and counts rentals, as script_countitem_sub's exact match reads no rental time.
 - Step 1 diff: about 880 lines without generated files. Going on.
+- Step 2: G7 needs a protocol field and a shop_stock key per entry for an item sold twice; GOAL.md wants a proposal before a protocol change, so only refined costs and 6 cost lines are built (no protocol change). Left for the orchestrator.
+- G10: names in the script's text did not cover `"shop_ext171_" + .@str$`; added shops starting with the name's fixed text.
+- Step 3: G15 had nothing left to map; only UNPC_GROUP_ID (client group mark) is refused, with a clearer reason.
+- Tests: tools/convert full, server/modscript/..., mod, shop, status, gamedata, zone full, check.sh vet lint: pass.

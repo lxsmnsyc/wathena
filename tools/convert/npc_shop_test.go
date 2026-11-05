@@ -48,7 +48,8 @@ const shopBarters = `{"barters": [
  {"index": 5, "item": "Apple", "id": 512, "stock": 0, "zeny": 0, "refine": 0, "required": [
   {"index": 0, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1}, {"index": 1, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1},
   {"index": 2, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1}, {"index": 3, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1},
-  {"index": 4, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1}, {"index": 5, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1}]}]},
+  {"index": 4, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1}, {"index": 5, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1},
+  {"index": 6, "item": "Jellopy", "id": 909, "amount": 1, "refine": -1}]}]},
 {"name": "Placed Barter#t", "file": "barters.yml", "map": "prontera", "x": 155, "y": 160, "dir": 4, "sprite": "4_F_KAFRA1", "items": [
  {"index": 0, "item": "Apple", "id": 512, "stock": 0, "zeny": 30, "refine": 0, "required": []}]},
 {"name": "Refined Barter#t", "file": "barters.yml", "map": null, "x": 0, "y": 0, "dir": 0, "sprite": null, "items": [
@@ -106,11 +107,11 @@ func TestShopKindsConvert(t *testing.T) {
 		{"Cash#t", Full, false, `- {name: "Cash#t", shop: {buys_from_players: false, discount: false, items: [{item: Red_Potion, cost: {currency: {cash: 100}}}]}}`, ""},
 		{"Market#t", Partial, false, `- {name: "Market#t", shop: {buys_from_players: false, discount: false, items: [{item: Red_Potion, price: 40, stock: 5}, {item: Apple, price: 15}]}}`,
 			"marketshop: Jellopy starts with no stock, and a stock in data/npcs.yml is 1 or more"},
-		{"Barter#t", Partial, false, `- {name: "Barter#t", shop: {buys_from_players: false, discount: false, items: [{item: Oridecon, cost: {items: [{item: Oridecon_Stone, amount: 5}]}}, {item: Elunium, cost: {zeny: 500, items: [{item: Jellopy, amount: 2}, {item: Apple, amount: 1}]}, stock: 10}]}}`,
+		{"Barter#t", Partial, false, `- {name: "Barter#t", shop: {buys_from_players: false, discount: false, items: [{item: Oridecon, cost: {items: [{item: Oridecon_Stone, amount: 5}]}}, {item: Elunium, cost: {zeny: 500, items: [{item: Jellopy, amount: 2}, {item: Apple, amount: 1}]}, stock: 10}, ` +
+			`{item: Knife, cost: {items: [{item: Sword, amount: 1, refine: 9}]}}]}}`,
 			"barter: Elunium (index 2) is sold a second time, and a shop table names each item once; " +
 				"barter: Sword (index 3) is sold refined to +7, and a shop item has no refine; " +
-				"barter: Knife (index 4) takes Sword refined to +9 or more, and a cost cannot ask for a refine; " +
-				"barter: Apple (index 5) takes 6 kinds of items, and a cost takes at most 5"},
+				"barter: Apple (index 5) takes 7 kinds of items, and a cost takes at most 6"},
 		{"Placed Barter#t", Full, true, `- {name: "Placed Barter#t", map: prontera, x: 155, y: 160, direction: south, sprite: 4_F_KAFRA1, display_name: Placed Barter, shop: {buys_from_players: false, discount: false, items: [{item: Apple, cost: {zeny: 30}}]}}`, ""},
 		{"Refined Barter#t", None, false, "", "barter: Sword (index 0) is sold refined to +4, and a shop item has no refine; barter: 0 items convert, and a shop has 1 to 200"},
 	} {

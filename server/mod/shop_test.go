@@ -36,6 +36,11 @@ items:
 	if it.Cost == nil || it.Cost.Zeny != 5 || it.Cost.Items[0].Amount != 2 || it.Cost.Currencies["cash"] != 3 || it.Stock != 4 || it.Restock != "6h" {
 		t.Errorf("item %+v %+v", it, it.Cost)
 	}
+	// A barter's required refine (decision 0072).
+	if sh, err := shopOf(t, `{items: [{item: A, cost: {items: [{item: B, refine: 9}, {item: C}]}}]}`); err != nil || sh.Items[0].Cost.Items[0].Refine != 9 ||
+		sh.Items[0].Cost.Items[1].Refine != 0 {
+		t.Errorf("refine %+v %v", sh, err)
+	}
 	if sh, err := shopOf(t, `[{item: Red_Potion, price: 10}, {item: Red_Potion}]`); err != nil || len(sh.Items) != 2 || !sh.BuysFromPlayers {
 		t.Errorf("list %+v %v", sh, err)
 	}
@@ -47,7 +52,8 @@ items:
 		`{items: [{item: A, stock: 1, restock: 30s}]}`:    "restock is daily",
 		`{items: [{item: A, cost: {zeny: 1, gems: 2}}]}`:  `"gems" is not a field`,
 		`{items: [{item: A}], sells: true}`:               `"sells" is not a field`,
-		`{items: [{item: A, cost: {items: [{item: B}, {item: C}, {item: D}], currency: {a: 1, b: 1, c: 1}}}]}`: "at most 5",
+		`{items: [{item: A, cost: {items: [{item: B}, {item: C}, {item: D}], currency: {a: 1, b: 1, c: 1, d: 1}}}]}`: "at most 6",
+		`{items: [{item: A, cost: {items: [{item: B, refine: 21}]}}]}`:                                               "refine is 1 to 20",
 	} {
 		if _, err := shopOf(t, src); err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%s: %v, want %q", src, err, want)

@@ -103,7 +103,7 @@ func (r *NPCResult) NPCReport() string {
 	b.WriteString("- cashshop, itemshop, pointshop, marketshop and barter shops become shops with a cost and a stock. Players cannot sell to them, as in rAthena.\n")
 	b.WriteString("- A cashshop's price is in cash points only. rAthena also lets Kafra points pay part of it, which does not convert.\n")
 	b.WriteString("- A pointshop's variable becomes a currency: #CASHPOINTS is `cash`, #KAFRAPOINTS is `kafra`, and other variables are new records of core's `data/currencies.yml`. Reads and changes of these variables use the currency calls.\n")
-	b.WriteString("- A barter item that is refined, that takes refined items or more than 5 kinds of items, or that the barter sells a second time, does not convert.\n")
+	b.WriteString("- A barter item that takes a refined item takes it at that refine, or at the lowest refine above it, as rAthena. One that is sold refined, that takes more than 6 kinds of items, or that the barter sells a second time, does not convert.\n")
 	fmt.Fprintf(&b, "- %d currencies were added for pointshop variables.\n", len(r.conv.newCurrencies))
 	b.WriteString("- Pushcart rental converts: F_KafCart gives the cart with `player:set_cart`.\n")
 	fmt.Fprintf(&b, "- rAthena's getitem and delitem do nothing for an amount of 0 or less, and wAthena's calls raise an error. %d scripts and functions have a fixed amount of 0 or less, which converts to nothing. %d have a computed amount, which `R.give_item` and `R.take_item` check first.\n\n", len(r.conv.zeroAmounts), len(r.conv.checkedAmounts))

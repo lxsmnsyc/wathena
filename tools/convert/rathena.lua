@@ -1923,6 +1923,18 @@ function R.party_members(party, field)
 	return out, #names
 end
 
+-- party_members_into is getpartymember's array form: it sets the
+-- array's elements from 0 to the members' names or IDs, keeps the rest,
+-- and returns the array and the count.
+function R.party_members_into(array, party, field)
+	array = array or {}
+	local list, n = R.party_members(party, field)
+	for i = 0, n - 1 do
+		array[i] = list[i]
+	end
+	return array, n
+end
+
 -- guild_field reads a field of a guild handle, such as its name. Without
 -- a guild it returns the default, as rAthena's guild reads return "null"
 -- for a guild that does not exist.
@@ -2249,6 +2261,19 @@ function R.cards(...)
 		end
 	end
 	return out
+end
+
+-- callshop is callshop of a computed name: shops maps the shop names
+-- the script names to their records, or false for a shop that does not
+-- convert. Another name opens nothing, as rAthena's, which logs an error.
+function R.callshop(player, name, shops)
+	local rec = shops[name]
+	if rec == false then
+		R.unsupported("the shop " .. name .. " does not convert")
+	end
+	if rec ~= nil then
+		player:open_shop(rec)
+	end
 end
 
 -- match is the options of count_item and take_item for countitem2's

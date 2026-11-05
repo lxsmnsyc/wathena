@@ -189,7 +189,7 @@ func TestBuiltinsConvert(t *testing.T) {
 		// Others.
 		{`{ getgroupitem(IG_BlueBox); end; }`, "player:give_item_from_group(BLUEBOX)"},
 		{`{ mes mesitemlink(501, true); end; }`, "text.item_link(RED_POTION)"},
-		{`{ mes mesitemlink(501, false); end; }`, "!mesitemlink: without brackets"},
+		{`{ mes mesitemlink(501, false); end; }`, "text.item_link(RED_POTION)"},
 		{`{ debugmes "x"; end; }`, "-- debugmes"},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})

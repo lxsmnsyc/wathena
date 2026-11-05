@@ -2934,7 +2934,7 @@ local wa_BuyingStoreSpec = {}
 ---@field restock string? When the stock fills again: "daily", "weekly", or a time such as "6h", "30m" or "2d". It needs a stock.
 local wa_ShopItemOptions = {}
 
----A cost: zeny, items and currencies, each optional, at most 5 items and currencies together.
+---A cost: zeny, items and currencies, each optional, at most 6 items and currencies together, as a barter's MAX_BARTER_REQUIREMENTS.
 ---@class wa.ShopCost
 ---@field zeny integer? 0 to 2147483647. Discount lowers it when the shop allows it.
 ---@field items wa.ShopCostItem[]? Items the purchase takes, for one bought.

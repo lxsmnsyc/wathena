@@ -1867,7 +1867,7 @@ var Classes = []Class{
 			{"restock", "string?", `When the stock fills again: "daily", "weekly", or a time such as "6h", "30m" or "2d". It needs a stock.`}},
 	},
 	{
-		Name: "wa.ShopCost", Doc: "A cost: zeny, items and currencies, each optional, at most 5 items and currencies together.",
+		Name: "wa.ShopCost", Doc: "A cost: zeny, items and currencies, each optional, at most 6 items and currencies together, as a barter's MAX_BARTER_REQUIREMENTS.",
 		Fields: []Field{{"zeny", "integer?", "0 to 2147483647. Discount lowers it when the shop allows it."},
 			{"items", "wa.ShopCostItem[]?", "Items the purchase takes, for one bought."},
 			{"currency", "table<string, integer>?", "Currencies of data/currencies.yml and the amount of each, for one bought, such as { cash = 100 }."}},

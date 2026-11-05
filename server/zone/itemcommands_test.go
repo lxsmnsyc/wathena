@@ -2,6 +2,7 @@ package zone
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/lxsmnsyc/wathena/server/item"
@@ -82,7 +83,8 @@ func TestTakeItemExact(t *testing.T) {
 		t.Fatalf("got %q, want %q: %s", got, want, logs)
 	}
 	for i := range want {
-		if got[i] != want[i] && !(i == 3 && len(got[i]) > len(want[i]) && got[i][len(got[i])-len(want[i]):] == want[i]) {
+		// The error line has the call's place before the message.
+		if !strings.HasSuffix(got[i], want[i]) {
 			t.Errorf("line %d: got %q, want %q", i, got[i], want[i])
 		}
 	}

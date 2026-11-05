@@ -1441,6 +1441,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 		if len(args) < 1 || len(args) > 2 {
 			return unsupported(name, "arguments")
 		}
+		if v, err := b.expr(args[0]); err == nil && v.str == nil {
+			return b.callshopComputed(v, args[0])
+		}
 		ref, err := b.shopNamed(name, args[0])
 		if err != nil {
 			return err
@@ -1567,6 +1570,14 @@ func (b *body) commandErr(name string, args []Expr) error {
 		return b.unloadnpc(args)
 	case "atcommand", "setbattleflag":
 		return unsupported(name, "%s", refusedCommands[name])
+	case "freeloop":
+		// freeloop lifts rAthena's loop limit. A call keeps its CPU
+		// budget, which the loops it guards stay far below (review
+		// decision 60, G11).
+		if len(args) > 1 {
+			return unsupported(name, "arguments")
+		}
+		b.line("-- freeloop: the call's CPU budget stays.")
 	default:
 		if ok, err := b.mapsCommand(name, args); ok {
 			return err

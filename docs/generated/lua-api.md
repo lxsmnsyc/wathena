@@ -5183,7 +5183,7 @@ Options of shop:add_item.
 
 ### wa.ShopCost
 
-A cost: zeny, items and currencies, each optional, at most 5 items and currencies together.
+A cost: zeny, items and currencies, each optional, at most 6 items and currencies together, as a barter's MAX_BARTER_REQUIREMENTS.
 
 | Field | Type | Meaning |
 |---|---|---|

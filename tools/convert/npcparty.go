@@ -325,7 +325,8 @@ func (b *body) partyField(e Expr, field, def string) (val, error) {
 // returns the count. These become locals of the function, which reads of
 // the variables after it use. It returns the count's local. Types 1 and
 // 2 read party:get_member_list (review decision 58).
-//   - An array argument of the script's own does not convert.
+//   - An array argument of the script's own, a .@ array, gets the names
+//     or IDs in place of the $@ arrays (decision 0072).
 func (b *body) getpartymember(args []Expr) (string, error) {
 	const name = "getpartymember"
 	if len(args) < 1 || len(args) > 3 {
@@ -346,8 +347,18 @@ func (b *body) getpartymember(args []Expr) (string, error) {
 			field = "account_id"
 		}
 	}
+	var into *localVar
 	if len(args) == 3 {
-		return "", unsupported(name, "into an array of the script's own")
+		// The array form fills the script's own array from index 0, and
+		// $@partymembercount (review decision 60, G16).
+		v, ok := asVar(args[2])
+		if !ok || v.Index != nil {
+			return "", unsupported(name, "into an array other than a .@ array of the type's kind")
+		}
+		if p, _, str := varName(v.Name); p != ".@" || str != (field == "name") {
+			return "", unsupported(name, "into an array other than a .@ array of the type's kind")
+		}
+		into = b.local(v.Name)
 	}
 	p, _, err := b.partyHandle(args[0])
 	if err != nil {
@@ -355,6 +366,14 @@ func (b *body) getpartymember(args []Expr) (string, error) {
 	}
 	if b.partyCount == "" {
 		b.partyCount = b.hide("party_member_count")
+	}
+	if into != nil {
+		kind := "nil"
+		if field != "name" {
+			kind = luaString(field)
+		}
+		b.line("%s, %s = R.party_members_into(%s, %s, %s)", into.lua, b.partyCount, into.lua, p, kind)
+		return b.partyCount, nil
 	}
 	list := &b.partyNames
 	switch field {

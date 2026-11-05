@@ -64,6 +64,9 @@ type Item struct {
 type CostItem struct {
 	ID     uint32
 	Amount int
+	// Refine, above 0, takes copies refined to it, or else the lowest
+	// refine above it, as npc_barter_purchase. 0 takes unrefined copies.
+	Refine int
 }
 
 // CostCurrency is a currency a cost takes, for one bought.

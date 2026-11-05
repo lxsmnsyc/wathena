@@ -213,6 +213,12 @@ type buyLine struct {
 	amount int
 }
 
+// costKey is an item a cost takes, with the refine it asks for.
+type costKey struct {
+	id     uint32
+	refine int
+}
+
 // costSlot is an inventory slot a cost takes items from.
 type costSlot struct {
 	slot   int
@@ -223,18 +229,29 @@ type costSlot struct {
 // costSlots picks the inventory slots that pay amount of an item, as
 // npc_barter_purchase: unequipped copies, in slot order, leaving out
 // refined copies and copies with cards, so a cost never takes a
-// player's upgraded gear. taken holds what earlier lines took. It
-// returns nil when the player has too few.
-func costSlots(inv *item.Inventory, id uint32, amount int, taken map[int]int) []costSlot {
-	var out []costSlot
+// player's upgraded gear. A refine above 0 takes copies at that refine,
+// then at the lowest refine above it, as the barter's search for each
+// copy (npc.cpp 3266). taken holds what earlier lines took. It returns
+// nil when the player has too few.
+func costSlots(inv *item.Inventory, id uint32, refine, amount int, taken map[int]int) []costSlot {
+	var order []int
 	for i := range inv.Slots {
+		s := &inv.Slots[i]
+		if s.ID != id || s.Equip != 0 || len(s.Cards) > 0 && hasCard(s.Cards) {
+			continue
+		}
+		if refine == 0 && s.Refine > 0 || s.Refine < refine {
+			continue
+		}
+		order = append(order, i)
+	}
+	slices.SortStableFunc(order, func(a, b int) int { return inv.Slots[a].Refine - inv.Slots[b].Refine })
+	var out []costSlot
+	for _, i := range order {
 		if amount <= 0 {
 			break
 		}
 		s := &inv.Slots[i]
-		if s.ID != id || s.Equip != 0 || s.Refine > 0 || len(s.Cards) > 0 && hasCard(s.Cards) {
-			continue
-		}
 		free := s.Amount - taken[i]
 		if free <= 0 {
 			continue
@@ -287,7 +304,7 @@ func (z *Zone) buy(p *Player, npc uint32, lines []buyLine) {
 	slots := 0
 	idx := make([]int, len(lines))
 	asked := map[uint32]int{}
-	costItems := map[uint32]int{}
+	costItems := map[costKey]int{}
 	costCurrencies := map[uint32]int64{}
 	for i := range lines {
 		l := &lines[i]
@@ -322,7 +339,7 @@ func (z *Zone) buy(p *Player, npc uint32, lines []buyLine) {
 		total += int64(shopPrice(p, s, it)) * int64(l.amount)
 		weight += int64(d.Weight) * int64(l.amount)
 		for _, c := range it.Items {
-			costItems[c.ID] += c.Amount * l.amount
+			costItems[costKey{c.ID, c.Refine}] += c.Amount * l.amount
 		}
 		for _, c := range it.Currencies {
 			costCurrencies[c.ID] += c.Amount * int64(l.amount)
@@ -335,14 +352,22 @@ func (z *Zone) buy(p *Player, npc uint32, lines []buyLine) {
 	// The items a cost takes, in the order of the shop's items.
 	taken := map[int]int{}
 	var pay []costSlot
-	for _, id := range sortedKeys(costItems) {
-		got := costSlots(p.inventory, id, costItems[id], taken)
+	// A refine asked for comes last, so unrefined costs of the same item
+	// keep the copies they may take.
+	keys := slices.SortedFunc(maps.Keys(costItems), func(a, b costKey) int {
+		if a.refine != b.refine {
+			return a.refine - b.refine
+		}
+		return int(a.id) - int(b.id)
+	})
+	for _, k := range keys {
+		got := costSlots(p.inventory, k.id, k.refine, costItems[k], taken)
 		if got == nil {
-			fail(wathenav1.ShopOutcome_SHOP_OUTCOME_NOT_ENOUGH_ITEMS, id)
+			fail(wathenav1.ShopOutcome_SHOP_OUTCOME_NOT_ENOUGH_ITEMS, k.id)
 			return
 		}
 		pay = append(pay, got...)
-		weight -= int64(z.Items.Get(id).Weight) * int64(costItems[id])
+		weight -= int64(z.Items.Get(k.id).Weight) * int64(costItems[k])
 	}
 	var wallets []*transfer.CurrencyWallet
 	for _, id := range sortedKeys(costCurrencies) {
