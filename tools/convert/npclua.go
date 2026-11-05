@@ -143,6 +143,8 @@ type npcConv struct {
 	// touch is set when the script has a touch handler: OnTouch or
 	// OnTouch_. touchDialog is set when it shows a dialog.
 	touch, touchDialog bool
+	// clickTouch is set when the touch handler only clicks the NPC.
+	clickTouch bool
 	// all is the script's top level, where callsub finds its labels.
 	// localFuncs are its local functions by lower-case name.
 	all        []Stmt
@@ -163,6 +165,10 @@ type npcConv struct {
 	// npcIDs are the variables that only hold getnpcid's value, with the
 	// NPC's code, once npcIDVars read them (npcpresent.go).
 	npcIDs map[string]string
+	// dotShared is set when a computed getd or setd name may reach the
+	// script's . variables, which are then NPC variables of wa.variables
+	// (review decision 60, F3).
+	dotShared bool
 	// inEvent is set while an event label's body is written, which may
 	// run without a player.
 	inEvent bool
@@ -297,6 +303,8 @@ func (n *npcConv) scanArrays(stmts []Stmt) {
 		case *Assign:
 			expr(e.Target)
 			expr(e.Value)
+		case *IncDec:
+			expr(e.Target)
 		}
 	}
 	var stmt func(s Stmt)
@@ -384,6 +392,11 @@ type body struct {
 	indent int
 	locals map[string]*localVar
 	order  []string
+	// table, when set, is the Lua table that holds the .@ variables of
+	// the function, by lower-case name without the prefix, because a
+	// computed getd or setd name may reach any of them (review decision
+	// 60, F3). A $ ends the name of a string variable.
+	table string
 	// main is set for the click handler and the setup function, where
 	// end and close return.
 	main bool
@@ -471,7 +484,20 @@ func (b *body) text(subs []string) ([]string, bool) {
 	if len(b.hidden) > 0 {
 		out = append(out, pad+"local "+strings.Join(b.hidden, ", "))
 	}
-	if len(b.order) > 0 {
+	if b.table != "" {
+		out = append(out, pad+"local "+b.table+" = {}")
+		for _, k := range b.order {
+			l := b.locals[k]
+			val := "0"
+			switch {
+			case l.array:
+				val = "{}"
+			case l.str:
+				val = `""`
+			}
+			out = append(out, pad+l.lua+" = "+val)
+		}
+	} else if len(b.order) > 0 {
 		names := make([]string, len(b.order))
 		vals := make([]string, len(b.order))
 		for i, k := range b.order {
@@ -527,6 +553,16 @@ func (b *body) local(name string) *localVar {
 		return l
 	}
 	_, bare, str := varName(name)
+	if b.table != "" {
+		k := strings.ToLower(bare)
+		if str {
+			k += "$"
+		}
+		l := &localVar{lua: b.table + "[" + luaString(k) + "]", str: str, array: b.n.arrays[key]}
+		b.locals[key] = l
+		b.order = append(b.order, key)
+		return l
+	}
 	lua := luaName(bare)
 	for {
 		taken := false
@@ -570,7 +606,7 @@ func (b *body) variable(name string) (*npcVar, error) {
 			return nil, unsupported("variables", "%s is an NPC variable in a function", name)
 		}
 		scope = "npc"
-		if n.c.sharedVar(n.line.Name, key) {
+		if n.c.sharedVar(n.line.Name, key) || n.dotShared {
 			scope = "npc_shared"
 		}
 		if n.c.duplicated[n.line.Name] {
@@ -615,8 +651,11 @@ func (b *body) variable(name string) (*npcVar, error) {
 	return v, nil
 }
 
+// variableNameOK reports whether wa.variables takes the name. It may
+// start with a digit once its prefix is gone, such as $@3rdgc_room01
+// (review decision 60, F1).
 func variableNameOK(s string) bool {
-	if len(s) > 64 || s == "" || s[0] >= '0' && s[0] <= '9' {
+	if len(s) > 64 || s == "" {
 		return false
 	}
 	for _, c := range s {

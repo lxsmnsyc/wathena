@@ -6,10 +6,10 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 13459 of 19892 NPC lines are placed, duplicates too: 282 shops and 13177 of 19420 script NPCs.
-- 16 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
+- 13575 of 19892 NPC lines are placed, duplicates too: 282 shops and 13293 of 19420 script NPCs.
+- 7 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
 - 55 of 56 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
-- 650 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
+- 669 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
 - Pre-renewal classic is experimental until `core.ruleset.pre_renewal` matches rAthena's pre-renewal (phase 10 item 1). `waserver` warns at start.
 
 ## Folders
@@ -18,35 +18,35 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 
 | Folder | Lines | Placed | Not placed |
 |---|---:|---:|---:|
-| airports | 63 | 62 | 1 |
+| airports | 63 | 63 | 0 |
 | battleground | 295 | 0 | 295 |
 | cities | 947 | 923 | 24 |
 | custom | 130 | 116 | 14 |
 | events | 150 | 148 | 2 |
-| guides | 95 | 92 | 3 |
+| guides | 95 | 95 | 0 |
 | guild | 534 | 0 | 534 |
 | guild2 | 478 | 0 | 478 |
 | guild3 | 255 | 0 | 255 |
 | instances | 3531 | 4 | 3527 |
-| jobs | 1804 | 1688 | 116 |
+| jobs | 1804 | 1709 | 95 |
 | kafras | 97 | 97 | 0 |
-| merchants | 690 | 466 | 224 |
+| merchants | 690 | 473 | 217 |
 | mobs | 13 | 12 | 1 |
-| other | 3466 | 3068 | 398 |
-| quests | 6622 | 6263 | 359 |
+| other | 3466 | 3075 | 391 |
+| quests | 6622 | 6340 | 282 |
 | warps | 250 | 238 | 12 |
 
 ## What blocks the rest
 
-2442 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+2379 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|
-| variables | 491 | variables: 'step is an instance variable |
-| instance folder | 334 | instance folder: the instance system places the NPCs of the instances folder |
+| variables | 464 | variables: 'step is an instance variable |
+| instance folder | 336 | instance folder: the instance system places the NPCs of the instances folder |
 | instance_npcname | 327 | instance_npcname |
 | event oninstanceinit | 304 | event oninstanceinit |
-| siege folder | 196 | siege folder: the siege system places the NPCs of the guild folders |
+| siege folder | 202 | siege folder: the siege system places the NPCs of the guild folders |
 | battleground | 155 | battleground: battlegrounds are a v0.3.0 system |
 | navigateto | 82 | navigateto |
 | waitingroom | 47 | waitingroom |
@@ -59,19 +59,19 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | questinfo | 16 | questinfo: a computed condition |
 | instance_mapname | 15 | instance_mapname |
 | achievementinfo | 14 | achievementinfo |
-| getd | 13 | getd: a name whose fixed start does not fix its scope |
 | mesitemlink | 13 | mesitemlink: without brackets or with a name of its own |
 | callshop | 11 | callshop: a computed shop |
 | add_reputation_points | 10 | add_reputation_points |
 | instance | 10 | instance: 1@mist is an instance map, which wAthena does not have yet |
 | getmercinfo | 9 | getmercinfo |
 | refineui | 9 | refineui |
-| sscanf | 9 | sscanf |
-| assignment in an expression | 8 | assignment in an expression |
-| getarg | 8 | getarg: outside a function |
 | bg_unbook | 7 | bg_unbook |
 | floating | 7 | floating: a script NPC without a map whose script does nothing |
 | openstylist | 7 | openstylist |
+| setcell | 7 | setcell: basilica cells: wAthena's Basilica keeps no cell flag, and battlegrounds do not exist |
+| isequippedcnt | 6 | isequippedcnt |
+| getarraysize | 5 | getarraysize: not of a variable |
+| instance_check_party | 5 | instance_check_party |
 
 - `event <label>` is a label that rAthena runs on its own for a system that does not exist, such as `OnAgitStart`, or for an event the API does not have, such as `OnPCKillEvent`. Every other label converts to an `npc_event` handler (review decision 58), and the player labels, such as `OnPCLoginEvent`, to handlers of the player events of every map too (review decision 59).
 - `parameter <name>` reads or changes a player parameter that does not convert, such as `MaxWeight`.
