@@ -150,10 +150,7 @@ OnTimer1000:
 	// with the player.
 	moveTo(h, rt, 2000)
 	moveTo(h, rt, 2500)
-	var got []firedEvent
-	for _, ev := range h.fired {
-		got = append(got, ev)
-	}
+	got := h.fired
 	if len(got) != 1 || got[0].label != "ontimer1000" || got[0].player != 1 {
 		t.Fatalf("fired %+v", got)
 	}
