@@ -265,7 +265,7 @@ func (b *body) playerTimer(name string, args []Expr) error {
 	if err != nil {
 		return err
 	}
-	b.line("player:add_timer(%s, %s)", ms.asInt(), event)
+	b.line("R.add_timer(player, %s, %s)", ms.asInt(), event)
 	return nil
 }
 

@@ -119,7 +119,7 @@ func TestBuiltinsConvert(t *testing.T) {
 		{`{ startnpctimer; end; }`, "NpcTimer:of(player):start()"},
 		{`{ mes "" + getnpctimer(0); end; }`, "NpcTimer:of(player):tick()"},
 		// Player timers (C2).
-		{`{ addtimer 3000, "Other#t::OnGo"; deltimer "Other#t::OnGo"; end; }`, `player:add_timer(3000, "Other#t::OnGo")`},
+		{`{ addtimer 3000, "Other#t::OnGo"; deltimer "Other#t::OnGo"; end; }`, `R.add_timer(player, 3000, "Other#t::OnGo")`},
 		{`{ deltimer "Other#t::OnGo"; end; }`, `player:remove_timer("Other#t::OnGo")`},
 		{`{ addtimer 3000, "OnGo"; end; }`, "-- addtimer without \"::\" finds no event"},
 		// Equipment reads.

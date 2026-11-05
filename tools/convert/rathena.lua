@@ -968,6 +968,14 @@ function NpcTimer:due()
 	return self.handle ~= nil and 1 or 0
 end
 
+-- add_timer is addtimer. pc_addeventtimer fails quietly with 32 timers
+-- and the script goes on, where player:add_timer raises an error. A
+-- negative time is due at once, as add_timer takes it, and a huge one
+-- is cut to the longest the API takes.
+function R.add_timer(player, ms, label)
+	pcall(player.add_timer, player, math.min(math.max(ms, 0), 1 << 40), label)
+end
+
 -- Equipment reads by rAthena's EQI_ slot numbers (pc.cpp equip_bitmask).
 local equip_slots = {
 	[0] = "left_accessory", "right_accessory", "shoes", "garment", "head_low", "head_middle", "head_top",

@@ -158,3 +158,47 @@ OnTimer1000:
 		t.Error(m)
 	}
 }
+
+// TestRunOnInitCallsubWaits checks an OnInit whose callsub target waits.
+func TestRunOnInitCallsubWaits(t *testing.T) {
+	h, rt, _, logs := timerRuntime(t, map[string]string{"Sub#t": `{
+	end;
+OnInit:
+	callsub L_Setup;
+	end;
+L_Setup:
+	announce "a", bc_all;
+	sleep 1000;
+	announce "b", bc_all;
+	return;
+}`})
+	moveTo(h, rt, 0)
+	moveTo(h, rt, 1000)
+	if got := strings.Join(h.said, "|"); got != "a|b" {
+		t.Fatalf("said %q", got)
+	}
+	for _, m := range logs.msgs {
+		t.Error(m)
+	}
+}
+
+// TestOnInitCallfuncWaitsRefused checks that an OnInit that calls a
+// function which waits is refused: the function's wait has no
+// conversation, and only OnInit's own waits are wrapped.
+func TestOnInitCallfuncWaitsRefused(t *testing.T) {
+	builtinFunctions["Nap"] = `{
+	sleep 1000;
+	return;
+}`
+	defer delete(builtinFunctions, "Nap")
+	res := builtinResult(t, map[string]string{"Fn#t": `{
+	end;
+OnInit:
+	callfunc "Nap";
+	end;
+}`})
+	n := res.NPCs[len(res.NPCs)-1]
+	if n.Status == Full || len(n.Unsupported) == 0 || !strings.Contains(n.Unsupported[0], "OnInit runs without a player") {
+		t.Fatalf("%s %v", n.Status, n.Unsupported)
+	}
+}
