@@ -395,8 +395,7 @@ OnTimer2000:
 		t.Fatal(err)
 	}
 	for _, now := range []int64{999, 1000, 2000, 2999, 3000, 3999, 4000} {
-		h.now = now
-		rt.Advance(now)
+		moveTo(h, rt, now)
 	}
 	for _, m := range logs.msgs {
 		t.Error(m)
