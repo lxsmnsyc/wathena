@@ -1722,7 +1722,7 @@ Permission: `game.read`.
 
 #### `player:take_item(item, amount, options?) → boolean`
 
-Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. With refine, cards or signed_by_character it takes only the copies count_item counts with them, those not equipped first, as delitem2. Returns false, and takes nothing, when there are too few.
+Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. With refine, cards or signed_by_character it takes only the copies count_item counts with them, and rentals too, those not equipped first, as delitem2. Returns false, and takes nothing, when there are too few.
 
 | Parameter | Type | Meaning |
 |---|---|---|

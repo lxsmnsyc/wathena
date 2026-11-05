@@ -38,6 +38,19 @@ Rows of the generated reports, commit 16d728b -> this branch. Command rows: scri
 
 Remaining reasons: callshop `Pet_Items` and `tool_shop_lasagna#Extended` are not shops in the extract; the 2 partly barters are barter_refine_1 and barter_refine_2 (an item sold twice). The scripts left "not" in the jobname, freeloop, isequippedcnt and mesitemlink rows fail on other commands.
 
+## Review round 1
+
+- Rentals: `count_item` with a refine leaves rentals out again (countitem2 reads expire_time, script.cpp 7192); `take_item`'s exact match takes rentals (delitem2 does not read it). Two predicates in server/zone/itemactions.go: `specMatches` (count) and `exactMatches` (take).
+- `delitem2` ends the script when the player has too few (`if not player:take_item(...) then R.stop() end`). Plain `delitem` is unchanged; the orchestrator fixes it apart.
+- card 1 254 needs card 2 = 0 (refused otherwise, `R.match` raises), and cards 3 and 4 are masked to 16 bits.
+- Barter: a cost refine above the mode's MAX_REFINE asks for MAX_REFINE (zone, as barter_parseBodyNode caps it); a cost refine on an item that cannot be refined fails to load (gamedata npcShops).
+- mesitemlink: a computed brackets argument is evaluated (`R.first`); a name of its own keeps `<` and `>`, as rAthena.
+- The report lists scripts whose computed callshop may reach a shop that does not convert. None does now, so the note is absent.
+- `jobs.name` of a mod job without a display name gives its name in the mod.
+- Decision 0072 names the node barter-entries for the barter items sold twice.
+- New tests: tools/convert `TestRunCommandHelpers` (R.match, R.count_equipped, R.equip_option on a worn copy, R.party_members_into, R.callshop, R.item_link), more cases in `TestItemCommandsConvert`; server/zone `TestTakeItemExactOrder` (rentals, equipped last, cards), `TestBarterRefineCapped`.
+- Report rows did not change.
+
 ## Deviations
 
 - G13 uses a new `wa.RandomOption.id` field instead of the name table in rathena.lua the review named: the zone knows the IDs, and it covers mods' options.
@@ -53,11 +66,11 @@ Remaining reasons: callshop `Pet_Items` and `tool_shop_lasagna#Extended` are not
 ## Gotchas
 
 - `wa.jobs` exists only when the constants are loaded (prelude builds it from `H.constants()`). Zone tests without constants cannot call `jobs.name`; tools/convert's run tests can.
-- `count_item` with a refine now matches the signer (0 = unsigned) and counts rentals too, as countitem2. A signed copy no longer counts for a plain countitem2 match.
+- `count_item` with a refine now matches the signer (0 = unsigned). A signed copy no longer counts for a plain countitem2 match. `take_item`'s exact match takes rentals, `count_item`'s does not.
 - A cost item with a refine still leaves out copies with cards, and the shop window does not show the refine (no protocol field). The server checks it.
-- `delitem2`, like `delitem`, does not end the script when the player has too few, where rAthena does.
+- Plain `delitem` does not end the script when the player has too few, where rAthena does. `delitem2` does.
 - `mesitemlink`'s brackets never show; the web client draws a link's item from its own names.
-- An item a barter sells twice (5 items, barter_refine_1 and _2) is the open part of G7.
+- An item a barter sells twice (5 items, barter_refine_1 and _2) is the open part of G7, for the node barter-entries.
 
 ## Proposed learnings
 
@@ -70,6 +83,7 @@ Remaining reasons: callshop `Pet_Items` and `tool_shop_lasagna#Extended` are not
 - `go test -count=1 ./tools/convert`: pass (after fixing `TestBuiltinsConvert`'s old mesitemlink expectation).
 - `go test -p 1 -count=1 ./server/modscript/... ./server/mod ./server/shop ./server/status ./server/gamedata`: pass. `go test -p 1 -count=1 ./server/zone`: pass (192 s).
 - `scripts/check.sh vet lint`: pass.
+- After review round 1: `go test -count=1 ./tools/convert` (includes the three report and run tests), `go test -p 1 -count=1 ./server/gamedata ./server/status ./server/mod ./server/modscript/... ./server/zone`, `scripts/check.sh vet lint`: pass.
 - Reports regenerated with `go run ./tools/wactl convert npcs --mode <renewal|pre-renewal> --report ...` and `convert classic`; Lua docs with `go test ./server/modscript/luaapi -update`.
 
 ## Size

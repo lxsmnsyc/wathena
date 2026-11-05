@@ -1211,11 +1211,11 @@ Methods on player handles check their own permissions, such as `player.give_item
     - The `touch` event gets a third argument, `waited`, true for a touch that waited for the player's conversation to end (E2). Converted NPCs without a touch label click on touch only when it is false, as rAthena drops the touch of a player who talks. `Runtime.Touch` takes it.
     - An assignment used as a value reads left to right. A name that no fixed start of the script scopes goes through run-time helpers that read the prefix and declare the variable then. A script with a computed `.` name keeps its `.` variables as NPC variables, and a function with a computed `.@` name keeps them in one table.
 65. Details of review decision 60's commands, settled while building them (converter-commands, [decision 0072](../decisions/0072-converter-commands.md)). These add to API 1.0 only:
-    - `jobs.name(job)` gives rAthena's job names (job_name, map_msg.conf) for core's jobs, a mod job's display_name, and "Unknown Job" for other numbers. It needs `game.read`.
+    - `jobs.name(job)` gives rAthena's job names (job_name, map_msg.conf) for core's jobs, a mod job's display_name (its name in the mod without one), and "Unknown Job" for other numbers. It needs `game.read`.
     - `player:count_equipped(item)` counts the amount of each worn copy, or a card's places in worn copies, each copy once. It needs `game.read`.
-    - `wa.FromOptions` gets `signed_by_character`, a character ID: with a refine, `count_item` and `take_item` match only copies named for it, and without it only copies named for no one. `take_item` takes `refine`, `cards` and `signed_by_character`, the copies that are not equipped first. With a refine, `count_item` counts rentals too, as countitem2.
-    - `wa.RandomOption` gets `id`, the record's rAthena option ID, 0 for a mod's option.
-    - A cost item of `data/npcs.yml` takes `refine`, 1 to 20: copies at it, or at the lowest refine above it. A cost takes at most 6 items and currencies, up from 5, as MAX_BARTER_REQUIREMENTS. A barter that sells an item twice still does not convert: a purchase names the item, and the stock is kept by item.
+    - `wa.FromOptions` gets `signed_by_character`, a character ID: with a refine, `count_item` and `take_item` match only copies named for it, and without it only copies named for no one. `take_item` takes `refine`, `cards` and `signed_by_character`, the copies that are not equipped first, rentals too, as delitem2. `count_item` leaves rentals out with a refine too, as countitem2.
+    - `wa.RandomOption` gets `id`, the record's rAthena option ID, 0 for a mod's option, as for no option.
+    - A cost item of `data/npcs.yml` takes `refine`, 1 to 20: copies at it, or at the lowest refine above it. A refine above the mode's MAX_REFINE asks for MAX_REFINE, and a refine on an item that cannot be refined fails to load, as barter_parseBodyNode. A cost takes at most 6 items and currencies, up from 5, as MAX_BARTER_REQUIREMENTS. A barter that sells an item twice still does not convert: a purchase names the item, and the stock is kept by item (node barter-entries).
 
 ## Version
 

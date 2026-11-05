@@ -15,14 +15,16 @@
 
 ### jobname (E3)
 
-- `jobname(<job>)` becomes `jobs.name(job)`. For core's jobs it gives rAthena's `job_name` (pc.cpp), whose names come from `conf/msg_conf/map_msg.conf`: "Swordsman", "Magician", and the mounted forms' own names ("Knight" for `JOB_KNIGHT2`). The table is `server/modscript/jobnames.go`, made from those two files. A mod job gives its record's `display_name`. Any other number gives "Unknown Job", msg 655. `display_name` of core's records stays as it is ("Swordman"): it is what the client shows.
+- `jobname(<job>)` becomes `jobs.name(job)`. For core's jobs it gives rAthena's `job_name` (pc.cpp), whose names come from `conf/msg_conf/map_msg.conf`: "Swordsman", "Magician", and the mounted forms' own names ("Knight" for `JOB_KNIGHT2`). The table is `server/modscript/jobnames.go`, made from those two files. A mod job gives its record's `display_name`, or its name in the mod when the record has none. Any other number gives "Unknown Job", msg 655. `display_name` of core's records stays as it is ("Swordman"): it is what the client shows.
 
 ### delitem2 and countitem2 (G5)
 
 - `delitem2 <item>,<amount>,<identify>,<refine>,<attribute>,<card1>..<card4>` becomes `player:take_item(item, amount, { refine, cards })`. Only identified copies that are not broken convert, as for `countitem2`.
 - card 1 `CARD0_CREATE` (254) is a copy named for the character in cards 3 and 4, as getnameditem makes it. It converts to `signed_by_character`. Computed cards go through `R.match`, which reads them when the script runs. A forged or pet mark stays refused. `countitem2` uses the same options, so the sign quest's check (the_sign_quest.txt, Knight#ss) now runs.
 - `take_item` with these options takes the copies that are not equipped first, then the equipped ones, in slot order, as `buildin_delitem_search` with an exact match. Too few take nothing.
-- With a refine, `count_item` also matches the signer (0 for none), and counts rentals: `script_countitem_sub`'s exact match reads no rental time.
+- With a refine, `count_item` also matches the signer (0 for none). It still leaves rentals out, unless `rentals` is set, as `script_countitem_sub` (script.cpp 7192). `take_item` takes rentals too: `buildin_delitem_search` reads no rental time.
+- A card 1 of 254 needs card 2 to be 0, as a named copy has: rAthena compares all four cards, so another card 2 matches nothing. Such a call is refused, and `R.match` raises an error for it. Cards 3 and 4 are read as 16-bit halves.
+- When the player has too few, `delitem2` ends the script, as rAthena's, which ends it and closes the dialog (script.cpp 8771): `if not player:take_item(...) then R.stop() end`. Plain `delitem` still goes on; that is a separate fix.
 
 ### isequippedcnt (G12)
 
@@ -31,21 +33,22 @@
 ### getequiprandomoption (G13)
 
 - `getequiprandomoption(<slot>, <index>, <type>)` becomes `R.equip_option`. ROA_ID reads the new `id` field of `wa.RandomOption`, the option record's rAthena ID, ROA_VALUE `value` and ROA_PARAM `param`. An index outside 0 to 4 or an empty slot gives -1, an index past the copy's options 0, and another type 0, as rAthena's. The type must be fixed.
-- The review asked for a table of option names in `rathena.lua`. The zone has each record's ID (`item.RandomOption.ID`), so a field is smaller and covers mods' options too.
+- The review asked for a table of option names in `rathena.lua`. The zone has each record's ID (`item.RandomOption.ID`), so a field is smaller and covers mods' options too. A mod's option has `id` 0, the same as a slot without an option.
 
 ### mesitemlink (G14)
 
-- Every form converts: `mesitemlink(<item>{, <brackets>{, <name>}})`. `text.item_link`'s link has no brackets, and the web client draws a link's item from its own item names (client/src/viewer/dialog.ts), with the link's text as its title. So the brackets argument is read and dropped, and a name of its own becomes the link's text through `R.item_link`, which is "" for an item that does not exist, as rAthena's.
+- Every form converts: `mesitemlink(<item>{, <brackets>{, <name>}})`. `text.item_link`'s link has no brackets, and the web client draws a link's item from its own item names (client/src/viewer/dialog.ts), with the link's text as its title. So the brackets argument changes nothing. It is still evaluated when it is not fixed, for its effects (`R.first`). A name of its own becomes the link's text through `R.item_link`, as rAthena writes it, with `<` and `>` kept. The web client's link pattern stops at `<INFO>`, so only a name with `<INFO>` in it would break the link. `R.item_link` is "" for an item that does not exist, as rAthena's.
 
 ### Barter costs (G7)
 
 - A cost item of `data/npcs.yml` takes `refine`, 1 to 20. It takes copies at that refine, then at the lowest refine above it, as `npc_barter_purchase`'s search for each copy (npc.cpp 3266). Costs with a refine take their copies after the unrefined costs of the same item. A cost item without a refine keeps its rule: unrefined copies.
+- A refine above the mode's MAX_REFINE (10 in pre-renewal) asks for MAX_REFINE, as barter_parseBodyNode caps it. A cost refine on an item that cannot be refined fails to load, as rAthena refuses the line.
 - A cost takes at most 6 items and currencies, as `MAX_BARTER_REQUIREMENTS`, up from 5. `shop:add_item`'s cost follows.
-- A barter that sells an item twice does not convert yet. A purchase names the item (`ShopBuyLine.item_id`), and the shop's stock is saved by shop and item (`shop_stock`). Selling one item twice needs an index in the protocol and in the table. See Details to review.
+- A barter that sells an item twice does not convert yet. A purchase names the item (`ShopBuyLine.item_id`), and the shop's stock is saved by shop and item (`shop_stock`). Selling one item twice needs an index in the protocol and in the table. The roadmap node barter-entries (a `should` node) builds it. See Details to review.
 
 ### callshop of a computed name (G10)
 
-- `callshop` of a computed name becomes `R.callshop(player, name, shops)`. `shops` maps the shop names the script's text has, and the shops whose names start with the name's fixed text (`"shop_ext171_" + .@str$`), to their records, or to false for a shop that does not convert. Another name opens nothing, as rAthena's, which logs "Shop not found" and goes on. A false one raises an error.
+- `callshop` of a computed name becomes `R.callshop(player, name, shops)`. `shops` maps the shop names the script's text has, and the shops whose names start with the name's fixed text (`"shop_ext171_" + .@str$`), to their records, or to false for a shop that does not convert. Another name opens nothing, as rAthena's, which logs "Shop not found" and goes on. A false one raises an error. The report lists the scripts that may reach such a shop, since their rows count as converted.
 
 ### freeloop (G11)
 
@@ -71,12 +74,12 @@
 
 ## Details to review
 
-- `delitem2`, like `delitem`, goes on when the player has too few, where rAthena ends the script and closes the dialog. The converted call's result is not read. Changing both is one rule for both commands.
-- A barter item that a barter sells a second time (barter_refine_1 and barter_refine_2: 5 items) does not convert. It needs `ShopBuyLine` to name the entry, a protocol change, and `shop_stock` keyed by entry, a migration. None of the 5 has a stock.
-- A cost item with a refine leaves out copies with cards, as cost items always did. rAthena's barter takes them. The shop window does not show the refine a cost asks for, since `ShopCostItem` has no refine: a protocol field. The server checks it.
+- Plain `delitem` goes on when the player has too few, where rAthena ends the script and closes the dialog. `delitem2` now ends it. delitem is left for a separate fix.
+- A barter item that a barter sells a second time (barter_refine_1 and barter_refine_2: 5 items) does not convert. It needs `ShopBuyLine` to name the entry, a protocol change, and `shop_stock` keyed by entry, a migration. None of the 5 has a stock. The node barter-entries builds it.
+- A cost item with a refine never takes copies with cards, as cost items always did. rAthena's barter takes them. `shop:add_item`'s cost has no refine, so a script cannot make a refined cost (marketscripts.go). The shop window does not show the refine a cost asks for, since `ShopCostItem` has no refine: a protocol field. The server checks it.
 - rAthena's barter with a required refine of 0 takes +0 copies first, then the lowest above. The converter writes no refine for 0, which takes unrefined copies only. No barter of the tree asks for refine 0 on a refinable item.
 - `jobs.name` follows `job_name` exactly, also where rAthena gives one name for two jobs, such as `JOB_SUMMER2`, which is "Summer".
-- `mesitemlink`'s brackets do not show, in either form. rAthena's default link has them.
+- `mesitemlink`'s brackets do not show, in either form. rAthena's default link has them. A name of its own keeps `<` and `>`, as rAthena's, where `text.item_link` strips them from item names.
 - `callshop` of a static name that is not a shop stays refused (`Pet_Items`, `tool_shop_lasagna#Extended`), where rAthena logs an error and goes on.
 - `getequiprandomoption`'s index reads `random_options` in order. wAthena lists the copy's options without gaps. rAthena's slots may have an empty slot before a filled one.
 - `isequippedcnt` counts a card in any worn copy. rAthena skips copies whose card 1 is a forged, named or pet mark. wAthena's copies keep those marks outside the card list, so the result is the same.

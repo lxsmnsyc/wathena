@@ -139,18 +139,23 @@ func (h scriptHost) CountItemSpec(player int64, itemID uint32, spec modscript.Co
 	return n, nil
 }
 
-// specMatches reports whether a slot holds copies a count spec matches.
-// countitem2's exact match (script_countitem_sub) reads no rental time,
-// so with a refine rentals count unless the spec asks for rentals only.
+// specMatches reports whether a slot holds copies a count spec matches,
+// as script_countitem_sub: rentals count only for a spec that asks for
+// rentals, with or without a refine.
 func specMatches(s *item.Slot, itemID uint32, spec modscript.CountSpec) bool {
+	return (s.Expires != 0) == spec.Rentals && exactMatches(s, itemID, spec)
+}
+
+// exactMatches reports whether a slot holds copies of the item with the
+// spec's refine, cards and signer, whatever their rental time, as
+// buildin_delitem_search's exact match. Without a refine any copy
+// matches.
+func exactMatches(s *item.Slot, itemID uint32, spec modscript.CountSpec) bool {
 	if s.ID != itemID || s.Amount <= 0 {
 		return false
 	}
 	if spec.Refine == nil {
-		return (s.Expires != 0) == spec.Rentals
-	}
-	if spec.Rentals && s.Expires == 0 {
-		return false
+		return true
 	}
 	return s.Refine == *spec.Refine && !s.Unidentified && !s.Broken && s.SignedBy == spec.SignedBy && slices.Equal(s.Cards, spec.Cards)
 }
@@ -165,7 +170,7 @@ func (h scriptHost) TakeItemSpec(player int64, itemID uint32, amount int, spec m
 	}
 	have := 0
 	for i := range p.inventory.Slots {
-		if s := &p.inventory.Slots[i]; specMatches(s, itemID, spec) {
+		if s := &p.inventory.Slots[i]; exactMatches(s, itemID, spec) {
 			have += s.Amount
 		}
 	}
@@ -178,7 +183,7 @@ func (h scriptHost) TakeItemSpec(player int64, itemID uint32, amount int, spec m
 				return true, nil
 			}
 			s := &p.inventory.Slots[slot]
-			if !specMatches(s, itemID, spec) || (s.Equip != 0) != equipped {
+			if !exactMatches(s, itemID, spec) || (s.Equip != 0) != equipped {
 				continue
 			}
 			n := min(s.Amount, amount)

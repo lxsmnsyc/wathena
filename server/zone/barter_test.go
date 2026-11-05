@@ -55,3 +55,21 @@ func TestBarterRefinedCost(t *testing.T) {
 		t.Errorf("knives %v, jellopy %d, potions %d", got, inventoryCount(a.inventory, 909), inventoryCount(a.inventory, 501))
 	}
 }
+
+// TestBarterRefineCapped asks for a refine above MAX_REFINE, which
+// barter_parseBodyNode caps: a copy at MAX_REFINE pays it.
+func TestBarterRefineCapped(t *testing.T) {
+	z, a, _, _ := marketZone(t, character.Item{Slot: 0, ID: 1201, Amount: 1, Refine: 20, Serial: item.NewSerial()})
+	s := shop.New("core:barter_cap", "Cap", false, false, "core", []shop.Item{
+		{ID: 501, Items: []shop.CostItem{{ID: 1201, Amount: 1, Refine: 25}}, Stock: -1, Initial: -1},
+	})
+	z.Mods = &Mods{Shops: shop.NewRegistry([]*shop.Shop{s})}
+	a.maxWeight = 1 << 30
+	z.openShop(a, s, nil)
+	z.buy(a, 0, []buyLine{{id: 501, amount: 1}})
+	z.commitTransfers()
+	z.stepAt(z.now + 50)
+	if o, _ := shopResultOf(events(a)); o != wathenav1.ShopOutcome_SHOP_OUTCOME_BOUGHT {
+		t.Errorf("buy with a +20 for a +25 cost: %v", o)
+	}
+}

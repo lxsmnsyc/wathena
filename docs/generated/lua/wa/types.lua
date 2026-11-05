@@ -498,7 +498,7 @@ function wa_Player:give_item_from_group(group) end
 ---@return integer?
 function wa_Player:count_item(item, options) end
 
----Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. With refine, cards or signed_by_character it takes only the copies count_item counts with them, those not equipped first, as delitem2. Returns false, and takes nothing, when there are too few.
+---Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. With refine, cards or signed_by_character it takes only the copies count_item counts with them, and rentals too, those not equipped first, as delitem2. Returns false, and takes nothing, when there are too few.
 ---@param item integer An item from items.id.
 ---@param amount integer 1 or more.
 ---@param options? wa.FromOptions

@@ -2282,6 +2282,10 @@ end
 -- and 4.
 function R.match(refine, c1, c2, c3, c4)
 	if c1 == 0xFE then
+		-- A named copy's card 2 is 0. rAthena compares all four cards.
+		if c2 ~= 0 then
+			R.unsupported("a named item's mark with a card 2 other than 0")
+		end
 		local id = (c3 & 0xFFFF) | ((c4 & 0xFFFF) << 16)
 		if id <= 0 then
 			R.unsupported("a copy named for no character")
@@ -2325,13 +2329,19 @@ function R.equip_option(player, slot, index, field)
 end
 
 -- item_link is mesitemlink with a name of its own: text.item_link's
--- form with that name. It is "" for an item that does not exist, as
--- rAthena's.
+-- form with that name, as rAthena writes it, without a change. It is ""
+-- for an item that does not exist, as rAthena's.
 function R.item_link(item, name)
 	if not pcall(items.name, item) then
 		return ""
 	end
-	return "<ITEMLINK>" .. tostring(name):gsub("[<>]", "") .. "<INFO>" .. item .. "</INFO></ITEMLINK>"
+	return "<ITEMLINK>" .. tostring(name) .. "<INFO>" .. item .. "</INFO></ITEMLINK>"
+end
+
+-- first returns its first argument. The others were evaluated for their
+-- effects, as an argument rAthena reads and the conversion does not use.
+function R.first(value)
+	return value
 end
 
 -- broken_id is getbrokenid: the nth broken item, from 1, or 0.

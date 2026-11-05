@@ -981,7 +981,8 @@ func (b *body) call(e *Call) (val, error) {
 		// mesitemlink(<item>{, <brackets>{, <name>}}). text.item_link's
 		// link has no brackets, and the client draws the item's own name
 		// in a link, so the brackets argument changes nothing (decision
-		// 0072). A name of its own goes in the link's text.
+		// 0072). It is still evaluated, for its effects. A name of its own
+		// goes in the link's text.
 		if len(args) < 1 || len(args) > 3 {
 			return val{}, unsupported(name, "arguments")
 		}
@@ -989,20 +990,32 @@ func (b *body) call(e *Call) (val, error) {
 		if err != nil {
 			return val{}, err
 		}
+		brackets := ""
 		if len(args) >= 2 {
-			if _, err := b.expr(args[1]); err != nil {
+			v, err := b.expr(args[1])
+			if err != nil {
 				return val{}, err
 			}
+			if v.static == nil {
+				brackets = v.code
+			}
 		}
+		code := ""
 		if len(args) == 3 {
 			label, err := b.expr(args[2])
 			if err != nil {
 				return val{}, err
 			}
-			return done(val{code: "R.item_link(" + it + ", " + label.asText() + ")", t: tStr}, nil)
+			code = "R.item_link(" + it + ", " + label.asText() + ")"
+		} else {
+			f.need("text")
+			code = "text.item_link(" + it + ")"
 		}
-		f.need("text")
-		return done(val{code: "text.item_link(" + it + ")", t: tStr}, nil)
+		if brackets != "" {
+			// Arguments run left to right: the link, then the brackets.
+			code = "R.first(" + code + ", " + brackets + ")"
+		}
+		return done(val{code: code, t: tStr}, nil)
 	case "getarraysize", "implode":
 		if len(args) == 0 {
 			return val{}, unsupported(name, "arguments")

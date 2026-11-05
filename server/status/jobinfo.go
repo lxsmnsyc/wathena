@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 )
 
 // Job records (proposal 0002, review decision 24): what server/gamedata
@@ -78,7 +79,12 @@ func (t *Tables) DisplayName(job int) string {
 // false for core's jobs and jobs the tables lack.
 func (t *Tables) ModJobName(job int) (string, bool) {
 	if j := t.jobs[job]; j != nil && j.info.Mod != "" {
-		return j.info.DisplayName, true
+		if j.info.DisplayName != "" {
+			return j.info.DisplayName, true
+		}
+		// A record without a display name shows its name in the mod.
+		_, local, _ := strings.Cut(j.info.Name, ":")
+		return local, local != ""
 	}
 	return "", false
 }

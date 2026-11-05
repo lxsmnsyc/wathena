@@ -441,6 +441,8 @@ func (b *body) callshopComputed(name val, e Expr) error {
 		rec := "false"
 		if ref.npc.Status != None {
 			rec = luaString("core:" + ref.npc.Name)
+		} else {
+			b.n.c.openShops[b.n.line.Name] = n
 		}
 		parts = append(parts, fmt.Sprintf("[%s] = %s", luaString(n), rec))
 	}

@@ -132,7 +132,20 @@ func (b *body) delitem2(args []Expr) error {
 	if err != nil {
 		return err
 	}
-	b.giveTake(name, "take_item", it, vals[0], match)
+	// rAthena ends the script, and closes the dialog, when the player
+	// has too few (script.cpp 8771). Plain delitem goes on (decision
+	// 0072).
+	n := vals[0]
+	switch {
+	case n.static != nil && *n.static <= 0:
+		b.n.c.zeroAmounts[b.n.line.Name] = true
+		b.line("-- %s with an amount of %d does nothing in rAthena.", name, *n.static)
+	case n.static != nil:
+		b.line("if not player:take_item(%s, %s, %s) then R.stop() end", it, n.asInt(), match)
+	default:
+		b.n.c.checkedAmounts[b.n.line.Name] = true
+		b.line("if not R.take_item(player, %s, %s, %s) then R.stop() end", it, n.asInt(), match)
+	}
 	return nil
 }
 
@@ -157,7 +170,12 @@ func matchOptions(name string, refine val, cards []val) (string, error) {
 		return fmt.Sprintf("R.match(%s, %s)", refine.asInt(), strings.Join(all, ", ")), nil
 	}
 	if *cards[0].static == card0Create {
-		id := *cards[2].static | *cards[3].static<<16
+		// A named copy's card 2 is 0 (getnameditem); rAthena compares
+		// all four cards, so another card 2 matches no copy.
+		if *cards[1].static != 0 {
+			return "", unsupported(name, "a named item's mark with a card 2 other than 0")
+		}
+		id := *cards[2].static&0xFFFF | (*cards[3].static&0xFFFF)<<16
 		if id <= 0 {
 			return "", unsupported(name, "a copy named for no character")
 		}

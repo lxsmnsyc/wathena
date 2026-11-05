@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -87,5 +88,55 @@ func TestTakeItemExact(t *testing.T) {
 		if !strings.HasSuffix(got[i], want[i]) {
 			t.Errorf("line %d: got %q, want %q", i, got[i], want[i])
 		}
+	}
+}
+
+// TestTakeItemExactOrder checks the rest of delitem2's and countitem2's
+// rules: count_item with a refine leaves rentals out unless rentals is
+// set (script_countitem_sub), take_item takes a rental (delitem's search
+// reads no rental time), takes the copies that are not equipped first,
+// and matches cards exactly.
+func TestTakeItemExactOrder(t *testing.T) {
+	z, p, n, logs := npcZone(t, clickScript(`
+    local knife = items.id("Knife")
+    player:send_message(player:count_item(knife, { refine = 5 }) .. " " .. player:count_item(knife, { refine = 5, rentals = true }) ..
+      " " .. player:count_item(knife, { refine = 1, cards = { 4001 } }))
+    player:send_message(tostring(player:take_item(knife, 2, { refine = 5 })) .. " " .. tostring(player:take_item(knife, 1, { refine = 1, cards = { 4001 } })) ..
+      " " .. tostring(player:take_item(knife, 1, { refine = 1, cards = { 4001 } })))
+`))
+	p.maxWeight = 1 << 30
+	for _, c := range []struct {
+		refine int
+		cards  []uint32
+		x      item.Extra
+	}{{5, nil, item.Extra{Expires: 1 << 40}}, {5, nil, item.Extra{}}, {5, nil, item.Extra{}}, {1, []uint32{4001}, item.Extra{}}, {1, []uint32{4001, 4001}, item.Extra{}}} {
+		if r := z.addCopy(p, 1201, 1, c.refine, c.cards, c.x, scriptOrigin); r != item.AddSuccess {
+			t.Fatal(r)
+		}
+	}
+	// The first +5 that is not rented is worn: it goes last.
+	worn := -1
+	for i, s := range p.inventory.Slots {
+		if s.ID == 1201 && s.Refine == 5 && s.Expires == 0 {
+			worn = i
+			break
+		}
+	}
+	p.inventory.Slots[worn].Equip = item.EqpHandR
+	got := messages(click(z, p, n))
+	want := []string{"2 1 1", "true true false"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("got %q, want %q: %s", got, want, logs)
+	}
+	var left []string
+	for _, s := range p.inventory.Slots {
+		if s.ID == 1201 && s.Amount > 0 {
+			left = append(left, fmt.Sprintf("+%d %d %v %v", s.Refine, len(s.Cards), s.Expires != 0, s.Equip != 0))
+		}
+	}
+	// Of the three +5: the rental and the one not worn go, the worn one
+	// stays. The copy with two cards stays.
+	if want := []string{"+5 0 false true", "+1 2 false false"}; !slices.Equal(left, want) {
+		t.Errorf("left %q, want %q", left, want)
 	}
 }

@@ -361,7 +361,9 @@ func (z *Zone) buy(p *Player, npc uint32, lines []buyLine) {
 		return int(a.id) - int(b.id)
 	})
 	for _, k := range keys {
-		got := costSlots(p.inventory, k.id, k.refine, costItems[k], taken)
+		// A refine above the mode's MAX_REFINE asks for MAX_REFINE, as
+		// barter_parseBodyNode caps it.
+		got := costSlots(p.inventory, k.id, min(k.refine, z.maxRefine()), costItems[k], taken)
 		if got == nil {
 			fail(wathenav1.ShopOutcome_SHOP_OUTCOME_NOT_ENOUGH_ITEMS, k.id)
 			return

@@ -15,3 +15,4 @@
 - G10: names in the script's text did not cover `"shop_ext171_" + .@str$`; added shops starting with the name's fixed text.
 - Step 3: G15 had nothing left to map; only UNPC_GROUP_ID (client group mark) is refused, with a clearer reason.
 - Tests: tools/convert full, server/modscript/..., mod, shop, status, gamedata, zone full, check.sh vet lint: pass.
+- Review round 1: I had misread script_countitem_sub; the exact form does check expire_time (7192). Split count and take predicates. delitem2 now ends the script on failure. Named-copy card 2 check, 16-bit masks, MAX_REFINE cap, unrefinable cost refused at load, mesitemlink brackets evaluated and names verbatim, report note for computed callshop, mod job name fallback.
