@@ -1025,7 +1025,13 @@ func (r *Runtime) Fire(event string, args ...Arg) {
 }
 
 // Advance runs the timers of the zone clock that are due at now, in zone
-// milliseconds, in order of due time.
+// milliseconds, in order of due time. A host must call RunServerTimers
+// too, and give Options.Clock: timers of the server clock, which
+// converted initnpctimer and OnInit waits use, never run, and raise an
+// error without a clock.
+//
+// A timers.every callback that waits longer than its interval starts one
+// handler thread per run, and they pile up until the context ends.
 func (r *Runtime) Advance(now int64) { r.runDue(now, false) }
 
 // RunServerTimers runs the timers of the server clock that are due at
@@ -1058,8 +1064,9 @@ func (r *Runtime) runDue(now int64, server bool) {
 		skip := runs && r.off(t.ctx)
 		if runs && !skip && !server && r.overBudget(t.ctx) {
 			// The timer stays due, and runs at the next tick its mod has
-			// budget for. A server clock timer has no tick to wait for in
-			// a sleeping zone, so it skips this, as schedules do.
+			// budget for. A server clock timer skips this, in awake zones
+			// too: a sleeping zone has no tick to wait for, and schedules
+			// skip it as well.
 			continue
 		}
 		if t.wait != nil {

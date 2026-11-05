@@ -8,3 +8,10 @@
 - The attached NPC timer is one `NpcTimer` per player name. rAthena shares one tick between them; we do not.
 - The reports show: initnpctimer, stopnpctimer, setnpctimer, startnpctimer and OnInit refusals drop; sleep converts in more labels.
 - Open doubt: remote player handles cannot add timers.
+
+## Review round 1
+
+- Handoff and logout of player timers now have zone tests (round trip z, b, z; leave). Sleeping-zone path has a test through scheduleWait.
+- `OnInit: callsub` with a wait converts and runs (callsub is inlined); a callfunc to a waiting function is already refused. No converter change; two tests pin it.
+- Converted addtimer uses R.add_timer (quiet at the 32 cap, clamps ms). deltimer unchanged.
+- Notes of item 5 are in decision 0070 and in Advance's comment.

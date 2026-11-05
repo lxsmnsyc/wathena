@@ -32,7 +32,7 @@
 - NPC timers wait on a server clock timer (C1).
 - A timer attached to the player (C3): `initnpctimer` and `startnpctimer` with a flag use `NpcTimer:of(player, true)`, another timer of the same labels, kept by the player's name. It runs each label as `npc:fire_event(label, { player })` and ends when that fails, as rAthena's "Attached player not found". Plain commands act on the player's attached timer when it has one.
 - Timer commands on another NPC (C4): every NPC with timers listens to the hidden labels `WaTimerInit`, `WaTimerStart`, `WaTimerStop` and `WaTimerSet0`. The commands fire them with `R.fire`, or with `R.doevent` and the player for an attached timer, which needs an NPC on the same map. `setnpctimer` there takes the tick 0 only.
-- `addtimer` and `deltimer` map to `player:add_timer` and `player:remove_timer`. A label without `::` finds no NPC, as in rAthena, and converts to a comment.
+- `addtimer` maps to `R.add_timer`, which wraps `player:add_timer`, and `deltimer` to `player:remove_timer`. A label without `::` finds no NPC, as in rAthena, and converts to a comment.
 
 ## Breaks
 
@@ -53,6 +53,14 @@
 - An attached NPC timer shares no tick with the NPC's own timer. rAthena shares `nd->u.scr.timer` between them.
 - `stopnpctimer` with a flag acts on the player's attached timer; in rAthena it detaches first.
 - `setnpctimer` with a tick other than 0 on another NPC, `getnpctimer` of another NPC, and an attach flag that is computed, are refused.
+- Hosts must call `RunServerTimers` as well as `Advance`, and give `Options.Clock`, or converted `initnpctimer` and `OnInit` waits fail. The comment of `Advance` says so.
+- A `timers.every` callback that waits longer than its interval starts one thread per run, and they pile up until the context ends.
+- Server clock timers skip the CPU budget in awake zones too, not only in sleeping ones.
+- Converted NPC timers keep an empty zone waking while they run (C1's cost). A perf-pass could look at it.
+- Server clock timers follow wall time: a step of the clock delays them or fires them together.
+- An attached NPC timer ends when its player leaves the NPC's map, since `fire_event` then fails, as rAthena's "Attached player not found".
+- Converted `addtimer` goes through `R.add_timer`: it fails quietly at 32 timers and the script goes on, as `pc_addeventtimer`, a negative time is due at once, and a huge one is cut to 2^40 ms. The Lua API still raises for mods.
+- An `OnInit` that calls a function which waits is refused (the function's wait has no conversation); a `callsub` inside `OnInit` is inlined and converts.
 - `schedules.yearly` stays deferred (review decision 60, C5).
 
 ## How to check it worked
