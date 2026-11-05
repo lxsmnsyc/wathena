@@ -1,7 +1,7 @@
 ---
 id: converter-names
 title: Convert variable names, getarg, labels and expressions rAthena's parser takes
-status: active
+status: done
 priority: must
 type: feature
 outline: false
