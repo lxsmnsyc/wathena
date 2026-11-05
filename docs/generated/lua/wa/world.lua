@@ -29,7 +29,7 @@ function world.play_music(file) end
 ---@return wa.Npc?
 function world.get_npc(name) end
 
----Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent "::OnX" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs.
+---Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent "::OnX" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs, when one of the zone's NPC sources names the label in quotes, without regard to case (review decision 60). A label built at run time, such as "OnE" .. i, does not start a zone.
 ---@param name string An event label, such as OnEnable, without regard to case.
 ---@return integer
 function world.fire_npc_event(name) end

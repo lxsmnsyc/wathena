@@ -6,7 +6,7 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 13304 of 15337 NPC lines are placed, duplicates too: 282 shops and 13022 of 14865 script NPCs.
+- 13322 of 15337 NPC lines are placed, duplicates too: 282 shops and 13040 of 14865 script NPCs.
 - 16 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
 - 55 of 55 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
 - 650 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
@@ -26,9 +26,9 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | instances | 671 | 4 | 667 |
 | jobs | 1804 | 1688 | 116 |
 | kafras | 97 | 97 | 0 |
-| merchants | 690 | 463 | 227 |
-| other | 3466 | 3065 | 401 |
-| quests | 6622 | 6242 | 380 |
+| merchants | 690 | 466 | 224 |
+| other | 3466 | 3067 | 399 |
+| quests | 6622 | 6255 | 367 |
 | warps | 250 | 238 | 12 |
 
 The extract leaves out the script NPCs of these folders, so none of them load:
@@ -45,7 +45,7 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 
 ## What blocks the rest
 
-437 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+421 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|
@@ -67,23 +67,23 @@ The extract leaves out the script NPCs of these folders, so none of them load:
 | floating | 7 | floating: a script NPC without a map whose script does nothing |
 | getd | 7 | getd: a computed name of a .@ or . variable, which are Lua locals |
 | openstylist | 7 | openstylist |
-| unittalk | 7 | unittalk: a flag with a game ID other than the attached player's |
 | labels | 6 | labels: l_askquestions: a label inside a block, which a jump from outside the block reaches |
 | sscanf | 6 | sscanf |
 | getarraysize | 5 | getarraysize: not of a variable |
+| initnpctimer | 5 | initnpctimer: a timer attached to the player |
 | open_quest_ui | 5 | open_quest_ui: a computed quest |
 | setunitdata | 5 | setunitdata: a type other than UNPC_CLASS, UNPC_SEX and the UNPC_ looks |
-| unloadnpc | 5 | unloadnpc: an NPC with duplicates, which rAthena unloads with it |
 | getcharid | 4 | getcharid: battlegrounds, clans and other IDs |
 | getequiprefinecost | 4 | getequiprefinecost: a cost other than REFINE_COST_NORMAL, which the refine data lacks |
-| initnpctimer | 4 | initnpctimer: a timer attached to the player |
 | isequippedcnt | 4 | isequippedcnt |
 | item_enchant | 4 | item_enchant |
+| item_reform | 4 | item_reform |
+| npctalk | 4 | npctalk: an NPC name that is not a string |
 
 - `event <label>` is a label that rAthena runs on its own for a system that does not exist, such as `OnAgitStart`, or for an event the API does not have, such as `OnPCKillEvent`. Every other label converts to an `npc_event` handler (review decision 58), and the player labels, such as `OnPCLoginEvent`, to handlers of the player events of every map too (review decision 59).
 - `parameter <name>` reads or changes a player parameter that does not convert, such as `MaxWeight`.
 - `floating` is a script NPC without a map whose script does nothing. Other NPCs without a map are placed, and run in the start map's zone (review decision 58). `instance` is an NPC on an instance map. `sprite` is a view that is not an NPC sprite.
-- The NPC-to-NPC commands (`donpcevent`, `doevent`, enable and disable, cloaking and hiding, `getvariableofnpc`, `unloadnpc`) convert since review decision 58. The forms that do not, such as `doevent` to an NPC on another map, block 8 of these scripts.
+- The NPC-to-NPC commands (`donpcevent`, `doevent`, enable and disable, cloaking and hiding, `getvariableofnpc`, `unloadnpc`) convert since review decision 58. The forms that do not, such as `doevent` to an NPC on another map, block 3 of these scripts.
 
 ## Systems not built
 

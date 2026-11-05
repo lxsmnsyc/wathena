@@ -621,11 +621,12 @@ function wa_Player:set_save_point(map, x, y) end
 ---@param options? wa.EffectOptions
 function wa_Player:show_effect(effect, options) end
 
----Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2.
+---Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2. to = a player stops it for that player alone, as SELF (review decision 60).
 ---@param effect integer An effect from wa.effects.
-function wa_Player:remove_effect(effect) end
+---@param options? wa.EffectOptions to, as player:show_effect's.
+function wa_Player:remove_effect(effect, options) end
 
----Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself is bc_self: only the player hears it. The chat filter and the chat hooks do not see it.
+---Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself, or "self", is bc_self: only the player hears it. "self" also works on a player of another map. The chat filter and the chat hooks do not see it.
 ---@param text string 1 to 255 bytes. Players see the player's name before it.
 ---@param options? wa.SayAloudOptions Only to: a player's line has no color.
 function wa_Player:say_aloud(text, options) end
@@ -1094,6 +1095,10 @@ function wa_Monster:set_modes(modes) end
 ---@param milliseconds integer Per cell, 20 to 1000.
 function wa_Monster:set_speed(milliseconds) end
 
+---Shows an emotion over the monster to everyone who sees it, as emotion on a monster's game ID (review decision 60). A monster of another map shows it after the current step.
+---@param emotion integer An emotion from wa.emotions.
+function wa_Monster:show_emotion(emotion) end
+
 ---The monster uses a ground skill on a cell with the skill's own cast time, as unitskillusepos. Returns false when the cast does not start, and for a skill that is not a ground skill.
 ---@param skill integer A ground skill from skills.id.
 ---@param level integer 1 to 100.
@@ -1157,6 +1162,11 @@ local wa_Npc = {}
 ---@param emotion integer An emotion from wa.emotions.
 function wa_Npc:show_emotion(emotion) end
 
+---Runs the NPC's touch handlers for a player who stands in its touch area, in a conversation, as a step in would: after the current step, waiting while the player talks. It is npc_touchnext_areanpc's touch of the next player in the area (review decision 60). false when the player is not in the area. An NPC of another map raises an error. Another mod's NPC needs npcs.control.
+---@param player wa.Player A player of the NPC's map.
+---@return boolean
+function wa_Npc:fire_touch(player) end
+
 ---Says a line as the NPC, as npctalk (script.cpp 16193): by default to every player who sees the NPC, as AREA. The to option sends it to the NPC's map, the world, or one player, as bc_map, bc_all and bc_self. A line from an NPC that a player does not see shows with the NPC's name and no speaker. An NPC without a map says nothing to its area or map. Another mod's NPC needs npcs.control.
 ---@param text string 1 to 255 bytes. Players see the NPC's name before it.
 ---@param options? wa.SayAloudOptions
@@ -1193,7 +1203,7 @@ function wa_Npc:is_cloaked(player) end
 ---Removes the NPC until the server restarts, as unloadnpc: it vanishes, its context ends after the current step, and its NPC variables go. Another mod's NPC needs npcs.control.
 function wa_Npc:remove() end
 
----Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; true for an NPC whose zone has not started its scripts. Another mod's NPC needs npcs.control.
+---Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; for an NPC whose zone has not started its scripts, whether one of the zone's NPC sources names the label in quotes (review decision 60). Another mod's NPC needs npcs.control.
 ---@param name string An event label, such as OnEnable, without regard to case.
 ---@param options? wa.FireEventOptions
 ---@return boolean
@@ -1204,9 +1214,10 @@ function wa_Npc:fire_event(name, options) end
 ---@param options? wa.EffectOptions
 function wa_Npc:show_effect(effect, options) end
 
----Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. Another mod's NPC needs npcs.control.
+---Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. to = a player stops it for that player alone, as SELF (review decision 60). Another mod's NPC needs npcs.control.
 ---@param effect integer An effect from wa.effects.
-function wa_Npc:remove_effect(effect) end
+---@param options? wa.EffectOptions to, as npc:show_effect's.
+function wa_Npc:remove_effect(effect, options) end
 
 ---Shows a title with the NPC's name, as setunittitle. Another mod's NPC needs npcs.control.
 ---@param text string At most 23 bytes. "" removes the title.
@@ -1997,6 +2008,8 @@ local wa_NpcEventOptions = {}
 ---@field name string The label, in lower case.
 ---@field player wa.Player? The player of npc:fire_event's player option, the killer of a monster's label, or nil. A player of another map is a handle that acts on its own map (review decision 59).
 ---@field conversation wa.Conversation? The conversation with the player, or nil without one, and for a player of another map.
+---@field monster_id integer? On a monster's label, the dead monster's ID, as monsters.id and rAthena's killedrid. nil on other events (review decision 60).
+---@field monster_game_id integer? On a monster's label, the dead monster's game ID, as killedgid. maps.find_monster no longer finds it.
 local wa_NpcEvent = {}
 
 ---The options of npc:fire_event.
@@ -2006,7 +2019,7 @@ local wa_FireEventOptions = {}
 
 ---The options of npc:say_aloud and player:say_aloud (review decision 58).
 ---@class wa.SayAloudOptions
----@field to "area"|"map"|"world"|wa.Player|nil Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self).
+---@field to "area"|"map"|"world"|"self"|wa.Player|nil Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self). "self" is the speaking player alone, for player:say_aloud only (review decision 60).
 ---@field color integer? 0xRRGGBB, as npctalk's color. The chat's own color by default. NPC lines only.
 local wa_SayAloudOptions = {}
 

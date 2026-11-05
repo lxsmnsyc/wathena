@@ -776,6 +776,13 @@ new_npc, npc_ids = handle_type("npc", {
 	show_emotion = function(self, emotion)
 		return (call(H.npc_emotion, npc_ids[self], emotion))
 	end,
+	fire_touch = function(self, player)
+		local id = player_ids[player]
+		if id == nil then
+			error("npc:fire_touch: want a player handle", 2)
+		end
+		return (call(H.npc_fire_touch, npc_ids[self], id))
+	end,
 	say_aloud = function(self, text, options)
 		local to, to_id = send_to("npc:say_aloud", options, { to = true, color = true })
 		return (call(H.npc_present, npc_ids[self], "say_aloud", text, to, to_id, options ~= nil and options.color or nil))
@@ -936,6 +943,9 @@ end
 monster_methods.set_modes = function(self, modes)
 	call(H.monster_call, "set_modes", monster_ids[self], modes)
 end
+monster_methods.show_emotion = function(self, emotion)
+	call(H.monster_call, "show_emotion", monster_ids[self], emotion)
+end
 monster_methods.set_speed = function(self, milliseconds)
 	call(H.monster_call, "set_speed", monster_ids[self], milliseconds)
 end
@@ -1059,8 +1069,9 @@ npc_methods.show_effect = function(self, effect, options)
 	local to, to_id = send_to("npc:show_effect", options, { to = true })
 	return (call(H.npc_present, npc_ids[self], "show_effect", effect, to, to_id))
 end
-npc_methods.remove_effect = function(self, effect)
-	return (call(H.npc_present, npc_ids[self], "remove_effect", effect))
+npc_methods.remove_effect = function(self, effect, options)
+	local to, to_id = send_to("npc:remove_effect", options, { to = true })
+	return (call(H.npc_present, npc_ids[self], "remove_effect", effect, to, to_id))
 end
 npc_methods.set_guild = function(self, guild)
 	local id = 0
@@ -1134,8 +1145,9 @@ end
 player_methods.show_emotion = function(self, emotion)
 	return (call(H.player_present, player_ids[self], "show_emotion", emotion))
 end
-player_methods.remove_effect = function(self, effect)
-	return (call(H.player_present, player_ids[self], "remove_effect", effect))
+player_methods.remove_effect = function(self, effect, options)
+	local to, to_id = send_to("player:remove_effect", options, { to = true })
+	return (call(H.player_present, player_ids[self], "remove_effect", effect, to, to_id))
 end
 player_methods.play_sound = function(self, file, options)
 	options = present_options("player:play_sound", options, { ["repeat"] = true, to = true })
@@ -3983,8 +3995,12 @@ end
 -- npc_event runs an NPC's npc_event handlers of a label with the event
 -- object: in a conversation's thread when a player is attached, as
 -- doevent, or without one, as donpcevent (review decision 58).
-function R.npc_event(label, player_id, conversation_id, ...)
+function R.npc_event(label, monster, player_id, conversation_id, ...)
 	local fields = { name = label }
+	if monster ~= nil then
+		-- The monster whose death runs its label (review decision 60).
+		fields.monster_id, fields.monster_game_id = monster.id, monster.game_id
+	end
 	if player_id ~= nil then
 		fields.player = new_player(player_id)
 	end

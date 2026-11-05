@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/lxsmnsyc/wathena/server/modscript"
 	"slices"
 )
 
@@ -51,8 +52,9 @@ type touchEvent struct {
 	player  *Player
 	untouch bool
 	// label is set for an NPC event with a player (doevent), which waits
-	// in the same queue (npcworld.go).
-	label string
+	// in the same queue (npcworld.go), and killed for a monster label's.
+	label  string
+	killed *modscript.LabelMonster
 }
 
 // touches reports whether an NPC's touch area holds a cell.
@@ -108,6 +110,28 @@ func (z *Zone) queueTouch(n *entity, p *Player, untouch bool) {
 		return
 	}
 	z.scriptEvents = append(z.scriptEvents, scriptEvent{touch: &touchEvent{npc: n, player: p, untouch: untouch}})
+}
+
+// FireTouch is npc:fire_touch: the NPC's touch handlers run for a
+// player in its touch area, as when the player stepped in, after the
+// current step and waiting while the player talks (review decision 60,
+// E1). It reports false for a player outside the area, or an NPC of
+// another map.
+func (h scriptHost) FireTouch(id, player int64) (bool, error) {
+	z := h.z
+	e, err := h.localNPC(id)
+	if err != nil {
+		return false, err
+	}
+	p, err := h.player(player)
+	if err != nil {
+		return false, err
+	}
+	if e.npc.Touch == nil || !slices.Contains(p.touching, e) {
+		return false, nil
+	}
+	z.queueTouch(e, p, false)
+	return true, nil
 }
 
 // runTouch runs an NPC's touch or untouch handlers.

@@ -17,3 +17,4 @@ Ideas and parked items. The curator looks at this list at every checkpoint.
 - 2026-10-27: `--at`, a time of day for the backup schedule (review decision 61, A2). Workaround in the deploy guide.
 - 2026-10-27: Other Prometheus measurements (review decision 61, B2).
 - 2026-10-27: From review decision 62, deferred to later: mods' own tilesets (generator version 4 and a proposal first); a Lua read of a map's stored spawns; the theme chance as a setting; a cancel for a forced world change; locale text and a banner for the change warnings.
+- 2026-10-31: Bug on main: `NPCDirectory.mentions` (player events) and `namesLabel` (labels, review decision 60 A2) read an unstarted zone's NPC sources from `z.Mods`, so a mod reloaded before the zone starts is checked by its old files. Needs `npcSource` to see `ReloadMod`'s snapshot safely from other goroutines. Fix PR of its own.

@@ -14,12 +14,12 @@ local R = require "core.lib.rathena"
 return function()
   local npc = context:get_instance()
   local event_ontouch_
-  event_ontouch_ = function(player, conversation)
+  event_ontouch_ = function(player, conversation, event)
     R.run(function()
       player:warp("prontera", 150, 180)
       do return end
     end)
   end
-  events.on("npc_event", function(event) event_ontouch_(event.player, event.conversation) end, { name = "OnTouch_" })
-  R.touch_one(event_ontouch_)
+  events.on("npc_event", function(event) event_ontouch_(event.player, event.conversation, event) end, { name = "OnTouch_" })
+  R.touch_one(npc, event_ontouch_)
 end

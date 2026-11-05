@@ -69,13 +69,19 @@ end`
 // followupZone is mapsZone with followupScript.
 func followupZone(t *testing.T) (*Zone, *Player, *entity) {
 	t.Helper()
+	return followupZoneWith(t, followupScript)
+}
+
+// followupZoneWith is followupZone with another NPC script.
+func followupZoneWith(t *testing.T, src string) (*Zone, *Player, *entity) {
+	t.Helper()
 	z := New("map/test", open(40), rng.FromKey([32]byte{5}).Stream(), nil)
 	z.Items = testItems()
 	z.Progress = testTables()
 	z.PlayerStatus = battle.Status{MaxHP: 200, MaxSP: 50, Hit: 200, BAtk: 5, ADelay: 600, AMotion: 300, RHW: battle.Weapon{Range: 1}, Player: &battle.Player{}}
 	logs := &syncBuffer{}
 	st := &battle.Status{Level: 3, MaxHP: 30, Hit: 200, ADelay: 1000, AMotion: 500, DMotion: 300, Mode: 0x81, RHW: battle.Weapon{Atk: 10, Atk2: 10, Range: 1}}
-	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{npcMod(followupScript)}, IDs: []string{"core", "example.test"},
+	z.Mods = &Mods{Limits: testLimits, Scripts: []*mod.Scripts{npcMod(src)}, IDs: []string{"core", "example.test"},
 		Log: slog.New(slog.NewTextHandler(logs, nil)), Server: variables.NewServer(nil, nil), Temporary: variables.NewTemporary(),
 		Monsters: map[uint32]Spawn{1002: {Mob: 1002, Name: "Poring", Amount: 1, Speed: 400, Status: st}}}
 	z.SetNPCs([]NPC{{Name: "example.test:Guide", DisplayName: "Guide", X: 20, Y: 20, Sprite: 112, Script: "example.test:scripts/npc.lua"}})

@@ -208,12 +208,12 @@ local THAI_HEAD = variables.character_integer "thai_head"
 return function()
   local npc = context:get_instance()
   local event_onmymobdead
-  event_onmymobdead = function(player, conversation)
+  event_onmymobdead = function(player, conversation, event)
     R.run(function()
       do return end
     end)
   end
-  events.on("npc_event", function(event) event_onmymobdead(event.player, event.conversation) end, { name = "OnMyMobDead" })
+  events.on("npc_event", function(event) event_onmymobdead(event.player, event.conversation, event) end, { name = "OnMyMobDead" })
   events.on("click", function(player, conversation)
     R.run(function()
       local spell = 0

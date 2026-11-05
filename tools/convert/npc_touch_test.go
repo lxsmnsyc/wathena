@@ -115,12 +115,12 @@ func TestNPCTouchConvert(t *testing.T) {
 		}
 	}
 	for name, wantLine := range map[string]string{
-		"Touch Warp#t":  "R.touch_one(event_ontouch_)",
+		"Touch Warp#t":  "R.touch_one(npc, event_ontouch_)",
 		"Touch Each#t":  `events.on("touch", event_ontouch)`,
-		"Touch Both#t":  "R.touch_one(event_ontouch_)",
-		"Touch Quiet#t": "R.touch_one(event_ontouch_)",
+		"Touch Both#t":  "R.touch_one(npc, event_ontouch_)",
+		"Touch Quiet#t": "R.touch_one(npc, event_ontouch_)",
 		"Touch Talk#t":  `events.on("touch", event_ontouch)`,
-		"Touch Func#t":  "R.touch_one(event_ontouch_, true)",
+		"Touch Func#t":  "R.touch_one(npc, event_ontouch_, true)",
 	} {
 		var n *NPC
 		for _, x := range res.NPCs {

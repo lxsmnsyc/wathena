@@ -284,8 +284,9 @@ func (h *npcHost) NPCField(id int64, field string) (script.Value, error) {
 	}
 	return script.Nil, fmt.Errorf("npc has no field %q", field)
 }
-func (h *npcHost) NPCEmotion(int64, int64) error { return nil }
-func (h *npcHost) NPCSay(int64, string) error    { return nil }
+func (h *npcHost) NPCEmotion(int64, int64) error        { return nil }
+func (h *npcHost) FireTouch(int64, int64) (bool, error) { return false, nil }
+func (h *npcHost) NPCSay(int64, string) error           { return nil }
 func (h *npcHost) Converse(c *modscript.Conversation, s modscript.Step) error {
 	if s.Kind.Waits() {
 		h.steps[c.ID] = s

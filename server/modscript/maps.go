@@ -146,7 +146,7 @@ type FreeCell struct {
 // MonsterAction is a monster method of area B8.
 type MonsterAction struct {
 	// Op is kill, remove, set_hp, set_damage_immune, set_modes,
-	// set_speed, use_skill_at or warp_to.
+	// set_speed, show_emotion, use_skill_at or warp_to.
 	Op     string
 	Value  int64
 	On     bool
@@ -617,6 +617,12 @@ func (r *Runtime) monsterCall8(c *script.Call) error {
 		n, ok := arg(0).AsInt()
 		if !ok || n < 20 || n > 1000 {
 			return fmt.Errorf("%s: want milliseconds per cell from 20 to 1000", what)
+		}
+		a.Value = n
+	case "show_emotion":
+		n, ok := arg(0).AsInt()
+		if !ok || n < 0 || n > 255 {
+			return fmt.Errorf("%s: want an emotion from wa.emotions", what)
 		}
 		a.Value = n
 	case "use_skill_at":

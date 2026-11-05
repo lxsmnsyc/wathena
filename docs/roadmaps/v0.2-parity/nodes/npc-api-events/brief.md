@@ -1,7 +1,7 @@
 ---
 id: npc-api-events
 title: NPC API: kill events, attached players and handles across maps
-status: todo
+status: active
 priority: must
 type: feature
 outline: false

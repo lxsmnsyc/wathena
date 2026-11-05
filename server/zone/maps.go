@@ -431,7 +431,8 @@ func (z *Zone) monsterLabelEvent(e, killer *entity) {
 		p = z.topDamage(e)
 	}
 	msg := npcMessage{kind: npcEventMessage, handle: l.handle, label: l.event,
-		counts: &labelCounts{zone: z, key: l.key, total: z.shared.countMonsters(""), label: z.shared.countMonsters(l.key)}}
+		counts: &labelCounts{zone: z, key: l.key, total: z.shared.countMonsters(""), label: z.shared.countMonsters(l.key),
+			killed: modscript.LabelMonster{ID: m.spawn.Mob, GameID: z.gameID(e)}}}
 	if p != nil {
 		if l.zone == z {
 			msg.player = int64(p.charID)
@@ -449,6 +450,9 @@ type labelCounts struct {
 	zone         *Zone
 	key          string
 	total, label int
+	// killed is the monster that died, for the event's monster_id and
+	// monster_game_id.
+	killed modscript.LabelMonster
 }
 
 // topDamage is the player of the zone that dealt a monster the most
@@ -1210,6 +1214,11 @@ func (h scriptHost) MonsterAct(id int64, a modscript.MonsterAction) (bool, error
 		// UMOB_DMGIMMUNE: ud.immune_attack, which battle_check_target
 		// reads (battle.cpp 7928).
 		m.immune = a.On
+		return true, nil
+	case "show_emotion":
+		// emotion on a monster's game ID: clif_emotion to the area
+		// (review decision 60, B9).
+		z.emotions = append(z.emotions, npcEmotion{e, uint32(a.Value)}) // #nosec G115 -- checked by the runtime.
 		return true, nil
 	}
 	if e.status == nil {

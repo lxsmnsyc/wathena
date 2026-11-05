@@ -30,7 +30,7 @@ func (h *npcHost) ShowEffectTo(e modscript.Entity, effect int64, to modscript.Se
 	}
 	return h.present("effect %s %d %d %s", e.Kind, e.ID, effect, to.To)
 }
-func (h *npcHost) RemoveEffect(e modscript.Entity, effect int64) error {
+func (h *npcHost) RemoveEffect(e modscript.Entity, effect int64, _ modscript.SendTarget) error {
 	return h.present("remove effect %s %d %d", e.Kind, e.ID, effect)
 }
 func (h *npcHost) SetNPCTitle(id int64, title string) error {
@@ -136,7 +136,8 @@ func TestPresentConvert(t *testing.T) {
 			"player:show_emotion(emotions.ok)", `R.npc_view("Guard#" .. npc.hidden_name, "show_emotion", emotions.hng)`,
 		}},
 		{`{ unittalk .@aid,"Hi"; unittalk $@mobid[0],"Grr"; end; }`, []string{"R.unittalk(", `"Hi")`, `"Grr")`}},
-		{`{ unittalk .@aid,"Hi",bc_self; end; }`, []string{"!unittalk: a flag with a game ID other than"}},
+		{`{ unittalk .@aid,"Hi",bc_self; unittalk .@aid,"Yo",bc_area; end; }`, []string{`R.unittalk(aid, "Hi", true)`, `R.unittalk(aid, "Yo")`}},
+		{`{ emotion ET_HNG,$@mobid[0]; end; }`, []string{"R.unit_emotion(", ", emotions.hng)"}},
 		{`{ emotion ET_SMILE, getnpcid(0, "Other#t"); emotion ET_OK, getcharid(3); emotion ET_HNG, getnpcid(0); end; }`, []string{
 			`R.npc_view("Other#t", "show_emotion", emotions.smile)`, "player:show_emotion(emotions.ok)", "npc:show_emotion(emotions.hng)",
 		}},
@@ -145,7 +146,7 @@ func TestPresentConvert(t *testing.T) {
 		{`{ removespecialeffect EF_HEAL; removespecialeffect EF_HEAL,AREA,"Other#t"; removespecialeffect2 EF_HEAL; end; }`, []string{
 			"npc:remove_effect(effects.heal)", `R.npc_view("Other#t", "remove_effect", effects.heal)`, "player:remove_effect(effects.heal)",
 		}},
-		{`{ removespecialeffect EF_HEAL,SELF; end; }`, []string{"!removespecialeffect: a send target other than AREA"}},
+		{`{ removespecialeffect EF_HEAL,SELF; removespecialeffect2 EF_HEAL,ALL_SAMEMAP; end; }`, []string{"npc:remove_effect(effects.heal, { to = player })", `player:remove_effect(effects.heal, { to = "map" })`}},
 		{`{ setunittitle getnpcid(0), "<Society>"; end; }`, []string{`npc:set_title("<Society>")`}},
 		{`{ setunittitle getcharid(3), "x"; end; }`, []string{"!setunittitle: on a player"}},
 		{`{ setunittitle getnpcid(0), "<Subspace Vending Machine>"; setunittitle getnpcid(0), .@t$; end; }`, []string{

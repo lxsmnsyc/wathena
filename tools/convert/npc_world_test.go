@@ -139,7 +139,7 @@ func TestNPCWorldConvert(t *testing.T) {
 			`npc.full_name .. "|" .. npc.name .. "|" .. npc.hidden_name .. "|" .. npc.unique_name .. "|" .. npc.map`,
 			`R.npc_view("Old Sign#w", "remove")`, `local NPC_COUNT = variables.npc_integer "count"`,
 			`local SERVER_TEMP_ROUND = variables.server_temporary_integer "round"`,
-			`events.on("npc_event", function(event) event_onself(event.player, event.conversation) end, { name = "OnSelf" })`,
+			`events.on("npc_event", function(event) event_onself(event.player, event.conversation, event) end, { name = "OnSelf" })`,
 		},
 		"Door#w": {
 			`NPC_COUNT:add(npc, 1)`, `"Count " .. NPC_COUNT:get(npc)`, `{ name = "OnCommandOn" }`, `{ name = "OnTalk" }`,

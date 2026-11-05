@@ -681,7 +681,7 @@ Permission: `game.read`.
 
 #### `world.fire_npc_event(name) → integer`
 
-Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent "::OnX" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs.
+Sends the event to every NPC with an npc_event handler of the label, on every map, as donpcevent "::OnX" (npc_event_doall_sub). The handlers run with no player, after the current step, each in its NPC's zone. Without npcs.control it reaches only the mod's own NPCs. Returns how many NPCs have a handler of the label, of the zones that started their NPC scripts. The event still starts the NPC scripts of a zone that did not, and reaches its NPCs, when one of the zone's NPC sources names the label in quotes, without regard to case (review decision 60). A label built at run time, such as "OnE" .. i, does not start a zone.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1878,17 +1878,18 @@ Plays an effect on the player, as specialeffect2: for everyone who sees the play
 | `effect` | `integer` | An effect from wa.effects. |
 | `options` | `wa.EffectOptions?` |  |
 
-#### `player:remove_effect(effect)`
+#### `player:remove_effect(effect, options?)`
 
-Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2.
+Stops an effect that plays on the player, for everyone who sees the player, as removespecialeffect2. to = a player stops it for that player alone, as SELF (review decision 60).
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `effect` | `integer` | An effect from wa.effects. |
+| `options` | `wa.EffectOptions?` | to, as player:show_effect's. |
 
 #### `player:say_aloud(text, options?)`
 
-Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself is bc_self: only the player hears it. The chat filter and the chat hooks do not see it.
+Says a line of local chat as the player, as unittalk (script.cpp 20216, clif_disp_overhead_). By default the players within 9 cells who see the player hear it, and the player itself, as AREA_CHAT_WOC. to = the player itself, or "self", is bc_self: only the player hears it. "self" also works on a player of another map. The chat filter and the chat hooks do not see it.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2586,6 +2587,14 @@ Sets the monster's walk speed, as setunitdata's UMOB_SPEED.
 |---|---|---|
 | `milliseconds` | `integer` | Per cell, 20 to 1000. |
 
+#### `monster:show_emotion(emotion)`
+
+Shows an emotion over the monster to everyone who sees it, as emotion on a monster's game ID (review decision 60). A monster of another map shows it after the current step.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `emotion` | `integer` | An emotion from wa.emotions. |
+
 #### `monster:use_skill_at(skill, level, x, y) → boolean`
 
 The monster uses a ground skill on a cell with the skill's own cast time, as unitskillusepos. Returns false when the cast does not start, and for a skill that is not a ground skill.
@@ -2674,6 +2683,14 @@ Shows an emotion over the NPC, as emotion.
 |---|---|---|
 | `emotion` | `integer` | An emotion from wa.emotions. |
 
+#### `npc:fire_touch(player) → boolean`
+
+Runs the NPC's touch handlers for a player who stands in its touch area, in a conversation, as a step in would: after the current step, waiting while the player talks. It is npc_touchnext_areanpc's touch of the next player in the area (review decision 60). false when the player is not in the area. An NPC of another map raises an error. Another mod's NPC needs npcs.control.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `player` | `wa.Player` | A player of the NPC's map. |
+
 #### `npc:say_aloud(text, options?)`
 
 Says a line as the NPC, as npctalk (script.cpp 16193): by default to every player who sees the NPC, as AREA. The to option sends it to the NPC's map, the world, or one player, as bc_map, bc_all and bc_self. A line from an NPC that a player does not see shows with the NPC's name and no speaker. An NPC without a map says nothing to its area or map. Another mod's NPC needs npcs.control.
@@ -2734,7 +2751,7 @@ Removes the NPC until the server restarts, as unloadnpc: it vanishes, its contex
 
 #### `npc:fire_event(name, options?) → boolean`
 
-Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; true for an NPC whose zone has not started its scripts. Another mod's NPC needs npcs.control.
+Sends the event to the NPC: its npc_event handlers of the label run after the current step, in its zone. Without a player it is donpcevent, and runs on a disabled NPC too. With a player it is doevent: the handlers run in a conversation with the player, which waits while the player talks to an NPC, and do not run on a disabled NPC. The player must be on the NPC's map. Returns whether the NPC has a handler of the label, as donpcevent returns 1 or 0; for an NPC whose zone has not started its scripts, whether one of the zone's NPC sources names the label in quotes (review decision 60). Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2750,13 +2767,14 @@ Plays an effect on the NPC, as specialeffect: for everyone who sees the NPC, or 
 | `effect` | `integer` | An effect from wa.effects. |
 | `options` | `wa.EffectOptions?` |  |
 
-#### `npc:remove_effect(effect)`
+#### `npc:remove_effect(effect, options?)`
 
-Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. Another mod's NPC needs npcs.control.
+Stops an effect that plays on the NPC, for everyone who sees it, as removespecialeffect. to = a player stops it for that player alone, as SELF (review decision 60). Another mod's NPC needs npcs.control.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `effect` | `integer` | An effect from wa.effects. |
+| `options` | `wa.EffectOptions?` | to, as npc:show_effect's. |
 
 #### `npc:set_title(text)`
 
@@ -3857,6 +3875,8 @@ The object of the npc_event event.
 | `name` | `string` | The label, in lower case. |
 | `player` | `wa.Player?` | The player of npc:fire_event's player option, the killer of a monster's label, or nil. A player of another map is a handle that acts on its own map (review decision 59). |
 | `conversation` | `wa.Conversation?` | The conversation with the player, or nil without one, and for a player of another map. |
+| `monster_id` | `integer?` | On a monster's label, the dead monster's ID, as monsters.id and rAthena's killedrid. nil on other events (review decision 60). |
+| `monster_game_id` | `integer?` | On a monster's label, the dead monster's game ID, as killedgid. maps.find_monster no longer finds it. |
 
 ### wa.FireEventOptions
 
@@ -3872,7 +3892,7 @@ The options of npc:say_aloud and player:say_aloud (review decision 58).
 
 | Field | Type | Meaning |
 |---|---|---|
-| `to` | `"area"\|"map"\|"world"\|wa.Player\|nil` | Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self). |
+| `to` | `"area"\|"map"\|"world"\|"self"\|wa.Player\|nil` | Who hears it: the players who see the speaker (area, the default), every player of its map (bc_map), every player of the world (bc_all), or one player (bc_self). "self" is the speaking player alone, for player:say_aloud only (review decision 60). |
 | `color` | `integer?` | 0xRRGGBB, as npctalk's color. The chat's own color by default. NPC lines only. |
 
 ### wa.EffectOptions

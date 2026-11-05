@@ -318,6 +318,27 @@ func (r *Runtime) npcEventHandlers(c *Context, label string) []*handler {
 // without (npc_event_do_sub, npc.cpp 1284, does not check). ran reports
 // whether a handler ran.
 func (r *Runtime) FireNPCEvent(n *NPC, label string, player int64) (conv *Conversation, ran bool, err error) {
+	return r.FireMonsterLabel(n, label, player, nil)
+}
+
+// LabelMonster is the monster whose death runs a monster label: the
+// event's monster_id and monster_game_id, as killedrid and killedgid
+// (review decision 60, B4).
+type LabelMonster struct {
+	ID     uint32
+	GameID int64
+}
+
+func (m *LabelMonster) value() script.Value {
+	if m == nil {
+		return script.Nil
+	}
+	return script.NewTable(script.KV("id", script.Int(int64(m.ID))), script.KV("game_id", script.Int(m.GameID)))
+}
+
+// FireMonsterLabel is FireNPCEvent for a monster's label: the event also
+// names the monster that died, or none for a nil m.
+func (r *Runtime) FireMonsterLabel(n *NPC, label string, player int64, m *LabelMonster) (conv *Conversation, ran bool, err error) {
 	c := n.Context()
 	if c == nil {
 		return nil, false, nil
@@ -335,14 +356,14 @@ func (r *Runtime) FireNPCEvent(n *NPC, label string, player int64) (conv *Conver
 		for i, h := range list {
 			vals[i] = h.fn.Value()
 		}
-		conv, err := r.converse(n, c, player, "npc_event "+label, r.fns.npcEvent, []script.Value{script.String(label)}, vals)
+		conv, err := r.converse(n, c, player, "npc_event "+label, r.fns.npcEvent, []script.Value{script.String(label), m.value()}, vals)
 		return conv, true, err
 	}
 	for _, h := range list {
 		if h.removed || c.ended {
 			continue
 		}
-		if err := r.run(c, r.fns.npcEvent.Value(), script.String(label), script.Nil, script.Nil, h.fn.Value()); err != nil {
+		if err := r.run(c, r.fns.npcEvent.Value(), script.String(label), m.value(), script.Nil, script.Nil, h.fn.Value()); err != nil {
 			r.failed(c, "event npc_event "+label, err)
 		}
 	}
@@ -354,7 +375,7 @@ func (r *Runtime) FireNPCEvent(n *NPC, label string, player int64) (conv *Conver
 // event has the player's handle and no conversation, since dialogs show
 // on the player's own map. A disabled NPC runs no event with a player
 // (npc.cpp 1767). It reports whether a handler ran.
-func (r *Runtime) FireNPCEventAway(n *NPC, label string, player int64) bool {
+func (r *Runtime) FireNPCEventAway(n *NPC, label string, player int64, m *LabelMonster) bool {
 	c := n.Context()
 	if c == nil || n.Disabled {
 		return false
@@ -365,7 +386,7 @@ func (r *Runtime) FireNPCEventAway(n *NPC, label string, player int64) bool {
 		if h.removed || c.ended {
 			continue
 		}
-		if err := r.run(c, r.fns.npcEvent.Value(), script.String(label), script.Int(player), script.Nil, h.fn.Value()); err != nil {
+		if err := r.run(c, r.fns.npcEvent.Value(), script.String(label), m.value(), script.Int(player), script.Nil, h.fn.Value()); err != nil {
 			r.failed(c, "event npc_event "+label, err)
 		}
 	}

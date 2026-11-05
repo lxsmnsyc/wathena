@@ -8,7 +8,7 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 
 | Kind | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
-| script | 3754 | 3646 | 3645 | 1 | 108 |
+| script | 3754 | 3647 | 3646 | 1 | 107 |
 | script (duplicate) | 4451 | 4378 | 4374 | 4 | 73 |
 | shop | 185 | 185 | 185 | 0 | 0 |
 | Kafras (scripts that call F_Kafra) | 43 | 43 | 43 | 0 | 0 |
@@ -47,7 +47,7 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 | jobs | 1027 | 1017 | 1017 | 0 | 10 |
 | kafras | 71 | 71 | 71 | 0 | 0 |
 | merchants | 101 | 91 | 86 | 5 | 10 |
-| other | 3052 | 2967 | 2967 | 0 | 85 |
+| other | 3052 | 2968 | 2968 | 0 | 84 |
 | quests | 2939 | 2883 | 2883 | 0 | 56 |
 | warps | 81 | 80 | 80 | 0 | 1 |
 
@@ -70,7 +70,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | mes | 2784 | 2714 | 1 | 69 | 2784 |  |
 | close | 2583 | 2538 | 1 | 44 | 2583 |  |
 | next | 2362 | 2318 | 1 | 43 | 2362 |  |
-| end | 1875 | 1845 | 0 | 30 | 1875 |  |
+| end | 1876 | 1846 | 0 | 30 | 1876 |  |
 | variables | 1711 | 1670 | 1 | 40 | 1707 | $@08_ep13nydun02_in is not a valid name (2); $050320_ein_typing is not a valid name (1); $050908_minus1_yagu$ is not a valid name (1) |
 | select | 1367 | 1326 | 1 | 40 | 1367 |  |
 | warp | 788 | 779 | 0 | 9 | 788 |  |
@@ -83,7 +83,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getitem | 541 | 534 | 1 | 6 | 541 |  |
 | event ontouch_ | 538 | 538 | 0 | 0 | 538 |  |
 | disablenpc | 528 | 525 | 0 | 3 | 528 |  |
-| event oninit | 465 | 461 | 0 | 4 | 462 | it waits or shows a dialog, and OnInit runs without a player (3) |
+| event oninit | 466 | 462 | 0 | 4 | 463 | it waits or shows a dialog, and OnInit runs without a player (3) |
 | enablenpc | 463 | 456 | 0 | 7 | 463 |  |
 | event onenable | 460 | 457 | 0 | 3 | 460 |  |
 | emotion | 428 | 426 | 0 | 2 | 428 |  |
@@ -810,7 +810,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | smonster | 1 | 1 | 0 | 0 | 1 |  |
 | strtolower | 1 | 1 | 0 | 0 | 1 |  |
 | successrefitem | 1 | 1 | 0 | 0 | 1 |  |
-| unloadnpc | 1 | 0 | 0 | 1 | 0 | an NPC with duplicates, which rAthena unloads with it (1) |
+| unloadnpc | 1 | 1 | 0 | 0 | 1 |  |
 
 ## Functions
 
@@ -996,7 +996,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/guildpvp.txt | 1 | 0 | 1 |
 | npc/other/gympass.txt | 1 | 1 | 0 |
 | npc/other/hugel_bingo.txt | 150 | 149 | 1 |
-| npc/other/mail.txt | 32 | 31 | 1 |
+| npc/other/mail.txt | 32 | 32 | 0 |
 | npc/other/marriage.txt | 11 | 8 | 3 |
 | npc/other/mercenary_rent.txt | 10 | 4 | 6 |
 | npc/other/monster_museum.txt | 62 | 62 | 0 |

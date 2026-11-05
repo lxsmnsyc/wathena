@@ -133,6 +133,14 @@ func near(p *Player, e *entity) bool {
 	return abs(e.x-me.x) <= npcClickRange && abs(e.y-me.y) <= npcClickRange
 }
 
+// answerNear reports whether a player may answer an NPC's dialog from
+// where it stands, as npc_checknear (npc.cpp 2155): from anywhere for an
+// NPC without a view, rAthena's class -1 (review decision 60, E5), else
+// within the click range.
+func answerNear(p *Player, e *entity) bool {
+	return e.npc != nil && e.npc.NoSprite || near(p, e)
+}
+
 // rkEnchantBlade is RK_ENCHANTBLADE, the first third class skill.
 const rkEnchantBlade = 2001
 
@@ -341,7 +349,7 @@ func (z *Zone) reply(p *Player, r *wathenav1.NpcReply) {
 	if t == nil || r.GetDialog() != t.dialog {
 		return
 	}
-	if t.npc != nil && (!z.entities.has(t.npc) || !near(p, t.npc)) {
+	if t.npc != nil && (!z.entities.has(t.npc) || !answerNear(p, t.npc)) {
 		return
 	}
 	if t.ended {

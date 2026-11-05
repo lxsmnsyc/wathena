@@ -55,6 +55,12 @@ type NPCDirectory struct {
 	// not started name in their source (playerworld.go).
 	events map[*Zone]map[string]int
 	named  map[*Zone]map[string]bool
+	// sources are the NPC sources of a zone that has not started, in
+	// lower case, for the labels they name (review decision 60, A2).
+	// They are read once, from the mods as they loaded, as named is, and
+	// dropped when the zone starts or leaves. A quoted label that is not
+	// a handler's, such as one in a comment, only starts the zone.
+	sources map[*Zone]string
 }
 
 // NewNPCDirectory makes an empty directory.
@@ -134,6 +140,7 @@ func (d *NPCDirectory) RemoveZone(z *Zone) {
 	delete(d.started, z)
 	delete(d.events, z)
 	delete(d.named, z)
+	delete(d.sources, z)
 }
 
 // find finds an NPC by name: a full record name, or a plain name, which
@@ -176,18 +183,59 @@ func fullNames(name, modID string) []string {
 func (d *NPCDirectory) markStarted(z *Zone) {
 	d.mu.Lock()
 	d.started[z] = true
+	delete(d.sources, z)
 	d.mu.Unlock()
 }
 
 // hasLabel reports whether an NPC listens to a label, as far as the
-// world knows: true for an NPC whose zone has not started its scripts.
+// world knows: for an NPC whose zone has not started its scripts,
+// whether the zone's NPC sources name the label.
 func (d *NPCDirectory) hasLabel(en *npcEntry, label string) bool {
 	d.mu.Lock()
-	defer d.mu.Unlock()
 	if en.removed || !en.scripted {
+		d.mu.Unlock()
 		return false
 	}
-	return !d.started[en.zone] || en.labels[label] > 0
+	started, has := d.started[en.zone], en.labels[label] > 0
+	d.mu.Unlock()
+	if started {
+		return has
+	}
+	return d.namesLabel(en.zone, label)
+}
+
+// namesLabel reports whether the NPC sources of a zone name a label in
+// quotes, as an npc_event handler's name option does, without regard to
+// case, as rAthena matches labels (npc.cpp 1295). A broadcast starts a
+// zone that has not started only then, as player events do (mentions).
+func (d *NPCDirectory) namesLabel(z *Zone, label string) bool {
+	d.mu.Lock()
+	src, ok := d.sources[z]
+	var paths []string
+	if !ok {
+		for _, en := range d.byZone[z] {
+			if en.scripted && en.script != "" {
+				paths = append(paths, en.script)
+			}
+		}
+	}
+	d.mu.Unlock()
+	if !ok {
+		var b strings.Builder
+		for _, entry := range paths {
+			b.WriteString(strings.ToLower(z.npcSource(entry)))
+			b.WriteByte('\n')
+		}
+		src = b.String()
+		d.mu.Lock()
+		if d.sources == nil {
+			d.sources = map[*Zone]string{}
+		}
+		d.sources[z] = src
+		d.mu.Unlock()
+	}
+	l := strings.ToLower(label)
+	return strings.Contains(src, `"`+l+`"`) || strings.Contains(src, `'`+l+`'`)
 }
 
 func (d *NPCDirectory) label(en *npcEntry, label string, add bool) {
@@ -266,8 +314,8 @@ func (d *NPCDirectory) read(en *npcEntry) (state string, cloaked bool, cloakFor 
 // knows to listen. mods limits the NPCs to those mods, or nil for every
 // mod.
 func (d *NPCDirectory) broadcastTargets(from *Zone, label string, mods []string) (zones []*Zone, count int) {
+	var unstarted []*Zone
 	d.mu.Lock()
-	defer d.mu.Unlock()
 	for z, list := range d.byZone {
 		if z == from {
 			continue
@@ -278,8 +326,8 @@ func (d *NPCDirectory) broadcastTargets(from *Zone, label string, mods []string)
 				continue
 			}
 			if !d.started[z] {
-				send = true
-				continue
+				unstarted = append(unstarted, z)
+				break
 			}
 			if en.labels[label] > 0 {
 				send = true
@@ -287,6 +335,14 @@ func (d *NPCDirectory) broadcastTargets(from *Zone, label string, mods []string)
 			}
 		}
 		if send {
+			zones = append(zones, z)
+		}
+	}
+	d.mu.Unlock()
+	// A zone that has not started gets the event only when its sources
+	// name the label (review decision 60, A2).
+	for _, z := range unstarted {
+		if d.namesLabel(z, label) {
 			zones = append(zones, z)
 		}
 	}
@@ -468,19 +524,23 @@ func (z *Zone) runNPCMessage(m npcMessage) {
 		prev := z.countView
 		z.countView = m.counts
 		defer func() { z.countView = prev }()
+		var killed *modscript.LabelMonster
+		if m.counts != nil {
+			killed = &m.counts.killed
+		}
 		if m.playerName != "" {
-			z.runNPCEventAway(e, m.label, m.playerName)
+			z.runNPCEventAway(e, m.label, m.playerName, killed)
 			return
 		}
 		if m.player == 0 {
-			_, _, _ = r.FireNPCEvent(n.script, m.label, 0)
+			_, _, _ = r.FireMonsterLabel(n.script, m.label, 0, killed)
 			return
 		}
 		p := z.players[uint32(m.player)] // #nosec G115 -- a zone player ID.
 		if p == nil || p.gone() {
 			return
 		}
-		z.runNPCEvent(&touchEvent{npc: e, player: p, label: m.label})
+		z.runNPCEvent(&touchEvent{npc: e, player: p, label: m.label, killed: killed})
 	case npcControlMessage:
 		z.controlNPC(e, m.control, m.charID)
 	case npcEndMessage:
@@ -496,7 +556,7 @@ func (z *Zone) runNPCMessage(m npcMessage) {
 // a handle of the player, and no conversation, since the player talks on
 // its own map. A player who came to this zone runs it as runNPCEvent. A
 // player who went offline runs it with no player.
-func (z *Zone) runNPCEventAway(e *entity, label, name string) {
+func (z *Zone) runNPCEventAway(e *entity, label, name string, killed *modscript.LabelMonster) {
 	n := e.npc
 	d := z.playerDir()
 	var en *playerEntry
@@ -504,16 +564,16 @@ func (z *Zone) runNPCEventAway(e *entity, label, name string) {
 		en = d.find(name)
 	}
 	if en == nil {
-		_, _, _ = z.scripts.FireNPCEvent(n.script, label, 0)
+		_, _, _ = z.scripts.FireMonsterLabel(n.script, label, 0, killed)
 		return
 	}
 	if en.zone == z {
 		if p := z.players[en.id]; p != nil && !p.gone() {
-			z.runNPCEvent(&touchEvent{npc: e, player: p, label: label})
+			z.runNPCEvent(&touchEvent{npc: e, player: p, label: label, killed: killed})
 		}
 		return
 	}
-	z.scripts.FireNPCEventAway(n.script, label, z.remotePlayerHandle(en.name))
+	z.scripts.FireNPCEventAway(n.script, label, z.remotePlayerHandle(en.name), killed)
 }
 
 // npcsInOrder are the zone's NPCs with a script handle, in handle order.
@@ -544,7 +604,7 @@ func (z *Zone) runNPCEvent(t *touchEvent) {
 		}
 		return
 	}
-	conv, _, err := z.scripts.FireNPCEvent(n.script, t.label, int64(p.charID))
+	conv, _, err := z.scripts.FireMonsterLabel(n.script, t.label, int64(p.charID), t.killed)
 	if err != nil {
 		if z.Mods != nil && z.Mods.Log != nil {
 			z.Mods.Log.Warn("NPC event failed", "map", z.Map, "npc", n.Name, "label", t.label, "err", err)

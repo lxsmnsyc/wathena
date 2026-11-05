@@ -52,7 +52,7 @@ var playerLabelRefused = map[string]string{
 // systemLabels are labels that rAthena runs on its own for systems
 // wAthena does not have, or not yet as labels: they stay unsupported.
 var systemLabels = map[string]bool{
-	"oninterifinit": true, "oninterifinitonce": true, "onwhisperglobal": true, "onbuyitem": true, "onsellitem": true,
+	"oninterifinit": true, "onwhisperglobal": true, "onbuyitem": true, "onsellitem": true,
 	"onagitinit": true, "onagitstart": true, "onagitend": true, "onagitinit2": true, "onagitstart2": true,
 	"onagitend2": true, "onagitinit3": true, "onagitstart3": true, "onagitend3": true, "onguildbreak": true,
 	"oninstanceinit": true, "oninstancedestroy": true, "onagiteliminate": true, "onagitbreak": true,
@@ -360,10 +360,17 @@ func (b *body) unloadnpc(args []Expr) error {
 		// buildin_unloadnpc: "You cannot self-unload NPC".
 		b.line("-- unloadnpc of the NPC itself does nothing, as in rAthena.")
 		return nil
-	case len(b.n.c.dups[s.Value]) > 0:
-		return unsupported(what, "an NPC with duplicates, which rAthena unloads with it")
 	}
 	b.line("R.npc_view(%s, \"remove\")", luaString(b.n.c.recordFor(s.Value)))
+	// npc_unload unloads the NPC's duplicates with it (npc.cpp 2400,
+	// review decision 60, A6). The NPC that runs the script is left: its
+	// handler is running.
+	for _, d := range b.n.c.dups[s.Value] {
+		if d == b.n.line.Name && !b.n.isFunction {
+			continue
+		}
+		b.line("R.npc_view(%s, \"remove\")", luaString(b.n.c.recordFor(d)))
+	}
 	return nil
 }
 

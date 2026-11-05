@@ -521,20 +521,62 @@ end
 -- unittalk is unittalk of a game ID other than the attached player's
 -- or an NPC's (script.cpp 20216): a player of any map by account ID, as
 -- player:say_aloud, or a monster, as monster:talk. The line keeps the
--- speaker's name that the script wrote, as rAthena sends it whole.
-function R.unittalk(gid, text)
+-- speaker's name that the script wrote, as rAthena sends it whole. self
+-- is bc_self: the player alone hears it, and a monster says nothing, as
+-- script.cpp 20229 refuses bc_self for a unit that is not a player.
+function R.unittalk(gid, text, self)
 	text = R.text(text)
 	if text == "" then
 		return
 	end
 	local p = R.by_account(gid)
 	if p ~= nil then
-		p:say_aloud(text)
+		p:say_aloud(text, self and { to = "self" } or nil)
 		return
 	end
 	local m = R.unit_monster(gid)
-	if m ~= nil then
+	if m ~= nil and not self then
 		m:talk(text)
+	end
+end
+
+-- unit_exists is unitexists of a game ID other than the attached
+-- player's or an NPC's (map_id2bl): 1 for a player of any map by account
+-- ID or a monster of any map, else 0.
+function R.unit_exists(gid)
+	return R.by_gid(gid) ~= nil and 1 or 0
+end
+
+-- unit_type is getunittype of such a game ID: BL_PC (1), BL_MOB (2), or
+-- -1 (script.cpp 19032).
+function R.unit_type(gid)
+	if R.by_account(gid) ~= nil then
+		return 1
+	elseif R.unit_monster(gid) ~= nil then
+		return 2
+	end
+	return -1
+end
+
+-- unit_data is getunitdata of a monster (script.cpp 19062): the UMOB_
+-- indexes the API reads, UMOB_LEVEL (1), UMOB_HP (2), UMOB_MAXHP (3),
+-- UMOB_X (6), UMOB_Y (7) and UMOB_CLASS (13). A game ID that is not a
+-- monster's changes nothing.
+function R.unit_data(gid, data)
+	local m = R.unit_monster(gid)
+	if m == nil then
+		return
+	end
+	data[1], data[2], data[3], data[6], data[7], data[13] = m.level, m.hp, m.max_hp, m.x, m.y, m.id
+end
+
+-- unit_emotion is emotion on a game ID other than the attached player's
+-- or an NPC's: a player of any map by account ID, or a monster of any
+-- map (review decision 60).
+function R.unit_emotion(gid, emotion)
+	local unit = R.by_gid(gid)
+	if unit ~= nil then
+		unit:show_emotion(emotion)
 	end
 end
 
@@ -1382,6 +1424,26 @@ end
 -- npc_view is enablenpc, disablenpc, hideonnpc and hideoffnpc, the
 -- cloaks for everyone, and the presentation commands of review decision
 -- 58, area B5: a method of the NPC's handle, and what it returns.
+-- once reports true the first time it runs with a key since the server
+-- started, and false after, also after a reload of the mod: the key is a
+-- temporary server variable, which every zone shares and nobody saves.
+-- A converted key is "oninterifinitonce " and an NPC's unique name, at
+-- most 24 characters, so the variable name stays within 64.
+function R.once(key)
+	local name = "once_" .. key:lower():gsub("[^%w_]", "_")
+	local flag = variables.server_temporary_integer(name:sub(1, 64))
+	if flag:get() ~= 0 then
+		return false
+	end
+	flag:set(1)
+	return true
+end
+
+-- npc_exists is unitexists of an NPC's getnpcid: 1 when the NPC exists.
+function R.npc_exists(target)
+	return npc_named(target) ~= nil and 1 or 0
+end
+
 function R.npc_view(target, method, ...)
 	local n = npc_named(target)
 	if n ~= nil then
@@ -1801,15 +1863,23 @@ end
 --
 -- dialog is set when fn shows a dialog. The next player then has no
 -- conversation, since it did not touch the NPC just now, so touch_one
--- leaves the NPC free and runs fn for the next player who comes in.
--- rAthena would show the dialog to the player already in the area.
-function R.touch_one(fn, dialog)
+-- runs the NPC's touch again for it with npc:fire_touch, which gives it
+-- one, as rAthena shows the dialog to the player already in the area
+-- (review decision 60, E1).
+function R.touch_one(npc, fn, dialog)
 	local inside, touching = {}, nil
 	local function can(player)
 		return player.hp > 0 and not R.hiding(player)
 	end
 	events.on("touch", function(player, conversation)
-		inside[#inside + 1] = player
+		-- Player handles are cached, so one player is one handle.
+		local known = false
+		for _, p in ipairs(inside) do
+			known = known or p == player
+		end
+		if not known then
+			inside[#inside + 1] = player
+		end
 		if touching == nil and can(player) then
 			touching = player
 			fn(player, conversation)
@@ -1826,14 +1896,20 @@ function R.touch_one(fn, dialog)
 			return
 		end
 		touching = nil
-		if dialog then
-			return
-		end
 		for _, p in ipairs(inside) do
 			if can(p) then
-				touching = p
-				fn(p)
-				return
+				if dialog then
+					-- A dialog needs the player's conversation: the touch
+					-- runs again for the next player, as a step in would
+					-- (review decision 60, E1).
+					if npc:fire_touch(p) then
+						return
+					end
+				else
+					touching = p
+					fn(p)
+					return
+				end
 			end
 		end
 	end)

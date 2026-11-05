@@ -389,6 +389,9 @@ type body struct {
 	main bool
 	// hasArgs is set where getarg reads the function's arguments.
 	hasArgs bool
+	// event is set in the code of an event label, outside its callsub
+	// functions, where the npc_event handler's event is in scope.
+	event bool
 	// labels are the labels of the function's top level. deepLabels
 	// are the labels inside blocks, with the path of the block.
 	labels     map[string]bool
