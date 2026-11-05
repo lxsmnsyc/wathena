@@ -1,7 +1,7 @@
 ---
 id: npc-api-timers
 title: NPC API: waits, server clock timers and player timers
-status: active
+status: done
 priority: must
 type: feature
 outline: false
