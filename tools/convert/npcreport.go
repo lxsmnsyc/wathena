@@ -226,7 +226,7 @@ var warpSprites = map[string]bool{"45": true, "WARPNPC": true, "139": true, "HID
 // label, and of script NPCs with a warp sprite.
 func (r *NPCResult) touchTable(b *strings.Builder) {
 	type counts struct{ total, placed, touch, dialog int }
-	var scripts, lines, warps counts
+	var scripts, lines, warps, clicks counts
 	reasons := map[string]int{}
 	for _, n := range r.NPCs {
 		if n.Kind != "script" {
@@ -262,6 +262,16 @@ func (r *NPCResult) touchTable(b *strings.Builder) {
 				}
 			}
 		}
+		if n.ClickOnTouch {
+			clicks.total++
+			if placed {
+				clicks.placed++
+			}
+			clicks.touch++
+			if n.TouchDialog {
+				clicks.dialog++
+			}
+		}
 		if warpSprites[n.Sprite] {
 			warps.total++
 			if placed {
@@ -276,11 +286,12 @@ func (r *NPCResult) touchTable(b *strings.Builder) {
 		}
 	}
 	b.WriteString("## Touch areas\n\n")
-	b.WriteString("`OnTouch` and `OnTouch_` labels become the `touch` event, and the line's span the record's `touch` field (review decision 55). `OnTouch_` runs for one player at a time through `R.touch_one`. A touch handler runs in a conversation with the player, so a label with a dialog converts (review decision 56). A touch label that does not convert fails on other commands, which the command table lists.\n\n")
+	b.WriteString("`OnTouch` and `OnTouch_` labels become the `touch` event, and the line's span the record's `touch` field (review decision 55). `OnTouch_` runs for one player at a time through `R.touch_one`. A touch handler runs in a conversation with the player, so a label with a dialog converts (review decision 56). A touch label that does not convert fails on other commands, which the command table lists. A script NPC with a touch area and no touch label clicks on touch, as rAthena clicks it: unless the player talks, or the NPC is hidden (review decision 60, E2).\n\n")
 	b.WriteString("| NPCs | Lines | Placed | With a touch area | With a dialog on touch |\n|---|---:|---:|---:|---:|\n")
 	fmt.Fprintf(b, "| Scripts with OnTouch or OnTouch_ | %d | %d | %d | %d |\n", scripts.total, scripts.placed, scripts.touch, scripts.dialog)
 	fmt.Fprintf(b, "| Lines with OnTouch or OnTouch_, duplicates too | %d | %d | %d | %d |\n", lines.total, lines.placed, lines.touch, lines.dialog)
-	fmt.Fprintf(b, "| Script NPCs with a warp sprite, duplicates too | %d | %d | %d | %d |\n\n", warps.total, warps.placed, warps.touch, warps.dialog)
+	fmt.Fprintf(b, "| Script NPCs with a warp sprite, duplicates too | %d | %d | %d | %d |\n", warps.total, warps.placed, warps.touch, warps.dialog)
+	fmt.Fprintf(b, "| Lines with a touch area and no touch label, which click on touch | %d | %d | %d | %d |\n\n", clicks.total, clicks.placed, clicks.touch, clicks.dialog)
 	if len(reasons) > 0 {
 		b.WriteString("| Why a touch label does not convert | Scripts |\n|---|---:|\n")
 		type kv struct {

@@ -128,6 +128,11 @@ type NPC struct {
 	// touch is set when the script has a touch handler, from OnTouch or
 	// OnTouch_. Duplicates take it from their source.
 	touch bool
+	// clickTouch is set when the touch handler is the click fallback: the
+	// script has no touch label (review decision 60, E2).
+	clickTouch bool
+	// ClickOnTouch is set for a placed NPC whose touch area clicks it.
+	ClickOnTouch bool
 	// Touch is set for a placed NPC whose record has a touch area: a
 	// touch handler and a span of 0 or more on both axes.
 	Touch bool
@@ -224,6 +229,9 @@ type npcConverter struct {
 	// source, by unique name.
 	duplicated map[string]bool
 	dups       map[string][]string
+	// dupSpan holds the sources that a duplicate with a touch area runs
+	// the script of.
+	dupSpan map[string]bool
 	// dupOf is the source of each duplicate, by name.
 	dupOf map[string]string
 	// recordOf is the record name of each NPC by its unique name, and
@@ -314,7 +322,7 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		jobs: map[string]string{}, functions: map[string]*npcLine{}, converted: map[string]*Function{}, paths: map[string]bool{},
 		zeroAmounts: map[string]bool{}, checkedAmounts: map[string]bool{},
 		monsters: map[int64]monsterInfo{}, monsterIDs: map[string]int64{}, shops: map[string]*shopRef{}, quests: in.Quests,
-		refArgs: map[string]map[int]bool{}, duplicated: map[string]bool{}, itemTypes: map[uint32]string{}, groups: map[int64]string{},
+		refArgs: map[string]map[int]bool{}, duplicated: map[string]bool{}, dupSpan: map[string]bool{}, itemTypes: map[uint32]string{}, groups: map[int64]string{},
 	}
 	shopsIn, err := readShops(in.Shops)
 	if err != nil {
@@ -348,8 +356,9 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		c.spriteID[s.ID] = true
 	}
 	for i := range extract.NPCs {
-		if d := extract.NPCs[i].DuplicateOf; d != "" {
-			c.duplicated[d] = true
+		if l := &extract.NPCs[i]; l.DuplicateOf != "" {
+			c.duplicated[l.DuplicateOf] = true
+			c.dupSpan[l.DuplicateOf] = c.dupSpan[l.DuplicateOf] || l.XS >= 0 && l.YS >= 0
 		}
 		if l := &extract.NPCs[i]; l.Kind == "function" {
 			// A later function of the same name replaces the earlier
@@ -522,6 +531,7 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 			return n
 		}
 		n.Status, n.Script, n.touch, n.TouchDialog = src.converted, src.Script, src.touch, src.TouchDialog
+		n.clickTouch = src.clickTouch
 	} else {
 		n.TouchLabel = touchLabel.MatchString(l.Script)
 		nc := c.newNPCConv(l)
@@ -537,7 +547,7 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 			return n
 		}
 		n.Status = Full
-		n.touch, n.TouchDialog = nc.touch, nc.touchDialog
+		n.touch, n.TouchDialog, n.clickTouch = nc.touch, nc.touchDialog, nc.clickTouch
 		for _, f := range n.Functions {
 			if fn := c.converted[f]; fn != nil && (len(fn.Stubs) > 0 || fn.Err != "") {
 				n.Status = Partial
@@ -616,6 +626,7 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 	if touch {
 		// rAthena's OnTouch area: the cells within the spans of the NPC.
 		n.Touch = true
+		n.ClickOnTouch = n.clickTouch
 		fields = append(fields, fmt.Sprintf("touch: {x_span: %d, y_span: %d}", l.XS, l.YS))
 	}
 	if state != "" {

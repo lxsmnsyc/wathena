@@ -33,7 +33,11 @@ func (b *body) expr(e Expr) (val, error) {
 		if err != nil {
 			return val{}, err
 		}
-		if c.static != nil {
+		// rAthena evaluates both branches of ?: (parse_subexpr emits them
+		// before C_OP3). A branch with an effect is evaluated even when
+		// the condition is known or the other branch is taken.
+		effects := hasEffect(e.Then) || hasEffect(e.Else)
+		if c.static != nil && !effects {
 			if *c.static != 0 {
 				return b.expr(e.Then)
 			}
@@ -51,14 +55,77 @@ func (b *body) expr(e Expr) (val, error) {
 		if x.t != y.t {
 			t = tAny
 		}
+		if effects {
+			xc, yc := x.code, y.code
+			if x.t == tBool {
+				xc = x.asInt()
+			}
+			if y.t == tBool {
+				yc = y.asInt()
+			}
+			if t == tBool {
+				t = tInt
+			}
+			return val{code: fmt.Sprintf("R.choose(%s, %s, %s)", c.asBool(), xc, yc), t: t}, nil
+		}
 		if x.t == tInt || x.t == tStr {
 			return val{code: fmt.Sprintf("(%s and %s or %s)", c.asBool(), x.code, y.code), t: t}, nil
 		}
 		return val{code: fmt.Sprintf("(function() if %s then return %s end return %s end)()", c.asBool(), x.code, y.code), t: t}, nil
-	case *Assign, *IncDec:
-		return val{}, unsupported("assignment in an expression", "")
+	case *luaCode:
+		return val{code: e.code, t: e.t}, nil
+	case *Assign:
+		return b.assignValue(e, false)
+	case *IncDec:
+		op := map[string]string{"++": "+=", "--": "-="}[e.Op]
+		return b.assignValue(&Assign{Target: e.Target, Op: op, Value: &Num{Value: 1}}, !e.Prefix)
 	}
 	return val{}, unsupported("expression", "%T", e)
+}
+
+// assignValue converts an assignment used as a value (review decision
+// 60, F2): an inline function that assigns and returns the variable's
+// new value, or its old one for x++ and x--. Lua reads the operands of
+// an expression from left to right, so the side effect happens where
+// rAthena's stack machine runs it, and a .@ local is set as an upvalue.
+func (b *body) assignValue(s *Assign, old bool) (val, error) {
+	t := s.Target
+	// The assignment writes its lines into the function, which are taken
+	// back out of the body here.
+	var steps []string
+	var err error
+	steps, err = b.capture(func() error {
+		// The index is evaluated once, before the write, and the read
+		// after it uses the same value.
+		target, err := b.pureTarget(s.Target)
+		if err != nil {
+			return err
+		}
+		s = &Assign{Target: target, Op: s.Op, Value: s.Value}
+		t = target
+		return b.assign(s)
+	})
+	if err != nil {
+		return val{}, err
+	}
+	if len(steps) == 0 {
+		return val{}, unsupported("assignment in an expression", "to %s, which holds no value", t.Name)
+	}
+	var cur val
+	if p, _, _ := varName(t.Name); p == "" && t.Index == nil {
+		cur, err = b.ident(t.Name)
+	} else {
+		cur, err = b.readVar(t.Name, t.Index)
+	}
+	if err != nil {
+		return val{}, err
+	}
+	code := "(function() " + strings.Join(steps, " ") + " return " + cur.code + " end)()"
+	if old {
+		// x++ gives the value before the change.
+		code = "(function() local wa_old = " + cur.code + " " + strings.Join(steps, " ") + " return wa_old end)()"
+	}
+	return val{code: code, t: cur.t}, nil
 }
 
 // ident converts a bare name: a constant, a parameter, or a character
@@ -193,14 +260,17 @@ func (b *body) binary(e *Binary) (val, error) {
 	}
 	// && and || stop early when the left side is known, so a part for a
 	// setting that is off need not convert.
-	if x.static != nil && (e.Op == "&&" && *x.static == 0 || e.Op == "||" && *x.static != 0) {
+	// rAthena evaluates both sides of && and || (parse_subexpr emits both
+	// before C_LAND and C_LOR), so a side with an effect is never skipped.
+	effects := (e.Op == "&&" || e.Op == "||") && hasEffect(e.Y)
+	if x.static != nil && !effects && (e.Op == "&&" && *x.static == 0 || e.Op == "||" && *x.static != 0) {
 		return intVal(b2i(e.Op == "||")), nil
 	}
 	y, err := b.expr(e.Y)
 	if err != nil {
 		return val{}, err
 	}
-	if x.static != nil && y.static != nil {
+	if x.static != nil && y.static != nil && !effects {
 		v, err := fold(e.Op, *x.static, *y.static)
 		if err != nil {
 			return val{}, err
@@ -241,11 +311,17 @@ func (b *body) binary(e *Binary) (val, error) {
 		}
 		return val{code: "(" + l + " " + op + " " + r + ")", t: tBool}, nil
 	case "&&":
+		if effects {
+			return val{code: "R.both(" + x.asBool() + ", " + y.asBool() + ")", t: tBool}, nil
+		}
 		if x.static != nil {
 			return val{code: y.asBool(), t: tBool}, nil
 		}
 		return val{code: "(" + x.asBool() + " and " + y.asBool() + ")", t: tBool}, nil
 	case "||":
+		if effects {
+			return val{code: "R.either(" + x.asBool() + ", " + y.asBool() + ")", t: tBool}, nil
+		}
 		if x.static != nil {
 			return val{code: y.asBool(), t: tBool}, nil
 		}
@@ -765,9 +841,28 @@ func (b *body) call(e *Call) (val, error) {
 		return b.callfunc(args)
 	case "callsub":
 		return b.callsub(args)
+	case "sscanf":
+		// The conversions are statements, so the call is an inline
+		// function that runs them and returns the count.
+		var count string
+		steps, err := b.capture(func() (err error) {
+			count, err = b.sscanf(args)
+			return err
+		})
+		if err != nil {
+			return val{}, err
+		}
+		return done(val{code: "(function() " + strings.Join(steps, " ") + " return " + count + " end)()", t: tInt}, nil)
 	case "getarg":
-		if !b.hasArgs || len(args) == 0 || len(args) > 2 {
-			return val{}, unsupported("getarg", "outside a function")
+		if len(args) == 0 || len(args) > 2 {
+			return val{}, unsupported("getarg", "arguments")
+		}
+		if !b.hasArgs {
+			// A script's own code, which a label that callsub runs also
+			// falls into, has no call frame. rAthena logs "no callfunc or
+			// callsub" and ends the script (buildin_getarg).
+			b.n.ok(name)
+			return val{code: "(R.stop() or 0)", t: tAny}, nil
 		}
 		i, err := b.expr(args[0])
 		if err != nil {
@@ -783,7 +878,9 @@ func (b *body) call(e *Call) (val, error) {
 		return done(val{code: "R.arg(args, " + i.asInt() + ")", t: tAny}, nil)
 	case "getargcount":
 		if !b.hasArgs {
-			return val{}, unsupported("getargcount", "outside a function")
+			// Like getarg, it ends the script without a call frame.
+			b.n.ok(name)
+			return val{code: "(R.stop() or 0)", t: tInt}, nil
 		}
 		return done(val{code: "args.n", t: tInt}, nil)
 	case "countitem":
@@ -1450,6 +1547,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 		b.line("%s", strings.TrimSuffix(strings.TrimPrefix(v.code, "("), " > 0)"))
 	case "doevent":
 		return b.doevent(args)
+	case "sscanf":
+		_, err := b.sscanf(args)
+		return err
 	case "cmdothernpc":
 		v, err := b.cmdothernpc(args)
 		if err != nil {

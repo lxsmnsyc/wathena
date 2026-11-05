@@ -313,6 +313,7 @@ func (n *npcConv) writeBody(stmts []Stmt, indent int, main, hasArgs bool) ([]str
 	b := n.newBody(indent)
 	b.main, b.hasArgs = main, hasArgs
 	b.event = main && n.inEvent
+	b.keepLocalsInTable(stmts)
 	if hasArgs {
 		b.line("local args = table.pack(...)")
 	}
@@ -320,7 +321,7 @@ func (n *npcConv) writeBody(stmts []Stmt, indent int, main, hasArgs bool) ([]str
 		// The body of a global function reads its reference arguments.
 		b.refArgs = n.refArgs
 	}
-	if err := b.block(n.reachable(stmts)); err != nil {
+	if err := b.block(n.reachable(enterLabels(stmts))); err != nil {
 		return nil, err
 	}
 	if err := checkGotos(b); err != nil {
@@ -376,8 +377,9 @@ func (n *npcConv) writeBody(stmts []Stmt, indent int, main, hasArgs bool) ([]str
 			sb := n.newBody(indent + 1)
 			sb.hasArgs = true
 			sb.subs, sb.funcs = b.subs, b.funcs
+			sb.keepLocalsInTable(part)
 			sb.line("local args = table.pack(...)")
-			if err := sb.block(n.reachable(part)); err != nil {
+			if err := sb.block(n.reachable(enterLabels(part))); err != nil {
 				return nil, err
 			}
 			if err := checkGotos(sb); err != nil {
@@ -516,6 +518,7 @@ func (n *npcConv) npcScript() (string, error) {
 	}
 	click, events, order := segments(stmts.Stmts)
 	n.prepare(stmts.Stmts)
+	_, n.dotShared = computedNames(stmts.Stmts)
 	// The labels as the script writes them, for npc_event's name.
 	labels := map[string]string{}
 	for _, st := range stmts.Stmts {
@@ -601,6 +604,15 @@ func (n *npcConv) npcScript() (string, error) {
 		n.ok("event " + e)
 	}
 	n.touch, n.touchDialog = touch != "", touchDialog
+	// An NPC with a touch area and no touch label is clicked by a player
+	// who comes in, unless the player talks (npc_touch_areanpc, npc.cpp
+	// 1943). That needs a view to click: rAthena's npc_click refuses a
+	// class below 0. The area is the line's span, or a duplicate's, which
+	// runs this script (review decision 60, E2).
+	spans := n.line.XS >= 0 && n.line.YS >= 0 || n.c.dupSpan[n.line.Name]
+	if touch == "" && len(handler) > 0 && spans && n.line.Map != "" && n.line.Sprite != "-1" && !n.isFunction {
+		n.touch, n.touchDialog, n.clickTouch = true, slices.ContainsFunc(handler, dialogCode.MatchString), true
+	}
 	if len(handler) == 0 && len(n.eventOrder) == 0 {
 		return "", nil
 	}
@@ -703,7 +715,11 @@ func (n *npcConv) npcScript() (string, error) {
 	}
 	if len(handler) > 0 {
 		f.need("events")
-		f.line(`events.on("click", function(player, conversation)`)
+		if n.clickTouch {
+			f.line("local function click(player, conversation)")
+		} else {
+			f.line(`events.on("click", function(player, conversation)`)
+		}
 		f.line("  R.run(function()")
 		f.indent = 0
 		for _, l := range handler {
@@ -711,7 +727,17 @@ func (n *npcConv) npcScript() (string, error) {
 		}
 		f.indent = 1
 		f.line("  end)")
-		f.line("end)")
+		if n.clickTouch {
+			// The touch that waited for a conversation gets no click, as
+			// rAthena clicks only for a player who does not talk, and a
+			// hidden NPC takes no click (npc_click). A disabled NPC, and one
+			// cloaked for the player, are not touched at all.
+			f.line("end")
+			f.line(`events.on("click", click)`)
+			f.line(`events.on("touch", function(player, conversation, waited) if not waited and npc.state == "shown" and not npc:is_cloaked(player) then click(player, conversation) end end)`)
+		} else {
+			f.line("end)")
+		}
 	}
 	if fn, ok := n.eventFns["oninit"]; ok {
 		if slices.ContainsFunc(bodies["oninit"], func(l string) bool { return strings.Contains(l, "R.sleep(") }) {

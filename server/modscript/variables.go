@@ -45,7 +45,9 @@ const (
 	MaxModPlayerBytes = 1 << 20
 )
 
-var variableName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,63}$`)
+// variableName allows a leading digit, as rAthena's names do (review
+// decision 60, F1).
+var variableName = regexp.MustCompile(`^[A-Za-z0-9_]{1,64}$`)
 
 // variableScopes are the scopes of wa.variables, with whether a value
 // needs a player. npc values need an NPC instead, and server_temporary
@@ -75,7 +77,7 @@ func (r *Runtime) variablesDeclare(c *script.Call) error {
 		return err
 	}
 	if !variableName.MatchString(name) {
-		return fmt.Errorf("%s: %q is not a variable name: 1 to 64 letters, digits and _, not starting with a digit", what, name)
+		return fmt.Errorf("%s: %q is not a variable name: 1 to 64 letters, digits and _", what, name)
 	}
 	mod := r.actor()
 	if mod == "" {

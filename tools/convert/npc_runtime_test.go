@@ -274,6 +274,13 @@ func (h *npcHost) NPCField(id int64, field string) (script.Value, error) {
 		return script.String(n.Source), nil
 	case "hidden_name":
 		_, hidden, _ := strings.Cut(n.Source, "#")
+		if hidden == "" {
+			// A "::" name keeps its # part in the record's display_name
+			// (scriptDisplayName).
+			_, shown, _ := strings.Cut(n.record, `display_name: "`)
+			shown, _, _ = strings.Cut(shown, `"`)
+			_, hidden, _ = strings.Cut(shown, "#")
+		}
 		return script.String(hidden), nil
 	case "state":
 		return script.String("shown"), nil
@@ -458,7 +465,7 @@ func TestRunConvertedNPCs(t *testing.T) {
 						// The player steps into the touch area and out
 						// again.
 						touches++
-						conv, err := rt.Touch(npc, "touch", 1)
+						conv, err := rt.Touch(npc, "touch", 1, false)
 						if err != nil {
 							t.Errorf("%s: touch: %v", n.Name, err)
 						}
@@ -467,7 +474,7 @@ func TestRunConvertedNPCs(t *testing.T) {
 						if conv != nil && !conv.Done {
 							rt.CloseConversation(conv)
 						}
-						if _, err := rt.Touch(npc, "untouch", 1); err != nil {
+						if _, err := rt.Touch(npc, "untouch", 1, false); err != nil {
 							t.Errorf("%s: untouch: %v", n.Name, err)
 						}
 					}

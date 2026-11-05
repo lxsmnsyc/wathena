@@ -572,7 +572,8 @@ func getdName(s string) (string, int64) {
 }
 
 // variableRef matches a variable's name with its prefix and $ suffix.
-var variableRef = regexp.MustCompile(`^(\.@|\.|\$@|\$|##|#|@|')?[A-Za-z_][A-Za-z0-9_]*\$?$`)
+// A name with a prefix may start with a digit (review decision 60, F1).
+var variableRef = regexp.MustCompile(`^((\.@|\.|\$@|\$|##|#|@|')[A-Za-z0-9_]+|[A-Za-z_][A-Za-z0-9_]*)\$?$`)
 
 // staticGetd reads getd("<name>") of a fixed name: that variable, with
 // its index.
@@ -597,22 +598,32 @@ func staticGetd(c *Call) (*Var, bool) {
 
 // dynamicVar is a getd or setd name made when the script runs: the
 // variables of its scope, the Lua code of the name, and the type of its
-// value when the converter can tell it.
+// value when the converter can tell it. kind says where the name lives:
+// scope is the variables of a fixed start, and for nameLocal and nameDot
+// the reader of .@ and . variables.
 type dynamicVar struct {
+	kind        nameScope
 	scope, name string
 	t           valType
 }
 
-// dynamicName reads a computed getd or setd name. It converts when the
-// text starts with a fixed string that fixes the scope: no prefix (a
-// character variable), @, # or ##, $, or $@. R.getd and R.setd read the
-// rest of the name, its $ and its index when the script runs, as getd
-// does. These do not convert:
-//   - .@ and . variables, which are Lua locals with names fixed when the
-//     script converts.
+// dynamicName reads a computed getd or setd name (review decision 60,
+// F3). The start of the text says where the variable lives:
+//   - No prefix (a character variable), @, # or ##, $, or $@ is a scope
+//     of wa.variables. R.getd and R.setd read the rest of the name, its
+//     $ and its index when the script runs, as getd does.
+//   - .@ is a variable of the function's table of .@ variables, which
+//     keeps them all for this reason (keepLocalsInTable).
+//   - . is an NPC variable, and the script keeps all its . variables as
+//     NPC variables for this reason (computedNames).
+//   - A start that is not fixed text, or does not fix the scope, may be
+//     any of these. R.getd_any and R.setd_any read the prefix when the
+//     script runs and declare the variable then.
+//
+// These do not convert:
 //   - ' variables, which need instance variables.
-//   - A start that a currency's variable, a parameter, a constant or a
-//     skill also starts with: getd would read those, not a variable.
+//   - A fixed start that a currency's variable, a parameter, a constant
+//     or a skill also starts with: getd would read those, not a variable.
 func (b *body) dynamicName(what string, e Expr) (*dynamicVar, error) {
 	var parts []Expr
 	var flatten func(e Expr)
@@ -625,32 +636,27 @@ func (b *body) dynamicName(what string, e Expr) (*dynamicVar, error) {
 		parts = append(parts, e)
 	}
 	flatten(e)
-	first, ok := parts[0].(*Str)
-	if !ok {
-		return nil, unsupported(what, "a name that does not start with fixed text")
+	kind := scopeOfName(e)
+	prefix, scope, lower := "", "", ""
+	if first, ok := parts[0].(*Str); ok && kind != nameAny {
+		prefix = namePrefix.FindString(first.Value)
+		scope = map[string]string{"": "character", "@": "character_temporary", "#": "account", "##": "account", "$": "server",
+			"$@": "server_temporary", ".": "npc"}[prefix]
+		lower = strings.ToLower(first.Value)
+		if prefix == "'" {
+			return nil, unsupported("variables", "%s... is an instance variable", first.Value)
+		}
 	}
-	text := first.Value
-	prefix := regexp.MustCompile(`^(\.@|\.|\$@|\$|##|#|@|')?`).FindString(text)
-	rest := text[len(prefix):]
-	if rest == "" || !variableRef.MatchString(rest[:1]) {
-		return nil, unsupported(what, "a name whose fixed start does not fix its scope")
+	if kind == nameDot && b.n.isFunction {
+		return nil, unsupported(what, "a computed name of a . variable in a function")
 	}
-	scope := map[string]string{"": "character", "@": "character_temporary", "#": "account", "##": "account", "$": "server",
-		"$@": "server_temporary"}[prefix]
-	switch prefix {
-	case ".@", ".":
-		return nil, unsupported(what, "a computed name of a .@ or . variable, which are Lua locals")
-	case "'":
-		return nil, unsupported("variables", "%s... is an instance variable", text)
-	}
-	lower := strings.ToLower(text)
 	c := b.n.c
 	for name := range c.currencyVars {
-		if strings.HasPrefix(name, lower) {
+		if kind == nameFixed && strings.HasPrefix(name, lower) {
 			return nil, unsupported(what, "a name that may be the currency %s", name)
 		}
 	}
-	if prefix == "" {
+	if kind == nameFixed && prefix == "" {
 		for _, names := range []map[string]int64{c.consts.Constants, c.consts.Parameters, c.consts.Skills} {
 			for name := range names {
 				if strings.HasPrefix(strings.ToLower(name), lower) {
@@ -709,7 +715,7 @@ func (b *body) dynamicName(what string, e Expr) (*dynamicVar, error) {
 		// A number ends with a digit.
 		t = tInt
 	}
-	return &dynamicVar{scope: scope, name: strings.Join(code, " .. "), t: t}, nil
+	return &dynamicVar{kind: kind, scope: scope, name: strings.Join(code, " .. "), t: t}, nil
 }
 
 // getd converts getd("<name>"): a variable by a name made when the
@@ -726,7 +732,60 @@ func (b *body) getd(args []Expr) (val, error) {
 	if err != nil {
 		return val{}, err
 	}
-	return val{code: fmt.Sprintf("R.getd(%q, %s, player)", d.scope, d.name), t: d.t}, nil
+	switch d.kind {
+	case nameLocal:
+		if b.table == "" {
+			return val{}, unsupported(what, "a computed name of a .@ variable")
+		}
+		return val{code: fmt.Sprintf("R.getd_local(%s, %s)", b.table, d.name), t: d.t}, nil
+	case nameDot:
+		return val{code: fmt.Sprintf("R.getd(%q, %s, player, %s%s)", d.scope, d.name, b.dotOwner(), b.indexedArg()), t: d.t}, nil
+	case nameAny:
+		return val{code: fmt.Sprintf("R.getd_any(%s, player, %s, %s%s)", d.name, b.dotOwner(), b.tableOrNil(), b.indexedArg()), t: d.t}, nil
+	}
+	return val{code: fmt.Sprintf("R.getd(%q, %s, player%s)", d.scope, d.name, b.indexedNil()), t: d.t}, nil
+}
+
+// dotOwner is the NPC whose . variables a computed name reads: the
+// NPC, or the source of an NPC with duplicates, which they share, and
+// nil in a function.
+func (b *body) dotOwner() string {
+	if b.n.isFunction {
+		// A function does not know the source NPC of the script that
+		// called it, whose . variables a duplicate shares, so R.getd_any
+		// raises an error for a . name there.
+		return "nil"
+	}
+	if b.n.c.duplicated[b.n.line.Name] {
+		b.n.sourceShared = true
+		return sourceVar
+	}
+	return "npc"
+}
+
+// indexedArg is the last argument of R.getd and R.setd: true when the
+// script indexes its computed names, so a run-time name is a table.
+func (b *body) indexedArg() string {
+	if b.n.indexed {
+		return ", true"
+	}
+	return ""
+}
+
+// indexedNil is indexedArg after an owner that is nil.
+func (b *body) indexedNil() string {
+	if b.n.indexed {
+		return ", nil, true"
+	}
+	return ""
+}
+
+// tableOrNil is the table of the body's .@ variables, or nil.
+func (b *body) tableOrNil() string {
+	if b.table == "" {
+		return "nil"
+	}
+	return b.table
 }
 
 // setd converts setd "<name>", <value>; and set getd("<name>"), <value>;.
@@ -758,6 +817,18 @@ func (b *body) setd(what string, args []Expr) error {
 	if value.t == tBool {
 		code = value.asInt()
 	}
-	b.line("R.setd(%q, %s, player, %s)", d.scope, d.name, code)
+	switch d.kind {
+	case nameLocal:
+		if b.table == "" {
+			return unsupported(what, "a computed name of a .@ variable")
+		}
+		b.line("R.setd_local(%s, %s, %s)", b.table, d.name, code)
+	case nameDot:
+		b.line("R.setd(%q, %s, player, %s, %s%s)", d.scope, d.name, code, b.dotOwner(), b.indexedArg())
+	case nameAny:
+		b.line("R.setd_any(%s, player, %s, %s, %s%s)", d.name, b.dotOwner(), b.tableOrNil(), code, b.indexedArg())
+	default:
+		b.line("R.setd(%q, %s, player, %s%s)", d.scope, d.name, code, b.indexedNil())
+	}
 	return nil
 }

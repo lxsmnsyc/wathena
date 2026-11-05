@@ -164,7 +164,7 @@ func TestBuiltinsConvert(t *testing.T) {
 		{`{ setd "$foo_" + .@i, 3; mes "" + getd("$foo_" + .@i); end; }`, `R.setd("server", "$foo_" .. tostring(i), player, 3)`},
 		{`{ mes getd("#bar_" + .@i + "$"); end; }`, `R.getd("account", "#bar_" .. tostring(i) .. "$", player)`},
 		{`{ setd "$foo", 3; set getd("$foo"), 4; end; }`, "SERVER_FOO:set(4)"},
-		{`{ mes "" + getd(".@x" + .@i); end; }`, "!getd: a computed name of a .@ or . variable"},
+		{`{ mes "" + getd(".@x" + .@i); end; }`, `R.getd_local(locals_1, ".@x" .. tostring(locals_1["i"]))`},
 		{`{ setd "$@x" + .@i, 1; end; }`, `R.setd("server_temporary", "$@x" .. tostring(i), player, 1)`},
 		{`{ setd "Zen" + .@i, 1; end; }`, "!setd: a name that may be"},
 		// Functions called by name, local functions and callsub.
@@ -174,11 +174,11 @@ func TestBuiltinsConvert(t *testing.T) {
 		{`{ mes "a"; close; S_Sub: .@v = getarg(0); return; OnInit: callsub S_Sub, 1; end; }`, "sub_s_sub(player, conversation, npc, 1)"},
 		{`{ mes "a"; close; S_Sub: mes "" + getarg(0); return; OnInit: callsub S_Sub, 1; end; }`, "!event oninit: it shows a dialog, and OnInit runs without a player"},
 		{`{ switch (select("A:B")) { case 1: callsub S_X, 1; case 2: if (.@a) close; else end; } S_X: mes "" + getarg(0); end; }`, "sub_s_x(player, conversation, npc, 1)"},
-		{`{ switch (select("A:B:C")) { case 1: callsub S_X, 1; case 2: close; } S_X: mes "" + getarg(0); end; }`, "!getarg: outside a function"},
-		{`{ callsub S_X, 1; S_X: mes "" + getarg(0); return; }`, "!getarg: outside a function"},
+		{`{ switch (select("A:B:C")) { case 1: callsub S_X, 1; case 2: close; } S_X: mes "" + getarg(0); end; }`, "(R.stop() or 0)"},
+		{`{ callsub S_X, 1; S_X: mes "" + getarg(0); return; }`, "(R.stop() or 0)"},
 		// Labels inside blocks.
 		{`{ .@a = 3; if (.@a) { L_In: .@a--; if (.@a) goto L_In; } end; }`, "::l_in::"},
-		{`{ goto L_In; if (.@a) { L_In: end; } end; }`, "!labels: l_in: a label inside a block, which a jump from outside the block reaches"},
+		{`{ goto L_In; if (.@a) { L_In: end; } end; }`, "::wa_enter_l_in::"},
 		// Reference arguments.
 		{`{ callfunc "F_TestRef", .@arr, 7; mes "" + .@arr[1]; end; }`, `require("core.functions.F_TestRef")(player, conversation, npc, arr, 7)`},
 		{`{ F_TestRef .@other, 1; end; }`, `(player, conversation, npc, other, 1)`},

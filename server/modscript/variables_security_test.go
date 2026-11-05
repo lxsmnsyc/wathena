@@ -46,3 +46,26 @@ end`))
 		t.Fatalf("messages = %q; logs: %s", h.messages, logs)
 	}
 }
+
+// A name may start with a digit, as rAthena's do (review decision 60,
+// F1). A name with other characters, or of 65 characters, is refused.
+func TestVariableNameStartsWithDigit(t *testing.T) {
+	h := newHost()
+	r, logs := newRuntime(t, h, modScripts("example.a", nil, nil, "scripts/main.lua", `
+local events = require "wa.events"
+local variables = require "wa.variables"
+local room = variables.server_temporary_integer("3rdgc_room01")
+return function()
+  events.on("login", function(player)
+    room:set(4)
+    local ok = pcall(variables.server_integer, "3 room")
+    local long = pcall(variables.server_integer, string.rep("1", 65))
+    local full = pcall(variables.server_integer, string.rep("1", 64))
+    player:send_message(room:get() .. " " .. tostring(ok) .. " " .. tostring(long) .. " " .. tostring(full))
+  end)
+end`))
+	r.Fire("login", Player(1))
+	if len(h.messages) != 1 || h.messages[0] != "1:4 false false true" {
+		t.Fatalf("messages = %q; logs: %s", h.messages, logs)
+	}
+}

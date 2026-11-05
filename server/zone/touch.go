@@ -55,6 +55,9 @@ type touchEvent struct {
 	// in the same queue (npcworld.go), and killed for a monster label's.
 	label  string
 	killed *modscript.LabelMonster
+	// waited is set once the touch waited for the player's conversation
+	// to end. The handlers read it (review decision 60, E2).
+	waited bool
 }
 
 // touches reports whether an NPC's touch area holds a cell.
@@ -142,7 +145,7 @@ func (z *Zone) runTouch(t *touchEvent) {
 	}
 	p := t.player
 	if t.untouch {
-		_, _ = z.scripts.Touch(n.script, "untouch", int64(p.charID))
+		_, _ = z.scripts.Touch(n.script, "untouch", int64(p.charID), false)
 		if z.players[p.charID] == p {
 			z.afterTalk(p)
 		}
@@ -155,12 +158,13 @@ func (z *Zone) runTouch(t *touchEvent) {
 	if p.talk != nil {
 		// npc_event_sub queues the event while the player talks.
 		if len(p.touchQueue) < maxTouchQueue {
+			t.waited = true
 			p.touchQueue = append(p.touchQueue, t)
 			p.touchAt = z.now + touchQueueDelay
 		}
 		return
 	}
-	conv, err := z.scripts.Touch(n.script, "touch", int64(p.charID))
+	conv, err := z.scripts.Touch(n.script, "touch", int64(p.charID), t.waited)
 	if err != nil {
 		if z.Mods != nil && z.Mods.Log != nil {
 			z.Mods.Log.Warn("NPC touch failed", "map", z.Map, "npc", n.Name, "err", err)

@@ -76,6 +76,24 @@ function R.text(v)
 	return tostring(v)
 end
 
+-- both, either and choose are &&, || and ?: when a side has an effect:
+-- rAthena evaluates every side (parse_subexpr), so the arguments are all
+-- evaluated before they are combined.
+function R.both(a, b)
+	return a and b
+end
+
+function R.either(a, b)
+	return a or b
+end
+
+function R.choose(c, a, b)
+	if c then
+		return a
+	end
+	return b
+end
+
 -- truthy is rAthena's test of a value: not 0 and not "".
 function R.truthy(v)
 	return v ~= nil and v ~= 0 and v ~= ""
@@ -1365,37 +1383,71 @@ function R.explode(t, i, s, delimiter)
 	t[i] = table.concat(part)
 end
 
+-- name_parts reads a name made when the script runs: the name up to the
+-- first [ without its prefix, and the number after [, or 0. Digits may
+-- start a name once a prefix is gone, such as $@3rdgc_room01 (review
+-- decision 60, F1).
+local function name_parts(text, prefixed)
+	local name = text:match("^[^%[]*")
+	local index = math.tointeger(tonumber(text:match("^[^%[]*%[[ \t\n\v\f\r]*([+-]?%d+)") or "0")) or 0
+	local bare = name:gsub("^[$#@.]+", "")
+	local str = bare:sub(-1) == "$"
+	if str then
+		bare = bare:sub(1, -2)
+	end
+	if bare == "" and prefixed then
+		-- rAthena keeps a variable named by the prefix alone, such as "."
+		-- from "." .. strnpcinfo(2) for an NPC whose name has no # part.
+		bare = "_"
+	end
+	local first = prefixed and "[A-Za-z0-9_]" or "[A-Za-z_]"
+	if not bare:find("^" .. first .. "[A-Za-z0-9_]*$") or #bare > 64 then
+		error("getd: " .. text .. " is not a variable name", 4)
+	end
+	return bare, index, str
+end
+
 -- dynamic finds a variable of wa.variables by a name made when the
 -- script runs, as getd and setd read it (script.cpp 18016 and 18155):
 -- the prefix, which the converter checked, the name up to the first [
 -- with $ for a string, and the number after [, or 0. It returns the
 -- handle, the index for an array or nil, the owner, and the default.
 -- rAthena's x and x[0] are one value: a name that a script keeps as an
--- array is read at index 0.
-local function dynamic(scope, text, player)
-	local name = text:match("^[^%[]*")
-	local index = math.tointeger(tonumber(text:match("^[^%[]*%[[ \t\n\v\f\r]*([+-]?%d+)") or "0")) or 0
-	local bare = name:gsub("^[$#@]+", "")
-	local str = bare:sub(-1) == "$"
-	if str then
-		bare = bare:sub(1, -2)
-	end
-	if not bare:find("^[A-Za-z_][A-Za-z0-9_]*$") or #bare > 64 then
-		error("getd: " .. text .. " is not a variable name", 3)
-	end
+-- array is read at index 0. The owner of an NPC variable is the NPC.
+local function dynamic(scope, text, player, npc, indexed)
+	local bare, index, str = name_parts(text, scope ~= "character")
 	local declared = bare:lower() .. (str and "_text" or "")
 	local owner = player
 	if scope == "server" or scope == "server_temporary" then
 		owner = nil
+	elseif scope == "npc" then
+		owner = npc
+	end
+	if scope == "npc" and owner == nil then
+		error("getd: " .. text .. " is a . variable, which needs an NPC, and a function has none", 3)
 	end
 	local default = str and "" or 0
-	if index == 0 then
-		local ok, handle = pcall(variables[scope .. "_" .. (str and "string" or "integer")], declared)
-		if ok then
-			return handle, nil, owner, default
-		end
+	-- A name is a number or a string, as a script that names it declares
+	-- it, unless the index makes it a table. A script that indexes its
+	-- computed names (indexed) declares them all as tables, so x and x[2]
+	-- work in any order; index 0 is the plain value, as rAthena's x[0].
+	if index ~= 0 then
+		return variables[scope .. "_table"](declared), index, owner, default
 	end
-	return variables[scope .. "_table"](declared), index, owner, default
+	local first, second = "_table", "_" .. (str and "string" or "integer")
+	if not indexed then
+		first, second = second, first
+	end
+	local ok, handle = pcall(variables[scope .. first], declared)
+	if not ok then
+		-- The name is declared the other way, by another script.
+		handle = variables[scope .. second](declared)
+		first = second
+	end
+	if first == "_table" then
+		return handle, index, owner, default
+	end
+	return handle, nil, owner, default
 end
 
 -- NPCs by name (review decision 58). A command on an NPC that does not
@@ -1614,9 +1666,10 @@ function R.player_field(p, field, default)
 	return p[field]
 end
 
--- getd reads a variable by a name made when the script runs.
-function R.getd(scope, text, player)
-	local handle, index, owner, default = dynamic(scope, text, player)
+-- getd reads a variable by a name made when the script runs. npc owns
+-- the variables of scope "npc".
+function R.getd(scope, text, player, npc, indexed)
+	local handle, index, owner, default = dynamic(scope, text, player, npc, indexed)
 	if index ~= nil then
 		return R.aget(handle, owner, index, default)
 	end
@@ -1634,8 +1687,8 @@ end
 
 -- setd writes a variable by a name made when the script runs. A string
 -- variable takes the value as text; a number variable needs a number.
-function R.setd(scope, text, player, value)
-	local handle, index, owner, default = dynamic(scope, text, player)
+function R.setd(scope, text, player, value, npc, indexed)
+	local handle, index, owner, default = dynamic(scope, text, player, npc, indexed)
 	if type(default) == "string" then
 		value = tostring(value)
 	elseif math.type(value) ~= "integer" then
@@ -1648,6 +1701,141 @@ function R.setd(scope, text, player, value)
 	else
 		handle:set(owner, value)
 	end
+end
+
+-- getd_local and setd_local read and write a .@ variable by a name made
+-- when the script runs. locals holds the function's .@ variables by
+-- lower-case name, with $ for a string. A variable that the function
+-- never named is made when it is first written. A name used as an array
+-- is a table from index 0, and x and x[0] are one value.
+function R.getd_local(locals, text)
+	local bare, index, str = name_parts(text, true)
+	local v = locals[bare:lower() .. (str and "$" or "")]
+	if type(v) == "table" then
+		v = v[index]
+	elseif index ~= 0 then
+		v = nil
+	end
+	if v == nil then
+		return str and "" or 0
+	end
+	return v
+end
+
+function R.setd_local(locals, text, value)
+	local bare, index, str = name_parts(text, true)
+	local key = bare:lower() .. (str and "$" or "")
+	if str then
+		value = tostring(value)
+	elseif math.type(value) ~= "integer" then
+		error("setd: " .. text .. " takes a number", 2)
+	end
+	local v = locals[key]
+	if type(v) == "table" then
+		v[index] = value
+	elseif index == 0 then
+		locals[key] = value
+	else
+		-- A number or a string becomes the first element of an array.
+		locals[key] = { [0] = v, [index] = value }
+	end
+end
+
+-- scope_of finds the scope a name made when the script runs is in, from
+-- its prefix: the scope of wa.variables, or "local" for .@ and "npc"
+-- for a . variable.
+local function scope_of(text)
+	local scopes = { { "%.@", "local" }, { "%$@", "server_temporary" }, { "##", "account" }, { "%.", "npc" },
+		{ "%$", "server" }, { "#", "account" }, { "@", "character_temporary" } }
+	for _, s in ipairs(scopes) do
+		if text:find("^" .. s[1]) then
+			return s[2]
+		end
+	end
+	if text:find("^'") then
+		error("getd: " .. text .. " is an instance variable, which wAthena does not have yet", 3)
+	end
+	return "character"
+end
+
+-- getd_any and setd_any are getd and setd of a name that no fixed start
+-- of the script tells the scope of. The prefix of the name does when the
+-- script runs, and the variable is declared then. A name that a
+-- constant, a parameter or a currency also has is the variable here,
+-- where rAthena reads that.
+function R.getd_any(text, player, npc, locals, indexed)
+	local scope = scope_of(text)
+	if scope == "local" then
+		return R.getd_local(locals, text)
+	end
+	return R.getd(scope, text, player, npc, indexed)
+end
+
+function R.setd_any(text, player, npc, locals, value, indexed)
+	local scope = scope_of(text)
+	if scope == "local" then
+		return R.setd_local(locals, text, value)
+	end
+	return R.setd(scope, text, player, value, npc, indexed)
+end
+
+-- sscanf is sscanf of a format of %d, %s, %% and literal text, as the C
+-- scanf that buildin_sscanf calls once for each conversion. It returns
+-- the number of conversions, or -1 when the text or a conversion does
+-- not match, and the values it read, in order. White space in the format
+-- skips any in the text, a conversion skips white space before it, and
+-- a literal after the last conversion is not read.
+function R.sscanf(text, format)
+	local values = {}
+	if format ~= "" and text == "" then
+		return -1, values
+	end
+	local left = 0
+	for _ in format:gsub("%%%%", ""):gmatch("%%[ds]") do
+		left = left + 1
+	end
+	local pos, i = 1, 1
+	while left > 0 do
+		local c = format:sub(i, i)
+		if c == "%" then
+			local kind = format:sub(i + 1, i + 1)
+			i = i + 2
+			if kind == "%" then
+				if text:sub(pos, pos) ~= "%" then
+					return -1, values
+				end
+				pos = pos + 1
+			else
+				local from = text:find("[^ \t\n\v\f\r]", pos)
+				if from == nil then
+					return -1, values
+				end
+				local a, b
+				if kind == "d" then
+					a, b = text:find("^[+-]?%d+", from)
+				else
+					a, b = text:find("^[^ \t\n\v\f\r]+", from)
+				end
+				if a == nil then
+					return -1, values
+				end
+				local piece = text:sub(a, b)
+				values[#values + 1] = kind == "d" and R.strtol(piece, 10) or piece
+				pos = b + 1
+				left = left - 1
+			end
+		elseif c:find("^%s") then
+			pos = text:find("[^ \t\n\v\f\r]", pos) or #text + 1
+			i = i + 1
+		else
+			if text:sub(pos, pos) ~= c then
+				return -1, values
+			end
+			pos = pos + 1
+			i = i + 1
+		end
+	end
+	return #values, values
 end
 
 -- skill_level is getskilllv of a computed skill ID: 0 for an ID that is

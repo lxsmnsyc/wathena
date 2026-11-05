@@ -286,8 +286,10 @@ func (r *Runtime) converse(n *NPC, c *Context, player int64, what string, fn *sc
 // The touch handlers run in a conversation with the player, as a
 // click's, so they may show a dialog as rAthena's OnTouch. Touch returns
 // it, or nil when the NPC has no touch handler. The untouch handlers get
-// no conversation.
-func (r *Runtime) Touch(n *NPC, event string, player int64) (*Conversation, error) {
+// no conversation. waited is set for a touch that waited for the
+// player's conversation to end, which the handlers read (review decision
+// 60, E2).
+func (r *Runtime) Touch(n *NPC, event string, player int64, waited bool) (*Conversation, error) {
 	c := n.Context()
 	if c == nil {
 		return nil, nil
@@ -302,7 +304,7 @@ func (r *Runtime) Touch(n *NPC, event string, player int64) (*Conversation, erro
 		if len(vals) == 0 {
 			return nil, nil
 		}
-		return r.converse(n, c, player, "touch", r.fns.converse, nil, vals)
+		return r.converse(n, c, player, "touch", r.fns.converseTouch, []script.Value{script.Bool(waited)}, vals)
 	}
 	for _, h := range slices.Clone(r.handlers[event]) {
 		if h.ctx != c || h.removed || c.ended {

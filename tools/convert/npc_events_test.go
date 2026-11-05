@@ -140,7 +140,7 @@ func eventResult(t *testing.T) *NPCResult {
 	var lines []npcLine
 	for _, name := range sortedKeys(eventNPCs) {
 		lines = append(lines, npcLine{Kind: "script", Name: name, Display: name, File: "test.txt", Line: 1, Map: "prontera",
-			X: 150, Y: 150, Sprite: "4_F_KAFRA1", Script: eventNPCs[name]})
+			X: 150, Y: 150, Sprite: "4_F_KAFRA1", XS: -1, YS: -1, Script: eventNPCs[name]})
 	}
 	data, err := json.Marshal(map[string]any{"mode": "renewal", "npcs": lines})
 	if err != nil {
