@@ -1138,6 +1138,15 @@ npc_methods.add_quest_icon = function(self, icon, options)
 	return (call(H.npc_present, npc_ids[self], "add_quest_icon", icon, options.mark, options.condition))
 end
 
+player_methods.add_timer = function(self, milliseconds, label)
+	if math_type(milliseconds) ~= "integer" then
+		error("player:add_timer: milliseconds must be an integer", 2)
+	end
+	return (call(H.player_add_timer, player_ids[self], milliseconds, label))
+end
+player_methods.remove_timer = function(self, label)
+	return (call(H.player_remove_timer, player_ids[self], label))
+end
 player_methods.say_aloud = function(self, text, options)
 	local to, to_id = send_to("player:say_aloud", options, { to = true })
 	return (call(H.player_present, player_ids[self], "say_aloud", text, to, to_id))
@@ -1490,16 +1499,38 @@ api["wa.spawning"] = readonly("wa.spawning", {
 	end,
 })
 
+-- timer_clock reads the clock option of timers.after and timers.every:
+-- true for the server clock.
+local function timer_clock(what, options)
+	if options == nil then
+		return false
+	end
+	check(type(options) == "table", what .. ": the options must be a table")
+	local server = false
+	for k, v in pairs(options) do
+		check(k == "clock", what .. ": the only option is clock")
+		check(v == "zone" or v == "server", what .. ": clock is zone or server")
+		server = v == "server"
+	end
+	return server
+end
+
 api["wa.timers"] = readonly("wa.timers", {
-	after = function(milliseconds, fn)
+	after = function(milliseconds, fn, options)
 		check(math_type(milliseconds) == "integer", "timers.after: milliseconds must be an integer")
 		check(type(fn) == "function", "timers.after: the callback must be a function")
-		return new_timer(call(H.timers_start, milliseconds, fn, false))
+		local server = timer_clock("timers.after", options)
+		return new_timer(call(H.timers_start, milliseconds, fn, false, server))
 	end,
-	every = function(milliseconds, fn)
+	every = function(milliseconds, fn, options)
 		check(math_type(milliseconds) == "integer", "timers.every: milliseconds must be an integer")
 		check(type(fn) == "function", "timers.every: the callback must be a function")
-		return new_timer(call(H.timers_start, milliseconds, fn, true))
+		local server = timer_clock("timers.every", options)
+		return new_timer(call(H.timers_start, milliseconds, fn, true, server))
+	end,
+	wait = function(milliseconds)
+		check(math_type(milliseconds) == "integer", "timers.wait: milliseconds must be an integer")
+		call(H.timers_wait, milliseconds)
 	end,
 	-- with_bonuses runs fn now: the bonuses it adds end after the time.
 	-- { restart = timer } cancels that timer first, if it still runs.

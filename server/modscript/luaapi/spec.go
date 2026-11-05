@@ -164,10 +164,11 @@ var Modules = []Module{
 	},
 	{
 		Name: "wa.timers", Local: "timers",
-		Doc: "Timers on the zone clock. The context owns them, and cancels them when it ends.",
+		Doc: "Timers on the zone clock, or on the server clock with { clock = \"server\" }. The context owns them, and cancels them when it ends.",
 		Funcs: []Func{
-			{Name: "after", Params: []Param{{"milliseconds", "integer", "0 or more."}, {"callback", "fun()", ""}}, Returns: "wa.Timer", Doc: "Runs the callback once, after the time."},
-			{Name: "every", Params: []Param{{"milliseconds", "integer", "Above 0."}, {"callback", "fun()", ""}}, Returns: "wa.Timer", Doc: "Runs the callback every time the interval passes. A timer that falls behind skips the runs it missed."},
+			{Name: "after", Params: []Param{{"milliseconds", "integer", "0 or more."}, {"callback", "fun()", ""}, {"options", "wa.TimerOptions?", ""}}, Returns: "wa.Timer", Doc: "Runs the callback once, after the time. In an NPC context the callback may call timers.wait."},
+			{Name: "every", Params: []Param{{"milliseconds", "integer", "Above 0."}, {"callback", "fun()", ""}, {"options", "wa.TimerOptions?", ""}}, Returns: "wa.Timer", Doc: "Runs the callback every time the interval passes. A timer that falls behind skips the runs it missed. In an NPC context the callback may call timers.wait."},
+			{Name: "wait", Params: []Param{{"milliseconds", "integer", "0 to 10 minutes."}}, Doc: "Waits, as sleep without a player (review decision 60). It runs in a handler of an NPC context that has no conversation: an npc_event handler sent without a player or with a player of another map, a callback of timers.after or timers.every, or a schedule handler. The wait follows the clock the handler started on: the zone clock, or the server clock for the callback of a timer with { clock = \"server\" } and for a schedule handler. A handler with a conversation waits with conversation:wait. Elsewhere it raises an error. The wait ends when the context ends."},
 			{Name: "with_bonuses", Params: []Param{{"milliseconds", "integer", ""}, {"add", "fun()", "Adds bonuses with bonuses.add."}, {"options", "wa.WithBonusesOptions?", ""}},
 				Returns: "wa.Timer", Doc: "Runs the function now. The bonuses it adds end after the time. Item contexts only."},
 		},
@@ -573,6 +574,9 @@ var Classes = []Class{
 			{Name: "item_heal", Params: []Param{{"heal", "wa.HealSpec", ""}}, Doc: "Heals as itemheal, with its bonuses from VIT, INT and skills."},
 			{Name: "heal_percent", Params: []Param{{"heal", "wa.HealSpec", "Amounts in percent, from -100 to 100."}}, Doc: "Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1 (review decision 56)."},
 			{Name: "heal_fully", Doc: "Heals all HP and SP."},
+			{Name: "add_timer", Params: []Param{{"milliseconds", "integer", "0 or more."}, {"label", "string", "An event label of the context's NPC, such as OnTimeout, or of a named NPC, such as Guard::OnTimeout. Another mod's NPC (core:Guard::OnTimeout) needs npcs.control."}},
+				Doc: "Starts a timer of the player, as addtimer (review decision 60). When the time comes, the label runs as npc:fire_event(label, { player }) does: after the current step, in a conversation that waits while the player talks. The timer belongs to the player: it goes with the player to other maps and ends at logout. At most 32 timers. A label outside an NPC's script needs the NPC's name. The player must be on this map."},
+			{Name: "remove_timer", Params: []Param{{"label", "string", "As add_timer's."}}, Returns: "boolean", Doc: "Ends the first timer of the player with the label, as deltimer. Returns whether one ended."},
 			{Name: "warp", Params: []Param{{"map", "string", ""}, {"x", "integer", ""}, {"y", "integer", ""}}, Returns: "boolean", Doc: "Moves the player after the event. Returns false when the map does not run.", Permission: "player.warp"},
 			{Name: "warp_to_random_cell", Returns: "boolean", Doc: "A Fly Wing: a random walkable cell of the map.", Permission: "player.warp"},
 			{Name: "warp_to_save_point", Returns: "boolean", Doc: "A Butterfly Wing: the save point.", Permission: "player.warp"},
@@ -1895,6 +1899,10 @@ var Classes = []Class{
 	{
 		Name: "wa.TradeOptions", Doc: "The options of a trade handler.",
 		Fields: []Field{{"player", "wa.Player?", "Only trades of this player."}},
+	},
+	{
+		Name: "wa.TimerOptions", Doc: "Options of timers.after and timers.every.",
+		Fields: []Field{{"clock", "string?", "\"zone\" (the default) or \"server\". A timer of the zone clock stands still while the zone has no players. A timer of the server clock follows wall time and wakes a sleeping zone, as schedules do; converted NPC timers use it (review decision 60)."}},
 	},
 	{
 		Name: "wa.WithBonusesOptions", Doc: "Options of timers.with_bonuses.",

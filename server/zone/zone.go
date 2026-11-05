@@ -96,8 +96,11 @@ type Player struct {
 	Look Look
 	Out  <-chan *wathenav1.ServerMessage
 
-	out    chan *wathenav1.ServerMessage
-	entity *entity
+	// eventTimers are the player's timers of player:add_timer, which go
+	// with the player to other maps (playertimers.go).
+	eventTimers []eventTimer
+	out         chan *wathenav1.ServerMessage
+	entity      *entity
 	// queued counts the player's commands in the zone's queue, which
 	// Session.send keeps below playerQueue.
 	queued atomic.Int32
@@ -1196,6 +1199,11 @@ func (z *Zone) join(p *Player) joinResult {
 			}
 			p.cooldowns[id] = z.now + left
 		}
+		// So do the timers of player:add_timer.
+		for _, t := range h.eventTimers {
+			t.due += z.now
+			p.eventTimers = append(p.eventTimers, t)
+		}
 		// Spirit spheres go on too.
 		for _, left := range h.spiritBalls {
 			p.spiritTimers = append(p.spiritTimers, z.now+left)
@@ -1737,6 +1745,7 @@ func (z *Zone) stepAt(now int64) {
 	z.autosave()
 	z.runScripts()
 	z.talkTimers()
+	z.runEventTimers()
 	z.queuedTouches()
 	if z.scripts != nil {
 		z.scripts.Advance(z.now)

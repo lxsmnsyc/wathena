@@ -250,6 +250,16 @@ func (r *Runtime) timersStart(c *script.Call) error {
 		return err
 	}
 	t := &timer{id: r.newID(), ctx: ctx, due: r.host.Now() + ms, fn: ref}
+	if c.NArgs() > 3 && c.Bool(3) {
+		// A timer of the server clock follows wall time, so it also runs
+		// while the zone sleeps (review decision 60, C1).
+		now, err := r.clockNow(what)
+		if err != nil {
+			ref.Release()
+			return err
+		}
+		t.server, t.due = true, now.UnixMilli()+ms
+	}
 	if repeat {
 		t.every = ms
 	}

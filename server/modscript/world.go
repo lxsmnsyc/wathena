@@ -721,7 +721,7 @@ func (r *Runtime) RunSchedules(now time.Time) {
 		}
 		if sc.cond == nil {
 			sc.next = schedule.Next(sc.spec, now, r.location())
-			if err := r.run(sc.ctx, sc.fn.Value()); err != nil {
+			if err := r.runWaitable(sc.ctx, true, sc.fn.Value()); err != nil {
 				r.failed(sc.ctx, "schedule", err)
 			}
 			continue
@@ -775,11 +775,19 @@ func (r *Runtime) runFn(c *Context, f func() error) error {
 	return err
 }
 
-// NextSchedule returns when RunSchedules next has work: the first fixed
-// time, or the next minute when a condition waits. ok is false without
-// schedules.
+// NextSchedule returns when RunSchedules or RunServerTimers next has
+// work: the first fixed time, the next minute when a condition waits, or
+// the first timer of the server clock. ok is false without any.
 func (r *Runtime) NextSchedule() (time.Time, bool) {
 	var next time.Time
+	// A timer of the server clock wakes the zone too.
+	for _, t := range r.timers {
+		if t.server {
+			if at := time.UnixMilli(t.due); next.IsZero() || at.Before(next) {
+				next = at
+			}
+		}
+	}
 	for _, sc := range r.schedules {
 		at := sc.next
 		if sc.cond != nil {

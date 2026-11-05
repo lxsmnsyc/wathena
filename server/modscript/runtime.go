@@ -221,6 +221,9 @@ type Runtime struct {
 	closed string
 	// talking is the conversation whose thread runs now, or nil.
 	talking *Conversation
+	// waiting is the handler thread that runs now, or nil. timers.wait
+	// pauses it.
+	waiting *waiter
 	// questIcons are the quest icons of npc:add_quest_icon, by NPC
 	// handle, in the order they were added (present.go).
 	questIcons map[int64][]*questIcon
@@ -357,6 +360,12 @@ type timer struct {
 	every    int64
 	fn       *script.Ref
 	canceled bool
+	// server is set for a timer on the server clock: due is then in
+	// milliseconds of Options.Clock, and the timer wakes a sleeping zone.
+	server bool
+	// wait is the handler thread that a timers.wait timer resumes. fn is
+	// nil for it, as for a with_bonuses timer.
+	wait *waiter
 	// bonuses are the bonuses of a with_bonuses timer, which end when it
 	// is due or canceled. fn is nil for such a timer.
 	bonuses []*Bonus
@@ -461,6 +470,9 @@ func (r *Runtime) init() error {
 		{"events_remove", r.eventsRemove},
 		{"timers_start", r.timersStart},
 		{"timers_cancel", r.timersCancel},
+		{"timers_wait", r.timersWait},
+		{"player_add_timer", r.playerAddTimer},
+		{"player_remove_timer", r.playerRemoveTimer},
 		{"items_id", r.itemsID},
 		{"player_field", r.playerField},
 		{"player_remote", r.playerRemote},
@@ -853,6 +865,10 @@ func (r *Runtime) end(c *Context) {
 	for _, t := range c.timers {
 		t.canceled = true
 		r.endTimerBonuses(t)
+		if t.wait != nil {
+			// The thread that waits never goes on.
+			_ = t.wait.thread.Close()
+		}
 		if t.fn != nil {
 			t.fn.Release()
 		}
@@ -1008,12 +1024,20 @@ func (r *Runtime) Fire(event string, args ...Arg) {
 	}
 }
 
-// Advance runs the timers that are due at now, in zone milliseconds, in
-// order of due time.
-func (r *Runtime) Advance(now int64) {
+// Advance runs the timers of the zone clock that are due at now, in zone
+// milliseconds, in order of due time.
+func (r *Runtime) Advance(now int64) { r.runDue(now, false) }
+
+// RunServerTimers runs the timers of the server clock that are due at
+// now, as Advance does for the zone clock. A sleeping zone runs it when
+// NextSchedule says so.
+func (r *Runtime) RunServerTimers(now time.Time) { r.runDue(now.UnixMilli(), true) }
+
+// runDue runs the timers of one clock that are due at now.
+func (r *Runtime) runDue(now int64, server bool) {
 	var due []*timer
 	for _, t := range r.timers {
-		if t.due <= now {
+		if t.server == server && t.due <= now {
 			due = append(due, t)
 		}
 	}
@@ -1030,10 +1054,25 @@ func (r *Runtime) Advance(now int64) {
 		if t.canceled || t.ctx.ended {
 			continue
 		}
-		skip := t.fn != nil && r.off(t.ctx)
-		if t.fn != nil && !skip && r.overBudget(t.ctx) {
+		runs := t.fn != nil || t.wait != nil
+		skip := runs && r.off(t.ctx)
+		if runs && !skip && !server && r.overBudget(t.ctx) {
 			// The timer stays due, and runs at the next tick its mod has
-			// budget for.
+			// budget for. A server clock timer has no tick to wait for in
+			// a sleeping zone, so it skips this, as schedules do.
+			continue
+		}
+		if t.wait != nil {
+			// A timers.wait timer: the handler goes on, unless its mod is
+			// off, which ends it.
+			r.dropTimer(t)
+			if skip {
+				_ = t.wait.thread.Close()
+				continue
+			}
+			if err := r.resumeWaiter(t.wait, script.String("ok")); err != nil {
+				r.failed(t.ctx, "timer", err)
+			}
 			continue
 		}
 		if t.fn == nil {
@@ -1054,7 +1093,7 @@ func (r *Runtime) Advance(now int64) {
 		}
 		// A timer of a mod that is off is skipped (switches.go).
 		if !skip {
-			if err := r.run(t.ctx, t.fn.Value()); err != nil {
+			if err := r.runWaitable(t.ctx, t.server, t.fn.Value()); err != nil {
 				r.failed(t.ctx, "timer", err)
 			}
 		}
@@ -1064,11 +1103,14 @@ func (r *Runtime) Advance(now int64) {
 	}
 }
 
-// Shift moves every timer later, for time the zone spent asleep. Timers
-// follow the zone clock, which stops while a zone has no players.
+// Shift moves every timer of the zone clock later, for time the zone
+// spent asleep. Those timers follow the zone clock, which stops while a
+// zone has no players. Timers of the server clock keep their times.
 func (r *Runtime) Shift(ms int64) {
 	for _, t := range r.timers {
-		t.due += ms
+		if !t.server {
+			t.due += ms
+		}
 	}
 }
 

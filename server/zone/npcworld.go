@@ -563,6 +563,15 @@ func (z *Zone) runNPCEventAway(e *entity, label, name string, killed *modscript.
 	if d != nil {
 		en = d.find(name)
 	}
+	if d == nil {
+		// A zone without a world's directory knows its own players.
+		for _, p := range z.players {
+			if p.Name == name && !p.gone() {
+				z.runNPCEvent(&touchEvent{npc: e, player: p, label: label, killed: killed})
+				return
+			}
+		}
+	}
 	if en == nil {
 		_, _, _ = z.scripts.FireMonsterLabel(n.script, label, 0, killed)
 		return

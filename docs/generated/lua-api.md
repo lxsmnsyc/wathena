@@ -16,7 +16,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.hooks`](#wahooks) | Hooks change a game result in a chain ordered by priority. Each hook calls next to get the rest of the chain's result. The innermost result is rAthena's value. Hooks only compute: calls that change the game raise an error in them. The context owns them. |
 | [`wa.schedules`](#waschedules) | Schedules on the server clock, in the server's time zone (time_zone in the config). A time that does not exist on a day clocks change runs at the next valid minute, and a time that happens twice runs once. A time that passed while the zone slept or the server was stopped runs once, or not at all. The context owns them. |
 | [`wa.spawning`](#waspawning) | Monsters that the context owns. They go when it ends. Monsters of another map belong to no context. |
-| [`wa.timers`](#watimers) | Timers on the zone clock. The context owns them, and cancels them when it ends. |
+| [`wa.timers`](#watimers) | Timers on the zone clock, or on the server clock with { clock = "server" }. The context owns them, and cancels them when it ends. |
 | [`wa.items`](#waitems) | Items by name. |
 | [`wa.skills`](#waskills) | Skills by name. |
 | [`wa.companions`](#wacompanions) | Companions by name: core's, such as falcon, and the mods' records of data/companions.yml. |
@@ -186,25 +186,35 @@ Permission: `npc.create`.
 local timers = require "wa.timers"
 ```
 
-Timers on the zone clock. The context owns them, and cancels them when it ends.
+Timers on the zone clock, or on the server clock with { clock = "server" }. The context owns them, and cancels them when it ends.
 
-#### `timers.after(milliseconds, callback) → wa.Timer`
+#### `timers.after(milliseconds, callback, options?) → wa.Timer`
 
-Runs the callback once, after the time.
+Runs the callback once, after the time. In an NPC context the callback may call timers.wait.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `milliseconds` | `integer` | 0 or more. |
 | `callback` | `fun()` |  |
+| `options` | `wa.TimerOptions?` |  |
 
-#### `timers.every(milliseconds, callback) → wa.Timer`
+#### `timers.every(milliseconds, callback, options?) → wa.Timer`
 
-Runs the callback every time the interval passes. A timer that falls behind skips the runs it missed.
+Runs the callback every time the interval passes. A timer that falls behind skips the runs it missed. In an NPC context the callback may call timers.wait.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `milliseconds` | `integer` | Above 0. |
 | `callback` | `fun()` |  |
+| `options` | `wa.TimerOptions?` |  |
+
+#### `timers.wait(milliseconds)`
+
+Waits, as sleep without a player (review decision 60). It runs in a handler of an NPC context that has no conversation: an npc_event handler sent without a player or with a player of another map, a callback of timers.after or timers.every, or a schedule handler. The wait follows the clock the handler started on: the zone clock, or the server clock for the callback of a timer with { clock = "server" } and for a schedule handler. A handler with a conversation waits with conversation:wait. Elsewhere it raises an error. The wait ends when the context ends.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `milliseconds` | `integer` | 0 to 10 minutes. |
 
 #### `timers.with_bonuses(milliseconds, add, options?) → wa.Timer`
 
@@ -1832,6 +1842,23 @@ Heals as percentheal. A negative amount takes that percent of the maximum HP or 
 #### `player:heal_fully()`
 
 Heals all HP and SP.
+
+#### `player:add_timer(milliseconds, label)`
+
+Starts a timer of the player, as addtimer (review decision 60). When the time comes, the label runs as npc:fire_event(label, { player }) does: after the current step, in a conversation that waits while the player talks. The timer belongs to the player: it goes with the player to other maps and ends at logout. At most 32 timers. A label outside an NPC's script needs the NPC's name. The player must be on this map.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `milliseconds` | `integer` | 0 or more. |
+| `label` | `string` | An event label of the context's NPC, such as OnTimeout, or of a named NPC, such as Guard::OnTimeout. Another mod's NPC (core:Guard::OnTimeout) needs npcs.control. |
+
+#### `player:remove_timer(label) → boolean`
+
+Ends the first timer of the player with the label, as deltimer. Returns whether one ended.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `label` | `string` | As add_timer's. |
 
 #### `player:warp(map, x, y) → boolean`
 
@@ -5211,6 +5238,14 @@ The options of a trade handler.
 | Field | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player?` | Only trades of this player. |
+
+### wa.TimerOptions
+
+Options of timers.after and timers.every.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `clock` | `string?` | "zone" (the default) or "server". A timer of the zone clock stands still while the zone has no players. A timer of the server clock follows wall time and wakes a sleeping zone, as schedules do; converted NPC timers use it (review decision 60). |
 
 ### wa.WithBonusesOptions
 
