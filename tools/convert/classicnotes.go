@@ -155,17 +155,21 @@ func (r *NPCResult) ClassicNotes() string {
 	b.WriteString("## Systems not built\n\n")
 	b.WriteString("These systems are not in the first release, so their NPCs do not load. They are in phase 10.\n\n")
 	b.WriteString("| System | rAthena's NPCs | Script NPCs |\n|---|---|---:|\n")
-	inst := r.LeftOut["instances"]
-	if c := byFolder["instances"]; c != nil {
-		inst += c.total
+	// lines counts a folder's script NPC lines, in the extract and left
+	// out of it.
+	lines := func(folders ...string) int {
+		n := 0
+		for _, f := range folders {
+			n += r.LeftOut[f]
+			if c := byFolder[f]; c != nil {
+				n += c.total
+			}
+		}
+		return n
 	}
-	guilds := r.LeftOut["guild"] + r.LeftOut["guild2"] + r.LeftOut["guild3"]
-	if c := byFolder["guild3"]; c != nil {
-		guilds += c.total
-	}
-	fmt.Fprintf(&b, "| Instances (memorial dungeons) | `npc/re/instances` and the instance maps of other folders | %d |\n", inst)
-	fmt.Fprintf(&b, "| Sieges (War of Emperium guild castles) | `npc/guild`, `npc/guild2` and `npc/re/guild3` | %d |\n", guilds)
-	fmt.Fprintf(&b, "| Battlegrounds | `npc/battleground` | %d |\n", r.LeftOut["battleground"])
+	fmt.Fprintf(&b, "| Instances (memorial dungeons) | `npc/re/instances` and the instance maps of other folders | %d |\n", lines("instances"))
+	fmt.Fprintf(&b, "| Sieges (War of Emperium guild castles) | `npc/guild`, `npc/guild2` and `npc/re/guild3` | %d |\n", lines("guild", "guild2", "guild3"))
+	fmt.Fprintf(&b, "| Battlegrounds | `npc/battleground` | %d |\n", lines("battleground"))
 	b.WriteString("| MVP tomb | `mvp_tomb_enabled` in `conf/battle/monster.conf`, which `mob_dead` places | none |\n\n")
 	b.WriteString("- The counts are script NPC lines, duplicates too, in the extract and left out of it.\n")
 	b.WriteString("- MVPs are still announced as rAthena does: the MVP effect and the MVP's prize line (decision 0051).\n")
