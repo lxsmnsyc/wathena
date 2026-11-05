@@ -1206,6 +1206,10 @@ Methods on player handles check their own permissions, such as `player.give_item
     - Converted NPC timers listen to the hidden labels `WaTimerInit`, `WaTimerStart`, `WaTimerStop` and `WaTimerSet0`; another NPC's timer commands fire them. `setnpctimer` on another NPC takes the tick 0 only.
     - An attached NPC timer is one timer per player, by name; its labels run as `npc:fire_event(label, { player })`, and it ends when that call fails.
     - `OnInit` with a `sleep` converts: a server clock timer of 0 runs it once the setup returns.
+64. Details of review decision 60's converter rules, settled while building them (converter-names, [decision 0071](../decisions/0071-converter-names.md)). These add to API 1.0 only:
+    - `wa.variables` names are 1 to 64 letters, digits and `_`, and may start with a digit (F1). The names of mods' variables were never allowed to; this relaxes the rule.
+    - The `touch` event gets a third argument, `waited`, true for a touch that waited for the player's conversation to end (E2). Converted NPCs without a touch label click on touch only when it is false, as rAthena drops the touch of a player who talks. `Runtime.Touch` takes it.
+    - An assignment used as a value reads left to right. A name that no fixed start of the script scopes goes through run-time helpers that read the prefix and declare the variable then. A script with a computed `.` name keeps its `.` variables as NPC variables, and a function with a computed `.@` name keeps them in one table.
 
 ## Version
 

@@ -368,6 +368,53 @@ func TestTouchQueue(t *testing.T) {
 	}
 }
 
+// waitedToucher is an NPC script whose touch handler shows whether the touch
+// waited.
+const waitedToucher = `
+local context = require "wa.context"
+local events = require "wa.events"
+return function()
+  local npc = context:get_instance()
+  events.on("touch", function(player, conversation, waited)
+    conversation:say(npc.name, "waited " .. tostring(waited))
+    conversation:wait_for_next()
+    conversation:say("Pass.")
+  end)
+end`
+
+// TestTouchWaited checks that a touch handler is told when its touch
+// waited for the player's conversation to end (review decision 60, E2):
+// converted scripts click an NPC on touch only for a player who does not
+// talk.
+func TestTouchWaited(t *testing.T) {
+	z, _ := touchZone(t, waitedToucher)
+	z.stopScripts()
+	z.npcsStarted = false
+	gate := NPC{Name: "example.test:Gate", DisplayName: "Gate", X: 20, Y: 20, Sprite: 45, Script: "example.test:scripts/npc.lua",
+		Touch: &TouchArea{XSpan: 1, YSpan: 1}}
+	post := gate
+	post.Name, post.DisplayName, post.Y = "example.test:Post", "Post", 21
+	z.SetNPCs([]NPC{gate, post})
+	z.startScripts()
+	z.startNPCs()
+	a := joinAt(z, "a", 10, 20)
+	walkTo(t, z, a, 19, 21)
+	ev := events(a)
+	if got := lines(ev); got != "Gate|waited false" {
+		t.Fatalf("first touch: %q", got)
+	}
+	ev = next(z, a, ev)
+	z.handle(command{player: a, npcReply: reply(lastDialog(ev).GetDialog(), func(b *wathenav1.NpcReply_builder) { b.Close = new(true) })})
+	var got string
+	for end := z.now + 1000; got == "" && z.now < end; {
+		z.stepAt(z.now + 50)
+		got = lines(events(a))
+	}
+	if got != "Post|waited true" {
+		t.Fatalf("the queued touch: %q", got)
+	}
+}
+
 // TestTouchWarp checks that a warp a touch handler asks for happens once
 // the handler ran, as for a click.
 func TestTouchWarp(t *testing.T) {

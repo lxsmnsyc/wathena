@@ -1049,7 +1049,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.character_boolean(name) → wa.BooleanVariable`
 
@@ -1059,7 +1059,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.character_string(name) → wa.StringVariable`
 
@@ -1069,7 +1069,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.character_table(name) → wa.TableVariable`
 
@@ -1079,7 +1079,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.character_temporary_integer(name) → wa.IntegerVariable`
 
@@ -1089,7 +1089,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.character_temporary_boolean(name) → wa.BooleanVariable`
 
@@ -1099,7 +1099,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.character_temporary_string(name) → wa.StringVariable`
 
@@ -1109,7 +1109,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.character_temporary_table(name) → wa.TableVariable`
 
@@ -1119,7 +1119,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.account_integer(name) → wa.IntegerVariable`
 
@@ -1129,7 +1129,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.account_boolean(name) → wa.BooleanVariable`
 
@@ -1139,7 +1139,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.account_string(name) → wa.StringVariable`
 
@@ -1149,7 +1149,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.account_table(name) → wa.TableVariable`
 
@@ -1159,7 +1159,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.server_integer(name) → wa.ServerIntegerVariable`
 
@@ -1169,7 +1169,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.server_boolean(name) → wa.ServerBooleanVariable`
 
@@ -1179,7 +1179,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.server_string(name) → wa.ServerStringVariable`
 
@@ -1189,7 +1189,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.server_table(name) → wa.ServerTableVariable`
 
@@ -1199,7 +1199,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.server_temporary_integer(name) → wa.ServerIntegerVariable`
 
@@ -1209,7 +1209,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.server_temporary_boolean(name) → wa.ServerBooleanVariable`
 
@@ -1219,7 +1219,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.server_temporary_string(name) → wa.ServerStringVariable`
 
@@ -1229,7 +1229,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.server_temporary_table(name) → wa.ServerTableVariable`
 
@@ -1239,7 +1239,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.npc_integer(name) → wa.NpcIntegerVariable`
 
@@ -1249,7 +1249,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.npc_boolean(name) → wa.NpcBooleanVariable`
 
@@ -1259,7 +1259,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.npc_string(name) → wa.NpcStringVariable`
 
@@ -1269,7 +1269,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.npc_table(name) → wa.NpcTableVariable`
 
@@ -1279,7 +1279,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.instance_integer(name) → wa.IntegerVariable`
 
@@ -1289,7 +1289,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.instance_boolean(name) → wa.BooleanVariable`
 
@@ -1299,7 +1299,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.instance_string(name) → wa.StringVariable`
 
@@ -1309,7 +1309,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 #### `variables.instance_table(name) → wa.TableVariable`
 
@@ -1319,7 +1319,7 @@ Permission: `storage.mod`.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `name` | `string` | 1 to 64 letters, digits and _, not starting with a digit. |
+| `name` | `string` | 1 to 64 letters, digits and _. It may start with a digit, as rAthena's names do, such as `$@3rdgc_room01`. |
 
 ### wa.random
 
@@ -5724,7 +5724,7 @@ Changes the NPC's value.
 | `job_level_up` | mod, npc, event | `player: wa.Player` | The player gained a job level. An NPC hears the players of every map, as OnPCJobLvUpEvent, unless it is disabled (review decision 59). |
 | `job_change` | mod, event | `change: wa.JobChange` | The player changed jobs: player:change_job, player:rebirth, or a converted jobchange. It fires after the stats and skills of the new job are set. |
 | `click` | npc | `player: wa.Player, conversation: wa.Conversation` | A player talks to the NPC. |
-| `touch` | npc | `player: wa.Player, conversation: wa.Conversation` | A player stepped into the NPC's touch area, the record's touch field, as rAthena's OnTouch. It fires once each time the player comes in: on a step, or when it arrives on a cell of the area. Hidden and dead players fire it too. The handlers run in a conversation with the player, which shows nothing until a handler shows a step (review decision 56). A touch while the player talks to an NPC waits until that conversation ends, and runs only if the player is still in the area then. |
+| `touch` | npc | `player: wa.Player, conversation: wa.Conversation, waited: boolean` | A player stepped into the NPC's touch area, the record's touch field, as rAthena's OnTouch. It fires once each time the player comes in: on a step, or when it arrives on a cell of the area. Hidden and dead players fire it too. The handlers run in a conversation with the player, which shows nothing until a handler shows a step (review decision 56). A touch while the player talks to an NPC waits until that conversation ends, and runs only if the player is still in the area then. waited tells a handler that it did, as converted scripts need: rAthena clicks an NPC without a touch label on a touch, but not for a player who talks (review decision 60, E2). |
 | `untouch` | npc | `player: wa.Player` | A player who fired touch left the NPC's touch area: a step out of it, a warp, or a logout. A player who left the map can only be compared: reading it raises an error. |
 | `npc_event` | npc | `event: wa.NpcEvent` | An event of the label in the options was sent to the NPC: npc:fire_event or world.fire_npc_event, as rAthena's named labels such as OnEnable (review decision 58). It runs after the step that sent it. With a player it runs in a conversation with the player. |
 | `monster_touch` | npc | `monster: wa.Monster` | A monster walked into the NPC's touch area, as OnTouchNPC (npc_touch_areanpc2). It fires once until the monster steps out of every touch area or into another NPC's. A disabled or cloaked NPC hears none. |

@@ -4023,6 +4023,17 @@ function R.converse(player_id, conversation_id, ...)
 	end
 end
 
+-- converse_touch is converse for a touch: the handlers also get whether
+-- the touch waited for the player's conversation to end (review decision
+-- 60, E2).
+function R.converse_touch(waited, player_id, conversation_id, ...)
+	local p = new_player(player_id)
+	local c = new_conversation(conversation_id)
+	for i = 1, select("#", ...) do
+		(select(i, ...))(p, c, waited)
+	end
+end
+
 -- npc_event runs an NPC's npc_event handlers of a label with the event
 -- object: in a conversation's thread when a player is attached, as
 -- doevent, or without one, as donpcevent (review decision 58).

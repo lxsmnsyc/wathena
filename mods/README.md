@@ -1394,6 +1394,7 @@ end
 - A step onto a warp that takes the player touches no area: warps come first, as in rAthena.
 - `touch` handlers run in a conversation with the player, as rAthena's `OnTouch` with a dialog. A handler that shows nothing opens no window.
 - A touch while the player talks to an NPC waits until that conversation ends, as rAthena queues it: at most two wait, and the first runs 100 ms after the conversation ended. It runs only if the player is still in the area then.
+- A `touch` handler gets a third argument, `waited`, which is true for a touch that waited for a conversation to end. Converted scripts click an NPC without a touch label on touch only when it is false, as rAthena (review decision 60, E2).
 - `untouch` handlers get no conversation.
 - A warp asked for in a `touch` or `untouch` handler happens once the handler ran or paused, as in a conversation.
 - Touch handlers run as a click does, so a mod over its CPU budget still runs them.
@@ -1678,7 +1679,7 @@ end
 - `get(player)` and `set(player, value)`, or `get()` and `set(value)` for a server variable, temporary or not. `add(player, amount)` changes an integer in one step and returns the new value.
 - Defaults: 0, false, "", and nil for a table. Setting nil, or the default, removes the stored value.
 - A string is at most 4,096 bytes. A table holds numbers, booleans, strings and tables, with keys that are all strings, or 1 to n, and is at most 64 KB as JSON. `get` returns a copy.
-- Names are 1 to 64 letters, digits and `_`, not starting with a digit.
+- Names are 1 to 64 letters, digits and `_`. A name may start with a digit, as rAthena's do.
 - Character and account variables are saved with the character, in the same transaction. Two characters of one account that change the same account variable at once: the last save wins.
 - Without a database, variables live in memory until the server stops.
 - Declaring needs `storage.mod`, which every mod has.

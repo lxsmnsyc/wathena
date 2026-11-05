@@ -178,9 +178,9 @@ type Runtime struct {
 	host Host
 	log  *slog.Logger
 	fns  struct {
-		loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse *script.Ref
-		loadTests, runCase, describe, runHooks, condition                         *script.Ref
-		statusBonuses, runGeneration, npcEvent, playerCall                        *script.Ref
+		loadEntry, invoke, dropMod, dropFile, resetLoading, isProtected, converse, converseTouch *script.Ref
+		loadTests, runCase, describe, runHooks, condition                                        *script.Ref
+		statusBonuses, runGeneration, npcEvent, playerCall                                       *script.Ref
 	}
 	nextID int64
 
@@ -689,6 +689,7 @@ func (r *Runtime) init() error {
 		{"reset_loading", &r.fns.resetLoading},
 		{"is_protected", &r.fns.isProtected},
 		{"converse", &r.fns.converse},
+		{"converse_touch", &r.fns.converseTouch},
 		{"load_tests", &r.fns.loadTests},
 		{"run_case", &r.fns.runCase},
 		{"describe", &r.fns.describe},
