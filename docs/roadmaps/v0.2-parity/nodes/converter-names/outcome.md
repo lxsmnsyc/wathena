@@ -75,6 +75,7 @@ The brief's 221 and 47 are the old counts of the `variables` row. Every remainin
 - Targeted: `go test -count=1 -run 'TestNamesConvert|TestClickOnTouchConvert|TestRunNames|TestBuiltinsConvert|TestRunConvertedNPCs' ./tools/convert`, `go test -run TestVariableNameStartsWithDigit ./server/modscript`, `go vet ./server/zone`: pass.
 - Reports regenerated with `go run ./tools/wactl convert npcs --mode <renewal|pre-renewal> --report ...` and `convert classic`, and the Lua docs with `go test ./server/modscript/luaapi -update`.
 - Narrow per-PR check on the final code commit (5b3fa3e): `scripts/check.sh vet lint` passed; `go test -p 1 -count=1 -timeout 45m` passed one package at a time, with WATHENA_TEST_DATABASE_URL set, on server/modscript, server/modscript/luaapi, server/zone, tools/convert and the importers server/account, adminworld, cmd/waserver, fields, gamedata, gateway, world, tools/modkit and tools/wactl. Log: /private/tmp/claude-501/-Users-alexis-Documents-GitHub-wathena/ab4336fe-fed3-4016-b4d9-8c75ad9ce7d6/scratchpad/names-check.log (lint: names-check-lint.log).
+- After the review fixes, on 93ba62a: `scripts/check.sh vet lint` passed, and `go test -p 1 -count=1 -timeout 45m` passed on tools/convert, tools/wactl and tools/modkit. server/zone passed on b7178b5, and nothing it builds from changed in 93ba62a. The b7178b5 run failed TestRunConvertedNPCs (a kind clash on `$@mr_1_tire1`), which 93ba62a fixes. Logs: names-check-2.log and names-check-3.log in the same scratchpad.
 
 ## Size
 
