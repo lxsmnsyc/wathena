@@ -169,6 +169,9 @@ type npcConv struct {
 	// script's . variables, which are then NPC variables of wa.variables
 	// (review decision 60, F3).
 	dotShared bool
+	// indexed is set when a computed name of the script has an index, so
+	// its run-time names are declared as tables (R.getd).
+	indexed bool
 	// inEvent is set while an event label's body is written, which may
 	// run without a player.
 	inEvent bool
@@ -185,6 +188,7 @@ func (c *npcConverter) newNPCConv(l *npcLine) *npcConv {
 // first: its top level, its local functions, and its arrays.
 func (n *npcConv) prepare(stmts []Stmt) {
 	n.all = stmts
+	n.indexed = indexedNames(stmts)
 	walkStmts(stmts, func(s Stmt) {
 		if f, ok := s.(*FuncDecl); ok && f.Body != nil {
 			n.localFuncs[strings.ToLower(f.Name)] = f

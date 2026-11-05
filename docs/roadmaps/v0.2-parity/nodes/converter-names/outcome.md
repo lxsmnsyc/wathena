@@ -36,7 +36,7 @@ The brief's 221 and 47 are the old counts of the `variables` row. Every remainin
 
 - `&&`, `||` and `?:` evaluate both sides when one has an effect (`R.both`, `R.either`, `R.choose`); the short-circuit stays for sides without one.
 - An index with a call, assignment or `++` is evaluated once into a hidden local for compound assignments and assignments used as values.
-- A function passes no NPC to computed names; a `.` name with no fixed start raises an error there (0071). `dotShared` is set only by names that can reach `.`. Run-time names are declared as tables first, so `x` and `x[2]` work in any order.
+- A function passes no NPC to computed names; a `.` name with no fixed start raises an error there (0071). `dotShared` is set only by names that can reach `.`. Run-time names are numbers or strings like static declarations, and tables for an index or in a script that indexes any computed name (round 2 fixed a clash with a static declaration in another script).
 - Unbounded run-time names are accepted and recorded in 0071.
 - The click-on-touch handler checks `npc:is_cloaked(player)` as well as `npc.state`.
 - Tests added: zone `TestClickOnTouchConverted` (normal touch, hidden, cloaked and disabled NPCs, a touch that waited, an `OnTouch_` label, a duplicate with a span whose source has none), converter and run tests for effects, indexes, `.` scope, a function's owner, sibling-branch jumps and switch cases with a label.

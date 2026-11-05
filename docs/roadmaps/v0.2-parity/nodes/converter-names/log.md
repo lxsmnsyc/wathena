@@ -20,3 +20,9 @@
 - Item 5 (unbounded names) is recorded in 0071 as accepted.
 - Row counts did not change except `rand` (1014 to 1015 scripts in renewal).
 - `heard` in touch_test.go only matches text that starts with "touch".
+
+## Review round 2
+
+- Fix 4 of round 1 (run-time names always tables) clashed with a static declaration of the same variable in another script (`Medal Distributor#single`, `$@mr_1_tire1`). Run-time names are numbers or strings again, as static declarations are, and a table only for an index, or in a script that indexes any computed name (`indexed`, passed to R.getd, R.setd and the `_any` forms). The reverse conflict (one script indexes, another names it as a scalar) is recorded in 0071.
+- Test: `OrdA` to `OrdE` in `TestRunNames`, a static and a computed use of one name in both orders and the x / x[2] order.
+- Reports did not change.

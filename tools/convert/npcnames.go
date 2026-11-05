@@ -669,3 +669,34 @@ func (b *body) pureTarget(t *Var) (*Var, error) {
 	b.line("%s = %s", tmp, iv.asInt())
 	return &Var{Name: t.Name, Index: &luaCode{code: tmp, t: tInt}}, nil
 }
+
+// indexedNames reports whether a computed getd or setd name in the
+// statements has an index, such as "$x_" + .@i + "[2]".
+func indexedNames(stmts []Stmt) bool {
+	found := false
+	has := func(name Expr) {
+		visitExpr(name, func(e Expr) {
+			if str, ok := e.(*Str); ok && strings.Contains(str.Value, "[") {
+				found = true
+			}
+		})
+	}
+	walkStmts(stmts, func(s Stmt) {
+		switch s := s.(type) {
+		case *Command:
+			if strings.EqualFold(s.Name, "setd") && len(s.Args) > 0 {
+				has(s.Args[0])
+			}
+		case *SetRef:
+			if strings.EqualFold(s.Ref.Name, "getd") && len(s.Ref.Args) == 1 {
+				has(s.Ref.Args[0])
+			}
+		}
+	})
+	walkExprs(stmts, func(e Expr) {
+		if c, ok := e.(*Call); ok && strings.EqualFold(c.Name, "getd") && len(c.Args) == 1 {
+			has(c.Args[0])
+		}
+	})
+	return found
+}

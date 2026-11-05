@@ -1414,7 +1414,7 @@ end
 -- handle, the index for an array or nil, the owner, and the default.
 -- rAthena's x and x[0] are one value: a name that a script keeps as an
 -- array is read at index 0. The owner of an NPC variable is the NPC.
-local function dynamic(scope, text, player, npc)
+local function dynamic(scope, text, player, npc, indexed)
 	local bare, index, str = name_parts(text, scope ~= "character")
 	local declared = bare:lower() .. (str and "_text" or "")
 	local owner = player
@@ -1427,16 +1427,27 @@ local function dynamic(scope, text, player, npc)
 		error("getd: " .. text .. " is a . variable, which needs an NPC, and a function has none", 3)
 	end
 	local default = str and "" or 0
-	-- A name is a table unless the script declared it as a number or a
-	-- string, so x and x[2] work in any order. x and x[0] are one value.
-	local ok, handle = pcall(variables[scope .. "_table"], declared)
-	if ok then
-		return handle, index, owner, default
-	end
+	-- A name is a number or a string, as a script that names it declares
+	-- it, unless the index makes it a table. A script that indexes its
+	-- computed names (indexed) declares them all as tables, so x and x[2]
+	-- work in any order; index 0 is the plain value, as rAthena's x[0].
 	if index ~= 0 then
 		return variables[scope .. "_table"](declared), index, owner, default
 	end
-	return variables[scope .. "_" .. (str and "string" or "integer")](declared), nil, owner, default
+	local first, second = "_table", "_" .. (str and "string" or "integer")
+	if not indexed then
+		first, second = second, first
+	end
+	local ok, handle = pcall(variables[scope .. first], declared)
+	if not ok then
+		-- The name is declared the other way, by another script.
+		handle = variables[scope .. second](declared)
+		first = second
+	end
+	if first == "_table" then
+		return handle, index, owner, default
+	end
+	return handle, nil, owner, default
 end
 
 -- NPCs by name (review decision 58). A command on an NPC that does not
@@ -1657,8 +1668,8 @@ end
 
 -- getd reads a variable by a name made when the script runs. npc owns
 -- the variables of scope "npc".
-function R.getd(scope, text, player, npc)
-	local handle, index, owner, default = dynamic(scope, text, player, npc)
+function R.getd(scope, text, player, npc, indexed)
+	local handle, index, owner, default = dynamic(scope, text, player, npc, indexed)
 	if index ~= nil then
 		return R.aget(handle, owner, index, default)
 	end
@@ -1676,8 +1687,8 @@ end
 
 -- setd writes a variable by a name made when the script runs. A string
 -- variable takes the value as text; a number variable needs a number.
-function R.setd(scope, text, player, value, npc)
-	local handle, index, owner, default = dynamic(scope, text, player, npc)
+function R.setd(scope, text, player, value, npc, indexed)
+	local handle, index, owner, default = dynamic(scope, text, player, npc, indexed)
 	if type(default) == "string" then
 		value = tostring(value)
 	elseif math.type(value) ~= "integer" then
@@ -1752,20 +1763,20 @@ end
 -- script runs, and the variable is declared then. A name that a
 -- constant, a parameter or a currency also has is the variable here,
 -- where rAthena reads that.
-function R.getd_any(text, player, npc, locals)
+function R.getd_any(text, player, npc, locals, indexed)
 	local scope = scope_of(text)
 	if scope == "local" then
 		return R.getd_local(locals, text)
 	end
-	return R.getd(scope, text, player, npc)
+	return R.getd(scope, text, player, npc, indexed)
 end
 
-function R.setd_any(text, player, npc, locals, value)
+function R.setd_any(text, player, npc, locals, value, indexed)
 	local scope = scope_of(text)
 	if scope == "local" then
 		return R.setd_local(locals, text, value)
 	end
-	return R.setd(scope, text, player, value, npc)
+	return R.setd(scope, text, player, value, npc, indexed)
 end
 
 -- sscanf is sscanf of a format of %d, %s, %% and literal text, as the C

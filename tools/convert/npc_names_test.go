@@ -305,6 +305,13 @@ func TestRunNames(t *testing.T) {
 	dispbottom "end";
 	end;
 }`,
+		// The same variable named by a script and computed by another,
+		// in both orders, and indexed computed names.
+		"OrdA#1":  `{ $@ord2_k = 5; end; }`,
+		"OrdB#1":  `{ dispbottom "" + getd("$@ord2_" + "k"); end; }`,
+		"OrdC#1":  `{ setd "$@ord3_" + "k", 4; dispbottom "" + getd("$@ord3_" + "k"); end; }`,
+		"OrdD#1":  `{ dispbottom "" + $@ord3_k; end; }`,
+		"OrdE#1":  `{ setd "$@ord4_" + "k", 2; setd "$@ord4_" + "k[2]", 3; dispbottom "" + getd("$@ord4_" + "k") + getd("$@ord4_" + "k[2]"); end; }`,
 		"Label#1": labelScript("1"),
 		"Label#2": labelScript("2"),
 		"Label#3": labelScript("3"),
@@ -329,6 +336,11 @@ func TestRunNames(t *testing.T) {
 		"Dyn#t":     "33|88|3|55|60|9|46",
 		"Scan#t":    "1 12|2abc5|-1abc0|7|-1-11",
 		"NoFrame#t": "a",
+		"OrdA#1":    "",
+		"OrdB#1":    "5",
+		"OrdC#1":    "4",
+		"OrdD#1":    "4",
+		"OrdE#1":    "23",
 		"Eval#t":    "5|7|22|9|11201|552|313",
 		"Switch#2":  "c2|d|end",
 		"Switch#3":  "e|end",

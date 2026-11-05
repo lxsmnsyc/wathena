@@ -739,11 +739,11 @@ func (b *body) getd(args []Expr) (val, error) {
 		}
 		return val{code: fmt.Sprintf("R.getd_local(%s, %s)", b.table, d.name), t: d.t}, nil
 	case nameDot:
-		return val{code: fmt.Sprintf("R.getd(%q, %s, player, %s)", d.scope, d.name, b.dotOwner()), t: d.t}, nil
+		return val{code: fmt.Sprintf("R.getd(%q, %s, player, %s%s)", d.scope, d.name, b.dotOwner(), b.indexedArg()), t: d.t}, nil
 	case nameAny:
-		return val{code: fmt.Sprintf("R.getd_any(%s, player, %s, %s)", d.name, b.dotOwner(), b.tableOrNil()), t: d.t}, nil
+		return val{code: fmt.Sprintf("R.getd_any(%s, player, %s, %s%s)", d.name, b.dotOwner(), b.tableOrNil(), b.indexedArg()), t: d.t}, nil
 	}
-	return val{code: fmt.Sprintf("R.getd(%q, %s, player)", d.scope, d.name), t: d.t}, nil
+	return val{code: fmt.Sprintf("R.getd(%q, %s, player%s)", d.scope, d.name, b.indexedNil()), t: d.t}, nil
 }
 
 // dotOwner is the NPC whose . variables a computed name reads: the
@@ -761,6 +761,23 @@ func (b *body) dotOwner() string {
 		return sourceVar
 	}
 	return "npc"
+}
+
+// indexedArg is the last argument of R.getd and R.setd: true when the
+// script indexes its computed names, so a run-time name is a table.
+func (b *body) indexedArg() string {
+	if b.n.indexed {
+		return ", true"
+	}
+	return ""
+}
+
+// indexedNil is indexedArg after an owner that is nil.
+func (b *body) indexedNil() string {
+	if b.n.indexed {
+		return ", nil, true"
+	}
+	return ""
 }
 
 // tableOrNil is the table of the body's .@ variables, or nil.
@@ -807,11 +824,11 @@ func (b *body) setd(what string, args []Expr) error {
 		}
 		b.line("R.setd_local(%s, %s, %s)", b.table, d.name, code)
 	case nameDot:
-		b.line("R.setd(%q, %s, player, %s, %s)", d.scope, d.name, code, b.dotOwner())
+		b.line("R.setd(%q, %s, player, %s, %s%s)", d.scope, d.name, code, b.dotOwner(), b.indexedArg())
 	case nameAny:
-		b.line("R.setd_any(%s, player, %s, %s, %s)", d.name, b.dotOwner(), b.tableOrNil(), code)
+		b.line("R.setd_any(%s, player, %s, %s, %s%s)", d.name, b.dotOwner(), b.tableOrNil(), code, b.indexedArg())
 	default:
-		b.line("R.setd(%q, %s, player, %s)", d.scope, d.name, code)
+		b.line("R.setd(%q, %s, player, %s%s)", d.scope, d.name, code, b.indexedNil())
 	}
 	return nil
 }
