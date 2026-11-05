@@ -249,6 +249,19 @@ var unavailableFunctions = map[string]string{}
 // F_ClearGarbage clears variables of old rAthena versions.
 var ignoredFunctions = map[string]bool{"f_cleargarbage": true}
 
+// countOnlyFolders are the folders whose script NPCs convert for the
+// reports but are not placed, with the reason, by the folder of the NPC's
+// source. The roadmap nodes of each system place them: the sieges story
+// the guild folders, the instances story the instances folder, and
+// v0.3.0 the battlegrounds.
+var countOnlyFolders = map[string]string{
+	"battleground": "battleground: battlegrounds are a v0.3.0 system",
+	"guild":        "siege folder: the siege system places the NPCs of the guild folders",
+	"guild2":       "siege folder: the siege system places the NPCs of the guild folders",
+	"guild3":       "siege folder: the siege system places the NPCs of the guild folders",
+	"instances":    "instance folder: the instance system places the NPCs of the instances folder",
+}
+
 // ConvertNPCs converts the NPC lines of a mode.
 func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 	var extract struct {
@@ -535,6 +548,17 @@ func (c *npcConverter) convertNPC(l *npcLine, name string, bySource map[string]*
 			n.Script = ScriptPathIn("scripts/npcs/", l.Name, c.paths)
 		}
 		n.converted = n.Status
+	}
+	source := l.File
+	if src != nil {
+		source = src.File
+	}
+	if why, ok := countOnlyFolders[npcFolder(source)]; ok {
+		// The extract keeps these folders so the reports count them, but
+		// the system they belong to places them, so they are not placed.
+		n.Unsupported = append(n.Unsupported, why)
+		n.Status = None
+		return n
 	}
 	if l.Map == "" {
 		// An NPC without a map runs only through events, in the start

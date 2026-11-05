@@ -9,8 +9,8 @@ Go code loads these files with the `internal/reference` package. Its tests check
 ## Source
 
 - rAthena data: commit `e98500617` ("6th rebalance - Meister - Part 1", #9997). The `wathena-reference` branch of the fork is based on it and changes no data. The recordings carry it in `rathena_git_hash`.
-- Everything reproduces from fork commit `f99a928d1` (checked on 2026-10-27; castles and map flags added on 2026-10-31). The fork's `wathena-reference` branch holds the whole recorder (`src/map/wathena_recorder.cpp`, `tools/wathena/record.sh`) and every extract function of `tools/wathena/extract.py`. Its commits, oldest first: `575d83531` extract script, `3f5534394` inventory script, `83616e3c3` exp tables and drops, `84dbe9b2f` job stats, `e9dceb60e` item weights and heals, `27ad000bc` warps, `f4641e37b` script constants, item scripts and groups, `003599e1c` NPCs, shops and item prices, `eac0a7e75` equipment, refine and monster groups, `2eb1327f4` status, `e92917ccc` skills, skill trees and casting, `784fce3ec` second class recordings and job change NPCs, `ecf13b511` monsters, `8e1c56558` random options, `5e50b7ad9` mounts, `50df331ca` party sharing, `f30328d04` guilds, `4214647ba` item trade, `3e45adbd3` barter shops and shop settings, `60bed4ccf` quests, `28488df04` refine costs, `39de3053d` part files for quest, warp and event NPCs, `f99a928d1` castles and GvG map flags.
-- `python3 tools/wathena/extract.py` at `f99a928d1` writes every file in `extracts/` with the same content as this folder. Only `rathena_git_hash` differs: in `extracts/` it is the fork commit that last wrote the file, and a run writes `f99a928d1`. The files were not copied again.
+- Everything reproduces from fork commit `b6294c1f6` (checked on 2026-10-27; castles and map flags added on 2026-10-31; NPC folders added on 2026-11-05). The fork's `wathena-reference` branch holds the whole recorder (`src/map/wathena_recorder.cpp`, `tools/wathena/record.sh`) and every extract function of `tools/wathena/extract.py`. Its commits, oldest first: `575d83531` extract script, `3f5534394` inventory script, `83616e3c3` exp tables and drops, `84dbe9b2f` job stats, `e9dceb60e` item weights and heals, `27ad000bc` warps, `f4641e37b` script constants, item scripts and groups, `003599e1c` NPCs, shops and item prices, `eac0a7e75` equipment, refine and monster groups, `2eb1327f4` status, `e92917ccc` skills, skill trees and casting, `784fce3ec` second class recordings and job change NPCs, `ecf13b511` monsters, `8e1c56558` random options, `5e50b7ad9` mounts, `50df331ca` party sharing, `f30328d04` guilds, `4214647ba` item trade, `3e45adbd3` barter shops and shop settings, `60bed4ccf` quests, `28488df04` refine costs, `39de3053d` part files for quest, warp and event NPCs, `f99a928d1` castles and GvG map flags, `b6294c1f6` instance, guild, battleground, custom and mobs NPCs.
+- `python3 tools/wathena/extract.py` at `b6294c1f6` writes every file in `extracts/` with the same content as this folder. Only `rathena_git_hash` differs: in `extracts/` it is the fork commit that last wrote the file, and a run writes `b6294c1f6`. The files were not copied again.
 - The recordings (`renewal/`, `pre-renewal/`) need `record.sh` and a built map server. The 2026-10-27 check did not rebuild them.
 - The fork's branch has no upstream and is not on its remote yet.
 - The recorder and scripts stay in the rAthena fork. This repository keeps only their output, so it does not need a C++ toolchain.
@@ -81,8 +81,9 @@ The converter also reads two extracts per mode for NPCs ([decision 0008](../../d
 
 - `npcs.json`: script NPCs, functions, shops and their duplicates, in the order `npc/<mode>/scripts_main.conf` loads them, with the names, map checks and duplicate rules of `warps.json`. Each NPC is one line of the file.
 - Script NPCs are kept from the folders the first release needs: `kafras`, `merchants`, `cities`, `airports`, `guides`, `jobs` and `other`, below `npc/`, `npc/re/` and `npc/pre-re/`. Shops and functions are kept from every folder.
-- The script NPCs of the `quests`, `warps` and `events` folders are kept too, in part files: `npcs-<folder>-<n>.json`, each below 1.9 MB of rows (review decision 55). `npcs.json` lists them in `parts`, in the order to read them after it, and counts their NPCs in `part_summary`. A duplicate goes in the file of its source, so each file holds the sources of its duplicates. The rows of `npcs.json` did not change.
-- `left_out` counts the script NPCs of the other folders, such as `instances` and `guild`.
+- The script NPCs of the `quests`, `warps` and `events` folders are kept too, and since fork commit `b6294c1f6` those of `instances`, `guild`, `guild2`, `guild3`, `battleground`, `custom` and `mobs`, in part files: `npcs-<folder>-<n>.json`, each below 1.9 MB of rows (review decision 55). `npcs.json` lists them in `parts`, in the order to read them after it, and counts their NPCs in `part_summary`. A duplicate goes in the file of its source, so each file holds the sources of its duplicates. The rows of `npcs.json` did not change.
+- `left_out` counts the script NPCs of any other folder. Since `b6294c1f6` it is empty in both modes.
+- The converter places no script NPC whose source is in `instances`, `guild`, `guild2`, `guild3` or `battleground`: the reports count them, and the instance and siege systems place them (tools/convert `countOnlyFolders`).
 - Shops have their items, with a price below 0 in the line replaced by the item's buy price, as `npc_parse_shop`. `discount` says whether Discount lowers the prices (`npc_shop_discount`). Item and point shops name their currency, and market shops give a stock.
 - `item_prices.json`: the buy and sell price of every item, with `ItemDatabase::loadingFinished`'s rules: a missing Buy is Sell * 2, a missing Sell is Buy / 2, and a Sell above what Discount and Overcharge allow becomes 1. `no_sell` is `Trade.NoSell`.
 
@@ -91,14 +92,14 @@ The converter also reads two extracts per mode for NPCs ([decision 0008](../../d
 | renewal | 6,870 | 358 | 5.3 MB | 2.0 MB |
 | pre-renewal | 4,190 | 185 | 3.2 MB | 0.4 MB |
 
-The part files, from rAthena fork commit `28488df04` (`PART_FOLDERS` is in the fork since `39de3053d`):
+The part files. `quests`, `warps` and `events` are from rAthena fork commit `28488df04` (`PART_FOLDERS` is in the fork since `39de3053d`), and the other folders from `b6294c1f6`:
 
-| Mode | `quests` | `warps` | `events` | Files | Size |
-|---|---:|---:|---:|---:|---:|
-| renewal | 6,162 | 250 | 150 | 11 | 16.3 MB |
-| pre-renewal | 2,942 | 81 | 150 | 7 | 8.6 MB |
+| Mode | `quests` | `warps` | `events` | `instances` | `guild` | `guild2` | `guild3` | `battleground` | `custom` | `mobs` | Files | Size |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| renewal | 6,162 | 250 | 150 | 2,860 | 534 | 478 | 245 | 295 | 130 | 13 | 19 | 20.8 MB |
+| pre-renewal | 2,942 | 81 | 150 | 296 | 481 | 478 | 0 | 294 | 0 | 2 | 12 | 9.5 MB |
 
-Each count is of script NPC lines, duplicates too. The largest file is 1.9 MB. `npcs.json` itself was already above 2 MB, at 8.3 MB and 4.8 MB, and only its header changed.
+Each count is of script NPC lines, duplicates too. The largest file is 1.9 MB. `npcs.json` itself was already above 2 MB, at 8.3 MB and 4.8 MB, and only its header changed, at both commits. A folder with no script NPCs in a mode has no part file.
 
 `PART_FOLDERS` and the part files are in `build_npcs` of `tools/wathena/extract.py`, with `extract.py npcs`, which writes `warps.json`, `npcs.json`, its part files and `item_prices.json` alone:
 
@@ -106,7 +107,7 @@ Each count is of script NPC lines, duplicates too. The largest file is 1.9 MB. `
 python3 tools/wathena/extract.py npcs
 ```
 
-Two runs give the same files. `warps.json` and `item_prices.json` come out the same but for `rathena_git_hash`, so they were not copied again.
+Two runs give the same files. `warps.json`, `item_prices.json` and the part files of `quests`, `warps` and `events` come out the same but for `rathena_git_hash`, so they were not copied again at `b6294c1f6`.
 
 They were first extracted at rAthena fork commit `003599e1c`. The `jobs` folder came at commit `784fce3ec`.
 

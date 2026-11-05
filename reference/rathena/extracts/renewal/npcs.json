@@ -1,5 +1,5 @@
 {
-	"rathena_git_hash": "28488df0427f1522754decb136e036e87f05496d",
+	"rathena_git_hash": "b6294c1f64401efb369a134901b5369903c664af",
 	"mode": "renewal",
 	"note": "Script NPCs, functions, shops and duplicates of them from npc/<mode>/scripts_main.conf, in the order rAthena loads them, with the unique names npc_parsename gives (as in warps.json). Lines on maps the map server does not load are left out. Script NPCs are kept from the folders in script_folders, below npc/, npc/re/ and npc/pre-re/. Those of part_folders are in the files that parts lists, which keeps each file small. left_out counts the others by folder. Shops and functions are kept from every folder. kind is script, function, or a shop type. display is the name players see, and sprite the view as the line writes it. xs and ys are the OnTouch span, -1 without one. state is enabled unless w2 sets (CLOAKED), (HIDDEN) or (DISABLED). script is the text from '{' to the matching '}'. A duplicate names its source in duplicate_of and has no script of its own; a duplicated shop repeats the source's items. shop.items have the item's AegisName and ID and the price, where a price below 0 in the line is the item's buy price (item_prices.json) in shop and marketshop lines. shop.discount says whether Discount and Compulsion Discount lower the prices (npc_shop_discount). shop.currency is the item of an itemshop or the variable of a pointshop. marketshop items have a stock, -1 for unlimited.",
 	"script_folders": [
@@ -14,7 +14,14 @@
 	"part_folders": [
 		"quests",
 		"warps",
-		"events"
+		"events",
+		"instances",
+		"guild",
+		"guild2",
+		"guild3",
+		"battleground",
+		"custom",
+		"mobs"
 	],
 	"parts": [
 		"npcs-quests-1.json",
@@ -27,7 +34,15 @@
 		"npcs-quests-8.json",
 		"npcs-quests-9.json",
 		"npcs-warps-1.json",
-		"npcs-events-1.json"
+		"npcs-events-1.json",
+		"npcs-instances-1.json",
+		"npcs-instances-2.json",
+		"npcs-guild-1.json",
+		"npcs-guild2-1.json",
+		"npcs-guild3-1.json",
+		"npcs-battleground-1.json",
+		"npcs-custom-1.json",
+		"npcs-mobs-1.json"
 	],
 	"summary": {
 		"function": 149,
@@ -38,17 +53,16 @@
 	"part_summary": {
 		"quests": 6162,
 		"warps": 250,
-		"events": 150
-	},
-	"left_out": {
-		"battleground": 295,
-		"custom": 130,
+		"events": 150,
+		"instances": 2860,
 		"guild": 534,
 		"guild2": 478,
 		"guild3": 245,
-		"instances": 2860,
+		"battleground": 295,
+		"custom": 130,
 		"mobs": 13
 	},
+	"left_out": {},
 	"npcs": [
 		{"kind":"function","name":"F_ClearJobVar","file":"npc/other/Global_Functions.txt","line":56,"script":"{\n\t// Misc ---------------------------------\n\tset JBLVL,0;\n\tset FIRSTAID,0;\n\tset PLAYDEAD,0;\n\tset got_bandage,0;\n\tset got_novnametag,0;\n\t// First Class Jobs ---------------------\n\tset job_acolyte_q,0; set job_acolyte_q2,0;\n\tset job_archer_q,0;\n\tset job_magician_q,0;\n\tset job_merchant_q,0; set job_merchant_q2,0; set job_merchant_q3,0;\n\tset job_sword_q,0; set SWTEST, 0;\n\tset job_thief_q,0;\n\t// Super Novice\n\tset SUPNOV_Q,0;\n\t// 2-1 Jobs ------------------------------\n\tset ASSIN_Q,0; set ASSIN_Q2,0; set ASSIN_Q3,0;\n\tset BSMITH_Q,0; set BSMITH_Q2,0;\n\tset HNTR_Q,0; set HNTR_Q2,0;\n\tset KNIGHT_Q,0; set KNIGHT_Q2,0;\n\tset PRIEST_Q,0; set PRIEST_Q2,0; set PRIEST_Q3,0;\n\tset WIZ_Q,0; set WIZ_Q2,0;\n\t// 2-2 Jobs ------------------------------\n\tset ROGUE_Q,0; set ROGUE_Q2,0;\n\tset ALCH_Q,0; set ALCH_Q2,0;\n\tset CRUS_Q,0;\n\tset MONK_Q,0; set JOB_MONK_C,0;\n\tset SAGE_Q,0; set SAGE_Q2,0;\n\tset DANC_Q,0;\n\tset BARD_Q,0;\n\t// Extended Classes\n\tset TAEK_Q,0; set TK_Q,0;\n\tset STGL_Q,0;\n\tset SOUL_Q,0;\n\tset GUNS_Q,0;\n\tset NINJ_Q,0;\n\treturn;\n}"},
 		{"kind":"function","name":"F_ClearGarbage","file":"npc/other/Global_Functions.txt","line":101,"script":"{\n\t// Clear outdated global VARS\n\t//Clear TURTLE var if the Turtle Islans Quest is already done\n\t\tif(TURTLE==20) set MISC_QUEST,MISC_QUEST | 65536;\n\t\tif(MISC_QUEST & 65536) set TURTLE,0; //now clear the var if the quest is over\n\t//Clear previously saved Quest Skills (now it isn't used)\n\t\tset ADV_QSK,0;\n\t\tset ADV_QSK2,0;\n\t//Old Reset Skill Event used to use RES_SKILL var\n\t\tset RES_SKILL,0;\n\t//Here you put outdated variables from your outdated EVENTS\n\t//e.g. Is XMAS done? Add the EVENT var clearing code here.\n\t\n\t//due to bugs in BS quest:\n\tset wizard_m2,0;\n\t\n\t// Old Novice Ground Variables.\n\tset NEW_MES_FLAG0,0;\n\tset NEW_MES_FLAG1,0;\n\tset NEW_MES_FLAG2,0;\n\tset NEW_MES_FLAG3,0;\n\tset NEW_MES_FLAG4,0;\n\tset NEW_MES_FLAG5,0;\n\tset NEW_LVUP0,0;\n\tset NEW_LVUP1,0;\n\tset NEW_JOBLVUP,0;\n\t\n\t// Old DTS variables that are no longer used.\n\tset dtseligible,0;\n\tset MISC_QUEST,MISC_QUEST & ~128;\n\t\n\treturn;\n}"},
