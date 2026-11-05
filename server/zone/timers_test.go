@@ -3,6 +3,8 @@ package zone
 import (
 	"testing"
 	"time"
+
+	wathenav1 "github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1"
 )
 
 // timersScript uses the timers of review decision 60 on npc_event labels
@@ -23,6 +25,9 @@ return function()
     p:add_timer(3000, "OnGone")
     note("removed " .. tostring(p:remove_timer("OnGone")) .. " " .. tostring(p:remove_timer("OnGone")))
   end)
+  on("OnArmW", function()
+    maps.find_player("w"):add_timer(1000, "OnTick")
+  end)
   on("OnTick", function(event) note("tick " .. event.player.name) end)
   on("OnNamed", function(event) note("named " .. event.player.name) end)
   on("OnGone", function() note("gone") end)
@@ -39,6 +44,9 @@ return function()
       timers.wait(500)
       note("server end")
     end, { clock = "server" })
+  end)
+  on("OnServerShort", function()
+    timers.after(50, function() note("short") end, { clock = "server" })
   end)
   on("OnWaitZone", function()
     note("zone start")
@@ -84,19 +92,64 @@ func TestPlayerTimersCap(t *testing.T) {
 	}
 }
 
+// joinWalker joins a player with a session, which can change zone.
+func joinWalker(z *Zone, name string) *Player {
+	c := savedCharacter()
+	c.Name, c.Map, c.X, c.Y = name, z.Map, 21, 21
+	sess := newSession(&saves{})
+	p := newPlayer(sess, c)
+	sess.zone, sess.player = z, p
+	z.join(p)
+	return p
+}
+
 // TestPlayerTimersMove checks that the timers go with a player to
-// another zone with the time they have left, and end with the player.
+// another zone with the time they have left, and run when it is back.
 func TestPlayerTimersMove(t *testing.T) {
-	z, p, n := followupZoneWith(t, timersScript)
-	fire(t, z, n, "OnArm")
-	seen(t, z)
+	z, _, n := followupZoneWith(t, timersScript)
+	w := joinWalker(z, "w")
+	z.stepAt(z.now + 50)
+	fire(t, z, n, "OnArmW")
 	z.stepAt(z.now + 400)
-	left := z.eventTimersLeft(p)
-	if len(left) != 2 || left[0].due != 600 || left[1].due != 1600 {
-		t.Fatalf("timers left = %+v", left)
+	// 600 ms are left when the player goes to the other zone.
+	b := saveZone()
+	b.Map = "map/b"
+	z.depart(w, b, 5, 5)
+	q := arrive(t, b)
+	if len(q.eventTimers) != 1 || q.eventTimers[0].due != b.now+600 {
+		t.Fatalf("timers on the new map: %+v at %d", q.eventTimers, b.now)
 	}
-	if left[0].label != "ontick" {
-		t.Fatalf("label = %q", left[0].label)
+	// The player comes back after 200 ms there: 600 ms are still left.
+	b.stepAt(b.now + 200)
+	b.depart(q, z, 21, 21)
+	r := arrive(t, z)
+	if len(r.eventTimers) != 1 || r.eventTimers[0].due != z.now+400 {
+		t.Fatalf("timers back: %+v at %d", r.eventTimers, z.now)
+	}
+	z.stepAt(z.now + 300)
+	z.runScripts()
+	if got := seen(t, z); got != "" {
+		t.Fatalf("early: %q", got)
+	}
+	z.stepAt(z.now + 150)
+	z.runScripts()
+	if got := seen(t, z); got != "tick w;" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+// TestPlayerTimersEndAtLogout checks that a player who leaves takes its
+// timers with it: no event runs.
+func TestPlayerTimersEndAtLogout(t *testing.T) {
+	z, _, n := followupZoneWith(t, timersScript)
+	w := joinWalker(z, "w")
+	z.stepAt(z.now + 50)
+	fire(t, z, n, "OnArmW")
+	z.leave(w, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+	z.stepAt(z.now + 2000)
+	z.runScripts()
+	if got := seen(t, z); got != "" {
+		t.Fatalf("got %q", got)
 	}
 }
 
@@ -142,5 +195,45 @@ func TestWaitZoneClock(t *testing.T) {
 	z.runScripts()
 	if got := seen(t, z); got != "zone end;" {
 		t.Fatalf("got %q", got)
+	}
+}
+
+// TestServerTimerWakesSleepingZone checks the sleeping zone's path: with
+// no player, the schedule wait fires when the server clock timer is due,
+// the callback runs, and the zone clock stands still.
+func TestServerTimerWakesSleepingZone(t *testing.T) {
+	z, p, n := followupZoneWith(t, timersScript)
+	z.Clock = time.Now
+	fire(t, z, n, "OnServerShort")
+	z.leave(p, wathenav1.VanishReason_VANISH_REASON_LOGGED_OUT)
+	if len(z.players) != 0 {
+		t.Fatal("the zone still has players")
+	}
+	now := z.now
+	var tm *time.Timer
+	defer func() {
+		if tm != nil {
+			tm.Stop()
+		}
+	}()
+	ch := z.scheduleWait(&tm)
+	if ch == nil {
+		t.Fatal("a sleeping zone with a server clock timer has nothing to wait for")
+	}
+	select {
+	case <-ch:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the schedule wait did not fire")
+	}
+	z.runSchedules()
+	z.runScripts()
+	if got := seen(t, z); got != "short;" {
+		t.Fatalf("got %q", got)
+	}
+	if z.now != now {
+		t.Fatalf("the zone clock moved from %d to %d", now, z.now)
+	}
+	if z.scheduleWait(&tm) != nil {
+		t.Fatal("the zone still waits for a timer that ran")
 	}
 }
