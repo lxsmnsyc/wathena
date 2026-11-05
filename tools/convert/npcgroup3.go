@@ -457,11 +457,11 @@ func (b *body) countitem2(args []Expr) (val, bool, error) {
 	if err != nil {
 		return val{}, true, err
 	}
-	cards, err := cardList(name, vals[3:])
+	match, err := matchOptions(name, vals[1], vals[3:])
 	if err != nil {
 		return val{}, true, err
 	}
-	return val{code: fmt.Sprintf("player:count_item(%s, { refine = %s, cards = %s })", it, vals[1].asInt(), cards), t: tInt}, true, nil
+	return val{code: fmt.Sprintf("player:count_item(%s, %s)", it, match), t: tInt}, true, nil
 }
 
 // cardList writes getitem2's four card arguments as a list of the

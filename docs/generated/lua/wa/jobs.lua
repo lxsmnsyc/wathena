@@ -247,6 +247,13 @@ function jobs.class_flags(job) end
 ---@return integer
 function jobs.from_class(flags, sex) end
 
+---The job's name as players see it, as jobname: rAthena's job names for core's jobs, such as Swordsman, and the record's display_name for a mod's job. Unknown Job for a job that does not exist.
+---
+---Needs the permission `game.read`.
+---@param job integer
+---@return string
+function jobs.name(job) end
+
 ---The jobs a job can change into, in job ID order: the jobs whose record lists it in changes_from. In core's records a Novice changes into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other core jobs have none until third classes exist.
 ---@param job integer
 ---@return integer[]

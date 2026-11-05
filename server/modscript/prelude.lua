@@ -315,7 +315,7 @@ new_player, player_ids = handle_type("player", {
 				error("player:count_item: the options must be a table, such as { from = \"storage\" }", 2)
 			end
 			for k, v in pairs(options) do
-				if k == "refine" or k == "cards" or k == "rentals" then
+				if k == "refine" or k == "cards" or k == "rentals" or k == "signed_by_character" then
 					-- countitem2 and rentalcountitem (review decision 58).
 					match = match or {}
 					if k == "cards" and type(v) ~= "table" then
@@ -328,7 +328,7 @@ new_player, player_ids = handle_type("player", {
 						error("player:count_item: from is \"storage\", \"cart\" or a storage's name", 2)
 					end
 				else
-					error("player:count_item: the options are from, refine, cards and rentals", 2)
+					error("player:count_item: the options are from, refine, cards, signed_by_character and rentals", 2)
 				end
 			end
 		end
@@ -448,22 +448,33 @@ new_player, player_ids = handle_type("player", {
 		return (call(H.player_give_zeny, player_ids[self], amount))
 	end,
 	take_item = function(self, item, amount, options)
-		local from = nil
+		local from, match = nil, nil
 		if options ~= nil then
 			if type(options) ~= "table" then
 				error("player:take_item: the options must be a table, such as { from = \"cart\" }", 2)
 			end
 			for k, v in pairs(options) do
-				if k ~= "from" then
-					error("player:take_item: the option is from", 2)
+				if k == "refine" or k == "cards" or k == "signed_by_character" then
+					-- delitem2 (review decision 60, G5).
+					match = match or {}
+					if k == "cards" and type(v) ~= "table" then
+						error("player:take_item: cards is a list of card item IDs", 2)
+					end
+					match[k] = v
+				elseif k == "from" then
+					from = v
+					if from == nil then
+						error("player:take_item: from is \"storage\", \"cart\" or a storage's name", 2)
+					end
+				else
+					error("player:take_item: the options are from, refine, cards and signed_by_character", 2)
 				end
-				from = v
-			end
-			if from == nil then
-				error("player:take_item: from is \"storage\", \"cart\" or a storage's name", 2)
 			end
 		end
-		return (call(H.player_take_item, player_ids[self], item, amount, from))
+		return (call(H.player_take_item, player_ids[self], item, amount, from, match))
+	end,
+	count_equipped = function(self, item)
+		return (call(H.player_count_equipped, player_ids[self], item))
 	end,
 	heal_fully = function(self)
 		return (call(H.player_heal, player_ids[self], true, 100, 100, 100, 100))
@@ -2645,6 +2656,11 @@ end
 job_tests.from_class = function(flags, sex)
 	check(math_type(flags) == "integer", "jobs.from_class: want class flags, such as jobs.class_flags(player.job)")
 	return (call(H.jobs_class, "from_class", flags, sex))
+end
+-- jobname (review decision 60, E3).
+job_tests.name = function(job)
+	check(math_type(job) == "integer", "jobs.name: want a job, such as player.job")
+	return (call(H.jobs_name, job))
 end
 job_tests.next_jobs = function(job)
 	check(math_type(job) == "integer", "jobs.next_jobs: want a job, such as player.job")

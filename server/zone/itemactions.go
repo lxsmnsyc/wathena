@@ -132,14 +132,90 @@ func (h scriptHost) CountItemSpec(player int64, itemID uint32, spec modscript.Co
 	}
 	n := 0
 	for i := range p.inventory.Slots {
+		if s := &p.inventory.Slots[i]; specMatches(s, itemID, spec) {
+			n += s.Amount
+		}
+	}
+	return n, nil
+}
+
+// specMatches reports whether a slot holds copies a count spec matches.
+// countitem2's exact match (script_countitem_sub) reads no rental time,
+// so with a refine rentals count unless the spec asks for rentals only.
+func specMatches(s *item.Slot, itemID uint32, spec modscript.CountSpec) bool {
+	if s.ID != itemID || s.Amount <= 0 {
+		return false
+	}
+	if spec.Refine == nil {
+		return (s.Expires != 0) == spec.Rentals
+	}
+	if spec.Rentals && s.Expires == 0 {
+		return false
+	}
+	return s.Refine == *spec.Refine && !s.Unidentified && !s.Broken && s.SignedBy == spec.SignedBy && slices.Equal(s.Cards, spec.Cards)
+}
+
+// TakeItemSpec is delitem2: buildin_delitem_search with an exact match
+// takes the copies that are not equipped first, then the equipped ones,
+// in slot order. A player with too few loses nothing.
+func (h scriptHost) TakeItemSpec(player int64, itemID uint32, amount int, spec modscript.CountSpec) (bool, error) {
+	p, err := h.player(player)
+	if err != nil {
+		return false, err
+	}
+	have := 0
+	for i := range p.inventory.Slots {
+		if s := &p.inventory.Slots[i]; specMatches(s, itemID, spec) {
+			have += s.Amount
+		}
+	}
+	if have < amount {
+		return false, nil
+	}
+	for _, equipped := range []bool{false, true} {
+		for slot := range p.inventory.Slots {
+			if amount == 0 {
+				return true, nil
+			}
+			s := &p.inventory.Slots[slot]
+			if !specMatches(s, itemID, spec) || (s.Equip != 0) != equipped {
+				continue
+			}
+			n := min(s.Amount, amount)
+			h.z.deleteItem(p, slot, n, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_TAKEN)
+			amount -= n
+		}
+	}
+	return true, nil
+}
+
+// CountEquipped is isequippedcnt: each worn copy counts once, with its
+// amount, and a card counts once per slot it fills in a worn copy.
+// wAthena's copies hold no forged or named mark among their cards.
+func (h scriptHost) CountEquipped(player int64, itemID uint32) (int, error) {
+	p, err := h.player(player)
+	if err != nil {
+		return 0, err
+	}
+	d, ok := h.z.Items.Lookup(itemID)
+	if !ok {
+		return 0, nil
+	}
+	card := strings.EqualFold(d.Type, "Card")
+	n := 0
+	for _, i := range wornSlots(p) {
 		s := &p.inventory.Slots[i]
-		if s.ID != itemID || s.Amount <= 0 || (s.Expires != 0) != spec.Rentals {
+		if !card {
+			if s.ID == itemID {
+				n += s.Amount
+			}
 			continue
 		}
-		if spec.Refine != nil && (s.Refine != *spec.Refine || s.Unidentified || s.Broken || !slices.Equal(s.Cards, spec.Cards)) {
-			continue
+		for _, c := range s.Cards {
+			if c == itemID {
+				n++
+			}
 		}
-		n += s.Amount
 	}
 	return n, nil
 }

@@ -484,6 +484,13 @@ func (j zoneJobs) BaseJobOf(job int) (int, bool) {
 	return j.z.Status.BaseJobOf(job)
 }
 
+func (j zoneJobs) ModJobName(job int) (string, bool) {
+	if j.z.Status == nil {
+		return "", false
+	}
+	return j.z.Status.ModJobName(job)
+}
+
 func (h scriptHost) Map() string { return strings.TrimPrefix(h.z.Map, "map/") }
 
 func (h scriptHost) player(id int64) (*Player, error) {

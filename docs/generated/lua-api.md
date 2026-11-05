@@ -1583,6 +1583,16 @@ The job of class flags, as roclass and pc_mapid2jobid: a Bard or a Dancer by the
 | `flags` | `integer` | Class flags, as class_flags gives them. |
 | `sex` | `"male"\|"female"\|nil` | male by default. |
 
+#### `jobs.name(job) → string`
+
+The job's name as players see it, as jobname: rAthena's job names for core's jobs, such as Swordsman, and the record's display_name for a mod's job. Unknown Job for a job that does not exist.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `job` | `integer` |  |
+
 #### `jobs.next_jobs(job) → integer[]`
 
 The jobs a job can change into, in job ID order: the jobs whose record lists it in changes_from. In core's records a Novice changes into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other core jobs have none until third classes exist.
@@ -1712,13 +1722,23 @@ Permission: `game.read`.
 
 #### `player:take_item(item, amount, options?) → boolean`
 
-Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. Returns false, and takes nothing, when there are too few.
+Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. With refine, cards or signed_by_character it takes only the copies count_item counts with them, those not equipped first, as delitem2. Returns false, and takes nothing, when there are too few.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `item` | `integer` | An item from items.id. |
 | `amount` | `integer` | 1 or more. |
 | `options` | `wa.FromOptions?` |  |
+
+#### `player:count_equipped(item) → integer`
+
+How many of the item the player wears, as isequippedcnt: the amount of each worn copy, such as a quiver's arrows, or for a card, how many times it sits in worn copies. A copy worn in two slots counts once.
+
+Permission: `game.read`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item` | `integer` | An item from items.id. |
 
 #### `player:open_storage(name?) → boolean`
 
@@ -3058,6 +3078,7 @@ A random option of a copy, as rAthena's random options.
 | Field | Type | Meaning |
 |---|---|---|
 | `option` | `string` | The option's name in data/random_options.yml, such as max_hp. |
+| `id` | `integer` | The option record's id: rAthena's option ID for core's options, as getequiprandomoption's ROA_ID, and 0 for a mod's. |
 | `value` | `integer` |  |
 | `param` | `integer` |  |
 
@@ -4855,13 +4876,14 @@ One side of world:trade.
 
 ### wa.FromOptions
 
-Options of player:count_item and player:take_item.
+Options of player:count_item and player:take_item. from goes with no other option.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `from` | `string?` | "storage", "cart" or an extra storage's name of data/storages.yml. |
-| `refine` | `integer?` | Counts only identified copies that are not broken, with this refine and exactly cards, as countitem2. 0 with cards. |
+| `refine` | `integer?` | Counts only identified copies that are not broken, with this refine, exactly cards and signed_by_character, as countitem2. 0 with cards or signed_by_character. |
 | `cards` | `integer[]?` | The cards of countitem2: exactly these, in slot order. None with refine. |
+| `signed_by_character` | `integer?` | With refine, only copies named for this character ID, as countitem2's and delitem2's CARD0_CREATE in card 1 with the ID in cards 3 and 4. Without it, only copies named for no one. |
 | `rentals` | `boolean?` | Counts only rentals, as rentalcountitem. Without it, count_item counts only copies that are not rentals, as countitem. |
 
 ### wa.GiveExpOptions

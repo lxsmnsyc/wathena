@@ -2251,6 +2251,64 @@ function R.cards(...)
 	return out
 end
 
+-- match is the options of count_item and take_item for countitem2's
+-- and delitem2's refine and four cards, read when the script runs. card
+-- 1 CARD0_CREATE (254) is a copy named for the character in cards 3
+-- and 4.
+function R.match(refine, c1, c2, c3, c4)
+	if c1 == 0xFE then
+		local id = (c3 & 0xFFFF) | ((c4 & 0xFFFF) << 16)
+		if id <= 0 then
+			R.unsupported("a copy named for no character")
+		end
+		return { refine = refine, signed_by_character = id }
+	end
+	return { refine = refine, cards = R.cards(c1, c2, c3, c4) }
+end
+
+-- count_equipped is isequippedcnt: the sum over the items, without IDs
+-- of 0 or less and without an ID given twice.
+function R.count_equipped(player, ...)
+	local seen, n = {}, 0
+	for i = 1, select("#", ...) do
+		local id = select(i, ...)
+		if id > 0 and not seen[id] then
+			seen[id] = true
+			n = n + player:count_equipped(id)
+		end
+	end
+	return n
+end
+
+-- equip_option is getequiprandomoption: a field of the copy's random
+-- option at index from 0, or 0 past its options. It is -1 for an index
+-- out of 0 to 4 (MAX_ITEM_RDM_OPT) and for an empty slot, and 0 for a
+-- field "" (a type that is not ROA_ID, ROA_VALUE or ROA_PARAM).
+function R.equip_option(player, slot, index, field)
+	if index < 0 or index >= 5 then
+		return -1
+	end
+	local e = R.equipped(player, slot)
+	if e == nil then
+		return -1
+	end
+	local o = e.random_options[index + 1]
+	if o == nil or field == "" then
+		return 0
+	end
+	return o[field]
+end
+
+-- item_link is mesitemlink with a name of its own: text.item_link's
+-- form with that name. It is "" for an item that does not exist, as
+-- rAthena's.
+function R.item_link(item, name)
+	if not pcall(items.name, item) then
+		return ""
+	end
+	return "<ITEMLINK>" .. tostring(name):gsub("[<>]", "") .. "<INFO>" .. item .. "</INFO></ITEMLINK>"
+end
+
 -- broken_id is getbrokenid: the nth broken item, from 1, or 0.
 function R.broken_id(player, n)
 	return player:get_broken_items()[n] or 0

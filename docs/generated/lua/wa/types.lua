@@ -498,12 +498,19 @@ function wa_Player:give_item_from_group(group) end
 ---@return integer?
 function wa_Player:count_item(item, options) end
 
----Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. Returns false, and takes nothing, when there are too few.
+---Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. With refine, cards or signed_by_character it takes only the copies count_item counts with them, those not equipped first, as delitem2. Returns false, and takes nothing, when there are too few.
 ---@param item integer An item from items.id.
 ---@param amount integer 1 or more.
 ---@param options? wa.FromOptions
 ---@return boolean
 function wa_Player:take_item(item, amount, options) end
+
+---How many of the item the player wears, as isequippedcnt: the amount of each worn copy, such as a quiver's arrows, or for a card, how many times it sits in worn copies. A copy worn in two slots counts once.
+---
+---Needs the permission `game.read`.
+---@param item integer An item from items.id.
+---@return integer
+function wa_Player:count_equipped(item) end
 
 ---Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee.
 ---@param name? string An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. A mod reaches only its own records and core's: another mod's name raises an error. Nothing opens the account's storage.
@@ -1390,6 +1397,7 @@ local wa_CardRolls = {}
 ---A random option of a copy, as rAthena's random options.
 ---@class wa.RandomOption
 ---@field option string The option's name in data/random_options.yml, such as max_hp.
+---@field id integer The option record's id: rAthena's option ID for core's options, as getequiprandomoption's ROA_ID, and 0 for a mod's.
 ---@field value integer
 ---@field param integer
 local wa_RandomOption = {}
@@ -2697,11 +2705,12 @@ local wa_TestVendLine = {}
 ---@field zeny integer?
 local wa_TradeOffer = {}
 
----Options of player:count_item and player:take_item.
+---Options of player:count_item and player:take_item. from goes with no other option.
 ---@class wa.FromOptions
 ---@field from string? "storage", "cart" or an extra storage's name of data/storages.yml.
----@field refine integer? Counts only identified copies that are not broken, with this refine and exactly cards, as countitem2. 0 with cards.
+---@field refine integer? Counts only identified copies that are not broken, with this refine, exactly cards and signed_by_character, as countitem2. 0 with cards or signed_by_character.
 ---@field cards integer[]? The cards of countitem2: exactly these, in slot order. None with refine.
+---@field signed_by_character integer? With refine, only copies named for this character ID, as countitem2's and delitem2's CARD0_CREATE in card 1 with the ID in cards 3 and 4. Without it, only copies named for no one.
 ---@field rentals boolean? Counts only rentals, as rentalcountitem. Without it, count_item counts only copies that are not rentals, as countitem.
 local wa_FromOptions = {}
 

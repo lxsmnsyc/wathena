@@ -8,7 +8,7 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 
 | Kind | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
-| script | 4342 | 3674 | 3673 | 1 | 668 |
+| script | 4342 | 3675 | 3674 | 1 | 667 |
 | script (duplicate) | 5414 | 4378 | 4374 | 4 | 1036 |
 | shop | 185 | 185 | 185 | 0 | 0 |
 | Kafras (scripts that call F_Kafra) | 44 | 43 | 43 | 0 | 1 |
@@ -43,7 +43,7 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 | merchants | 101 | 92 | 87 | 5 | 9 |
 | mobs | 2 | 2 | 2 | 0 | 0 |
 | other | 3052 | 2976 | 2976 | 0 | 76 |
-| quests | 2939 | 2895 | 2895 | 0 | 44 |
+| quests | 2939 | 2896 | 2896 | 0 | 43 |
 | warps | 81 | 80 | 80 | 0 | 1 |
 
 ## Touch areas
@@ -63,23 +63,23 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 
 | Command | Scripts | NPC full | NPC partly | NPC not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| mes | 3018 | 2735 | 1 | 282 | 3018 |  |
-| close | 2801 | 2557 | 1 | 243 | 2801 |  |
-| next | 2468 | 2339 | 1 | 128 | 2468 |  |
+| mes | 3018 | 2736 | 1 | 281 | 3018 |  |
+| close | 2801 | 2558 | 1 | 242 | 2801 |  |
+| next | 2468 | 2340 | 1 | 127 | 2468 |  |
 | end | 2157 | 1866 | 0 | 291 | 2157 |  |
-| variables | 1927 | 1691 | 1 | 235 | 1925 | 'ins_baphomet is an instance variable (2) |
-| select | 1567 | 1346 | 1 | 220 | 1567 |  |
+| variables | 1927 | 1692 | 1 | 234 | 1925 | 'ins_baphomet is an instance variable (2) |
+| select | 1567 | 1347 | 1 | 219 | 1567 |  |
 | warp | 963 | 785 | 0 | 178 | 963 |  |
-| countitem | 716 | 698 | 1 | 17 | 716 |  |
+| countitem | 716 | 699 | 1 | 16 | 716 |  |
 | close2 | 709 | 621 | 0 | 88 | 709 |  |
-| strcharinfo | 701 | 688 | 0 | 13 | 701 |  |
+| strcharinfo | 701 | 689 | 0 | 12 | 701 |  |
 | donpcevent | 691 | 665 | 0 | 26 | 689 | "OnControler1#aru_gd" is not an event label (1); "OnControler1#sch_gd" is not an event label (1) |
-| delitem | 583 | 571 | 1 | 11 | 583 |  |
-| rand | 561 | 551 | 1 | 9 | 561 |  |
+| delitem | 583 | 572 | 1 | 10 | 583 |  |
+| rand | 561 | 552 | 1 | 8 | 561 |  |
 | disablenpc | 551 | 530 | 0 | 21 | 551 |  |
-| getitem | 549 | 540 | 1 | 8 | 549 |  |
+| getitem | 549 | 541 | 1 | 7 | 549 |  |
 | event ontouch_ | 543 | 541 | 0 | 2 | 543 |  |
-| callfunc | 500 | 365 | 1 | 134 | 500 |  |
+| callfunc | 500 | 366 | 1 | 133 | 500 |  |
 | event oninit | 499 | 471 | 0 | 28 | 499 |  |
 | event onenable | 497 | 460 | 0 | 37 | 497 |  |
 | enablenpc | 484 | 460 | 0 | 24 | 484 |  |
@@ -98,9 +98,9 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | specialeffect | 222 | 202 | 1 | 19 | 217 | an effect that is not a fixed EF_ effect (4) |
 | event onmymobdead | 213 | 213 | 0 | 0 | 213 |  |
 | killmonster | 202 | 198 | 0 | 4 | 202 |  |
-| checkre | 184 | 180 | 0 | 4 | 184 |  |
+| checkre | 185 | 181 | 0 | 4 | 185 |  |
 | cutin | 178 | 167 | 0 | 11 | 178 |  |
-| getcharid | 177 | 15 | 0 | 162 | 153 | battlegrounds, clans and other IDs (24) |
+| getcharid | 177 | 16 | 0 | 161 | 153 | battlegrounds, clans and other IDs (24) |
 | setarray | 174 | 144 | 1 | 29 | 174 |  |
 | getcastledata | 164 | 7 | 0 | 157 | 164 |  |
 | specialeffect2 | 157 | 140 | 0 | 17 | 157 |  |
@@ -110,11 +110,11 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | percentheal | 144 | 142 | 0 | 2 | 144 |  |
 | event onreset | 134 | 133 | 0 | 1 | 134 |  |
 | isequipped | 121 | 109 | 0 | 12 | 121 |  |
+| getexp | 112 | 109 | 0 | 3 | 112 |  |
 | checkquest | 111 | 84 | 0 | 27 | 111 |  |
-| getexp | 111 | 108 | 0 | 3 | 111 |  |
 | completequest | 107 | 106 | 0 | 1 | 107 |  |
 | callsub | 103 | 100 | 0 | 3 | 103 |  |
-| getitemname | 103 | 98 | 1 | 4 | 103 |  |
+| getitemname | 103 | 99 | 1 | 3 | 103 |  |
 | viewpoint | 102 | 101 | 0 | 1 | 102 |  |
 | getskilllv | 101 | 97 | 0 | 4 | 101 |  |
 | logmes | 96 | 78 | 0 | 18 | 96 |  |
@@ -541,8 +541,8 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | checkoption | 1 | 0 | 0 | 1 | 1 |  |
 | checkwug | 1 | 1 | 0 | 0 | 1 |  |
 | consumeitem | 1 | 1 | 0 | 0 | 1 |  |
-| countitem2 | 1 | 0 | 0 | 1 | 1 |  |
-| delitem2 | 1 | 0 | 0 | 1 | 0 |  |
+| countitem2 | 1 | 1 | 0 | 0 | 1 |  |
+| delitem2 | 1 | 1 | 0 | 0 | 1 |  |
 | event on04_end1 | 1 | 1 | 0 | 0 | 1 |  |
 | event on04_end2 | 1 | 1 | 0 | 0 | 1 |  |
 | event on05_end1 | 1 | 1 | 0 | 0 | 1 |  |
@@ -1298,7 +1298,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/skills/thief_skills.txt | 2 | 2 | 0 |
 | npc/quests/skills/wizard_skills.txt | 2 | 2 | 0 |
 | npc/quests/thana_quest.txt | 47 | 42 | 5 |
-| npc/quests/the_sign_quest.txt | 101 | 98 | 3 |
+| npc/quests/the_sign_quest.txt | 101 | 99 | 2 |
 | npc/warps/cities/umbala.txt | 1 | 1 | 0 |
 | npc/warps/cities/yuno.txt | 13 | 13 | 0 |
 | npc/warps/dungeons/alde_dun.txt | 4 | 4 | 0 |

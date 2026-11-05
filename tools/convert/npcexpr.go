@@ -978,21 +978,28 @@ func (b *body) call(e *Call) (val, error) {
 		f.need("items")
 		return done(val{code: "items.name(" + it + ")", t: tStr}, nil)
 	case "mesitemlink":
-		// A second argument of true is the default: the name in
-		// brackets. false and a display name of its own need options
-		// that text.item_link does not have.
-		if len(args) == 2 {
-			if v, err := b.expr(args[1]); err != nil || v.static == nil || *v.static == 0 {
-				return val{}, unsupported(name, "without brackets or with a name of its own")
-			}
-			args = args[:1]
-		}
-		if len(args) != 1 {
+		// mesitemlink(<item>{, <brackets>{, <name>}}). text.item_link's
+		// link has no brackets, and the client draws the item's own name
+		// in a link, so the brackets argument changes nothing (decision
+		// 0072). A name of its own goes in the link's text.
+		if len(args) < 1 || len(args) > 3 {
 			return val{}, unsupported(name, "arguments")
 		}
 		it, err := b.item(args[0])
 		if err != nil {
 			return val{}, err
+		}
+		if len(args) >= 2 {
+			if _, err := b.expr(args[1]); err != nil {
+				return val{}, err
+			}
+		}
+		if len(args) == 3 {
+			label, err := b.expr(args[2])
+			if err != nil {
+				return val{}, err
+			}
+			return done(val{code: "R.item_link(" + it + ", " + label.asText() + ")", t: tStr}, nil)
 		}
 		f.need("text")
 		return done(val{code: "text.item_link(" + it + ")", t: tStr}, nil)

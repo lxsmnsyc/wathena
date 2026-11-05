@@ -29,7 +29,11 @@ func (h *testHost) HasOption(int64, int) (bool, error)              { return fal
 func (h *testHost) GiveItemSpec(int64, uint32, int, modscript.ItemSpec, modscript.GiveRoll, item.Bound) (bool, error) {
 	return true, nil
 }
-func (h *testHost) CountItemSpec(int64, uint32, modscript.CountSpec) (int, error)    { return 0, nil }
+func (h *testHost) CountItemSpec(int64, uint32, modscript.CountSpec) (int, error) { return 0, nil }
+func (h *testHost) TakeItemSpec(int64, uint32, int, modscript.CountSpec) (bool, error) {
+	return true, nil
+}
+func (h *testHost) CountEquipped(int64, uint32) (int, error)                         { return 0, nil }
 func (h *testHost) DropItem(string, int, int, uint32, int, modscript.ItemSpec) error { return nil }
 func (h *testHost) CanRefine(modscript.ItemRef) (bool, error)                        { return true, nil }
 func (h *testHost) RefineChance(modscript.ItemRef, int, bool) (int, error)           { return 100, nil }

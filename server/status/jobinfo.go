@@ -74,6 +74,15 @@ func (t *Tables) DisplayName(job int) string {
 	return ""
 }
 
+// ModJobName is the display name of a mod's job, for jobs.name. ok is
+// false for core's jobs and jobs the tables lack.
+func (t *Tables) ModJobName(job int) (string, bool) {
+	if j := t.jobs[job]; j != nil && j.info.Mod != "" {
+		return j.info.DisplayName, true
+	}
+	return "", false
+}
+
 // EquipMapID is the map job ID that equipment checks read for a job:
 // the one of its equips_as job.
 func (t *Tables) EquipMapID(job int) (uint64, bool) {
