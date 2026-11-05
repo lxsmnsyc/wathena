@@ -1433,6 +1433,8 @@ func (b *body) commandErr(name string, args []Expr) error {
 		return err
 	case "initnpctimer", "startnpctimer", "stopnpctimer", "setnpctimer":
 		return b.timerCommand(name, args)
+	case "addtimer", "deltimer":
+		return b.playerTimer(name, args)
 	case "enablenpc", "disablenpc", "hideonnpc", "hideoffnpc", "cloakonnpc", "cloakoffnpc", "cloakonnpcself", "cloakoffnpcself":
 		return b.npcView(name, args)
 	case "donpcevent":

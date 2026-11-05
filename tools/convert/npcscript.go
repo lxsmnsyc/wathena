@@ -585,10 +585,10 @@ func (n *npcConv) npcScript() (string, error) {
 			if err == nil && e == touch {
 				touchDialog = n.touchHasDialog(bodies[e], calls)
 			}
-			if err == nil && e == "oninit" && n.touchHasDialog(bodies[e], calls) {
-				// OnInit runs at the setup, with no player: a wait or a
-				// dialog there has no conversation.
-				err = unsupported("event oninit", "it waits or shows a dialog, and OnInit runs without a player")
+			if err == nil && e == "oninit" && n.touchHasDialog(withoutWaits(bodies[e]), calls) {
+				// OnInit runs at the setup, with no player: a dialog there
+				// has no conversation. A wait does: timers.wait (below).
+				err = unsupported("event oninit", "it shows a dialog, and OnInit runs without a player")
 			}
 			if err == nil && playerEvent && n.touchHasDialog(bodies[e], calls) {
 				// The player events have a player and no conversation.
@@ -656,6 +656,9 @@ func (n *npcConv) npcScript() (string, error) {
 	if len(n.eventOrder) > 0 {
 		f.need("events")
 	}
+	if timer {
+		n.timerHandlers()
+	}
 	for _, e := range n.eventOrder {
 		name := labels[e]
 		if name == "" {
@@ -711,7 +714,15 @@ func (n *npcConv) npcScript() (string, error) {
 		f.line("end)")
 	}
 	if fn, ok := n.eventFns["oninit"]; ok {
-		f.line("%s()", fn)
+		if slices.ContainsFunc(bodies["oninit"], func(l string) bool { return strings.Contains(l, "R.sleep(") }) {
+			// OnInit waits (review decision 60, A4): the setup function
+			// cannot, so a timer of the server clock runs it as soon as the
+			// setup returns.
+			f.need("timers")
+			f.line(`timers.after(0, function() %s() end, { clock = "server" })`, fn)
+		} else {
+			f.line("%s()", fn)
+		}
 	}
 	if fn, ok := n.eventFns["oninterifinitonce"]; ok {
 		// OnInterIfInitOnce runs as OnInit, once per server start: rAthena
@@ -730,6 +741,18 @@ func (n *npcConv) npcScript() (string, error) {
 // function passes the conversation on after the player, which does not
 // match.
 var dialogCode = regexp.MustCompile(`conversation:|\(conversation[,)]`)
+
+// withoutWaits is the lines of converted code without the waits of an
+// event label (R.sleep), which need no conversation.
+func withoutWaits(lines []string) []string {
+	out := make([]string, 0, len(lines))
+	for _, l := range lines {
+		if !strings.HasPrefix(strings.TrimSpace(l), "R.sleep(conversation,") {
+			out = append(out, l)
+		}
+	}
+	return out
+}
 
 // touchHasDialog reports whether an OnTouch or OnTouch_ part shows a
 // dialog, or calls a function that does. The touch event has a

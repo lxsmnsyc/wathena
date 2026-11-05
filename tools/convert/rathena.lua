@@ -37,12 +37,14 @@ function R.run(fn, ...)
 	end
 end
 
--- sleep is sleep and sleep2 in an event label. rAthena's script sleeps
--- with a timer even without a player. Here the wait needs the
--- conversation of an event with a player.
+-- sleep is sleep and sleep2 in an event label. With a conversation it is
+-- conversation:wait. Without one, as in a label that donpcevent, a timer
+-- or OnInit runs, it is timers.wait, which pauses the handler on the
+-- clock it runs on (review decision 60, A4).
 function R.sleep(conversation, ms)
 	if conversation == nil then
-		R.unsupported("a wait in an event without a player")
+		timers.wait(ms)
+		return
 	end
 	conversation:wait(ms)
 end
@@ -807,24 +809,54 @@ function R.monster_info(mob, kind)
 	return info[field]
 end
 
--- NpcTimer is rAthena's NPC timer of one NPC, without an attached
--- player (npc.cpp 1470 to 1735). labels are its OnTimer<n> labels as
--- { tick, function } by tick. elapsed is nd->u.scr.timer, the tick the
--- timer had at its last start, stop or label, and started is
--- nd->u.scr.timertick: when it ran from elapsed, in milliseconds of the
--- server clock (clock.milliseconds), or nil while the timer stands.
--- handle is the next label's timer, nd->u.scr.timerid.
+-- NpcTimer is rAthena's NPC timer of one NPC (npc.cpp 1470 to 1735).
+-- labels are its OnTimer<n> labels as { tick, function, event label } by
+-- tick. elapsed is nd->u.scr.timer, the tick the timer had at its last
+-- start, stop or label, and started is nd->u.scr.timertick: when it ran
+-- from elapsed, in milliseconds of the server clock (clock.milliseconds),
+-- or nil while the timer stands. handle is the next label's timer,
+-- nd->u.scr.timerid.
 --
 -- The tick follows the server clock, so it runs on while the map has no
--- players, as rAthena's. The labels wait on timers.after, which follows
--- the zone clock: a label that came due while the map slept runs when
--- the map wakes, and the labels after it that came due run with it, in
--- order, as the tick catches up.
+-- players, as rAthena's. The labels wait on a timers.after of the
+-- server clock, which wakes a sleeping zone as schedules do (review
+-- decision 60, C1). When the zone is late, the labels that came due run
+-- together, in order, as the tick catches up.
+--
+-- A timer attached to a player (initnpctimer with 1, review decision 60,
+-- C3) is another NpcTimer of the same labels, kept by the player's name
+-- in attached. It runs each label with the player over npc:fire_event,
+-- as rAthena's run_script with the player attached. The timer ends when
+-- the player is not on the NPC's map any more, as npc_timerevent's
+-- "Attached player not found".
 local NpcTimer = {}
 NpcTimer.__index = NpcTimer
 
-function R.npc_timer(labels)
-	return setmetatable({ labels = labels, elapsed = 0 }, NpcTimer)
+-- no_timer stands for the timer of an attach without a player, which
+-- rAthena's script_rid2sd refuses: every command does nothing.
+local no_timer = setmetatable({}, { __index = function() return function() end end })
+
+function R.npc_timer(labels, npc)
+	return setmetatable({ labels = labels, elapsed = 0, npc = npc, attached = {} }, NpcTimer)
+end
+
+-- of is the timer a command acts on. With attach, the player's own timer,
+-- made when it has none. Else the player's timer when it has one, as
+-- rAthena's commands act on the attached player of the label they run
+-- in, and the NPC's timer otherwise.
+function NpcTimer:of(player, attach)
+	if player == nil or self.player ~= nil then
+		if attach and player == nil then
+			return no_timer
+		end
+		return self
+	end
+	local t = self.attached[player.name]
+	if t == nil and attach then
+		t = setmetatable({ labels = self.labels, elapsed = 0, npc = self.npc, attached = self.attached, player = player }, NpcTimer)
+		self.attached[player.name] = t
+	end
+	return t or self
 end
 
 -- tick is npc_gettimerevent_tick: getnpctimer(0).
@@ -835,18 +867,30 @@ function NpcTimer:tick()
 	return self.elapsed + (clock.milliseconds() - self.started)
 end
 
+-- run runs a label's function: with no player for the NPC's own timer,
+-- and for an attached timer as an event with the player.
+function NpcTimer:run(label)
+	if self.player == nil then
+		label[2](nil, nil)
+		return
+	end
+	if not pcall(self.npc.fire_event, self.npc, label[3], { player = self.player }) then
+		self:stop()
+		self.attached[self.player.name] = nil
+	end
+end
+
 -- schedule arranges label i when the tick reaches it. When it runs, the
 -- tick is the label's, and the next label is arranged before the
 -- label's function runs, as npc_timerevent does, so a stop there
--- cancels it. Labels that came due while the map slept run after it,
--- each at its own tick. The functions run without a player.
+-- cancels it. Labels that came due while the zone was late run after
+-- it, each at its own tick.
 function NpcTimer:schedule(i)
 	local label = self.labels[i]
 	self.handle = timers.after(math.max(label[1] - self:tick(), 0), function()
 		self.handle = nil
 		local now = clock.milliseconds()
-		-- The tick at least reached the label, which the zone clock's
-		-- timer waited for.
+		-- The tick at least reached the label, which the timer waited for.
 		local reached = math.max(self:tick(), label[1])
 		local j = i
 		while true do
@@ -859,7 +903,7 @@ function NpcTimer:schedule(i)
 				self:schedule(j + 1)
 			end
 			local handle = self.handle
-			due[2](nil, nil)
+			self:run(due)
 			-- A stop, a set or an init in the label ends the catching up.
 			if after == nil or self.handle ~= handle or handle == nil or after[1] > reached then
 				return
@@ -868,7 +912,7 @@ function NpcTimer:schedule(i)
 			self.handle = nil
 			j = j + 1
 		end
-	end)
+	end, { clock = "server" })
 end
 
 -- start is npc_timerevent_start: nothing when the timer runs, and else

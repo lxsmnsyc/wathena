@@ -3,6 +3,7 @@ package convert
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lxsmnsyc/wathena/server/modscript"
 )
@@ -186,6 +187,9 @@ OnTimer2000:
 	for _, now := range []int64{999, 1000, 1999, 2000} {
 		h.now = now
 		rt.Advance(now)
+		// The timer's labels wait on the server clock (review decision
+		// 60, C1), which runs with the zone clock here.
+		rt.RunServerTimers(testClock.Add(time.Duration(now) * time.Millisecond))
 	}
 	for _, m := range logs.msgs {
 		t.Error(m)
