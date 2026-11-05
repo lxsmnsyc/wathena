@@ -84,7 +84,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | callfunc | 1086 | 880 | 3 | 203 | 1086 |  |
 | delitem | 1048 | 987 | 1 | 60 | 1048 |  |
 | emotion | 1015 | 952 | 0 | 63 | 1014 | a game ID that is a name (1) |
-| rand | 1014 | 944 | 2 | 68 | 1014 |  |
+| rand | 1015 | 945 | 2 | 68 | 1015 |  |
 | getarg | 988 | 780 | 3 | 205 | 988 |  |
 | checkweight | 973 | 851 | 3 | 119 | 973 |  |
 | erasequest | 933 | 765 | 2 | 166 | 933 |  |

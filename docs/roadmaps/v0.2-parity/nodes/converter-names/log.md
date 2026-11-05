@@ -13,3 +13,10 @@
 - E2: no "is talking" read exists, and one would not help: the touch runs after the talk ended. Added a `waited` parameter to the `touch` event (zone/touch.go, modscript Touch, prelude converse_touch). Touches that waited are dropped by rAthena (no click).
 - E2 uses `npc.state == "shown"` for hidden NPCs, since npc_click refuses OPTION_HIDE.
 - Test host fix: npc_runtime_test.go hidden_name for "::" names reads the record's display_name.
+
+## Review round 1
+
+- Fixed the eight review points: both sides of &&, || and ?: run when one has an effect (R.both, R.either, R.choose); an index with a call or effect is evaluated once (`pureTarget`, `luaCode`); a function passes no NPC to a computed name (R.getd_any raises for `.` there); dotShared only for names that can reach `.`; run-time names are tables first (order independent); E2 checks `npc:is_cloaked(player)`; end-to-end E2 test in the zone (`TestClickOnTouchConverted`); label tests for a sibling branch and switch cases.
+- Item 5 (unbounded names) is recorded in 0071 as accepted.
+- Row counts did not change except `rand` (1014 to 1015 scripts in renewal).
+- `heard` in touch_test.go only matches text that starts with "touch".

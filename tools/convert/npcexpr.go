@@ -33,7 +33,11 @@ func (b *body) expr(e Expr) (val, error) {
 		if err != nil {
 			return val{}, err
 		}
-		if c.static != nil {
+		// rAthena evaluates both branches of ?: (parse_subexpr emits them
+		// before C_OP3). A branch with an effect is evaluated even when
+		// the condition is known or the other branch is taken.
+		effects := hasEffect(e.Then) || hasEffect(e.Else)
+		if c.static != nil && !effects {
 			if *c.static != 0 {
 				return b.expr(e.Then)
 			}
@@ -51,10 +55,25 @@ func (b *body) expr(e Expr) (val, error) {
 		if x.t != y.t {
 			t = tAny
 		}
+		if effects {
+			xc, yc := x.code, y.code
+			if x.t == tBool {
+				xc = x.asInt()
+			}
+			if y.t == tBool {
+				yc = y.asInt()
+			}
+			if t == tBool {
+				t = tInt
+			}
+			return val{code: fmt.Sprintf("R.choose(%s, %s, %s)", c.asBool(), xc, yc), t: t}, nil
+		}
 		if x.t == tInt || x.t == tStr {
 			return val{code: fmt.Sprintf("(%s and %s or %s)", c.asBool(), x.code, y.code), t: t}, nil
 		}
 		return val{code: fmt.Sprintf("(function() if %s then return %s end return %s end)()", c.asBool(), x.code, y.code), t: t}, nil
+	case *luaCode:
+		return val{code: e.code, t: e.t}, nil
 	case *Assign:
 		return b.assignValue(e, false)
 	case *IncDec:
@@ -73,7 +92,19 @@ func (b *body) assignValue(s *Assign, old bool) (val, error) {
 	t := s.Target
 	// The assignment writes its lines into the function, which are taken
 	// back out of the body here.
-	steps, err := b.capture(func() error { return b.assign(s) })
+	var steps []string
+	var err error
+	steps, err = b.capture(func() error {
+		// The index is evaluated once, before the write, and the read
+		// after it uses the same value.
+		target, err := b.pureTarget(s.Target)
+		if err != nil {
+			return err
+		}
+		s = &Assign{Target: target, Op: s.Op, Value: s.Value}
+		t = target
+		return b.assign(s)
+	})
 	if err != nil {
 		return val{}, err
 	}
@@ -229,14 +260,17 @@ func (b *body) binary(e *Binary) (val, error) {
 	}
 	// && and || stop early when the left side is known, so a part for a
 	// setting that is off need not convert.
-	if x.static != nil && (e.Op == "&&" && *x.static == 0 || e.Op == "||" && *x.static != 0) {
+	// rAthena evaluates both sides of && and || (parse_subexpr emits both
+	// before C_LAND and C_LOR), so a side with an effect is never skipped.
+	effects := (e.Op == "&&" || e.Op == "||") && hasEffect(e.Y)
+	if x.static != nil && !effects && (e.Op == "&&" && *x.static == 0 || e.Op == "||" && *x.static != 0) {
 		return intVal(b2i(e.Op == "||")), nil
 	}
 	y, err := b.expr(e.Y)
 	if err != nil {
 		return val{}, err
 	}
-	if x.static != nil && y.static != nil {
+	if x.static != nil && y.static != nil && !effects {
 		v, err := fold(e.Op, *x.static, *y.static)
 		if err != nil {
 			return val{}, err
@@ -277,11 +311,17 @@ func (b *body) binary(e *Binary) (val, error) {
 		}
 		return val{code: "(" + l + " " + op + " " + r + ")", t: tBool}, nil
 	case "&&":
+		if effects {
+			return val{code: "R.both(" + x.asBool() + ", " + y.asBool() + ")", t: tBool}, nil
+		}
 		if x.static != nil {
 			return val{code: y.asBool(), t: tBool}, nil
 		}
 		return val{code: "(" + x.asBool() + " and " + y.asBool() + ")", t: tBool}, nil
 	case "||":
+		if effects {
+			return val{code: "R.either(" + x.asBool() + ", " + y.asBool() + ")", t: tBool}, nil
+		}
 		if x.static != nil {
 			return val{code: y.asBool(), t: tBool}, nil
 		}

@@ -26,6 +26,20 @@ func TestNamesConvert(t *testing.T) {
 		{`{ .@a[.@i++] = 1; end; }`, "a[(function() local wa_old = i i = (i + 1) return wa_old end)()] = 1"},
 		{`{ .@g = .@h = 2; end; }`, "g = (function() h = 2 return h end)()"},
 		{`{ $@v = ($@w = 3) + 1; end; }`, "SERVER_TEMP_V:set(((function() SERVER_TEMP_W:set(3) return SERVER_TEMP_W:get() end)() + 1))"},
+		// Both sides of &&, || and ?: run when one has an effect.
+		{`{ if (.@x == 1 && (.@y = select("a:b")) == 2) mes "x"; end; }`, "R.both((x == 1), ((function() y = conversation:choose"},
+		{`{ if (0 && (.@y = 1)) mes "x"; end; }`, "R.both(false, "},
+		{`{ .@k = 1 || (.@j = 7); end; }`, "R.either(true, "},
+		{`{ .@z = .@x ? (.@a = 1) : (.@b = 2); end; }`, "R.choose("},
+		{`{ .@z = 1 ? 1 : (.@b = 2); end; }`, "R.choose(true, 1, "},
+		{`{ .@z = .@x ? 1 : 2; end; }`, "((x ~= 0) and 1 or 2)"},
+		{`{ if (.@x && .@y) mes "x"; end; }`, "((x ~= 0) and (y ~= 0))"},
+		// An index with an effect is evaluated once.
+		{`{ .@a[.@i++] += 1; end; }`, "index_1 = (function() local wa_old = i i = (i + 1) return wa_old end)()"},
+		{`{ .@a[.@i++] += 1; end; }`, "a[index_1] = ((a[index_1] or 0) + 1)"},
+		{`{ .@y = (.@a[.@i++] = 5); end; }`, "return (a[index_1] or 0) end)()"},
+		{`{ .@a[.@i++]++; end; }`, "a[index_1] = ((a[index_1] or 0) + 1)"},
+		{`{ .@a[rand(3)] -= 1; end; }`, "index_1 = random.integer("},
 		// getarg and getargcount outside a function end the script.
 		{`{ mes "" + getarg(0); end; }`, "(R.stop() or 0)"},
 		{`{ mes "" + getargcount(); end; }`, "(R.stop() or 0)"},
@@ -100,7 +114,7 @@ func TestClickOnTouchConvert(t *testing.T) {
 		if got := n.clickTouch; got != c.want {
 			t.Errorf("%s: click on touch %v, want %v", c.line.Name, got, c.want)
 		}
-		has := strings.Contains(lua, `events.on("touch", function(player, conversation, waited) if not waited and npc.state == "shown" then click(player, conversation) end end)`)
+		has := strings.Contains(lua, `events.on("touch", function(player, conversation, waited) if not waited and npc.state == "shown" and not npc:is_cloaked(player) then click(player, conversation) end end)`)
 		if has != c.want {
 			t.Errorf("%s: the touch handler is %v, want %v:\n%s", c.line.Name, has, c.want, lua)
 		}
@@ -216,6 +230,9 @@ func TestRunNames(t *testing.T) {
 	dispbottom "" + getd(".@w2[3]") + getd(".@nothing" + 1);
 	setd "$3rd_" + 7, 9;
 	dispbottom "" + getd("$3rd_7");
+	setd "$ord_" + 1, 4;
+	setd "$ord_" + 1 + "[2]", 6;
+	dispbottom "" + getd("$ord_" + 1) + getd("$ord_" + "1[2]");
 	end;
 }`,
 		"Scan#t": `{
@@ -234,6 +251,58 @@ func TestRunNames(t *testing.T) {
 	dispbottom "a";
 	dispbottom "" + getarg(0);
 	dispbottom "b";
+	end;
+}`,
+		"Eval#t": `{
+	.@i = 0;
+	if (.@i == 1 && (.@i = 5) == 5)
+		dispbottom "a";
+	dispbottom "" + .@i;
+	.@k = 1 || (.@j = 7);
+	dispbottom "" + .@j;
+	.@m = 0;
+	.@q = .@m ? (.@m = 1) : (.@m = 2);
+	dispbottom "" + .@m + .@q;
+	.@r = 1 ? 1 : (.@s = 9);
+	dispbottom "" + .@s;
+	setarray .@a[0], 10, 20, 30;
+	.@n = 0;
+	.@a[.@n++] += 1;
+	dispbottom "" + .@a[0] + .@a[1] + .@n;
+	.@y = (.@a[.@n++] = 5);
+	dispbottom "" + .@a[1] + .@y + .@n;
+	.@a[.@n++]++;
+	dispbottom "" + .@a[2] + .@n;
+	end;
+}`,
+		"Switch#2": `{
+	.@mode = 2;
+	switch (.@mode) {
+	case 1:
+		dispbottom "c1";
+	L_D:
+		dispbottom "d";
+		break;
+	case 2:
+		dispbottom "c2";
+		goto L_D;
+	}
+	dispbottom "end";
+	end;
+}`,
+		"Switch#3": `{
+	.@mode = 9;
+	if (.@mode == 9) goto L_E;
+	switch (.@mode) {
+	case 1:
+		dispbottom "one";
+		break;
+	default:
+		dispbottom "x";
+	L_E:
+		dispbottom "e";
+	}
+	dispbottom "end";
 	end;
 }`,
 		"Label#1": labelScript("1"),
@@ -257,9 +326,12 @@ func TestRunNames(t *testing.T) {
 	})
 	for name, want := range map[string]string{
 		"Assign#t":  "4ab|56|979|f3|22|xyzxy|10202",
-		"Dyn#t":     "33|88|3|55|60|9",
+		"Dyn#t":     "33|88|3|55|60|9|46",
 		"Scan#t":    "1 12|2abc5|-1abc0|7|-1-11",
 		"NoFrame#t": "a",
+		"Eval#t":    "5|7|22|9|11201|552|313",
+		"Switch#2":  "c2|d|end",
+		"Switch#3":  "e|end",
 		"Label#1":   "one|in|after9",
 		"Label#2":   "two|in|after9",
 		"Label#3":   "after3",
@@ -268,5 +340,44 @@ func TestRunNames(t *testing.T) {
 		if got[name] != want {
 			t.Errorf("%s: got %q, want %q", name, got[name], want)
 		}
+	}
+}
+
+// TestDotNamesScope checks which scripts turn their . variables into NPC
+// variables (review decision 60, F3): a computed name that can reach a .
+// variable, not any name with no fixed start.
+func TestDotNamesScope(t *testing.T) {
+	res := builtinResult(t, nil)
+	for _, c := range []struct {
+		script string
+		shared bool
+	}{
+		{`{ .x = 1; mes "" + getd(.@n$); end; }`, false},
+		{`{ .x = 1; mes "" + getd("." + .@n$); end; }`, true},
+		{`{ .x = 1; mes "" + getd(.@n$); .@n$ = ".x"; end; }`, true},
+		{`{ .x = 1; mes "" + getd(".y" + .@i); end; }`, true},
+		{`{ .x = 1; mes "" + getd(".@y" + .@i); end; }`, false},
+	} {
+		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", XS: -1, YS: -1, Script: c.script})
+		lua, err := n.npcScript()
+		if err != nil {
+			t.Errorf("%s: %v", c.script, err)
+			continue
+		}
+		if got := strings.Contains(lua, `variables.npc_integer "x"`); got != c.shared {
+			t.Errorf("%s: NPC variable %v, want %v", c.script, got, c.shared)
+		}
+	}
+}
+
+// TestDotNameInFunction checks that a function passes no NPC to a
+// computed name, since it does not know the source of a duplicate.
+func TestDotNameInFunction(t *testing.T) {
+	builtinFunctions["F_DotAny"] = `{ return getd(getarg(0)); }`
+	defer delete(builtinFunctions, "F_DotAny")
+	res := builtinResult(t, map[string]string{"Caller#t": `{ mes "" + F_DotAny(".x"); end; }`})
+	f := res.Functions["f_dotany"]
+	if f == nil || !strings.Contains(f.Lua, "R.getd_any(tostring((R.arg(args, 0) or 0)), player, nil, ") {
+		t.Fatalf("function: %+v", f)
 	}
 }

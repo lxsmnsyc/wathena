@@ -26,9 +26,15 @@
 ### Computed names (F3)
 
 - A function whose statements have a computed name that may reach a `.@` variable keeps all its `.@` variables in one Lua table, `locals_N`, by lower-case name without the prefix, with a `$` at the end of a string's name. `R.getd_local` and `R.setd_local` read and write it. A name that the function never wrote is made on its first write.
-- A script whose statements have a computed name that may reach a `.` variable makes all its `.` variables NPC variables of `wa.variables`, as `getvariableofnpc` does. `R.getd` and `R.setd` take the NPC as the owner of the scope `"npc"`. A function keeps refusing `.` variables.
+- A script whose statements have a computed name that may reach a `.` variable makes all its `.` variables NPC variables of `wa.variables`, as `getvariableofnpc` does. A name reaches `.` when its fixed start is `.`, or when it has no fixed start and the script has text of a `.` name (`".x"`, or `"."` to build one on). `getd(.@n$)` alone leaves the `.` variables as they were. `R.getd` and `R.setd` take the NPC as the owner of the scope `"npc"`. A function keeps refusing `.` variables.
+- `R.getd` and `R.setd` declare a run-time name as a table first (index 0 is the plain value, as rAthena's `x` and `x[0]`), and as a number or string only when the script declared it so. `x` and `x[2]` then work in any order.
 - A name whose start is not fixed text, or does not fix the scope (`getd(.@var$)`, `getd("." + .@name$)`, `getd("$" + .@x$)`), goes through `R.getd_any` and `R.setd_any`. They read the prefix when the script runs, declare the variable then, and use the `.@` table and the NPC's variables for those prefixes.
+- In a function a name with no fixed start passes no NPC: `R.getd_any` raises an error for a `.` name there, since a function does not know the source NPC whose `.` variables a duplicate shares. A function's `.@` names work.
 - Core has no variable count limit (decision 0062), so declaring at run time is free there. A mod that converts its own scripts keeps the 256 limit, and computed names count toward it.
+
+### && || ?: with effects
+
+- rAthena evaluates both sides of `&&`, `||` and `?:` (parse_subexpr emits them before C_LAND, C_LOR and C_OP3). When a right side or a branch has an effect (an assignment, `++`, `--`, `select`, `prompt`, `callfunc`, `callsub`, `sscanf`, an item or monster command, `rand`, or a call of a script's function), both sides are arguments of `R.both`, `R.either` or `R.choose`, and nothing is folded away, even when the left side or the condition is known. Without an effect the short-circuit stays, so a part for a setting that is off need not convert.
 
 ### getarg and getargcount outside a function
 
@@ -42,13 +48,19 @@
 
 - `sscanf(text, format, variables...)` converts when the format is fixed text of `%d`, `%s`, `%%`, white space and literal text, when each conversion has its variable, and when `%d` goes into a number variable and `%s` into a string variable. `R.sscanf` returns the count, or -1 when the text or a conversion does not match, with the values it read. The variables before the failure are set, as rAthena's, which scans once for each conversion. As a statement the count is not read.
 
+### Index of a target
+
+- The index of a compound assignment or of an assignment used as a value (`.@a[.@i++] += 1`, `.@y = (.@a[.@i++] = 5)`, `.@a[.@i++]++`, `.@a[rand(3)] -= 1`) is evaluated once into a hidden local, which the read and the write use. A plain `=` statement evaluates it once anyway.
+
 ### Click on touch (E2)
 
 - A script NPC with a touch area, a view, a click handler and no `OnTouch` or `OnTouch_` label clicks on touch: the script registers `touch` with a handler that runs the click handler, as `npc_touch_areanpc` does (npc.cpp 1943). The area is the line's span, or one of its duplicates', which run the same script.
 - rAthena clicks only for a player who is not talking, and drops the touch otherwise. wAthena queues a touch while the player talks, so the `touch` event has a third argument, `waited`, true for a touch that waited. The converted handler does not click for it. No read of "is talking" exists, and one would not help: a queued touch runs after the conversation ended.
-- A hidden NPC is not clicked (`npc_click` refuses OPTION_HIDE): the handler reads `npc.state`.
+- A hidden NPC is not clicked (`npc_click` refuses OPTION_HIDE), and a disabled NPC or one cloaked for the player is not touched (npc.cpp 1896): the handler reads `npc.state` and `npc:is_cloaked(player)`. The zone does not fire `touch` for a disabled or cloaked NPC either, so the checks matter for a state that changed in between.
 
 ## Breaks
+
+- Converted `&&`, `||` and `?:` with an effect call `R.both`, `R.either` and `R.choose`.
 
 - Converted `.x` variables of a script that has a computed `.` name are NPC variables and no longer Lua locals of the setup function. They are not saved and every zone reads them.
 - `Runtime.Touch` takes `waited` as its last argument.
@@ -65,7 +77,9 @@
 
 - rAthena pushes a variable as a reference and reads it when the operator runs, so `.@a + (.@a = 5)` is 10 there and 6 here, and `.@a == (.@a = 3)` compares the new value with itself there. No script in rAthena's tree writes this.
 - `getd` of a name with no fixed start reads a variable even when the name is a constant, a parameter or a currency's variable (`getd("Zeny")`), where rAthena reads that. A fixed start that may be one of them is still refused. Names with other characters than letters, digits and `_` raise an error, where rAthena takes any text as a name. A name that is only a prefix (`.`, for an NPC whose name lost its `#` part) is the variable `_`.
-- A computed `.` name in a function, and a `'` name, stay refused.
+- A computed `.` name with a fixed start in a function, and a `'` name, stay refused. A `.` name with no fixed start in a function raises an error when it runs.
+- Names made when the script runs are not bounded: each new name declares a variable. Core has no count limit (decision 0062), and no official script builds a name from player text, so this is accepted. A mod that converts its own scripts keeps the 256 limit.
+- Which calls count as having an effect is a list (`effectCalls`) plus every call of a script's function. A command that changes something and is not on it, used on the right of `&&`, is still short-circuited.
 - A script with a computed `.` name keeps its `.` variables as NPC variables, which a `getvariableofnpc` of another NPC reads too.
 - A failed `sscanf` returns -1 and the script goes on, with the variables before the failure set. rAthena's also returns -1 for a character variable when no player is attached; this conversion does not check that.
 - `sscanf` with a computed format, a conversion other than `%d` and `%s`, or a width, is refused.

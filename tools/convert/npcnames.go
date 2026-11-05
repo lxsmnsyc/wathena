@@ -129,6 +129,7 @@ func scopeOfName(e Expr) nameScope {
 // variables keeps them in one table, and a script whose names may reach
 // . variables makes them NPC variables (review decision 60, F3).
 func computedNames(stmts []Stmt) (locals, dots bool) {
+	anyName := false
 	note := func(name Expr) {
 		if _, fixed := asVar(&Call{Name: "getd", Args: []Expr{name}}); fixed {
 			return
@@ -139,7 +140,7 @@ func computedNames(stmts []Stmt) (locals, dots bool) {
 		case nameDot:
 			dots = true
 		case nameAny:
-			locals, dots = true, true
+			locals, anyName = true, true
 		}
 	}
 	walkStmts(stmts, func(s Stmt) {
@@ -159,8 +160,22 @@ func computedNames(stmts []Stmt) (locals, dots bool) {
 			note(c.Args[0])
 		}
 	})
+	if anyName && !dots {
+		// A name with no fixed start reaches . variables only when the
+		// script has text of a . name to build it from, such as ".x" or
+		// "." + .@name$.
+		walkExprs(stmts, func(e Expr) {
+			if str, ok := e.(*Str); ok && dotText.MatchString(str.Value) {
+				dots = true
+			}
+		})
+	}
 	return locals, dots
 }
+
+// dotText matches text that starts a . variable's name: "." alone, or "."
+// and a name, but not ".@".
+var dotText = regexp.MustCompile(`^\.([A-Za-z0-9_]|$)`)
 
 // keepLocalsInTable makes the body keep its .@ variables in one table
 // when a computed name in its statements may reach them.
@@ -585,4 +600,72 @@ func enterSwitch(s *Switch, name string, flag *Var) (Stmt, bool) {
 	}
 	c.Value = &Ternary{Cond: flagSet(flag), Then: pick, Else: s.Value}
 	return &c, true
+}
+
+// luaCode is a value that is already Lua code, such as a local that
+// holds an index evaluated once.
+type luaCode struct {
+	code string
+	t    valType
+}
+
+func (*luaCode) expr() {}
+
+// effectCalls are the calls that change something or ask the player,
+// besides every call of a script's own function.
+var effectCalls = map[string]bool{
+	"select": true, "prompt": true, "callfunc": true, "callsub": true, "sscanf": true, "input": true,
+	"getitem": true, "getitem2": true, "delitem": true, "delitem2": true, "getnameditem": true, "makeitem": true,
+	"monster": true, "areamonster": true, "rand": true, "next": true, "sleep": true,
+}
+
+// hasEffect reports whether evaluating an expression can change
+// something: an assignment, ++ or --, or a call that does.
+func hasEffect(e Expr) bool {
+	found := false
+	visitExpr(e, func(e Expr) {
+		switch e := e.(type) {
+		case *Assign, *IncDec:
+			found = true
+		case *Call:
+			name := strings.ToLower(e.Name)
+			if effectCalls[name] || !builtins[name] && !pureCalls[name] {
+				found = true
+			}
+		}
+	})
+	return found
+}
+
+// pureCalls are names that are not commands and change nothing.
+var pureCalls = map[string]bool{"getd": true}
+
+// unevaluated reports whether an index must be evaluated once into a
+// local: it has an assignment, ++, --, or a call.
+func unevaluated(e Expr) bool {
+	found := false
+	visitExpr(e, func(e Expr) {
+		switch e.(type) {
+		case *Assign, *IncDec, *Call:
+			found = true
+		}
+	})
+	return found
+}
+
+// pureTarget makes a variable's index evaluated once: an index that has
+// an effect or a call is assigned to a hidden local first, and the
+// variable reads and writes through that. rAthena evaluates the index of
+// a.@[i++] += 1 once.
+func (b *body) pureTarget(t *Var) (*Var, error) {
+	if t.Index == nil || !unevaluated(t.Index) {
+		return t, nil
+	}
+	iv, err := b.expr(t.Index)
+	if err != nil {
+		return nil, err
+	}
+	tmp := b.hide("index")
+	b.line("%s = %s", tmp, iv.asInt())
+	return &Var{Name: t.Name, Index: &luaCode{code: tmp, t: tInt}}, nil
 }

@@ -650,9 +650,6 @@ func (b *body) dynamicName(what string, e Expr) (*dynamicVar, error) {
 	if kind == nameDot && b.n.isFunction {
 		return nil, unsupported(what, "a computed name of a . variable in a function")
 	}
-	if kind == nameAny && !b.n.isFunction && !b.n.dotShared {
-		return nil, unsupported(what, "a name that does not fix its scope, in a script that did not prepare for it")
-	}
 	c := b.n.c
 	for name := range c.currencyVars {
 		if kind == nameFixed && strings.HasPrefix(name, lower) {
@@ -750,9 +747,16 @@ func (b *body) getd(args []Expr) (val, error) {
 }
 
 // dotOwner is the NPC whose . variables a computed name reads: the
-// NPC, or the source of an NPC with duplicates, which they share.
+// NPC, or the source of an NPC with duplicates, which they share, and
+// nil in a function.
 func (b *body) dotOwner() string {
-	if !b.n.isFunction && b.n.c.duplicated[b.n.line.Name] {
+	if b.n.isFunction {
+		// A function does not know the source NPC of the script that
+		// called it, whose . variables a duplicate shares, so R.getd_any
+		// raises an error for a . name there.
+		return "nil"
+	}
+	if b.n.c.duplicated[b.n.line.Name] {
 		b.n.sourceShared = true
 		return sourceVar
 	}

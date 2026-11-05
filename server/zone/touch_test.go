@@ -493,3 +493,146 @@ func TestTouchDialogConverted(t *testing.T) {
 		t.Fatalf("logs: %s", logs)
 	}
 }
+
+// touchNPC is an NPC line of TestClickOnTouchConverted: its rAthena
+// script, the span of its touch area (-1 for none), the cell and state it
+// stands in, and the NPC it duplicates.
+type touchNPC struct {
+	name, script, state, dup string
+	span, x, y               int
+}
+
+// clickOnTouchZone converts the lines as rAthena NPCs on the map, starts
+// the converted NPCs with core's scripts, and returns the zone.
+func clickOnTouchZone(t *testing.T, npcs []touchNPC) (*Zone, *Player) {
+	t.Helper()
+	read := func(name string) []byte {
+		b, err := reference.ReadFile("extracts/renewal/" + name + ".json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+	var lines []map[string]any
+	for i, n := range npcs {
+		l := map[string]any{"kind": "script", "name": n.name, "display": n.name, "file": "test.txt", "line": i + 1, "map": "test",
+			"x": n.x, "y": n.y, "sprite": "WARPNPC", "xs": n.span, "ys": n.span, "state": "enabled", "script": n.script}
+		if n.dup != "" {
+			l["duplicate_of"] = n.dup
+			delete(l, "script")
+		}
+		lines = append(lines, l)
+	}
+	data, err := json.Marshal(map[string]any{"mode": "renewal", "npcs": lines})
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := convert.ConvertNPCs(convert.NPCInput{NPCs: bytes.NewReader(data), Constants: bytes.NewReader(read("script_constants")),
+		ClientTables: bytes.NewReader(read("client_tables"))})
+	if err != nil {
+		t.Fatal(err)
+	}
+	z, w := touchZone(t, "return function() end")
+	z.Statuses = testStatuses(t)
+	coreMods(t, z)
+	logs := &syncBuffer{}
+	z.Mods.Log = slog.New(slog.NewTextHandler(logs, nil))
+	z.Mods.Server = variables.NewServer(nil, nil)
+	var zn []NPC
+	for i, n := range res.NPCs {
+		if n.Script == "" || n.Status == convert.None {
+			t.Fatalf("%s did not convert: %v", n.Name, n.Unsupported)
+		}
+		if n.Lua != "" {
+			z.Mods.Scripts[0].Files[n.Script] = n.Lua
+		}
+		zn = append(zn, NPC{Name: "core:" + n.Name, DisplayName: n.Name, X: npcs[i].x, Y: npcs[i].y, Sprite: 45, Script: "core:" + n.Script,
+			State: npcs[i].state, Touch: &TouchArea{XSpan: 1, YSpan: 1}})
+		if !n.Touch {
+			zn[i].Touch = nil
+		}
+	}
+	z.stopScripts()
+	z.npcsStarted = false
+	z.SetNPCs(zn)
+	z.startScripts()
+	z.startNPCs()
+	t.Cleanup(func() {
+		if strings.Contains(logs.String(), "level=WARN") || strings.Contains(logs.String(), "level=ERROR") {
+			t.Errorf("logs: %s", logs)
+		}
+	})
+	return z, w
+}
+
+const clickDialog = `{ mes "[Gate]"; mes "Halt, " + strcharinfo(0) + "."; close; }`
+
+// TestClickOnTouchConverted runs the click fallback of review decision
+// 60, E2 in the zone: an NPC with a touch area and no touch label is
+// clicked by a player who comes in, as npc_touch_areanpc does, unless the
+// touch waited for a conversation, or the NPC is hidden or cloaked.
+func TestClickOnTouchConverted(t *testing.T) {
+	step := func(z *Zone, n int) {
+		for range n {
+			z.stepAt(z.now + 50)
+		}
+	}
+	// A normal touch clicks.
+	z, _ := clickOnTouchZone(t, []touchNPC{{name: "Gate#t", script: clickDialog, span: 1, x: 20, y: 20}})
+	a := joinAt(z, "a", 10, 20)
+	walkTo(t, z, a, 19, 20)
+	if got := lines(events(a)); got != "[Gate]|Halt, a." {
+		t.Fatalf("a touch: %q", got)
+	}
+
+	// A hidden NPC is touched, and not clicked. A cloaked one is not
+	// touched.
+	for _, state := range []string{"hidden", "cloaked", "disabled"} {
+		z, _ := clickOnTouchZone(t, []touchNPC{{name: "Gate#t", script: clickDialog, span: 1, x: 20, y: 20, state: state}})
+		a := joinAt(z, "a", 10, 20)
+		walkTo(t, z, a, 19, 20)
+		step(z, 3)
+		if got := lines(events(a)); got != "" {
+			t.Fatalf("a %s NPC: %q", state, got)
+		}
+	}
+
+	// A touch that waited for a conversation to end does not click.
+	z, _ = clickOnTouchZone(t, []touchNPC{
+		{name: "Talk#t", script: `{ end; OnTouch: mes "[Talk]"; mes "Stop."; close; }`, span: 1, x: 20, y: 20},
+		{name: "Gate#t", script: clickDialog, span: 1, x: 20, y: 21},
+	})
+	a = joinAt(z, "a", 10, 20)
+	walkTo(t, z, a, 19, 21)
+	ev := events(a)
+	if got := lines(ev); got != "[Talk]|Stop." {
+		t.Fatalf("the first touch: %q", got)
+	}
+	answer(z, a, reply(lastDialog(ev).GetDialog(), func(b *wathenav1.NpcReply_builder) { b.Close = new(true) }))
+	step(z, 10)
+	if got := lines(events(a)); got != "" {
+		t.Fatalf("a touch that waited clicked: %q", got)
+	}
+
+	// An OnTouch_ label is the touch: no click.
+	z, w := clickOnTouchZone(t, []touchNPC{{name: "Gate#t", script: `{ mes "click"; close; OnTouch_: npctalk "touch " + strcharinfo(0); end; }`, span: 1, x: 20, y: 20}})
+	a = joinAt(z, "a", 10, 20)
+	walkTo(t, z, a, 19, 20)
+	if got := lines(events(a)); got != "" {
+		t.Fatalf("an NPC with a label clicked: %q", got)
+	}
+	if got := strings.Join(heard(w), ","); got != "touch a" {
+		t.Fatalf("the label: %q", got)
+	}
+
+	// A duplicate with a span runs the script of a source that has none.
+	z, _ = clickOnTouchZone(t, []touchNPC{
+		{name: "Src#t", script: clickDialog, span: -1, x: 5, y: 5},
+		{name: "Dup#t", dup: "Src#t", span: 1, x: 20, y: 20},
+	})
+	a = joinAt(z, "a", 10, 20)
+	walkTo(t, z, a, 19, 20)
+	if got := lines(events(a)); got != "[Gate]|Halt, a." {
+		t.Fatalf("a duplicate's touch: %q", got)
+	}
+}

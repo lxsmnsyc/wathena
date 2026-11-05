@@ -76,6 +76,24 @@ function R.text(v)
 	return tostring(v)
 end
 
+-- both, either and choose are &&, || and ?: when a side has an effect:
+-- rAthena evaluates every side (parse_subexpr), so the arguments are all
+-- evaluated before they are combined.
+function R.both(a, b)
+	return a and b
+end
+
+function R.either(a, b)
+	return a or b
+end
+
+function R.choose(c, a, b)
+	if c then
+		return a
+	end
+	return b
+end
+
 -- truthy is rAthena's test of a value: not 0 and not "".
 function R.truthy(v)
 	return v ~= nil and v ~= 0 and v ~= ""
@@ -1405,14 +1423,20 @@ local function dynamic(scope, text, player, npc)
 	elseif scope == "npc" then
 		owner = npc
 	end
-	local default = str and "" or 0
-	if index == 0 then
-		local ok, handle = pcall(variables[scope .. "_" .. (str and "string" or "integer")], declared)
-		if ok then
-			return handle, nil, owner, default
-		end
+	if scope == "npc" and owner == nil then
+		error("getd: " .. text .. " is a . variable, which needs an NPC, and a function has none", 3)
 	end
-	return variables[scope .. "_table"](declared), index, owner, default
+	local default = str and "" or 0
+	-- A name is a table unless the script declared it as a number or a
+	-- string, so x and x[2] work in any order. x and x[0] are one value.
+	local ok, handle = pcall(variables[scope .. "_table"], declared)
+	if ok then
+		return handle, index, owner, default
+	end
+	if index ~= 0 then
+		return variables[scope .. "_table"](declared), index, owner, default
+	end
+	return variables[scope .. "_" .. (str and "string" or "integer")](declared), nil, owner, default
 end
 
 -- NPCs by name (review decision 58). A command on an NPC that does not

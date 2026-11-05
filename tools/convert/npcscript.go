@@ -730,10 +730,11 @@ func (n *npcConv) npcScript() (string, error) {
 		if n.clickTouch {
 			// The touch that waited for a conversation gets no click, as
 			// rAthena clicks only for a player who does not talk, and a
-			// hidden NPC takes no click (npc_click).
+			// hidden NPC takes no click (npc_click). A disabled NPC, and one
+			// cloaked for the player, are not touched at all.
 			f.line("end")
 			f.line(`events.on("click", click)`)
-			f.line(`events.on("touch", function(player, conversation, waited) if not waited and npc.state == "shown" then click(player, conversation) end end)`)
+			f.line(`events.on("touch", function(player, conversation, waited) if not waited and npc.state == "shown" and not npc:is_cloaked(player) then click(player, conversation) end end)`)
 		} else {
 			f.line("end)")
 		}

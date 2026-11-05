@@ -32,6 +32,16 @@ Rows of the generated reports (script NPCs that are not duplicates; "This part c
 
 The brief's 221 and 47 are the old counts of the `variables` row. Every remaining `variables` reason is an instance variable (`'x`), which the instance nodes own. The remaining `goto` reasons ("is in another part of the script": 3 NPCs in renewal, 2 in pre-renewal) are not in this brief and stay.
 
+## Review round 1
+
+- `&&`, `||` and `?:` evaluate both sides when one has an effect (`R.both`, `R.either`, `R.choose`); the short-circuit stays for sides without one.
+- An index with a call, assignment or `++` is evaluated once into a hidden local for compound assignments and assignments used as values.
+- A function passes no NPC to computed names; a `.` name with no fixed start raises an error there (0071). `dotShared` is set only by names that can reach `.`. Run-time names are declared as tables first, so `x` and `x[2]` work in any order.
+- Unbounded run-time names are accepted and recorded in 0071.
+- The click-on-touch handler checks `npc:is_cloaked(player)` as well as `npc.state`.
+- Tests added: zone `TestClickOnTouchConverted` (normal touch, hidden, cloaked and disabled NPCs, a touch that waited, an `OnTouch_` label, a duplicate with a span whose source has none), converter and run tests for effects, indexes, `.` scope, a function's owner, sibling-branch jumps and switch cases with a label.
+- Report rows did not change, except `rand` (renewal 1014 to 1015 scripts).
+
 ## Deviations
 
 - Files outside the brief's owned and shared paths, each changed minimally: tools/convert/npcbuiltins.go (`getd`/`setd`), npcreport.go (the new report row), npc_builtins_test.go, npc_events_test.go and npc_runtime_test.go (expectations and the test host), server/modscript/npcs.go, runtime.go and variables_security_test.go, server/zone/touch.go and touch_test.go, mods/README.md, docs/proposals/0002-lua-api.md, and a new file tools/convert/npcnames.go. The brief's gotcha said E2 needs no API; it needs the `waited` argument (see Gotchas).

@@ -1040,6 +1040,15 @@ func (b *body) jump(kind string) error {
 }
 
 func (b *body) assign(s *Assign) error {
+	if s.Op != "=" {
+		// A compound assignment reads and writes the target, and its
+		// index is evaluated once.
+		target, err := b.pureTarget(s.Target)
+		if err != nil {
+			return b.unsupported(err)
+		}
+		s = &Assign{Target: target, Op: s.Op, Value: s.Value}
+	}
 	t := s.Target
 	if _, ok := b.npcIDVars()[strings.ToLower(t.Name)]; ok && t.Index == nil {
 		// The variable holds an NPC's game ID, which the unit commands
