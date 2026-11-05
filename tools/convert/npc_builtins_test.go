@@ -103,15 +103,25 @@ func TestBuiltinsConvert(t *testing.T) {
 	for _, c := range []struct{ script, want string }{
 		// NPC timers.
 		{`{ end; OnInit: initnpctimer; end; OnTimer3000: end; OnTimer1000: stopnpctimer; end; }`,
-			"NpcTimer = R.npc_timer({ { 1000, event_ontimer1000 }, { 3000, event_ontimer3000 } })"},
-		{`{ end; OnInit: initnpctimer; end; }`, "NpcTimer:init()"},
-		{`{ initnpctimer "X#t"; stopnpctimer "X#t",1; end; }`, "NpcTimer:stop()"},
-		{`{ setnpctimer 0; startnpctimer; end; }`, "NpcTimer:set(0)\n      NpcTimer:start()"},
-		{`{ mes "" + getnpctimer(1) + getnpctimer(2); end; OnTimer5: end; }`, `"" .. NpcTimer:due() .. 1`},
-		{`{ initnpctimer 1; end; }`, "!initnpctimer: a timer attached to the player"},
-		{`{ initnpctimer "Other#t"; end; }`, "!initnpctimer: the timer of another NPC (Other#t)"},
-		{`{ startnpctimer; end; }`, "NpcTimer:start()"},
-		{`{ mes "" + getnpctimer(0); end; }`, "NpcTimer:tick()"},
+			`NpcTimer = R.npc_timer({ { 1000, event_ontimer1000, "ontimer1000" }, { 3000, event_ontimer3000, "ontimer3000" } }, npc)`},
+		{`{ end; OnInit: initnpctimer; end; }`, "NpcTimer:of(player):init()"},
+		{`{ initnpctimer "X#t"; stopnpctimer "X#t",1; end; OnTimer5: end; }`, "NpcTimer:of(player):stop()"},
+		{`{ setnpctimer 0; startnpctimer; end; }`, "NpcTimer:of(player):set(0)\n      NpcTimer:of(player):start()"},
+		{`{ mes "" + getnpctimer(1) + getnpctimer(2); end; OnTimer5: end; }`, `"" .. NpcTimer:of(player):due() .. 1`},
+		// A timer attached to the player is the player's own (C3).
+		{`{ initnpctimer 1; end; OnTimer5: end; }`, "NpcTimer:of(player, true):init()"},
+		// Another NPC's timer commands are events to it (C4).
+		{`{ initnpctimer "Other#t"; end; }`, `R.fire("Other#t", "watimerinit")`},
+		{`{ setnpctimer 0,"Other#t"; startnpctimer "Other#t"; stopnpctimer "Other#t"; end; }`, `R.fire("Other#t", "watimerset0")`},
+		{`{ setnpctimer 5,"Other#t"; end; }`, "!setnpctimer: a tick other than 0 on another NPC's timer"},
+		{`{ mes "" + getnpctimer(0,"Other#t"); end; }`, "!getnpctimer: the timer of another NPC"},
+		{`{ end; OnTimer5: end; }`, `{ name = "watimerinit" }`},
+		{`{ startnpctimer; end; }`, "NpcTimer:of(player):start()"},
+		{`{ mes "" + getnpctimer(0); end; }`, "NpcTimer:of(player):tick()"},
+		// Player timers (C2).
+		{`{ addtimer 3000, "Other#t::OnGo"; deltimer "Other#t::OnGo"; end; }`, `R.add_timer(player, 3000, "Other#t::OnGo")`},
+		{`{ deltimer "Other#t::OnGo"; end; }`, `player:remove_timer("Other#t::OnGo")`},
+		{`{ addtimer 3000, "OnGo"; end; }`, "-- addtimer without \"::\" finds no event"},
 		// Equipment reads.
 		{`{ if (isequipped(2234,5016)) mes "a"; end; }`, "R.isequipped(player, TIARA, BOY_S_CAP)"},
 		{`{ mes "" + isequipped(0,2234); end; }`, `"" .. -1`},
@@ -162,7 +172,7 @@ func TestBuiltinsConvert(t *testing.T) {
 		{`{ mes "" + Twice(2); end; function Twice { return getarg(0) * 2; } }`, "func_twice(player, conversation, npc, 2)"},
 		{`{ function Cell; Cell 1; end; function Cell { mes "c"; return; } }`, "func_cell(player, conversation, npc, 1)"},
 		{`{ mes "a"; close; S_Sub: .@v = getarg(0); return; OnInit: callsub S_Sub, 1; end; }`, "sub_s_sub(player, conversation, npc, 1)"},
-		{`{ mes "a"; close; S_Sub: mes "" + getarg(0); return; OnInit: callsub S_Sub, 1; end; }`, "!event oninit: it waits or shows a dialog, and OnInit runs without a player"},
+		{`{ mes "a"; close; S_Sub: mes "" + getarg(0); return; OnInit: callsub S_Sub, 1; end; }`, "!event oninit: it shows a dialog, and OnInit runs without a player"},
 		{`{ switch (select("A:B")) { case 1: callsub S_X, 1; case 2: if (.@a) close; else end; } S_X: mes "" + getarg(0); end; }`, "sub_s_x(player, conversation, npc, 1)"},
 		{`{ switch (select("A:B:C")) { case 1: callsub S_X, 1; case 2: close; } S_X: mes "" + getarg(0); end; }`, "!getarg: outside a function"},
 		{`{ callsub S_X, 1; S_X: mes "" + getarg(0); return; }`, "!getarg: outside a function"},
@@ -385,8 +395,7 @@ OnTimer2000:
 		t.Fatal(err)
 	}
 	for _, now := range []int64{999, 1000, 2000, 2999, 3000, 3999, 4000} {
-		h.now = now
-		rt.Advance(now)
+		moveTo(h, rt, now)
 	}
 	for _, m := range logs.msgs {
 		t.Error(m)

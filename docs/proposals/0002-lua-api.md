@@ -1199,6 +1199,13 @@ Methods on player handles check their own permissions, such as `player.give_item
     - **Deferred to later:** mods' own tilesets (generator version 4 and a proposal first); a Lua read of a map's stored spawns; the theme chance as a setting; a cancel for a forced world change; locale text and a banner for the change warnings.
     - **Refused:** a record field for server services on NPCs; longer `@renametown` names; options for quest events; layers on rotating floors and changed fields; stored forced changes; new level bands at a world change; an automatic economy re-check after hooks and a mod's own targets; a Lua read of simulated rates; `content.GuildLevel` as a setting; a general map type in map data.
     - Additions to API 1.0 only; no protocol or schema change.
+63. Details of review decision 60's timers, settled while building them (npc-api-timers, [decision 0070](../decisions/0070-npc-api-timers.md)). These add to API 1.0 only:
+    - `timers.wait` runs in the handlers of an NPC context that have no conversation: `npc_event` handlers sent without a player or with a player of another map, callbacks of `timers.after` and `timers.every`, and schedule handlers. A schedule handler's wait follows the server clock. Hooks, conditions and handlers of other contexts get an error.
+    - A server clock timer is not held back by a mod's CPU budget in a sleeping zone, as schedules are not, since the budget window only moves with the zone clock.
+    - `player:add_timer` and `remove_timer` take the player's own zone only; a handle of a player of another map raises an error until the player arrives. `remove_timer` ends the first match and returns whether one ended. At most 32 timers a player, as MAX_EVENTTIMER.
+    - Converted NPC timers listen to the hidden labels `WaTimerInit`, `WaTimerStart`, `WaTimerStop` and `WaTimerSet0`; another NPC's timer commands fire them. `setnpctimer` on another NPC takes the tick 0 only.
+    - An attached NPC timer is one timer per player, by name; its labels run as `npc:fire_event(label, { player })`, and it ends when that call fails.
+    - `OnInit` with a `sleep` converts: a server clock timer of 0 runs it once the setup returns.
 
 ## Version
 

@@ -586,6 +586,16 @@ function wa_Player:heal_percent(heal) end
 ---Heals all HP and SP.
 function wa_Player:heal_fully() end
 
+---Starts a timer of the player, as addtimer (review decision 60). When the time comes, the label runs as npc:fire_event(label, { player }) does: after the current step, in a conversation that waits while the player talks. The timer belongs to the player: it goes with the player to other maps and ends at logout. At most 32 timers. A label outside an NPC's script needs the NPC's name. The player must be on this map.
+---@param milliseconds integer 0 or more.
+---@param label string An event label of the context's NPC, such as OnTimeout, or of a named NPC, such as Guard::OnTimeout. Another mod's NPC (core:Guard::OnTimeout) needs npcs.control.
+function wa_Player:add_timer(milliseconds, label) end
+
+---Ends the first timer of the player with the label, as deltimer. Returns whether one ended.
+---@param label string As add_timer's.
+---@return boolean
+function wa_Player:remove_timer(label) end
+
 ---Moves the player after the event. Returns false when the map does not run.
 ---
 ---Needs the permission `player.warp`.
@@ -2970,6 +2980,11 @@ local wa_TradedItem = {}
 ---@class wa.TradeOptions
 ---@field player wa.Player? Only trades of this player.
 local wa_TradeOptions = {}
+
+---Options of timers.after and timers.every.
+---@class wa.TimerOptions
+---@field clock string? "zone" (the default) or "server". A timer of the zone clock stands still while the zone has no players. A timer of the server clock follows wall time and wakes a sleeping zone, as schedules do; converted NPC timers use it (review decision 60).
+local wa_TimerOptions = {}
 
 ---Options of timers.with_bonuses.
 ---@class wa.WithBonusesOptions

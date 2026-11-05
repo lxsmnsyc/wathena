@@ -6,7 +6,7 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 13450 of 19892 NPC lines are placed, duplicates too: 282 shops and 13168 of 19420 script NPCs.
+- 13459 of 19892 NPC lines are placed, duplicates too: 282 shops and 13177 of 19420 script NPCs.
 - 16 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
 - 55 of 56 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
 - 650 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
@@ -32,13 +32,13 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | kafras | 97 | 97 | 0 |
 | merchants | 690 | 466 | 224 |
 | mobs | 13 | 12 | 1 |
-| other | 3466 | 3067 | 399 |
-| quests | 6622 | 6255 | 367 |
+| other | 3466 | 3068 | 398 |
+| quests | 6622 | 6263 | 359 |
 | warps | 250 | 238 | 12 |
 
 ## What blocks the rest
 
-2451 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+2442 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|

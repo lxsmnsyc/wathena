@@ -147,6 +147,9 @@ type handoff struct {
 	cooldowns map[int]int64
 	// spiritBalls are the spirit spheres' times left, oldest first.
 	spiritBalls []int64
+	// eventTimers are the timers of player:add_timer, with the time left
+	// in due.
+	eventTimers []eventTimer
 	// member is the player in the chat hub, and seen the lines it saw,
 	// for reports.
 	member *chat.Member
@@ -242,6 +245,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 		}
 	}
 	h.spiritBalls = z.spheresLeft(p)
+	h.eventTimers = z.eventTimersLeft(p)
 	// What the player has not seen yet goes out before it leaves, such
 	// as the answer of a GM command that moved it.
 	if len(p.pending) > 0 {

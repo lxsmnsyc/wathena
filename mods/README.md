@@ -1294,6 +1294,9 @@ end
 - Times are in milliseconds of the zone clock. Timers run on the zone's ticks, every 50 ms.
 - A zone without players sleeps, and its clock stops. Timers wait while it sleeps.
 - A repeating timer that falls behind skips the runs it missed.
+- `{ clock = "server" }` as the third argument of `timers.after` and `timers.every` puts the timer on the server clock: it follows wall time and wakes a sleeping zone, as schedules do.
+- `timers.wait(ms)` waits 0 to 10 minutes in an NPC's handler that has no conversation: an `npc_event` handler sent without a player, a timer callback or a schedule handler. It follows the clock the handler started on. With a conversation, use `conversation:wait`.
+- `player:add_timer(ms, label)` runs an NPC's event label for the player when the time comes, as `addtimer`. The timer goes with the player to other maps and ends at logout. `player:remove_timer(label)` ends it.
 - A context can hold 10,000 handlers and timers.
 
 ### Players

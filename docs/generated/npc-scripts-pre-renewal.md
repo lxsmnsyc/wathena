@@ -8,7 +8,7 @@ A script NPC is placed when its own script converts whole. It converts fully whe
 
 | Kind | Lines | Placed | Full | Partly | Not |
 |---|---:|---:|---:|---:|---:|
-| script | 4342 | 3649 | 3648 | 1 | 693 |
+| script | 4342 | 3655 | 3654 | 1 | 687 |
 | script (duplicate) | 5414 | 4378 | 4374 | 4 | 1036 |
 | shop | 185 | 185 | 185 | 0 | 0 |
 | Kafras (scripts that call F_Kafra) | 44 | 43 | 43 | 0 | 1 |
@@ -42,8 +42,8 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 | kafras | 71 | 71 | 71 | 0 | 0 |
 | merchants | 101 | 91 | 86 | 5 | 10 |
 | mobs | 2 | 2 | 2 | 0 | 0 |
-| other | 3052 | 2968 | 2968 | 0 | 84 |
-| quests | 2939 | 2883 | 2883 | 0 | 56 |
+| other | 3052 | 2969 | 2969 | 0 | 83 |
+| quests | 2939 | 2888 | 2888 | 0 | 51 |
 | warps | 81 | 80 | 80 | 0 | 1 |
 
 ## Touch areas
@@ -52,8 +52,8 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/`, `npc
 
 | NPCs | Lines | Placed | With a touch area | With a dialog on touch |
 |---|---:|---:|---:|---:|
-| Scripts with OnTouch or OnTouch_ | 742 | 671 | 617 | 322 |
-| Lines with OnTouch or OnTouch_, duplicates too | 4142 | 3953 | 3873 | 543 |
+| Scripts with OnTouch or OnTouch_ | 742 | 673 | 619 | 324 |
+| Lines with OnTouch or OnTouch_, duplicates too | 4142 | 3955 | 3875 | 545 |
 | Script NPCs with a warp sprite, duplicates too | 1553 | 1390 | 1210 | 234 |
 
 ## Commands
@@ -62,33 +62,33 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 
 | Command | Scripts | NPC full | NPC partly | NPC not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| mes | 3014 | 2714 | 1 | 299 | 3014 |  |
-| close | 2798 | 2538 | 1 | 259 | 2798 |  |
-| next | 2464 | 2318 | 1 | 145 | 2464 |  |
-| end | 2149 | 1848 | 0 | 301 | 2149 |  |
-| variables | 1923 | 1671 | 1 | 251 | 1917 | $@08_ep13nydun02_in is not a valid name (2); 'ins_baphomet is an instance variable (2); $050320_ein_typing is not a valid name (1) |
-| select | 1563 | 1326 | 1 | 236 | 1563 |  |
-| warp | 958 | 779 | 0 | 179 | 958 |  |
+| mes | 3016 | 2717 | 1 | 298 | 3016 |  |
+| close | 2798 | 2539 | 1 | 258 | 2798 |  |
+| next | 2466 | 2321 | 1 | 144 | 2466 |  |
+| end | 2152 | 1854 | 0 | 298 | 2152 |  |
+| variables | 1923 | 1672 | 1 | 250 | 1917 | $@08_ep13nydun02_in is not a valid name (2); 'ins_baphomet is an instance variable (2); $050320_ein_typing is not a valid name (1) |
+| select | 1565 | 1329 | 1 | 235 | 1565 |  |
+| warp | 960 | 782 | 0 | 178 | 960 |  |
 | countitem | 714 | 690 | 1 | 23 | 714 |  |
-| close2 | 705 | 616 | 0 | 89 | 705 |  |
-| strcharinfo | 697 | 680 | 0 | 17 | 697 |  |
-| donpcevent | 688 | 656 | 0 | 32 | 686 | "OnControler1#aru_gd" is not an event label (1); "OnControler1#sch_gd" is not an event label (1) |
+| close2 | 707 | 618 | 0 | 89 | 707 |  |
+| strcharinfo | 699 | 682 | 0 | 17 | 699 |  |
+| donpcevent | 689 | 660 | 0 | 29 | 687 | "OnControler1#aru_gd" is not an event label (1); "OnControler1#sch_gd" is not an event label (1) |
 | delitem | 582 | 563 | 1 | 18 | 582 |  |
-| rand | 558 | 539 | 1 | 18 | 558 |  |
-| disablenpc | 547 | 525 | 0 | 22 | 547 |  |
+| rand | 558 | 542 | 1 | 15 | 558 |  |
+| disablenpc | 548 | 526 | 0 | 22 | 548 |  |
 | getitem | 546 | 534 | 1 | 11 | 546 |  |
-| event ontouch_ | 540 | 538 | 0 | 2 | 540 |  |
+| event ontouch_ | 542 | 540 | 0 | 2 | 542 |  |
 | callfunc | 500 | 360 | 1 | 139 | 500 |  |
 | event onenable | 496 | 457 | 0 | 39 | 496 |  |
-| event oninit | 495 | 464 | 0 | 31 | 492 | it waits or shows a dialog, and OnInit runs without a player (3) |
-| enablenpc | 482 | 456 | 0 | 26 | 482 |  |
+| event oninit | 495 | 467 | 0 | 28 | 495 |  |
+| enablenpc | 483 | 457 | 0 | 26 | 483 |  |
 | emotion | 429 | 426 | 0 | 3 | 429 |  |
 | getarg | 401 | 261 | 1 | 139 | 396 | outside a function (5) |
 | changequest | 367 | 364 | 0 | 3 | 367 |  |
-| initnpctimer | 366 | 333 | 0 | 33 | 364 | a timer attached to the player (2) |
-| stopnpctimer | 343 | 317 | 0 | 26 | 343 |  |
+| initnpctimer | 366 | 335 | 0 | 31 | 366 |  |
+| stopnpctimer | 345 | 319 | 0 | 26 | 345 |  |
 | checkweight | 286 | 264 | 1 | 21 | 286 |  |
-| Zeny | 271 | 256 | 1 | 14 | 271 |  |
+| Zeny | 271 | 257 | 1 | 13 | 271 |  |
 | input | 254 | 227 | 0 | 27 | 254 |  |
 | monster | 242 | 237 | 0 | 5 | 241 | OnMyMobDead is not an event label of this NPC (1) |
 | event ondisable | 240 | 231 | 0 | 9 | 240 |  |
@@ -102,9 +102,9 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | getcharid | 177 | 15 | 0 | 162 | 153 | battlegrounds, clans and other IDs (24) |
 | setarray | 173 | 141 | 1 | 31 | 173 |  |
 | getcastledata | 164 | 7 | 0 | 157 | 164 |  |
+| specialeffect2 | 156 | 140 | 0 | 16 | 156 |  |
 | getargcount | 155 | 26 | 0 | 129 | 155 |  |
 | setquest | 155 | 135 | 0 | 20 | 155 |  |
-| specialeffect2 | 154 | 138 | 0 | 16 | 154 |  |
 | event ontouch | 151 | 132 | 0 | 19 | 151 |  |
 | percentheal | 144 | 142 | 0 | 2 | 144 |  |
 | event onreset | 133 | 132 | 0 | 1 | 133 |  |
@@ -129,8 +129,8 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | event ontimer60000 | 59 | 59 | 0 | 0 | 59 |  |
 | close3 | 58 | 57 | 0 | 1 | 58 |  |
 | event ontimer1000 | 58 | 52 | 0 | 6 | 58 |  |
+| event oncommandon | 57 | 57 | 0 | 0 | 57 |  |
 | substr | 56 | 54 | 0 | 2 | 56 |  |
-| event oncommandon | 54 | 54 | 0 | 0 | 54 |  |
 | getmapxy | 54 | 30 | 0 | 24 | 53 | of another unit by name or game ID (1) |
 | checkcart | 52 | 49 | 0 | 3 | 52 |  |
 | event ontimer2000 | 52 | 52 | 0 | 0 | 52 |  |
@@ -153,21 +153,21 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | sc_start | 39 | 39 | 0 | 0 | 39 |  |
 | event ontimer120000 | 38 | 38 | 0 | 0 | 38 |  |
 | event ontimer4000 | 38 | 37 | 0 | 1 | 38 |  |
-| setnpctimer | 38 | 37 | 0 | 1 | 37 | the timer of another NPC (Summoner#gnp) (1) |
+| setnpctimer | 38 | 38 | 0 | 0 | 38 |  |
+| startnpctimer | 38 | 38 | 0 | 0 | 38 |  |
 | waitingroom | 38 | 0 | 0 | 38 | 0 |  |
-| startnpctimer | 37 | 37 | 0 | 0 | 37 |  |
 | erasequest | 36 | 23 | 0 | 13 | 36 |  |
 | event oncommandoff | 36 | 36 | 0 | 0 | 36 |  |
 | killmonsterall | 36 | 35 | 0 | 1 | 36 |  |
 | gettime | 35 | 34 | 0 | 1 | 35 |  |
 | event onagitinit2 | 34 | 0 | 0 | 34 | 0 |  |
 | event onstart | 34 | 34 | 0 | 0 | 34 |  |
+| event ontimer10000 | 33 | 32 | 0 | 1 | 33 |  |
 | event ontimer30000 | 33 | 33 | 0 | 0 | 33 |  |
 | event ontimer8000 | 33 | 29 | 0 | 4 | 33 |  |
 | soundeffect | 33 | 31 | 0 | 2 | 31 | a computed file (1); the file "effect\\¼®¾çÀÇ ¾î½Ø½Å.wav" (1) |
 | areawarp | 32 | 22 | 0 | 10 | 32 |  |
 | isbegin_quest | 32 | 31 | 0 | 1 | 32 |  |
-| event ontimer10000 | 31 | 30 | 0 | 1 | 31 |  |
 | event ontimer7000 | 31 | 26 | 0 | 5 | 31 |  |
 | getstrlen | 29 | 28 | 0 | 1 | 29 |  |
 | getmapusers | 26 | 16 | 0 | 10 | 26 |  |
@@ -354,7 +354,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | instance_check_party | 4 | 0 | 0 | 4 | 0 |  |
 | readbook | 4 | 2 | 0 | 2 | 4 |  |
 | setnpcdisplay | 4 | 4 | 0 | 0 | 4 |  |
-| sleep | 4 | 1 | 0 | 3 | 4 |  |
+| sleep | 4 | 4 | 0 | 0 | 4 |  |
 | bg_leave | 3 | 0 | 0 | 3 | 0 |  |
 | bg_reserve | 3 | 0 | 0 | 3 | 0 |  |
 | cell | 3 | 3 | 0 | 0 | 3 |  |
@@ -1117,7 +1117,7 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/other/monster_museum.txt | 62 | 62 | 0 |
 | npc/other/monster_race.txt | 202 | 190 | 12 |
 | npc/other/poring_war.txt | 37 | 30 | 7 |
-| npc/other/powernpc.txt | 5 | 4 | 1 |
+| npc/other/powernpc.txt | 5 | 5 | 0 |
 | npc/other/pvp.txt | 26 | 20 | 6 |
 | npc/other/turbo_track.txt | 2141 | 2121 | 20 |
 | npc/pre-re/airports/izlude.txt | 1 | 1 | 0 |
@@ -1229,10 +1229,10 @@ Counts are of script NPCs that are not duplicates, and of the functions they cal
 | npc/quests/quests_comodo.txt | 22 | 22 | 0 |
 | npc/quests/quests_ein.txt | 34 | 34 | 0 |
 | npc/quests/quests_geffen.txt | 3 | 2 | 1 |
-| npc/quests/quests_gonryun.txt | 72 | 69 | 3 |
+| npc/quests/quests_gonryun.txt | 72 | 72 | 0 |
 | npc/quests/quests_hugel.txt | 87 | 86 | 1 |
 | npc/quests/quests_izlude.txt | 1 | 1 | 0 |
-| npc/quests/quests_juperos.txt | 89 | 85 | 4 |
+| npc/quests/quests_juperos.txt | 89 | 87 | 2 |
 | npc/quests/quests_lighthalzen.txt | 105 | 104 | 1 |
 | npc/quests/quests_louyang.txt | 46 | 46 | 0 |
 | npc/quests/quests_lutie.txt | 2 | 2 | 0 |

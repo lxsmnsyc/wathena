@@ -136,7 +136,9 @@ func (h scriptHost) Despawn(owner int64) {
 // clock.
 func (z *Zone) runSchedules() {
 	if z.scripts != nil {
-		z.scripts.RunSchedules(z.wallClock())
+		now := z.wallClock()
+		z.scripts.RunServerTimers(now)
+		z.scripts.RunSchedules(now)
 	}
 }
 

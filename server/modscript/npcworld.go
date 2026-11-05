@@ -363,7 +363,7 @@ func (r *Runtime) FireMonsterLabel(n *NPC, label string, player int64, m *LabelM
 		if h.removed || c.ended {
 			continue
 		}
-		if err := r.run(c, r.fns.npcEvent.Value(), script.String(label), m.value(), script.Nil, script.Nil, h.fn.Value()); err != nil {
+		if err := r.runWaitable(c, false, r.fns.npcEvent.Value(), script.String(label), m.value(), script.Nil, script.Nil, h.fn.Value()); err != nil {
 			r.failed(c, "event npc_event "+label, err)
 		}
 	}
@@ -386,7 +386,7 @@ func (r *Runtime) FireNPCEventAway(n *NPC, label string, player int64, m *LabelM
 		if h.removed || c.ended {
 			continue
 		}
-		if err := r.run(c, r.fns.npcEvent.Value(), script.String(label), m.value(), script.Int(player), script.Nil, h.fn.Value()); err != nil {
+		if err := r.runWaitable(c, false, r.fns.npcEvent.Value(), script.String(label), m.value(), script.Int(player), script.Nil, h.fn.Value()); err != nil {
 			r.failed(c, "event npc_event "+label, err)
 		}
 	}

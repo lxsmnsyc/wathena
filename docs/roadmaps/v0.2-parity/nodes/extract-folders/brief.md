@@ -1,7 +1,7 @@
 ---
 id: extract-folders
 title: Extract rAthena's instance, guild, battleground, custom and mobs NPC folders
-status: active
+status: done
 priority: must
 type: chore
 outline: false
