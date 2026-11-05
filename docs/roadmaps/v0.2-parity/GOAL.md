@@ -9,7 +9,7 @@ branches:
 
 ## Outcome
 
-v0.2.0 is tagged with 1:1 parity with rAthena (strategy.md section 14.2a) for everything up to transcendent classes, plus instances, sieges, pets, homunculus, mercenaries and the small systems (chat rooms, marriage, achievements, navigation, stylist, bank, refine and enchant windows). Every in-scope NPC and item script converts and runs in both rulesets, except what a decision refuses on purpose. Classic mode is supported, not experimental. The modding ecosystem (strategy phase 9) follows, then v0.3.0 (third classes, battlegrounds, tier 3 systems).
+v0.2.0 is tagged with 1:1 parity with rAthena (strategy.md section 14.2a) for everything up to transcendent classes, plus instances, sieges, pets, homunculus, mercenaries and the small systems (chat rooms, marriage, achievements, navigation, stylist, bank and refine windows). The item enchant, enchant grade and reform windows follow in v0.2.x (debate/debate.md). Every in-scope NPC and item script converts and runs in both rulesets, except what a decision refuses on purpose. Classic mode is supported, not experimental. The modding ecosystem (strategy phase 9) follows, then v0.3.0 (third classes, battlegrounds, tier 3 systems).
 
 ## Acceptance
 
@@ -33,8 +33,24 @@ v0.2.0 is tagged with 1:1 parity with rAthena (strategy.md section 14.2a) for ev
 - Commits are signed off (`git commit -s`) and use Conventional Commits. No CI (decision 0026); checks run locally.
 - Golden and parity tests are the reference; no system ships without them.
 
+## Run order
+
+From the roadmap debate of 2026-11-05 (debate/debate.md, P5). When several nodes can start, take them in this order, so v0.2.0 can be tagged at any of three stop points:
+
+1. Nodes the acceptance cannot do without: converter-names, converter-commands, extract-folders, npc-api-timers, window-skills, monster-gaps, pre-renewal-parity, item-effects, item-skill-use, bonus-damage-taken, security-fixes.
+2. Instances, sieges and companions.
+3. Small systems: chat-rooms, marriage, ui-windows, achievements, navigation.
+4. npc-behavior-harness, security-review-v0.2, release-v0.2.0.
+
+At a stop point, when the release date matters, the maintainer may make the remaining small-system nodes `should` and ship them in v0.2.x, with their rows refused by a decision record.
+
+## Checkpoint
+
+After 5 more merged code nodes (counted from 2026-11-05), record the actual active days and tokens per node, recompute the length of the must line, and if the pace is below 1 node per 3 active days, apply the stop-point rule above. Each node records `spent:` (tokens and active days) in its brief's outcome from now on (debate/debate.md, P3).
+
 ## Non-goals
 
+- The item enchant, enchant grade and reform windows in v0.2.0 (item-windows is parked to v0.2.x; release-v0.2.0 refuses its rows; debate/debate.md).
 - Third, fourth and expanded classes, battlegrounds and tier 3 systems in v0.2.0 (they are v0.3.0).
 - Raw SQL script commands, `atcommand` and `setbattleflag` (refused by decisions).
 - A project-run server, published binaries or images (2026-10-20).
@@ -61,6 +77,7 @@ spec.go, prelude.lua, the generated Lua docs, proposal 0002, rathena.lua, npcexp
 
 ## Sources
 
+- debate/debate.md: the scope re-evaluation of 2026-11-05.
 - docs/strategy.md: "Where work stands", sections 14.2a, 15 (phases 9 and 10), 16, 17.
 - docs/proposals/0002-lua-api.md "Next steps" 1-45; docs/proposals/0002b-npc-api.md.
 - docs/decisions 0040-0066; docs/security/review-2026-10.md; docs/releases/v0.1.0.md.

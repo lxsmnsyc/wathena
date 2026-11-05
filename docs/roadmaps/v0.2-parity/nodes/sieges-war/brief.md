@@ -4,6 +4,7 @@ title: War of Emperium: siege state, guardians, admin and the bot siege
 status: todo
 priority: must
 type: feature
+story: sieges
 outline: false
 milestone: v0.2.0
 size: L

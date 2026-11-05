@@ -1,0 +1,55 @@
+2026-10-31 Merge pull request #8 from lxsmnsyc/feat/sieges-castles
+2026-10-31 test(zone): castle:set_owner refuses a guild that broke up
+2026-10-31 fix(modscript): refuse castle:set_owner with a guild that broke up
+2026-10-31 docs(castles): decision 0067 and the sieges-castles outcome
+2026-10-31 feat(convert): convert getcastledata, setcastledata, getcastlename and flagemblem
+2026-10-31 feat(modscript): wa.castles, castle_change and NPC guild badges
+2026-10-31 style(gamedata): gofmt
+2026-10-31 feat(gamedata): load castle records from data/castles.yml
+2026-10-31 feat(castle): castle registry, migration 00043 and saves
+2026-10-31 feat(reference): extract castles and GvG map flags
+2026-10-31 docs(roadmap): start sieges-castles
+2026-10-31 docs(roadmap): give release-v0.2.0 its from and target branches
+2026-10-27 Merge pull request #7 from lxsmnsyc/docs/review-world-gen
+2026-10-27 docs(proposals): record review decision 62 and apply it to the roadmap
+2026-10-27 docs(roadmap): review open world generation and content questions
+2026-10-27 docs(roadmap): start review-world-gen
+2026-10-27 Merge pull request #6 from lxsmnsyc/docs/review-ops-security
+2026-10-27 docs(proposals): record review decision 61 and apply it to the roadmap
+2026-10-27 docs(roadmap): review open operations and security questions
+2026-10-27 docs(roadmap): start review-ops-security
+2026-10-27 Merge pull request #5 from lxsmnsyc/docs/proposal-small-systems
+2026-10-27 docs(roadmap): apply proposal 0006 to the small system nodes
+2026-10-27 docs(proposals): accept small systems proposal 0006
+2026-10-27 docs(proposals): small systems design proposal 0006
+2026-10-27 docs(roadmap): start proposal-small-systems
+2026-10-27 docs(roadmap): finish check-hygiene
+2026-10-27 Merge pull request #3 from lxsmnsyc/chore/check-hygiene
+2026-10-27 Merge docs/roadmap-v0.2-parity into chore/check-hygiene
+2026-10-27 Merge main into docs/roadmap-v0.2-parity
+2026-10-27 Merge pull request #1 from lxsmnsyc/fix/gosec-showdigit
+2026-10-27 docs(roadmap): apply proposal 0005 to the companion nodes
+2026-10-27 docs(proposals): accept companions proposal 0005
+2026-10-27 docs(proposals): companions design proposal 0005
+2026-10-27 docs(roadmap): run workers in the main checkout
+2026-10-27 docs(roadmap): start proposal-companions
+2026-10-27 docs(roadmap): finish extract-sync
+2026-10-27 docs(reference): reproduce the extracts from the rAthena fork
+2026-10-27 docs(roadmap): start extract-sync
+2026-10-27 docs(roadmap): apply proposal 0004 to the siege nodes
+2026-10-27 docs(proposals): accept sieges proposal 0004
+2026-10-27 docs(proposals): sieges design proposal 0004
+2026-10-27 docs(roadmap): start proposal-sieges
+2026-10-27 docs(roadmap): apply proposal 0003 to the instance nodes
+2026-10-27 docs(proposals): accept instances proposal 0003
+2026-10-27 docs(proposals): instances design proposal 0003
+2026-10-27 docs(roadmap): start proposal-instances
+2026-10-27 docs(roadmap): retitle npc-api-timers after review decision 60
+2026-10-27 docs(roadmap): apply review decision 60 to the briefs
+2026-10-27 docs(proposals): record review decision 60
+2026-10-27 docs(roadmap): review-npc-api review draft
+2026-10-27 docs(roadmap): start review-npc-api
+2026-10-26 chore(check): remove the PostgreSQL volume and run gosec by version
+2026-10-26 fix(convert): mark the showdigit index as checked for gosec
+2026-10-26 docs(roadmap): start check-hygiene
+2026-10-26 docs: move planning into the v0.2 parity roadmap

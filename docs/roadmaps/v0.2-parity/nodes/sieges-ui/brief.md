@@ -4,6 +4,7 @@ title: Sieges: castle window, teleport and admin screens
 status: todo
 priority: must
 type: feature
+story: sieges
 outline: false
 milestone: v0.2.0
 size: M

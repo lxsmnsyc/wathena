@@ -1,7 +1,8 @@
 ---
 id: npc-behavior-spike
 title: Spike: how to prove NPC scripts behave as in rAthena
-status: todo
+status: dropped
+dropped: merged into npc-behavior-harness phase 1 by the roadmap debate of 2026-11-05 (debate/debate.md, O2 and P2)
 priority: must
 type: spike
 outline: false

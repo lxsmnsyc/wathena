@@ -1,0 +1,420 @@
+{
+  "goal": "Tag v0.2.0 with 1:1 rAthena parity up to transcendent classes plus instances, sieges, companions and small systems, at a cost the sequential 8 GB machine and the maintainer's time can sustain",
+  "research": false,
+  "max_rounds": 2,
+  "roadmap": "docs/roadmaps/v0.2-parity",
+  "supersedes": null,
+  "extra_axes": [],
+  "claims": [
+    {
+      "id": "J1",
+      "round": 1,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "time",
+      "text": "Roadmap holds 66 nodes: 10 done, 1 active, 31 todo, 24 outline. 33 must nodes remain (11 L, 20 M, 1 S, plus active npc-api-events L); the must line ends at wave 33 with --max-parallel 1.",
+      "evidence": {
+        "type": "measured",
+        "source": "plan.py docs/roadmaps/v0.2-parity overview --max-parallel 1; grep priority/size/status in nodes/*/brief.md",
+        "detail": "evidence/overview.md"
+      },
+      "ruling": "upheld"
+    },
+    {
+      "id": "J2",
+      "round": 1,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "time",
+      "text": "Since the roadmap began on 2026-10-26, 7 PRs merged: 6 docs/review/proposal nodes on 2026-10-27 and 1 code node (sieges-castles, M) on 2026-10-31. npc-api-events (L) was built on 2026-10-31 and is unmerged on 2026-11-05. Commits fall on 3 days out of 11 (10-26, 10-27, 10-31). Code-node rate so far: about 2 code nodes per 11 calendar days.",
+      "evidence": {
+        "type": "calibration",
+        "source": "git log --since=2026-10-26 main; git log main..HEAD",
+        "detail": "evidence/main-log.txt"
+      },
+      "ruling": "upheld"
+    },
+    {
+      "id": "J3",
+      "round": 1,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "time",
+      "text": "No CALIBRATION.md exists and no brief carries budget: or spent: fields, so token and time estimates per size have no recorded actuals.",
+      "evidence": {
+        "type": "measured",
+        "source": "ls docs/roadmaps; grep -E '^(budget|spent):' nodes/*/brief.md"
+      },
+      "ruling": "upheld"
+    },
+    {
+      "id": "J4",
+      "round": 1,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "device",
+      "text": "Machine: 8 GB RAM, 8 cores, 13 GiB free disk of 228 GiB. Docker images 12.7 GB, build cache 8.5 GB (1.2 GB reclaimable), go-build cache 8.8 GB, go mod cache 3.5 GB. GOAL.md requires 10 GB free and says a build or check can use more than 20 GB. The last full check on npc-api-events was killed by low memory while another session ran go test.",
+      "evidence": {
+        "type": "measured",
+        "source": "df -h /; sysctl hw.memsize hw.ncpu; docker system df; du -sh go caches; nodes/npc-api-events/log.md",
+        "detail": "evidence/device.txt"
+      },
+      "ruling": "upheld"
+    },
+    {
+      "id": "J5",
+      "round": 1,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "time",
+      "text": "GOAL.md and strategy.md 14.2a set no date for v0.2.0; the release waits for parity (2026-10-20). Strategy 14.3 estimates are for one full-time developer.",
+      "evidence": {
+        "type": "inferred",
+        "source": "docs/roadmaps/v0.2-parity/GOAL.md; docs/strategy.md 14.2a, 14.3"
+      },
+      "ruling": "upheld"
+    },
+    {
+      "id": "J6",
+      "round": 1,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "time",
+      "text": "Execution is strictly sequential: one node, one worker, one build, no worktrees (maintainer, 2026-10-27). So the must line length in waves equals the number of must nodes; no parallelism shortens it.",
+      "evidence": {
+        "type": "inferred",
+        "source": "GOAL.md Constraints; memory sequential-only, no-worktrees"
+      },
+      "ruling": "upheld"
+    },
+    {
+      "id": "J7",
+      "round": 1,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "time",
+      "text": "Acceptance requires every in-scope NPC and item script converted or refused with a reason, parity numbers in both modes, a behavior parity report with no unexplained difference, and check.sh all on the tag.",
+      "evidence": {
+        "type": "source",
+        "source": "GOAL.md Acceptance"
+      },
+      "ruling": "upheld"
+    },
+    {
+      "id": "O1",
+      "round": 1,
+      "by": "opponent",
+      "kind": "cut",
+      "axis": "time",
+      "severity": "high",
+      "action": "park",
+      "nodes": [
+        "item-windows"
+      ],
+      "answers": [
+        "J1"
+      ],
+      "estimate": {
+        "value": 1,
+        "unit": "L node (of 33 must)"
+      },
+      "text": "Park item-windows (L, renewal-only, 130 items, migration 00050, new extracts, client windows). Its own brief says it is the first node to become should if the release is late (decision 11). Saves one L node: about a full node slot of the 33 plus a schema migration, 3 new extracts and one full check cycle (20 GB disk). Release then lists these 130 items as refused/deferred with a reason, which the acceptance bar already allows.",
+      "evidence": {
+        "type": "source",
+        "source": "docs/roadmaps/v0.2-parity/nodes/item-windows/brief.md",
+        "detail": "Goal: renewal only; 'Stays must; first node to become should if the release is late (decision 11)'. Release depends on it."
+      },
+      "ruling": "upheld",
+      "ruling_why": "item-windows brief line 60 already names it the first node to become should (decision 11); it is L and renewal only. Outcome names enchant windows, so the user confirms at approval."
+    },
+    {
+      "id": "O2",
+      "round": 1,
+      "by": "opponent",
+      "kind": "cut",
+      "axis": "time",
+      "severity": "high",
+      "action": "merge",
+      "nodes": [
+        "npc-behavior-spike",
+        "npc-behavior-harness"
+      ],
+      "answers": [
+        "J7"
+      ],
+      "text": "Merge npc-behavior-spike and npc-behavior-harness into one node and fix its scope to the folders the release adds (instances, sieges, companions) plus a sampled set of existing folders, instead of 'every converted script it can drive'. J7's bar 'no unexplained difference' has no stated coverage, so it is open-ended: the harness is an L node whose cost scales with script count, and the spike is a gate node that blocks it. Saves one gate and one wave; caps the harness token spend.",
+      "evidence": {
+        "type": "source",
+        "source": "docs/roadmaps/v0.2-parity/nodes/npc-behavior-harness/brief.md; nodes/npc-behavior-spike/brief.md",
+        "detail": "Harness goal: 'Run it over every converted script it can drive'. Spike asks how many scripts can be covered automatically, so scope is unknown until it ends. No budget field on either (J3)."
+      },
+      "ruling": "upheld",
+      "ruling_why": "amended by P2: one L node, two phases, fixed scope. Originally open."
+    },
+    {
+      "id": "O3",
+      "round": 1,
+      "by": "opponent",
+      "kind": "rebuttal",
+      "axis": "time",
+      "severity": "high",
+      "answers": [
+        "J1",
+        "J6"
+      ],
+      "estimate": {
+        "value": 180,
+        "unit": "calendar days at observed rate"
+      },
+      "text": "The schedule is longer than the wave count suggests. 33 must nodes in sequence at the observed rate of 2 code nodes in 11 days (J2), with 11 of them L, is about 180 calendar days, and no node has recorded actuals (J3), so L sizes are unverified. The release date is open (J5), but 'maintainer time can sustain' is the goal's own axis.",
+      "evidence": {
+        "type": "calibration",
+        "source": "J2, J3, J6 in this ledger",
+        "detail": "33 / 2 * 11 = 181 days. The rate is from 2 code nodes only, so it is a weak basis; npc-api-events (L) took 5+ days and is still unmerged."
+      },
+      "ruling": "open",
+      "ruling_why": "the length of the must line stays unknown until the P3 checkpoint; carried as an open risk."
+    },
+    {
+      "id": "O4",
+      "round": 1,
+      "by": "opponent",
+      "kind": "risk",
+      "axis": "device",
+      "severity": "high",
+      "answers": [
+        "J4"
+      ],
+      "estimate": {
+        "value": 20,
+        "unit": "GB peak disk per full check"
+      },
+      "text": "11 L nodes each need a full check run (more than 20 GB disk, Docker postgres) on a machine with 13 GB free and 8 GB RAM; the last full check on npc-api-events was killed for memory. Expect repeated reruns per L node. Suggest: L nodes run quick plus targeted package tests; one full check per group of nodes before PR only where the node touches shared schema/proto, and the full check.sh all once at the release.",
+      "evidence": {
+        "type": "measured",
+        "source": "J4; docs/roadmaps/v0.2-parity/nodes/npc-api-events/log.md",
+        "detail": "Free disk 13 GiB against a stated 20 GB peak; OOM kill recorded in the node log."
+      },
+      "ruling": "rejected",
+      "ruling_why": "the per-PR check is already scripts/check.sh quick queries (about 18 min), not the full check, agreed 2026-10-31 (J8); the memory kill came from a second session running go test at the same time, which the sequential rule already forbids."
+    },
+    {
+      "id": "O5",
+      "round": 1,
+      "by": "opponent",
+      "kind": "cut",
+      "axis": "time",
+      "severity": "medium",
+      "action": "merge",
+      "nodes": [
+        "converter-names",
+        "converter-commands"
+      ],
+      "text": "Merge converter-names into converter-commands (M + L). Both edit npcexpr.go, rathena.lua and regenerate the same npc-scripts reports; as two nodes they pay two rebases, two regenerations and two full checks for one converter backlog. Saves about one M-node slot and one check cycle.",
+      "evidence": {
+        "type": "source",
+        "source": "docs/roadmaps/v0.2-parity/GOAL.md Hot files",
+        "detail": "npcexpr.go, rathena.lua and the coverage reports are touched by most nodes and regenerated per node; converter-commands is 'after converter-names'."
+      },
+      "ruling": "rejected",
+      "ruling_why": "GOAL.md Hot files says most nodes touch npcexpr.go and rathena.lua, so the merge saves one rebase of many, and an M+L merge makes an XL pull request that breaks the reviewable-size rule."
+    },
+    {
+      "id": "O6",
+      "round": 1,
+      "by": "opponent",
+      "kind": "cut",
+      "axis": "time",
+      "severity": "medium",
+      "action": "park",
+      "nodes": [
+        "achievements",
+        "navigation"
+      ],
+      "text": "Park achievements and navigation (M each) to v0.2.x. Both are client-facing conveniences with no dependency from the release's script conversion path; achievements has no instance, siege or companion content depending on it. This needs a GOAL.md change, since the Outcome lists them, so it is a scope cut the user must approve. Saves two M nodes (about 6 percent of the must line).",
+      "evidence": {
+        "type": "inferred",
+        "source": "GOAL.md Outcome and 'should' priority definition",
+        "detail": "Outcome names achievements and navigation, but 'should' means v0.2.0 can ship without it; the user's goal text says 'small systems' without naming each."
+      },
+      "ruling": "rejected",
+      "ruling_why": "beaten by P4 and J9: the rows are in scope and called by NPC scripts."
+    },
+    {
+      "id": "O7",
+      "round": 1,
+      "by": "opponent",
+      "kind": "risk",
+      "axis": "time",
+      "severity": "medium",
+      "answers": [
+        "J1"
+      ],
+      "text": "security-review-v0.2 waits on 11 nodes and sits at wave 31 of 33, with only release after it. Fixes it finds have no node to land in except an unplanned one, so the tail can slip. Alternative: review each large system (instances, sieges) as it completes with a small checklist in the node, and keep the final review for the delta.",
+      "evidence": {
+        "type": "source",
+        "source": "plan.py overview --max-parallel 1",
+        "detail": "security-review-v0.2 depends on chat-rooms, homunculus, instances-content, instances-ui, mercenaries, npc-api-events, pets, security-fixes, sieges-content, sieges-ui, ui-windows; security-fixes runs earlier (wave 18) from review-ops-security only."
+      },
+      "ruling": "rejected",
+      "ruling_why": "security-review-v0.2 brief line 57 says the node fixes high and critical findings itself, so the fixes have a home; the late-discovery risk stays as a low accepted risk."
+    },
+    {
+      "id": "J8",
+      "round": 1,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "device",
+      "text": "Per-PR practice since 2026-10-31: targeted tests while editing, one scripts/check.sh quick queries run (about 18 min) on the final commit, reviewer reuses it; full check.sh all only at the release.",
+      "evidence": {
+        "type": "source",
+        "source": "memory testing-process.md; scripts/check.sh line 120 quick_steps"
+      },
+      "ruling": "upheld"
+    },
+    {
+      "id": "P1",
+      "round": 2,
+      "by": "proponent",
+      "kind": "proposal",
+      "answers": [
+        "O1"
+      ],
+      "text": "Agree to park item-windows to v0.2.x, as O1 asks: the brief already names it the first node to become should, and only the release node depends on it. Condition: a decision record refuses the 3 command rows and 130 items with a reason, so 'converted or refused with a reason' still holds.",
+      "evidence": {
+        "type": "source",
+        "source": "nodes/item-windows/brief.md (decision 11); nodes/release-v0.2.0/brief.md",
+        "detail": "Only release-v0.2.0 depends on item-windows."
+      },
+      "ruling": "upheld",
+      "ruling_why": "keeps the acceptance bar: parked rows get a refusal decision instead of silently failing the report check."
+    },
+    {
+      "id": "P2",
+      "round": 2,
+      "by": "proponent",
+      "kind": "proposal",
+      "answers": [
+        "O2"
+      ],
+      "axis": "time",
+      "text": "Merge the spike into the harness as one L node with two phases and a written checkpoint in log.md between them, no gate node. Fixed scope: record and replay only scripts the driver reaches with default inputs (next, first menu choice, close; at most 2 menu paths per script); compare dialog lines, items and zeny, variables, warps, events. The report lists every script as compared, undriven (with the reason) or different (with the explanation). 'No unexplained difference' then applies to compared scripts, and undriven scripts are counted per folder. Stop rule: the phase 1 sample of 3 scripts must show the recorder extension fits in under 400 lines of C++, or the node falls back to dialog lines and warps only.",
+      "estimate": {
+        "value": 1,
+        "unit": "M gate node saved, harness stays L"
+      },
+      "evidence": {
+        "type": "source",
+        "source": "nodes/npc-behavior-spike/brief.md; nodes/npc-behavior-harness/brief.md; GOAL.md Acceptance (J7)",
+        "detail": "Spike is M, gate:true, 'do not build the harness here'; harness is outline:true and L. Merging removes one maintainer stop and one outline-to-brief rewrite. The 400-line stop rule is an estimate to be tested in phase 1."
+      },
+      "ruling": "upheld",
+      "ruling_why": "gives the harness a fixed, measurable scope (default inputs, at most 2 menu paths, per-script compared/undriven/different) and saves one M node; the 400-line C++ stop rule is an estimate that phase 1 tests."
+    },
+    {
+      "id": "P3",
+      "round": 2,
+      "by": "proponent",
+      "kind": "rebuttal",
+      "answers": [
+        "O3"
+      ],
+      "axis": "time",
+      "severity": "medium",
+      "estimate": {
+        "value": 31,
+        "unit": "active work days if 1 node per active day"
+      },
+      "text": "Calendar days are the wrong unit: the 11-day window holds 6 docs nodes on one day and 2 code nodes on 10-31, so the rate follows the days the maintainer opens a session, not elapsed time. With O1 and P2 the must line is 31 nodes. At the one-node-per-active-day pace of 10-26..10-31, that is about 31 active days; at 3 active days a week it is about 10 weeks, at 3 per 11 days (the observed density) about 110 days. No release date is set (J5), so no line should be cut for the date alone; add a monitored check: after 5 more merged code nodes, recompute and cut by the should rule if the pace is below 1 node per 3 active days.",
+      "evidence": {
+        "type": "calibration",
+        "source": "git log main since 2026-10-26 (J2), GOAL.md, J5",
+        "detail": "Estimate only: 3 active days of 11 observed, no actuals recorded (J3). 31/3*11 = 114."
+      },
+      "ruling": "upheld",
+      "ruling_why": "no date is set (J5) and the rate rests on 2 nodes (J3), so a recompute after 5 more merged code nodes is cheaper than cutting on a guess."
+    },
+    {
+      "id": "P4",
+      "round": 2,
+      "by": "proponent",
+      "kind": "rebuttal",
+      "answers": [
+        "O6"
+      ],
+      "axis": "time",
+      "severity": "medium",
+      "text": "Keep achievements and navigation. The acceptance says every in-scope script converts or is refused by a decision; achievementinfo/add/complete/remove/update and navigateto/F_Navi are command rows that rAthena NPCs call, and no decision refuses them. Parking leaves unexplained unconverted rows, which fails the first acceptance bullet, and GOAL.md Outcome and strategy 14.2a name both. They are M, depend only on the frozen small-systems contract, and can move last in the order, so the should rule can still cut them at the end without a rewrite.",
+      "evidence": {
+        "type": "source",
+        "source": "GOAL.md Outcome and Acceptance; docs/strategy.md 14.2a; nodes/achievements/brief.md; nodes/navigation/brief.md",
+        "detail": "Both briefs list command rows to convert in both modes; only release-v0.2.0 depends on either."
+      },
+      "ruling": "upheld",
+      "ruling_why": "measured: docs/generated/npc-scripts-renewal.md has navigateto in 73 rows and achievementinfo/achievementexists in 15 rows, none converted and none refused (J9), so parking them fails the report bar unless a decision refuses scripts the outcome names."
+    },
+    {
+      "id": "P5",
+      "round": 2,
+      "by": "proponent",
+      "kind": "alternative",
+      "axis": "time",
+      "text": "Order the must line so the cut points are real: run the nodes the acceptance cannot do without first (converters, extract-folders, npc-api-timers, window-skills, monster-gaps, pre-renewal-parity, item effects), then instances, sieges, companions, then small systems last (chat-rooms, marriage, ui-windows, achievements, navigation), then harness, review, release. Pre-agree that when a stop point is reached and the date matters, the remaining small-system nodes become 'should' and ship in v0.2.x with their rows refused by a decision record, the same mechanism as item-windows. This keeps GOAL.md's reading of 1:1 parity as scripts-convert-and-run and gives the maintainer a tag-able v0.2.0 at three points rather than one, with no node dropped now.",
+      "evidence": {
+        "type": "inferred",
+        "source": "GOAL.md Outcome, Priorities (should: v0.2.0 can ship without it), Acceptance; nodes/item-windows/brief.md decision 11",
+        "detail": "Reading inferred: the acceptance bars measure converted/refused rows and parity numbers, not the presence of each window. A release split of this kind needs the user to confirm which small systems are core."
+      },
+      "ruling": "upheld",
+      "ruling_why": "ordering for early tag points costs nothing under strict sequencing (J6); moving any small system to v0.2.x still needs the maintainer's decision at the stop point, since GOAL.md names them in the outcome."
+    },
+    {
+      "id": "P6",
+      "round": 2,
+      "by": "proponent",
+      "kind": "proposal",
+      "axis": "device",
+      "answers": [
+        "O2"
+      ],
+      "text": "Cap each remaining node's check to the existing practice (targeted tests, one check.sh quick queries per PR, check.sh all only on the tag), and run the behavior harness replay on rAthena recordings stored as files, so the C++ fork is built once, not per node. This keeps peak disk within the 10 GB free rule.",
+      "estimate": {
+        "value": 1,
+        "unit": "fork build, not per node"
+      },
+      "evidence": {
+        "type": "source",
+        "source": "J8; GOAL.md Constraints; nodes/npc-behavior-spike/brief.md",
+        "detail": "Recorder lives in the fork at ~/Documents/GitHub/rathena; recordings can be committed as data so wAthena replays do not need the fork."
+      },
+      "ruling": "upheld",
+      "ruling_why": "low: keeps the rAthena fork build to once, which helps the 13 GB free disk (J4); recordings are small text data."
+    },
+    {
+      "id": "J9",
+      "round": 2,
+      "by": "judge",
+      "kind": "fact",
+      "axis": "time",
+      "text": "docs/generated/npc-scripts-renewal.md lists navigateto in 73 script rows, achievementinfo in 14 and achievementexists in 1, all unconverted and not refused.",
+      "evidence": {
+        "type": "measured",
+        "source": "grep -i 'navigateto|achievement' docs/generated/npc-scripts-renewal.md"
+      },
+      "ruling": "upheld"
+    }
+  ],
+  "questions": [],
+  "proofs": [],
+  "hypothesis": null,
+  "spend": [
+    {
+      "round": 1,
+      "tokens": 49454
+    },
+    {
+      "round": 2,
+      "tokens": 52990
+    }
+  ]
+}

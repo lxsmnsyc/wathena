@@ -4,6 +4,7 @@ title: Instances: lifecycle, maps, variables and Lua API
 status: todo
 priority: must
 type: feature
+story: instances
 outline: false
 milestone: v0.2.0
 size: L

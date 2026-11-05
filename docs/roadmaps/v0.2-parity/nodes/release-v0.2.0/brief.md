@@ -55,9 +55,6 @@ depends_on:
   - on: navigation
     kind: hard
     why: must be in the release
-  - on: item-windows
-    kind: hard
-    why: must be in the release
   - on: achievements
     kind: hard
     why: must be in the release
@@ -89,6 +86,7 @@ Section 14.2a: every rAthena system in scope runs in both rulesets, and every NP
 
 ## Steps
 
+- [ ] Write a decision record that refuses the item enchant, enchant grade and reform rows (item-windows, parked to v0.2.x by debate/debate.md) with a reason, and mark them refused in the converter.
 - [ ] Regenerate reports; list every remaining unconverted script with its reason.
 - [ ] Raise `schema.Version` (decisions 0063-0065).
 - [ ] `scripts/check.sh all`, `e2e`, `economy`, load tests at the documented count.

@@ -4,6 +4,7 @@ title: Sieges: convert and run rAthena's castle scripts
 status: todo
 priority: must
 type: feature
+story: sieges
 outline: true
 milestone: v0.2.0
 size: M

@@ -4,6 +4,7 @@ title: Instances: client window, admin screen and staff endpoint
 status: todo
 priority: must
 type: feature
+story: instances
 outline: false
 milestone: v0.2.0
 size: M

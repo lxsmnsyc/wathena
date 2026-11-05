@@ -2,10 +2,10 @@
 id: item-windows
 title: Item enchant, enchant grade and reform windows
 status: todo
-priority: must
+priority: later
 type: feature
 outline: false
-milestone: v0.2.0
+milestone: later
 size: L
 spike: false
 gate: false
@@ -57,7 +57,7 @@ Build proposal 0006 sections 9 to 11, renewal only: `item.Slot.EnchantGrade` and
 
 See the frozen `small-systems` contract and proposal 0006, "Decisions in review". The gotchas for this node are in nodes/proposal-small-systems/outcome.md.
 
-- Split from ui-windows (decision 4). Stays `must`; it is the first node to become `should` if the release is late (decision 11).
+- Split from ui-windows (decision 4). Parked to v0.2.x by the roadmap debate of 2026-11-05 (debate/debate.md, O1). release-v0.2.0 refuses its command rows and items with a decision record instead.
 - The grade bonus to refine ATK and DEF is renewal only.
 - Source: proposal 0006 section 23
 
