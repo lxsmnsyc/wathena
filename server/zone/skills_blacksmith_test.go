@@ -319,16 +319,3 @@ func TestMaximizeDrainsSP(t *testing.T) {
 		t.Errorf("the second cast did not end it: failures %v", skillFailures(ev))
 	}
 }
-
-// TestSmithWindowsNotPorted checks that Weapon Repair and Upgrade Weapon,
-// which need item list windows, fail before they start.
-func TestSmithWindowsNotPorted(t *testing.T) {
-	z, p, _ := smithZone(t, reference.Renewal, smithAxe, 0)
-	sp := p.sp
-	cast(z, p, skill.IDWeaponRefine, 10, p.entity)
-	cast(z, p, skill.IDRepairWeapon, 1, p.entity)
-	ev := run(z, p, 50, 300)
-	if f := skillFailures(ev); len(f) != 2 || p.sp != sp {
-		t.Errorf("failures %v, SP %d -> %d", f, sp, p.sp)
-	}
-}

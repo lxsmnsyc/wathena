@@ -35,12 +35,9 @@ func init() {
 		skill.IDOverThrustMax:   statusSkill{},
 
 		// Weapon Repair (SkillWeaponRepair) and Upgrade Weapon
-		// (SkillUpgradeWeapon) open item lists
-		// (clif_item_repair_list and clif_item_refine_list), and the
-		// choice comes back from the window. The client has no such
-		// window yet.
-		skill.IDRepairWeapon: notPorted{},
-		skill.IDWeaponRefine: notPorted{},
+		// (SkillUpgradeWeapon) open item lists (skillitems.go).
+		skill.IDRepairWeapon: weaponRepair{},
+		skill.IDWeaponRefine: upgradeWeapon{},
 	})
 }
 

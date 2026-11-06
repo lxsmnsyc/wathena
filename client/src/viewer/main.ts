@@ -148,6 +148,7 @@ import {
   buyingStoreMessage,
   closesOwnStore,
 } from './buyingStore';
+import { SkillItemsWindow } from './skillItems';
 import { StoreSearchWindow, storeSearchMessage } from './storeSearch';
 import { groundItemLabel } from './groundItems';
 import randomLook from './looks';
@@ -2540,6 +2541,35 @@ if (serverURL === null) {
     worldMapData = m;
     worldMapWindow?.set(m);
     showMapName();
+  };
+  // A skill that asks for an item, such as Arrow Crafting, opens its
+  // list when the server sends SkillItemList.
+  const skillItemsRoot = document.createElement('section');
+  skillItemsRoot.id = 'skill-items';
+  skillItemsRoot.className = 'store-window';
+  skillItemsRoot.setAttribute('aria-label', 'Skill items');
+  skillItemsRoot.hidden = true;
+  document.body.append(skillItemsRoot);
+  makeMovable(skillItemsRoot, 'Skill items');
+  const skillItems = new SkillItemsWindow(
+    skillItemsRoot,
+    {
+      pick: (skillId, index) => {
+        connection.skillItemPick(skillId, index);
+      },
+      cancel: (skillId) => {
+        connection.skillItemPick(skillId, 0, true);
+      },
+    },
+    (id) => itemTexts.label(id),
+  );
+  view.onSkillItemList = (skillId, items) => {
+    itemTexts
+      .loadNames()
+      .then(() => {
+        skillItems.show(skillId, items);
+      })
+      .catch(reportError);
   };
   // The quest window opens with its button or Alt+U, as RO's quest
   // window. Its buttons mark quests active or inactive.

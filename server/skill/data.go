@@ -204,6 +204,9 @@ func (d *Def) Passive() bool { return d.Target == TargetPassive }
 type Data struct {
 	Mode   string     `json:"mode"`
 	Skills []RawSkill `json:"skills"`
+	// Crafting is the mode's crafting.json, which loads apart from
+	// skills.json. It may be nil.
+	Crafting *Crafting `json:"-"`
 }
 
 // RawSkill is one skill of skills.json.
@@ -318,11 +321,13 @@ type DB struct {
 	byID    map[int]*Def
 	byName  map[string]*Def
 	order   []*Def
+	// crafting is the arrow crafting and produce data, or nil.
+	crafting *Crafting
 }
 
 // Load builds a mode's skill database from skills.json.
 func Load(d *Data) (*DB, error) {
-	db := &DB{byID: map[int]*Def{}, byName: map[string]*Def{}}
+	db := &DB{byID: map[int]*Def{}, byName: map[string]*Def{}, crafting: d.Crafting}
 	switch d.Mode {
 	case "renewal":
 		db.renewal = true

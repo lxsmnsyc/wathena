@@ -102,6 +102,7 @@ import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
 import type { WorldEventRun } from './worldEvents';
 import { type QuestView, questOf } from './quests';
+import type { SkillItemLine } from './skillItems';
 import { type WorldMapData, worldMapOf } from './worldMap';
 import {
   HEAL_SKILLS,
@@ -657,6 +658,8 @@ export default class Online {
   onMusic: ((name: string) => void) | undefined;
   /** Called for a digital clock at the top of the screen, as rAthena's showdigit. */
   onDigits: ((kind: DigitsKind, value: number) => void) | undefined;
+  /** Called when a skill opens its item list, with the lines to pick from. */
+  onSkillItemList: ((skillId: number, items: SkillItemLine[]) => void) | undefined;
   /** Called when the server opens the quest log, with a quest or 0. */
   onQuestLogOpen: ((quest: number) => void) | undefined;
   /** Called for an announcement to the map or the world, with its color or 0. */
@@ -1280,6 +1283,16 @@ export default class Online {
           this.pathfinder.setMap(map);
           break;
         }
+        case 'skillItemList':
+          this.onSkillItemList?.(
+            e.body.value.skillId,
+            e.body.value.items.map((it) => ({
+              itemId: it.itemId,
+              refine: it.refine,
+              cards: [...it.cards],
+            })),
+          );
+          break;
         case 'questLogOpen':
           this.onQuestLogOpen?.(e.body.value.quest);
           break;

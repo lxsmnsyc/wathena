@@ -124,7 +124,31 @@ message Event {
     QuestLogOpen quest_log_open = 112;
     BookOpen book_open = 113;
     MapCells map_cells = 114;
+    SkillItemList skill_item_list = 115;
   }
+}
+
+// SkillItemList opens the item list of a skill that asks the player to
+// pick an item, as rAthena's menu skills (menuskill_id):
+//   - Arrow Crafting lists the items that make arrows, as
+//     clif_arrow_create_list.
+//   - Weapon Repair lists the target's broken items, as
+//     clif_item_repair_list.
+//   - Upgrade Weapon lists the weapons it can refine, as
+//     clif_item_refine_list. The list may be empty.
+// The answer is SkillItemPick. A new list replaces the one before.
+message SkillItemList {
+  uint32 skill_id = 1;
+  repeated SkillListItem items = 2;
+}
+
+// SkillListItem is one line of a SkillItemList. SkillItemPick names it by
+// its place in the list, from 0.
+message SkillListItem {
+  uint32 item_id = 1;
+  uint32 refine = 2;
+  // cards are the card IDs in the item's slots, in slot order.
+  repeated uint32 cards = 3;
 }
 
 // MapCells changes cells of the player's map, as rAthena's

@@ -1,0 +1,7371 @@
+{
+	"rathena_git_hash": "7885f522f7086a94559e176c625c5acbd8963683",
+	"mode": "pre-renewal",
+	"note": "arrows is create_arrow_db.yml as SkillArrowDatabase loads it, in file order: each source item, by ID, makes each product's amount when Arrow Crafting uses one. produce is produce_db.txt as skill_parse_row_producedb loads it, in ID order: the product, the item level that picks the window or script that makes it (skill_can_produce_mix's trigger), the skill and level it needs (0 for none), and its materials. A material of amount 0 must be held but is not used.",
+	"arrows": [
+		{
+			"source": 603,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 50
+				},
+				{
+					"item": 1768,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 604,
+			"make": [
+				{
+					"item": 1769,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"source": 609,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"source": 713,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"source": 714,
+			"make": [
+				{
+					"item": 1757,
+					"amount": 600
+				},
+				{
+					"item": 1765,
+					"amount": 600
+				},
+				{
+					"item": 1769,
+					"amount": 600
+				}
+			]
+		},
+		{
+			"source": 715,
+			"make": [
+				{
+					"item": 1768,
+					"amount": 1
+				},
+				{
+					"item": 1756,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 716,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 1
+				},
+				{
+					"item": 1763,
+					"amount": 1
+				},
+				{
+					"item": 1762,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"source": 717,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 30
+				},
+				{
+					"item": 1759,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"source": 724,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 50
+				},
+				{
+					"item": 1768,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"source": 733,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 756,
+			"make": [
+				{
+					"item": 1765,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 757,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 200
+				},
+				{
+					"item": 1758,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 902,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 7
+				}
+			]
+		},
+		{
+			"source": 904,
+			"make": [
+				{
+					"item": 1762,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"source": 909,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 4
+				}
+			]
+		},
+		{
+			"source": 910,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 12
+				}
+			]
+		},
+		{
+			"source": 911,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 8
+				}
+			]
+		},
+		{
+			"source": 912,
+			"make": [
+				{
+					"item": 1751,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 913,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"source": 920,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 15
+				}
+			]
+		},
+		{
+			"source": 922,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 30
+				},
+				{
+					"item": 1753,
+					"amount": 5
+				},
+				{
+					"item": 1756,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"source": 923,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 20
+				},
+				{
+					"item": 1760,
+					"amount": 10
+				},
+				{
+					"item": 1758,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 937,
+			"make": [
+				{
+					"item": 1763,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"source": 939,
+			"make": [
+				{
+					"item": 1762,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"source": 947,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"source": 952,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 956,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 150
+				},
+				{
+					"item": 1770,
+					"amount": 80
+				}
+			]
+		},
+		{
+			"source": 957,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 1
+				},
+				{
+					"item": 1762,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"source": 958,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 959,
+			"make": [
+				{
+					"item": 1763,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"source": 968,
+			"make": [
+				{
+					"item": 1765,
+					"amount": 1
+				},
+				{
+					"item": 1758,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 969,
+			"make": [
+				{
+					"item": 1760,
+					"amount": 50
+				},
+				{
+					"item": 1765,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 984,
+			"make": [
+				{
+					"item": 1765,
+					"amount": 250
+				}
+			]
+		},
+		{
+			"source": 985,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 1000
+				},
+				{
+					"item": 1758,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 990,
+			"make": [
+				{
+					"item": 1752,
+					"amount": 600
+				}
+			]
+		},
+		{
+			"source": 991,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 150
+				}
+			]
+		},
+		{
+			"source": 992,
+			"make": [
+				{
+					"item": 1755,
+					"amount": 150
+				}
+			]
+		},
+		{
+			"source": 993,
+			"make": [
+				{
+					"item": 1756,
+					"amount": 150
+				}
+			]
+		},
+		{
+			"source": 994,
+			"make": [
+				{
+					"item": 1752,
+					"amount": 1800
+				},
+				{
+					"item": 1769,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 995,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 450
+				},
+				{
+					"item": 1759,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 996,
+			"make": [
+				{
+					"item": 1755,
+					"amount": 450
+				},
+				{
+					"item": 1768,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 997,
+			"make": [
+				{
+					"item": 1760,
+					"amount": 5
+				},
+				{
+					"item": 1756,
+					"amount": 450
+				}
+			]
+		},
+		{
+			"source": 998,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 999,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 1000,
+			"make": [
+				{
+					"item": 1760,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 1001,
+			"make": [
+				{
+					"item": 1760,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"source": 1002,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 1003,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 8
+				}
+			]
+		},
+		{
+			"source": 1010,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 1011,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 200
+				},
+				{
+					"item": 1751,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"source": 1018,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 50
+				},
+				{
+					"item": 1756,
+					"amount": 60
+				}
+			]
+		},
+		{
+			"source": 1019,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"source": 1021,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 2
+				},
+				{
+					"item": 1770,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"source": 1027,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 70
+				},
+				{
+					"item": 1756,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 1031,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"source": 1035,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 50
+				},
+				{
+					"item": 1765,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"source": 1038,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 2
+				},
+				{
+					"item": 1770,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 1041,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 80
+				}
+			]
+		},
+		{
+			"source": 1043,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"source": 1044,
+			"make": [
+				{
+					"item": 1762,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 1053,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 300
+				},
+				{
+					"item": 1753,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"source": 1063,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 2
+				},
+				{
+					"item": 1751,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"source": 1064,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 100
+				},
+				{
+					"item": 1753,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 1066,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"source": 1067,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"source": 1068,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"source": 1095,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 100
+				},
+				{
+					"item": 1768,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"source": 1098,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 2257,
+			"make": [
+				{
+					"item": 1751,
+					"amount": 1000
+				}
+			]
+		},
+		{
+			"source": 2281,
+			"make": [
+				{
+					"item": 1769,
+					"amount": 40
+				},
+				{
+					"item": 1753,
+					"amount": 200
+				}
+			]
+		},
+		{
+			"source": 2288,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 200
+				},
+				{
+					"item": 1753,
+					"amount": 300
+				}
+			]
+		},
+		{
+			"source": 2292,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 200
+				},
+				{
+					"item": 1758,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"source": 2319,
+			"make": [
+				{
+					"item": 1760,
+					"amount": 1000
+				}
+			]
+		},
+		{
+			"source": 2328,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 700
+				},
+				{
+					"item": 1770,
+					"amount": 500
+				}
+			]
+		},
+		{
+			"source": 2329,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 1000
+				},
+				{
+					"item": 1770,
+					"amount": 700
+				}
+			]
+		},
+		{
+			"source": 2332,
+			"make": [
+				{
+					"item": 1751,
+					"amount": 700
+				}
+			]
+		},
+		{
+			"source": 2333,
+			"make": [
+				{
+					"item": 1757,
+					"amount": 10
+				},
+				{
+					"item": 1751,
+					"amount": 1000
+				}
+			]
+		},
+		{
+			"source": 2408,
+			"make": [
+				{
+					"item": 1770,
+					"amount": 700
+				},
+				{
+					"item": 1753,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 2618,
+			"make": [
+				{
+					"item": 1755,
+					"amount": 150
+				},
+				{
+					"item": 1764,
+					"amount": 10
+				},
+				{
+					"item": 1753,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 5014,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 600
+				},
+				{
+					"item": 1753,
+					"amount": 200
+				}
+			]
+		},
+		{
+			"source": 7002,
+			"make": [
+				{
+					"item": 1762,
+					"amount": 5
+				},
+				{
+					"item": 1753,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 7008,
+			"make": [
+				{
+					"item": 1758,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"source": 7010,
+			"make": [
+				{
+					"item": 1763,
+					"amount": 1
+				},
+				{
+					"item": 1753,
+					"amount": 250
+				}
+			]
+		},
+		{
+			"source": 7018,
+			"make": [
+				{
+					"item": 1769,
+					"amount": 1000
+				}
+			]
+		},
+		{
+			"source": 7019,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 1000
+				}
+			]
+		},
+		{
+			"source": 7020,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 1000
+				}
+			]
+		},
+		{
+			"source": 7021,
+			"make": [
+				{
+					"item": 1760,
+					"amount": 200
+				}
+			]
+		},
+		{
+			"source": 7022,
+			"make": [
+				{
+					"item": 1765,
+					"amount": 1000
+				}
+			]
+		},
+		{
+			"source": 7023,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 200
+				},
+				{
+					"item": 1764,
+					"amount": 600
+				}
+			]
+		},
+		{
+			"source": 7024,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 200
+				},
+				{
+					"item": 1764,
+					"amount": 600
+				}
+			]
+		},
+		{
+			"source": 7025,
+			"make": [
+				{
+					"item": 1769,
+					"amount": 400
+				},
+				{
+					"item": 1768,
+					"amount": 800
+				},
+				{
+					"item": 1758,
+					"amount": 800
+				}
+			]
+		},
+		{
+			"source": 7026,
+			"make": [
+				{
+					"item": 1765,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 7027,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7035,
+			"make": [
+				{
+					"item": 1752,
+					"amount": 3000
+				}
+			]
+		},
+		{
+			"source": 7036,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 300
+				}
+			]
+		},
+		{
+			"source": 7066,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7067,
+			"make": [
+				{
+					"item": 1756,
+					"amount": 50
+				},
+				{
+					"item": 1758,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 7068,
+			"make": [
+				{
+					"item": 1752,
+					"amount": 250
+				}
+			]
+		},
+		{
+			"source": 7069,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 150
+				}
+			]
+		},
+		{
+			"source": 7097,
+			"make": [
+				{
+					"item": 1752,
+					"amount": 150
+				}
+			]
+		},
+		{
+			"source": 7098,
+			"make": [
+				{
+					"item": 1752,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7100,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 7108,
+			"make": [
+				{
+					"item": 1757,
+					"amount": 300
+				},
+				{
+					"item": 1765,
+					"amount": 100
+				},
+				{
+					"item": 1753,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7109,
+			"make": [
+				{
+					"item": 1765,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7120,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7123,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 50
+				},
+				{
+					"item": 1769,
+					"amount": 50
+				},
+				{
+					"item": 1753,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"source": 7150,
+			"make": [
+				{
+					"item": 1750,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7155,
+			"make": [
+				{
+					"item": 1763,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"source": 7163,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"source": 7164,
+			"make": [
+				{
+					"item": 1758,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 7172,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"source": 7210,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 150
+				}
+			]
+		},
+		{
+			"source": 7221,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 50
+				},
+				{
+					"item": 1753,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 7263,
+			"make": [
+				{
+					"item": 1755,
+					"amount": 200
+				}
+			]
+		},
+		{
+			"source": 7315,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 50
+				},
+				{
+					"item": 1761,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 7316,
+			"make": [
+				{
+					"item": 1764,
+					"amount": 10
+				},
+				{
+					"item": 1763,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 7318,
+			"make": [
+				{
+					"item": 1762,
+					"amount": 100
+				},
+				{
+					"item": 1753,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 7319,
+			"make": [
+				{
+					"item": 1762,
+					"amount": 100
+				},
+				{
+					"item": 1753,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7321,
+			"make": [
+				{
+					"item": 1760,
+					"amount": 10
+				},
+				{
+					"item": 1768,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 7323,
+			"make": [
+				{
+					"item": 1753,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 7340,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 50
+				},
+				{
+					"item": 1761,
+					"amount": 30
+				},
+				{
+					"item": 1763,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"source": 7435,
+			"make": [
+				{
+					"item": 1772,
+					"amount": 300
+				},
+				{
+					"item": 1751,
+					"amount": 200
+				}
+			]
+		},
+		{
+			"source": 7442,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 50
+				},
+				{
+					"item": 1769,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 7445,
+			"make": [
+				{
+					"item": 1763,
+					"amount": 80
+				},
+				{
+					"item": 1756,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7446,
+			"make": [
+				{
+					"item": 1755,
+					"amount": 50
+				},
+				{
+					"item": 1754,
+					"amount": 50
+				},
+				{
+					"item": 1759,
+					"amount": 80
+				}
+			]
+		},
+		{
+			"source": 7447,
+			"make": [
+				{
+					"item": 1752,
+					"amount": 100
+				},
+				{
+					"item": 1760,
+					"amount": 80
+				}
+			]
+		},
+		{
+			"source": 7448,
+			"make": [
+				{
+					"item": 1757,
+					"amount": 50
+				},
+				{
+					"item": 1751,
+					"amount": 50
+				},
+				{
+					"item": 1768,
+					"amount": 80
+				}
+			]
+		},
+		{
+			"source": 7450,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 200
+				},
+				{
+					"item": 1757,
+					"amount": 500
+				},
+				{
+					"item": 1765,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"source": 7451,
+			"make": [
+				{
+					"item": 1752,
+					"amount": 300
+				},
+				{
+					"item": 1758,
+					"amount": 300
+				}
+			]
+		},
+		{
+			"source": 7510,
+			"make": [
+				{
+					"item": 1772,
+					"amount": 600
+				},
+				{
+					"item": 1757,
+					"amount": 600
+				},
+				{
+					"item": 1764,
+					"amount": 600
+				}
+			]
+		},
+		{
+			"source": 7511,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 300
+				},
+				{
+					"item": 1760,
+					"amount": 150
+				}
+			]
+		},
+		{
+			"source": 7561,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 50
+				},
+				{
+					"item": 1759,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 7562,
+			"make": [
+				{
+					"item": 1754,
+					"amount": 150
+				},
+				{
+					"item": 1759,
+					"amount": 400
+				},
+				{
+					"item": 1769,
+					"amount": 200
+				}
+			]
+		},
+		{
+			"source": 7566,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 100
+				},
+				{
+					"item": 1761,
+					"amount": 200
+				},
+				{
+					"item": 1763,
+					"amount": 200
+				}
+			]
+		},
+		{
+			"source": 7752,
+			"make": [
+				{
+					"item": 1767,
+					"amount": 50
+				},
+				{
+					"item": 1761,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"source": 7753,
+			"make": [
+				{
+					"item": 1761,
+					"amount": 20
+				},
+				{
+					"item": 1770,
+					"amount": 10
+				},
+				{
+					"item": 1762,
+					"amount": 50
+				}
+			]
+		}
+	],
+	"produce": [
+		{
+			"id": 0,
+			"item": 1101,
+			"item_level": 1,
+			"skill": 99,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 1,
+			"item": 1104,
+			"item_level": 1,
+			"skill": 99,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 2,
+			"item": 1107,
+			"item_level": 1,
+			"skill": 99,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 45
+				},
+				{
+					"item": 913,
+					"amount": 25
+				}
+			]
+		},
+		{
+			"id": 3,
+			"item": 1110,
+			"item_level": 2,
+			"skill": 99,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 4,
+			"item": 1113,
+			"item_level": 2,
+			"skill": 99,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"id": 5,
+			"item": 1122,
+			"item_level": 2,
+			"skill": 99,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 40
+				},
+				{
+					"item": 920,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"id": 6,
+			"item": 1126,
+			"item_level": 3,
+			"skill": 99,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 5
+				},
+				{
+					"item": 984,
+					"amount": 8
+				},
+				{
+					"item": 727,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 7,
+			"item": 1123,
+			"item_level": 3,
+			"skill": 99,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 8
+				},
+				{
+					"item": 999,
+					"amount": 10
+				},
+				{
+					"item": 728,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 8,
+			"item": 1119,
+			"item_level": 3,
+			"skill": 99,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 8
+				},
+				{
+					"item": 999,
+					"amount": 15
+				},
+				{
+					"item": 718,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 9,
+			"item": 1129,
+			"item_level": 3,
+			"skill": 99,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 16
+				},
+				{
+					"item": 724,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 10,
+			"item": 1201,
+			"item_level": 1,
+			"skill": 98,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 1
+				},
+				{
+					"item": 909,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 11,
+			"item": 1204,
+			"item_level": 1,
+			"skill": 98,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 25
+				}
+			]
+		},
+		{
+			"id": 12,
+			"item": 1207,
+			"item_level": 1,
+			"skill": 98,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"id": 13,
+			"item": 1210,
+			"item_level": 2,
+			"skill": 98,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 17
+				}
+			]
+		},
+		{
+			"id": 14,
+			"item": 1213,
+			"item_level": 2,
+			"skill": 98,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 15,
+			"item": 1216,
+			"item_level": 2,
+			"skill": 98,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 16,
+			"item": 1219,
+			"item_level": 3,
+			"skill": 98,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 4
+				},
+				{
+					"item": 999,
+					"amount": 40
+				},
+				{
+					"item": 726,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 17,
+			"item": 1222,
+			"item_level": 3,
+			"skill": 98,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 4
+				},
+				{
+					"item": 999,
+					"amount": 60
+				},
+				{
+					"item": 729,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 18,
+			"item": 1116,
+			"item_level": 1,
+			"skill": 100,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 35
+				},
+				{
+					"item": 958,
+					"amount": 15
+				}
+			]
+		},
+		{
+			"id": 19,
+			"item": 1151,
+			"item_level": 2,
+			"skill": 100,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 25
+				},
+				{
+					"item": 957,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 20,
+			"item": 1154,
+			"item_level": 2,
+			"skill": 100,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 45
+				}
+			]
+		},
+		{
+			"id": 21,
+			"item": 1157,
+			"item_level": 3,
+			"skill": 100,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 12
+				},
+				{
+					"item": 999,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 22,
+			"item": 1160,
+			"item_level": 3,
+			"skill": 100,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 12
+				},
+				{
+					"item": 999,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 23,
+			"item": 1163,
+			"item_level": 3,
+			"skill": 100,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 16
+				},
+				{
+					"item": 999,
+					"amount": 20
+				},
+				{
+					"item": 733,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 24,
+			"item": 1301,
+			"item_level": 1,
+			"skill": 101,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 25,
+			"item": 1351,
+			"item_level": 1,
+			"skill": 101,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 110
+				}
+			]
+		},
+		{
+			"id": 26,
+			"item": 1354,
+			"item_level": 2,
+			"skill": 101,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 27,
+			"item": 1357,
+			"item_level": 3,
+			"skill": 101,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 4
+				},
+				{
+					"item": 999,
+					"amount": 20
+				},
+				{
+					"item": 922,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 28,
+			"item": 1360,
+			"item_level": 3,
+			"skill": 101,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 8
+				},
+				{
+					"item": 999,
+					"amount": 10
+				},
+				{
+					"item": 719,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 29,
+			"item": 1501,
+			"item_level": 1,
+			"skill": 102,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"id": 30,
+			"item": 1504,
+			"item_level": 1,
+			"skill": 102,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 31,
+			"item": 1507,
+			"item_level": 2,
+			"skill": 102,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 32,
+			"item": 1510,
+			"item_level": 2,
+			"skill": 102,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 33
+				}
+			]
+		},
+		{
+			"id": 33,
+			"item": 1519,
+			"item_level": 2,
+			"skill": 102,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 45
+				}
+			]
+		},
+		{
+			"id": 34,
+			"item": 1513,
+			"item_level": 3,
+			"skill": 102,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 85
+				},
+				{
+					"item": 730,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 35,
+			"item": 1516,
+			"item_level": 3,
+			"skill": 102,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 100
+				},
+				{
+					"item": 963,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 36,
+			"item": 1522,
+			"item_level": 3,
+			"skill": 102,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 120
+				},
+				{
+					"item": 968,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 37,
+			"item": 1801,
+			"item_level": 1,
+			"skill": 103,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 160
+				},
+				{
+					"item": 722,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 38,
+			"item": 1803,
+			"item_level": 2,
+			"skill": 103,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"id": 39,
+			"item": 1805,
+			"item_level": 2,
+			"skill": 103,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 65
+				}
+			]
+		},
+		{
+			"id": 40,
+			"item": 1807,
+			"item_level": 3,
+			"skill": 103,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 4
+				},
+				{
+					"item": 723,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 41,
+			"item": 1809,
+			"item_level": 3,
+			"skill": 103,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 8
+				},
+				{
+					"item": 728,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 42,
+			"item": 1811,
+			"item_level": 3,
+			"skill": 103,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 4
+				},
+				{
+					"item": 727,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 43,
+			"item": 1401,
+			"item_level": 1,
+			"skill": 104,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"id": 44,
+			"item": 1404,
+			"item_level": 1,
+			"skill": 104,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"id": 45,
+			"item": 1407,
+			"item_level": 1,
+			"skill": 104,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 70
+				}
+			]
+		},
+		{
+			"id": 46,
+			"item": 1451,
+			"item_level": 2,
+			"skill": 104,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 25
+				}
+			]
+		},
+		{
+			"id": 47,
+			"item": 1454,
+			"item_level": 2,
+			"skill": 104,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 48,
+			"item": 1457,
+			"item_level": 2,
+			"skill": 104,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 999,
+					"amount": 55
+				}
+			]
+		},
+		{
+			"id": 49,
+			"item": 1460,
+			"item_level": 3,
+			"skill": 104,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 8
+				},
+				{
+					"item": 999,
+					"amount": 10
+				},
+				{
+					"item": 720,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 50,
+			"item": 1463,
+			"item_level": 3,
+			"skill": 104,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 12
+				},
+				{
+					"item": 999,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 51,
+			"item": 1410,
+			"item_level": 3,
+			"skill": 104,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 984,
+					"amount": 12
+				},
+				{
+					"item": 723,
+					"amount": 3
+				},
+				{
+					"item": 923,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 52,
+			"item": 12041,
+			"item_level": 11,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7472,
+					"amount": 0
+				},
+				{
+					"item": 940,
+					"amount": 5
+				},
+				{
+					"item": 7031,
+					"amount": 1
+				},
+				{
+					"item": 7457,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 53,
+			"item": 12046,
+			"item_level": 11,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7472,
+					"amount": 0
+				},
+				{
+					"item": 514,
+					"amount": 3
+				},
+				{
+					"item": 501,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 54,
+			"item": 12051,
+			"item_level": 11,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7472,
+					"amount": 0
+				},
+				{
+					"item": 960,
+					"amount": 10
+				},
+				{
+					"item": 511,
+					"amount": 10
+				},
+				{
+					"item": 503,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 55,
+			"item": 12056,
+			"item_level": 11,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7472,
+					"amount": 0
+				},
+				{
+					"item": 577,
+					"amount": 1
+				},
+				{
+					"item": 908,
+					"amount": 10
+				},
+				{
+					"item": 1024,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 56,
+			"item": 12061,
+			"item_level": 11,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7472,
+					"amount": 0
+				},
+				{
+					"item": 518,
+					"amount": 1
+				},
+				{
+					"item": 514,
+					"amount": 2
+				},
+				{
+					"item": 501,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 57,
+			"item": 12066,
+			"item_level": 11,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7472,
+					"amount": 0
+				},
+				{
+					"item": 942,
+					"amount": 5
+				},
+				{
+					"item": 7031,
+					"amount": 1
+				},
+				{
+					"item": 7457,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 58,
+			"item": 12042,
+			"item_level": 12,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7473,
+					"amount": 0
+				},
+				{
+					"item": 918,
+					"amount": 20
+				},
+				{
+					"item": 511,
+					"amount": 10
+				},
+				{
+					"item": 508,
+					"amount": 10
+				},
+				{
+					"item": 7454,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 59,
+			"item": 12052,
+			"item_level": 12,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7473,
+					"amount": 0
+				},
+				{
+					"item": 966,
+					"amount": 10
+				},
+				{
+					"item": 956,
+					"amount": 5
+				},
+				{
+					"item": 951,
+					"amount": 5
+				},
+				{
+					"item": 579,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 60,
+			"item": 12047,
+			"item_level": 12,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7473,
+					"amount": 0
+				},
+				{
+					"item": 510,
+					"amount": 5
+				},
+				{
+					"item": 507,
+					"amount": 10
+				},
+				{
+					"item": 508,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 61,
+			"item": 12057,
+			"item_level": 12,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7473,
+					"amount": 0
+				},
+				{
+					"item": 577,
+					"amount": 1
+				},
+				{
+					"item": 7454,
+					"amount": 1
+				},
+				{
+					"item": 1062,
+					"amount": 5
+				},
+				{
+					"item": 515,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"id": 62,
+			"item": 12062,
+			"item_level": 12,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7473,
+					"amount": 0
+				},
+				{
+					"item": 7182,
+					"amount": 10
+				},
+				{
+					"item": 539,
+					"amount": 1
+				},
+				{
+					"item": 519,
+					"amount": 1
+				},
+				{
+					"item": 736,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 63,
+			"item": 12067,
+			"item_level": 12,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7473,
+					"amount": 0
+				},
+				{
+					"item": 531,
+					"amount": 3
+				},
+				{
+					"item": 534,
+					"amount": 2
+				},
+				{
+					"item": 533,
+					"amount": 1
+				},
+				{
+					"item": 620,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 64,
+			"item": 12063,
+			"item_level": 13,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7474,
+					"amount": 0
+				},
+				{
+					"item": 512,
+					"amount": 5
+				},
+				{
+					"item": 513,
+					"amount": 5
+				},
+				{
+					"item": 582,
+					"amount": 5
+				},
+				{
+					"item": 578,
+					"amount": 5
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 65,
+			"item": 12048,
+			"item_level": 13,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7474,
+					"amount": 0
+				},
+				{
+					"item": 518,
+					"amount": 2
+				},
+				{
+					"item": 509,
+					"amount": 10
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 66,
+			"item": 12043,
+			"item_level": 13,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7474,
+					"amount": 0
+				},
+				{
+					"item": 517,
+					"amount": 4
+				},
+				{
+					"item": 7031,
+					"amount": 1
+				},
+				{
+					"item": 511,
+					"amount": 10
+				},
+				{
+					"item": 7286,
+					"amount": 5
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 67,
+			"item": 12053,
+			"item_level": 13,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7474,
+					"amount": 0
+				},
+				{
+					"item": 966,
+					"amount": 20
+				},
+				{
+					"item": 961,
+					"amount": 10
+				},
+				{
+					"item": 518,
+					"amount": 1
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 68,
+			"item": 12058,
+			"item_level": 13,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7474,
+					"amount": 0
+				},
+				{
+					"item": 962,
+					"amount": 10
+				},
+				{
+					"item": 548,
+					"amount": 10
+				},
+				{
+					"item": 549,
+					"amount": 5
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 69,
+			"item": 12068,
+			"item_level": 13,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7474,
+					"amount": 0
+				},
+				{
+					"item": 516,
+					"amount": 10
+				},
+				{
+					"item": 549,
+					"amount": 10
+				},
+				{
+					"item": 633,
+					"amount": 1
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 70,
+			"item": 12049,
+			"item_level": 14,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7475,
+					"amount": 0
+				},
+				{
+					"item": 578,
+					"amount": 10
+				},
+				{
+					"item": 568,
+					"amount": 4
+				},
+				{
+					"item": 582,
+					"amount": 10
+				},
+				{
+					"item": 970,
+					"amount": 2
+				},
+				{
+					"item": 514,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 71,
+			"item": 12054,
+			"item_level": 14,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7475,
+					"amount": 0
+				},
+				{
+					"item": 962,
+					"amount": 30
+				},
+				{
+					"item": 509,
+					"amount": 10
+				},
+				{
+					"item": 7194,
+					"amount": 10
+				},
+				{
+					"item": 7031,
+					"amount": 1
+				},
+				{
+					"item": 1024,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 72,
+			"item": 12044,
+			"item_level": 14,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7475,
+					"amount": 0
+				},
+				{
+					"item": 517,
+					"amount": 5
+				},
+				{
+					"item": 507,
+					"amount": 3
+				},
+				{
+					"item": 508,
+					"amount": 2
+				},
+				{
+					"item": 511,
+					"amount": 3
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				},
+				{
+					"item": 568,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 73,
+			"item": 12064,
+			"item_level": 14,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7475,
+					"amount": 0
+				},
+				{
+					"item": 580,
+					"amount": 5
+				},
+				{
+					"item": 519,
+					"amount": 15
+				},
+				{
+					"item": 548,
+					"amount": 10
+				},
+				{
+					"item": 508,
+					"amount": 10
+				},
+				{
+					"item": 517,
+					"amount": 1
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 74,
+			"item": 12059,
+			"item_level": 14,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7475,
+					"amount": 0
+				},
+				{
+					"item": 577,
+					"amount": 3
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 7066,
+					"amount": 10
+				},
+				{
+					"item": 515,
+					"amount": 10
+				},
+				{
+					"item": 1062,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 75,
+			"item": 12069,
+			"item_level": 14,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7475,
+					"amount": 0
+				},
+				{
+					"item": 1054,
+					"amount": 10
+				},
+				{
+					"item": 945,
+					"amount": 10
+				},
+				{
+					"item": 509,
+					"amount": 10
+				},
+				{
+					"item": 579,
+					"amount": 5
+				},
+				{
+					"item": 7453,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 76,
+			"item": 12050,
+			"item_level": 15,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7476,
+					"amount": 0
+				},
+				{
+					"item": 522,
+					"amount": 4
+				},
+				{
+					"item": 505,
+					"amount": 1
+				},
+				{
+					"item": 970,
+					"amount": 2
+				},
+				{
+					"item": 568,
+					"amount": 2
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 77,
+			"item": 12045,
+			"item_level": 15,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7476,
+					"amount": 0
+				},
+				{
+					"item": 516,
+					"amount": 10
+				},
+				{
+					"item": 518,
+					"amount": 2
+				},
+				{
+					"item": 7457,
+					"amount": 1
+				},
+				{
+					"item": 515,
+					"amount": 3
+				},
+				{
+					"item": 577,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 78,
+			"item": 12065,
+			"item_level": 15,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7476,
+					"amount": 0
+				},
+				{
+					"item": 520,
+					"amount": 2
+				},
+				{
+					"item": 521,
+					"amount": 3
+				},
+				{
+					"item": 7100,
+					"amount": 10
+				},
+				{
+					"item": 7198,
+					"amount": 6
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 79,
+			"item": 12060,
+			"item_level": 15,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7476,
+					"amount": 0
+				},
+				{
+					"item": 7006,
+					"amount": 20
+				},
+				{
+					"item": 1062,
+					"amount": 20
+				},
+				{
+					"item": 7482,
+					"amount": 1
+				},
+				{
+					"item": 520,
+					"amount": 10
+				},
+				{
+					"item": 507,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 80,
+			"item": 12055,
+			"item_level": 15,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7476,
+					"amount": 0
+				},
+				{
+					"item": 553,
+					"amount": 20
+				},
+				{
+					"item": 508,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 7456,
+					"amount": 1
+				},
+				{
+					"item": 511,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 81,
+			"item": 12070,
+			"item_level": 15,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7476,
+					"amount": 0
+				},
+				{
+					"item": 904,
+					"amount": 20
+				},
+				{
+					"item": 1042,
+					"amount": 10
+				},
+				{
+					"item": 7198,
+					"amount": 10
+				},
+				{
+					"item": 7031,
+					"amount": 2
+				},
+				{
+					"item": 7457,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 82,
+			"item": 12071,
+			"item_level": 16,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7477,
+					"amount": 0
+				},
+				{
+					"item": 517,
+					"amount": 10
+				},
+				{
+					"item": 518,
+					"amount": 2
+				},
+				{
+					"item": 508,
+					"amount": 1
+				},
+				{
+					"item": 522,
+					"amount": 1
+				},
+				{
+					"item": 954,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 83,
+			"item": 12076,
+			"item_level": 16,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7477,
+					"amount": 0
+				},
+				{
+					"item": 581,
+					"amount": 3
+				},
+				{
+					"item": 533,
+					"amount": 3
+				},
+				{
+					"item": 921,
+					"amount": 20
+				},
+				{
+					"item": 970,
+					"amount": 1
+				},
+				{
+					"item": 7456,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 84,
+			"item": 12091,
+			"item_level": 16,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7477,
+					"amount": 0
+				},
+				{
+					"item": 7164,
+					"amount": 20
+				},
+				{
+					"item": 539,
+					"amount": 10
+				},
+				{
+					"item": 548,
+					"amount": 10
+				},
+				{
+					"item": 519,
+					"amount": 10
+				},
+				{
+					"item": 620,
+					"amount": 5
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 85,
+			"item": 12086,
+			"item_level": 16,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7477,
+					"amount": 0
+				},
+				{
+					"item": 7286,
+					"amount": 20
+				},
+				{
+					"item": 567,
+					"amount": 20
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				},
+				{
+					"item": 568,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 86,
+			"item": 12081,
+			"item_level": 16,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7477,
+					"amount": 0
+				},
+				{
+					"item": 7188,
+					"amount": 20
+				},
+				{
+					"item": 1033,
+					"amount": 10
+				},
+				{
+					"item": 921,
+					"amount": 20
+				},
+				{
+					"item": 581,
+					"amount": 1
+				},
+				{
+					"item": 518,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 87,
+			"item": 12096,
+			"item_level": 16,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7477,
+					"amount": 0
+				},
+				{
+					"item": 903,
+					"amount": 5
+				},
+				{
+					"item": 1015,
+					"amount": 5
+				},
+				{
+					"item": 705,
+					"amount": 10
+				},
+				{
+					"item": 1061,
+					"amount": 10
+				},
+				{
+					"item": 704,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 88,
+			"item": 12072,
+			"item_level": 17,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7478,
+					"amount": 0
+				},
+				{
+					"item": 517,
+					"amount": 10
+				},
+				{
+					"item": 7098,
+					"amount": 1
+				},
+				{
+					"item": 1003,
+					"amount": 2
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 1019,
+					"amount": 15
+				},
+				{
+					"item": 509,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 89,
+			"item": 12077,
+			"item_level": 17,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7478,
+					"amount": 0
+				},
+				{
+					"item": 526,
+					"amount": 4
+				},
+				{
+					"item": 518,
+					"amount": 2
+				},
+				{
+					"item": 509,
+					"amount": 5
+				},
+				{
+					"item": 520,
+					"amount": 10
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 90,
+			"item": 12092,
+			"item_level": 17,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7478,
+					"amount": 0
+				},
+				{
+					"item": 580,
+					"amount": 10
+				},
+				{
+					"item": 522,
+					"amount": 5
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				},
+				{
+					"item": 708,
+					"amount": 5
+				},
+				{
+					"item": 609,
+					"amount": 5
+				},
+				{
+					"item": 619,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 91,
+			"item": 12087,
+			"item_level": 17,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7478,
+					"amount": 0
+				},
+				{
+					"item": 7003,
+					"amount": 10
+				},
+				{
+					"item": 1062,
+					"amount": 10
+				},
+				{
+					"item": 515,
+					"amount": 10
+				},
+				{
+					"item": 521,
+					"amount": 10
+				},
+				{
+					"item": 508,
+					"amount": 10
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 92,
+			"item": 12082,
+			"item_level": 17,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7478,
+					"amount": 0
+				},
+				{
+					"item": 1023,
+					"amount": 10
+				},
+				{
+					"item": 521,
+					"amount": 5
+				},
+				{
+					"item": 1028,
+					"amount": 10
+				},
+				{
+					"item": 579,
+					"amount": 2
+				},
+				{
+					"item": 537,
+					"amount": 10
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 93,
+			"item": 12097,
+			"item_level": 17,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7478,
+					"amount": 0
+				},
+				{
+					"item": 936,
+					"amount": 10
+				},
+				{
+					"item": 956,
+					"amount": 5
+				},
+				{
+					"item": 7194,
+					"amount": 10
+				},
+				{
+					"item": 517,
+					"amount": 5
+				},
+				{
+					"item": 581,
+					"amount": 10
+				},
+				{
+					"item": 966,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 94,
+			"item": 12073,
+			"item_level": 18,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7479,
+					"amount": 0
+				},
+				{
+					"item": 948,
+					"amount": 20
+				},
+				{
+					"item": 515,
+					"amount": 10
+				},
+				{
+					"item": 1062,
+					"amount": 10
+				},
+				{
+					"item": 521,
+					"amount": 2
+				},
+				{
+					"item": 520,
+					"amount": 1
+				},
+				{
+					"item": 7454,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 95,
+			"item": 12078,
+			"item_level": 18,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7479,
+					"amount": 0
+				},
+				{
+					"item": 576,
+					"amount": 4
+				},
+				{
+					"item": 520,
+					"amount": 10
+				},
+				{
+					"item": 610,
+					"amount": 3
+				},
+				{
+					"item": 521,
+					"amount": 10
+				},
+				{
+					"item": 526,
+					"amount": 6
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 96,
+			"item": 12093,
+			"item_level": 18,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7479,
+					"amount": 0
+				},
+				{
+					"item": 580,
+					"amount": 10
+				},
+				{
+					"item": 526,
+					"amount": 2
+				},
+				{
+					"item": 517,
+					"amount": 5
+				},
+				{
+					"item": 578,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 548,
+					"amount": 10
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 97,
+			"item": 12088,
+			"item_level": 18,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7479,
+					"amount": 0
+				},
+				{
+					"item": 606,
+					"amount": 1
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 517,
+					"amount": 10
+				},
+				{
+					"item": 520,
+					"amount": 10
+				},
+				{
+					"item": 1062,
+					"amount": 10
+				},
+				{
+					"item": 515,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 98,
+			"item": 12083,
+			"item_level": 18,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7479,
+					"amount": 0
+				},
+				{
+					"item": 7298,
+					"amount": 20
+				},
+				{
+					"item": 517,
+					"amount": 20
+				},
+				{
+					"item": 622,
+					"amount": 5
+				},
+				{
+					"item": 1062,
+					"amount": 10
+				},
+				{
+					"item": 7454,
+					"amount": 1
+				},
+				{
+					"item": 577,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 99,
+			"item": 12098,
+			"item_level": 18,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7479,
+					"amount": 0
+				},
+				{
+					"item": 578,
+					"amount": 10
+				},
+				{
+					"item": 577,
+					"amount": 5
+				},
+				{
+					"item": 7298,
+					"amount": 10
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				},
+				{
+					"item": 7456,
+					"amount": 2
+				},
+				{
+					"item": 7454,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 100,
+			"item": 12074,
+			"item_level": 19,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7480,
+					"amount": 0
+				},
+				{
+					"item": 1050,
+					"amount": 40
+				},
+				{
+					"item": 7482,
+					"amount": 1
+				},
+				{
+					"item": 548,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 1003,
+					"amount": 2
+				},
+				{
+					"item": 511,
+					"amount": 30
+				},
+				{
+					"item": 1024,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 101,
+			"item": 12079,
+			"item_level": 19,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7480,
+					"amount": 0
+				},
+				{
+					"item": 610,
+					"amount": 10
+				},
+				{
+					"item": 582,
+					"amount": 10
+				},
+				{
+					"item": 970,
+					"amount": 5
+				},
+				{
+					"item": 526,
+					"amount": 4
+				},
+				{
+					"item": 505,
+					"amount": 2
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				},
+				{
+					"item": 521,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 102,
+			"item": 12094,
+			"item_level": 19,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7480,
+					"amount": 0
+				},
+				{
+					"item": 619,
+					"amount": 5
+				},
+				{
+					"item": 582,
+					"amount": 10
+				},
+				{
+					"item": 578,
+					"amount": 10
+				},
+				{
+					"item": 7456,
+					"amount": 1
+				},
+				{
+					"item": 634,
+					"amount": 1
+				},
+				{
+					"item": 533,
+					"amount": 5
+				},
+				{
+					"item": 970,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 103,
+			"item": 12089,
+			"item_level": 19,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7480,
+					"amount": 0
+				},
+				{
+					"item": 517,
+					"amount": 10
+				},
+				{
+					"item": 526,
+					"amount": 5
+				},
+				{
+					"item": 711,
+					"amount": 20
+				},
+				{
+					"item": 7454,
+					"amount": 4
+				},
+				{
+					"item": 508,
+					"amount": 5
+				},
+				{
+					"item": 509,
+					"amount": 10
+				},
+				{
+					"item": 507,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 104,
+			"item": 12084,
+			"item_level": 19,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7480,
+					"amount": 0
+				},
+				{
+					"item": 7123,
+					"amount": 10
+				},
+				{
+					"item": 1037,
+					"amount": 20
+				},
+				{
+					"item": 610,
+					"amount": 3
+				},
+				{
+					"item": 526,
+					"amount": 6
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 7456,
+					"amount": 1
+				},
+				{
+					"item": 632,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 105,
+			"item": 12099,
+			"item_level": 19,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7480,
+					"amount": 0
+				},
+				{
+					"item": 702,
+					"amount": 1
+				},
+				{
+					"item": 605,
+					"amount": 2
+				},
+				{
+					"item": 606,
+					"amount": 2
+				},
+				{
+					"item": 970,
+					"amount": 2
+				},
+				{
+					"item": 526,
+					"amount": 6
+				},
+				{
+					"item": 7456,
+					"amount": 1
+				},
+				{
+					"item": 531,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 106,
+			"item": 12075,
+			"item_level": 20,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7481,
+					"amount": 0
+				},
+				{
+					"item": 1015,
+					"amount": 20
+				},
+				{
+					"item": 7482,
+					"amount": 1
+				},
+				{
+					"item": 970,
+					"amount": 1
+				},
+				{
+					"item": 606,
+					"amount": 2
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 526,
+					"amount": 5
+				},
+				{
+					"item": 610,
+					"amount": 10
+				},
+				{
+					"item": 505,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 107,
+			"item": 12080,
+			"item_level": 20,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7481,
+					"amount": 0
+				},
+				{
+					"item": 1033,
+					"amount": 10
+				},
+				{
+					"item": 707,
+					"amount": 1
+				},
+				{
+					"item": 521,
+					"amount": 5
+				},
+				{
+					"item": 526,
+					"amount": 5
+				},
+				{
+					"item": 568,
+					"amount": 5
+				},
+				{
+					"item": 576,
+					"amount": 5
+				},
+				{
+					"item": 607,
+					"amount": 1
+				},
+				{
+					"item": 510,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 108,
+			"item": 12095,
+			"item_level": 20,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7481,
+					"amount": 0
+				},
+				{
+					"item": 607,
+					"amount": 1
+				},
+				{
+					"item": 7066,
+					"amount": 10
+				},
+				{
+					"item": 7119,
+					"amount": 10
+				},
+				{
+					"item": 526,
+					"amount": 4
+				},
+				{
+					"item": 645,
+					"amount": 3
+				},
+				{
+					"item": 970,
+					"amount": 5
+				},
+				{
+					"item": 576,
+					"amount": 2
+				},
+				{
+					"item": 710,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 109,
+			"item": 12090,
+			"item_level": 20,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7481,
+					"amount": 0
+				},
+				{
+					"item": 904,
+					"amount": 20
+				},
+				{
+					"item": 7125,
+					"amount": 20
+				},
+				{
+					"item": 606,
+					"amount": 2
+				},
+				{
+					"item": 610,
+					"amount": 3
+				},
+				{
+					"item": 621,
+					"amount": 3
+				},
+				{
+					"item": 526,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				},
+				{
+					"item": 7482,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 110,
+			"item": 12085,
+			"item_level": 20,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7481,
+					"amount": 0
+				},
+				{
+					"item": 929,
+					"amount": 20
+				},
+				{
+					"item": 934,
+					"amount": 10
+				},
+				{
+					"item": 608,
+					"amount": 1
+				},
+				{
+					"item": 605,
+					"amount": 2
+				},
+				{
+					"item": 950,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 2
+				},
+				{
+					"item": 609,
+					"amount": 10
+				},
+				{
+					"item": 621,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 111,
+			"item": 12100,
+			"item_level": 20,
+			"skill": 0,
+			"skill_level": 0,
+			"materials": [
+				{
+					"item": 7481,
+					"amount": 0
+				},
+				{
+					"item": 1022,
+					"amount": 10
+				},
+				{
+					"item": 706,
+					"amount": 2
+				},
+				{
+					"item": 1033,
+					"amount": 10
+				},
+				{
+					"item": 7100,
+					"amount": 10
+				},
+				{
+					"item": 610,
+					"amount": 4
+				},
+				{
+					"item": 7454,
+					"amount": 1
+				},
+				{
+					"item": 7452,
+					"amount": 1
+				},
+				{
+					"item": 709,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 112,
+			"item": 998,
+			"item_level": 21,
+			"skill": 94,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1002,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 113,
+			"item": 999,
+			"item_level": 21,
+			"skill": 95,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 998,
+					"amount": 5
+				},
+				{
+					"item": 1003,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 114,
+			"item": 1000,
+			"item_level": 21,
+			"skill": 96,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1001,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 115,
+			"item": 994,
+			"item_level": 21,
+			"skill": 96,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 990,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 116,
+			"item": 995,
+			"item_level": 21,
+			"skill": 96,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 991,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 117,
+			"item": 996,
+			"item_level": 21,
+			"skill": 96,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 992,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 118,
+			"item": 997,
+			"item_level": 21,
+			"skill": 96,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 993,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 119,
+			"item": 501,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7144,
+					"amount": 0
+				},
+				{
+					"item": 507,
+					"amount": 1
+				},
+				{
+					"item": 1093,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 120,
+			"item": 503,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7144,
+					"amount": 0
+				},
+				{
+					"item": 508,
+					"amount": 1
+				},
+				{
+					"item": 1093,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 121,
+			"item": 504,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7144,
+					"amount": 0
+				},
+				{
+					"item": 509,
+					"amount": 1
+				},
+				{
+					"item": 1093,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 122,
+			"item": 505,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7144,
+					"amount": 0
+				},
+				{
+					"item": 510,
+					"amount": 1
+				},
+				{
+					"item": 911,
+					"amount": 1
+				},
+				{
+					"item": 1093,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 123,
+			"item": 545,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7133,
+					"amount": 0
+				},
+				{
+					"item": 501,
+					"amount": 1
+				},
+				{
+					"item": 1092,
+					"amount": 1
+				},
+				{
+					"item": 952,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 124,
+			"item": 546,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7133,
+					"amount": 0
+				},
+				{
+					"item": 503,
+					"amount": 1
+				},
+				{
+					"item": 1092,
+					"amount": 1
+				},
+				{
+					"item": 1017,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 125,
+			"item": 547,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7133,
+					"amount": 0
+				},
+				{
+					"item": 504,
+					"amount": 1
+				},
+				{
+					"item": 1092,
+					"amount": 1
+				},
+				{
+					"item": 1061,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 126,
+			"item": 523,
+			"item_level": 22,
+			"skill": 31,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 713,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 127,
+			"item": 678,
+			"item_level": 22,
+			"skill": 407,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 937,
+					"amount": 1
+				},
+				{
+					"item": 952,
+					"amount": 1
+				},
+				{
+					"item": 939,
+					"amount": 1
+				},
+				{
+					"item": 7033,
+					"amount": 1
+				},
+				{
+					"item": 972,
+					"amount": 1
+				},
+				{
+					"item": 657,
+					"amount": 1
+				},
+				{
+					"item": 713,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 128,
+			"item": 7135,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7128,
+					"amount": 0
+				},
+				{
+					"item": 970,
+					"amount": 1
+				},
+				{
+					"item": 1059,
+					"amount": 1
+				},
+				{
+					"item": 713,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 129,
+			"item": 7136,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7129,
+					"amount": 0
+				},
+				{
+					"item": 713,
+					"amount": 1
+				},
+				{
+					"item": 929,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 130,
+			"item": 7137,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7130,
+					"amount": 0
+				},
+				{
+					"item": 713,
+					"amount": 1
+				},
+				{
+					"item": 1032,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 131,
+			"item": 7138,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7131,
+					"amount": 0
+				},
+				{
+					"item": 713,
+					"amount": 1
+				},
+				{
+					"item": 1050,
+					"amount": 1
+				},
+				{
+					"item": 1051,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 132,
+			"item": 7139,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7132,
+					"amount": 0
+				},
+				{
+					"item": 970,
+					"amount": 1
+				},
+				{
+					"item": 950,
+					"amount": 1
+				},
+				{
+					"item": 1044,
+					"amount": 1
+				},
+				{
+					"item": 713,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 133,
+			"item": 12118,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7434,
+					"amount": 0
+				},
+				{
+					"item": 1012,
+					"amount": 2
+				},
+				{
+					"item": 716,
+					"amount": 1
+				},
+				{
+					"item": 1093,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 134,
+			"item": 12119,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7434,
+					"amount": 0
+				},
+				{
+					"item": 950,
+					"amount": 3
+				},
+				{
+					"item": 717,
+					"amount": 1
+				},
+				{
+					"item": 1093,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 135,
+			"item": 12120,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7434,
+					"amount": 0
+				},
+				{
+					"item": 7126,
+					"amount": 2
+				},
+				{
+					"item": 715,
+					"amount": 1
+				},
+				{
+					"item": 1093,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 136,
+			"item": 12121,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7434,
+					"amount": 0
+				},
+				{
+					"item": 1057,
+					"amount": 3
+				},
+				{
+					"item": 717,
+					"amount": 1
+				},
+				{
+					"item": 1093,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 137,
+			"item": 605,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7144,
+					"amount": 0
+				},
+				{
+					"item": 708,
+					"amount": 1
+				},
+				{
+					"item": 970,
+					"amount": 1
+				},
+				{
+					"item": 713,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 138,
+			"item": 606,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7144,
+					"amount": 0
+				},
+				{
+					"item": 704,
+					"amount": 1
+				},
+				{
+					"item": 518,
+					"amount": 1
+				},
+				{
+					"item": 713,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 139,
+			"item": 970,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7127,
+					"amount": 0
+				},
+				{
+					"item": 713,
+					"amount": 1
+				},
+				{
+					"item": 7033,
+					"amount": 5
+				},
+				{
+					"item": 905,
+					"amount": 5
+				},
+				{
+					"item": 1092,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 140,
+			"item": 7142,
+			"item_level": 22,
+			"skill": 228,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7144,
+					"amount": 0
+				},
+				{
+					"item": 7140,
+					"amount": 1
+				},
+				{
+					"item": 7141,
+					"amount": 1
+				},
+				{
+					"item": 7143,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 141,
+			"item": 12114,
+			"item_level": 23,
+			"skill": 1007,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7433,
+					"amount": 1
+				},
+				{
+					"item": 904,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"id": 142,
+			"item": 12115,
+			"item_level": 23,
+			"skill": 1007,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7433,
+					"amount": 1
+				},
+				{
+					"item": 946,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"id": 143,
+			"item": 12116,
+			"item_level": 23,
+			"skill": 1007,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7433,
+					"amount": 1
+				},
+				{
+					"item": 947,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"id": 144,
+			"item": 12117,
+			"item_level": 23,
+			"skill": 1007,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7433,
+					"amount": 1
+				},
+				{
+					"item": 1013,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"id": 145,
+			"item": 12333,
+			"item_level": 24,
+			"skill": 2039,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 717,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 146,
+			"item": 12725,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 8,
+			"materials": [
+				{
+					"item": 7069,
+					"amount": 1
+				},
+				{
+					"item": 7099,
+					"amount": 1
+				},
+				{
+					"item": 7938,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 147,
+			"item": 12726,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 7,
+			"materials": [
+				{
+					"item": 716,
+					"amount": 1
+				},
+				{
+					"item": 7938,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 148,
+			"item": 12727,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 9,
+			"materials": [
+				{
+					"item": 7210,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 149,
+			"item": 12728,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 7097,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 150,
+			"item": 12729,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 5,
+			"materials": [
+				{
+					"item": 7002,
+					"amount": 1
+				},
+				{
+					"item": 7938,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 151,
+			"item": 12730,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 6,
+			"materials": [
+				{
+					"item": 518,
+					"amount": 1
+				},
+				{
+					"item": 1048,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 152,
+			"item": 12731,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1034,
+					"amount": 1
+				},
+				{
+					"item": 7030,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 153,
+			"item": 12732,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 1035,
+					"amount": 1
+				},
+				{
+					"item": 7221,
+					"amount": 1
+				},
+				{
+					"item": 7938,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 154,
+			"item": 12733,
+			"item_level": 24,
+			"skill": 2010,
+			"skill_level": 4,
+			"materials": [
+				{
+					"item": 1096,
+					"amount": 1
+				},
+				{
+					"item": 7123,
+					"amount": 1
+				},
+				{
+					"item": 7939,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 156,
+			"item": 6128,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 5,
+			"materials": [
+				{
+					"item": 509,
+					"amount": 1
+				},
+				{
+					"item": 510,
+					"amount": 1
+				},
+				{
+					"item": 511,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 157,
+			"item": 12717,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7134,
+					"amount": 1
+				},
+				{
+					"item": 7155,
+					"amount": 20
+				},
+				{
+					"item": 7931,
+					"amount": 1
+				},
+				{
+					"item": 7937,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 158,
+			"item": 12718,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 4,
+			"materials": [
+				{
+					"item": 7134,
+					"amount": 1
+				},
+				{
+					"item": 7931,
+					"amount": 1
+				},
+				{
+					"item": 7932,
+					"amount": 1
+				},
+				{
+					"item": 7936,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 159,
+			"item": 12719,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 9,
+			"materials": [
+				{
+					"item": 709,
+					"amount": 1
+				},
+				{
+					"item": 950,
+					"amount": 10
+				},
+				{
+					"item": 7134,
+					"amount": 1
+				},
+				{
+					"item": 7931,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 160,
+			"item": 12720,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 3,
+			"materials": [
+				{
+					"item": 957,
+					"amount": 25
+				},
+				{
+					"item": 7134,
+					"amount": 1
+				},
+				{
+					"item": 7931,
+					"amount": 1
+				},
+				{
+					"item": 7935,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 161,
+			"item": 12721,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 8,
+			"materials": [
+				{
+					"item": 7134,
+					"amount": 1
+				},
+				{
+					"item": 7565,
+					"amount": 10
+				},
+				{
+					"item": 7931,
+					"amount": 1
+				},
+				{
+					"item": 7932,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 162,
+			"item": 12722,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 2,
+			"materials": [
+				{
+					"item": 7003,
+					"amount": 20
+				},
+				{
+					"item": 7134,
+					"amount": 1
+				},
+				{
+					"item": 7931,
+					"amount": 1
+				},
+				{
+					"item": 7933,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 163,
+			"item": 12723,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 7,
+			"materials": [
+				{
+					"item": 7033,
+					"amount": 10
+				},
+				{
+					"item": 7134,
+					"amount": 1
+				},
+				{
+					"item": 7931,
+					"amount": 1
+				},
+				{
+					"item": 7934,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 164,
+			"item": 12724,
+			"item_level": 25,
+			"skill": 2024,
+			"skill_level": 6,
+			"materials": [
+				{
+					"item": 709,
+					"amount": 1
+				},
+				{
+					"item": 7134,
+					"amount": 1
+				},
+				{
+					"item": 7565,
+					"amount": 10
+				},
+				{
+					"item": 7931,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 165,
+			"item": 1045,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 940,
+					"amount": 45
+				},
+				{
+					"item": 942,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"id": 166,
+			"item": 1020,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 738,
+					"amount": 40
+				},
+				{
+					"item": 1029,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 167,
+			"item": 1010,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 908,
+					"amount": 45
+				},
+				{
+					"item": 746,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 168,
+			"item": 1041,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 943,
+					"amount": 10
+				},
+				{
+					"item": 1032,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 169,
+			"item": 1026,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 952,
+					"amount": 30
+				},
+				{
+					"item": 946,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 170,
+			"item": 1008,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 754,
+					"amount": 25
+				},
+				{
+					"item": 1057,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"id": 171,
+			"item": 958,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 905,
+					"amount": 45
+				},
+				{
+					"item": 1036,
+					"amount": 45
+				}
+			]
+		},
+		{
+			"id": 172,
+			"item": 971,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 915,
+					"amount": 40
+				},
+				{
+					"item": 966,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 173,
+			"item": 1051,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 941,
+					"amount": 45
+				},
+				{
+					"item": 916,
+					"amount": 25
+				}
+			]
+		},
+		{
+			"id": 174,
+			"item": 1046,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 955,
+					"amount": 40
+				},
+				{
+					"item": 753,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 175,
+			"item": 1038,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 953,
+					"amount": 5
+				},
+				{
+					"item": 907,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 176,
+			"item": 1033,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 917,
+					"amount": 25
+				},
+				{
+					"item": 1044,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 177,
+			"item": 961,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 956,
+					"amount": 5
+				},
+				{
+					"item": 929,
+					"amount": 25
+				}
+			]
+		},
+		{
+			"id": 178,
+			"item": 959,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 935,
+					"amount": 20
+				},
+				{
+					"item": 1015,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"id": 179,
+			"item": 1040,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 939,
+					"amount": 35
+				},
+				{
+					"item": 1039,
+					"amount": 45
+				}
+			]
+		},
+		{
+			"id": 180,
+			"item": 1012,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 926,
+					"amount": 20
+				},
+				{
+					"item": 972,
+					"amount": 15
+				}
+			]
+		},
+		{
+			"id": 181,
+			"item": 1011,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 950,
+					"amount": 5
+				},
+				{
+					"item": 752,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 182,
+			"item": 1024,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 948,
+					"amount": 20
+				},
+				{
+					"item": 737,
+					"amount": 25
+				}
+			]
+		},
+		{
+			"id": 183,
+			"item": 1025,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 951,
+					"amount": 50
+				},
+				{
+					"item": 1048,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"id": 184,
+			"item": 1064,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 742,
+					"amount": 30
+				},
+				{
+					"item": 740,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"id": 185,
+			"item": 1019,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 930,
+					"amount": 10
+				},
+				{
+					"item": 1052,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 186,
+			"item": 962,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 957,
+					"amount": 40
+				},
+				{
+					"item": 1028,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 187,
+			"item": 974,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 937,
+					"amount": 15
+				},
+				{
+					"item": 924,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 188,
+			"item": 1013,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 947,
+					"amount": 50
+				},
+				{
+					"item": 912,
+					"amount": 45
+				}
+			]
+		},
+		{
+			"id": 189,
+			"item": 1058,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 749,
+					"amount": 20
+				},
+				{
+					"item": 903,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 190,
+			"item": 960,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 938,
+					"amount": 25
+				},
+				{
+					"item": 1055,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 191,
+			"item": 967,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 914,
+					"amount": 5
+				},
+				{
+					"item": 741,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 192,
+			"item": 1043,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 945,
+					"amount": 50
+				},
+				{
+					"item": 910,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 193,
+			"item": 1035,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 751,
+					"amount": 50
+				},
+				{
+					"item": 918,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"id": 194,
+			"item": 1049,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 936,
+					"amount": 30
+				},
+				{
+					"item": 1047,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"id": 195,
+			"item": 1037,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 913,
+					"amount": 25
+				},
+				{
+					"item": 1063,
+					"amount": 35
+				}
+			]
+		},
+		{
+			"id": 196,
+			"item": 1021,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 954,
+					"amount": 15
+				},
+				{
+					"item": 1054,
+					"amount": 25
+				}
+			]
+		},
+		{
+			"id": 197,
+			"item": 1056,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 747,
+					"amount": 35
+				},
+				{
+					"item": 1031,
+					"amount": 50
+				}
+			]
+		},
+		{
+			"id": 198,
+			"item": 963,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 944,
+					"amount": 10
+				},
+				{
+					"item": 965,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 199,
+			"item": 1042,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 920,
+					"amount": 20
+				},
+				{
+					"item": 911,
+					"amount": 45
+				}
+			]
+		},
+		{
+			"id": 200,
+			"item": 1061,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 928,
+					"amount": 10
+				},
+				{
+					"item": 735,
+					"amount": 15
+				}
+			]
+		},
+		{
+			"id": 201,
+			"item": 1022,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 919,
+					"amount": 10
+				},
+				{
+					"item": 739,
+					"amount": 15
+				}
+			]
+		},
+		{
+			"id": 202,
+			"item": 1034,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 909,
+					"amount": 45
+				},
+				{
+					"item": 745,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 203,
+			"item": 1014,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 743,
+					"amount": 20
+				},
+				{
+					"item": 748,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 204,
+			"item": 968,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 902,
+					"amount": 5
+				},
+				{
+					"item": 1018,
+					"amount": 45
+				}
+			]
+		},
+		{
+			"id": 205,
+			"item": 1009,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 904,
+					"amount": 10
+				},
+				{
+					"item": 1062,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 206,
+			"item": 970,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 931,
+					"amount": 50
+				},
+				{
+					"item": 932,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 207,
+			"item": 964,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 750,
+					"amount": 50
+				},
+				{
+					"item": 1023,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 208,
+			"item": 1050,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 922,
+					"amount": 25
+				},
+				{
+					"item": 949,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 209,
+			"item": 1030,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 906,
+					"amount": 5
+				},
+				{
+					"item": 736,
+					"amount": 20
+				}
+			]
+		},
+		{
+			"id": 210,
+			"item": 703,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 744,
+					"amount": 45
+				},
+				{
+					"item": 1017,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 211,
+			"item": 973,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 923,
+					"amount": 15
+				},
+				{
+					"item": 934,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 212,
+			"item": 1053,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 925,
+					"amount": 35
+				},
+				{
+					"item": 1059,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 213,
+			"item": 1016,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 921,
+					"amount": 35
+				},
+				{
+					"item": 1060,
+					"amount": 40
+				}
+			]
+		},
+		{
+			"id": 214,
+			"item": 1003,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 2101,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 215,
+			"item": 999,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1119,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 216,
+			"item": 2267,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1304,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 217,
+			"item": 1615,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7752,
+					"amount": 100
+				},
+				{
+					"item": 7753,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"id": 218,
+			"item": 2267,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1304,
+					"amount": 1
+				},
+				{
+					"item": 931,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"id": 219,
+			"item": 1061,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1057,
+					"amount": 100
+				},
+				{
+					"item": 911,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"id": 220,
+			"item": 7063,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 949,
+					"amount": 30
+				},
+				{
+					"item": 916,
+					"amount": 30
+				}
+			]
+		},
+		{
+			"id": 221,
+			"item": 992,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7066,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"id": 222,
+			"item": 991,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 920,
+					"amount": 100
+				}
+			]
+		},
+		{
+			"id": 223,
+			"item": 7166,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1059,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 224,
+			"item": 1059,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 7166,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 225,
+			"item": 13269,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1093,
+					"amount": 10
+				},
+				{
+					"item": 12417,
+					"amount": 10
+				},
+				{
+					"item": 7200,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 226,
+			"item": 13270,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1093,
+					"amount": 10
+				},
+				{
+					"item": 12418,
+					"amount": 10
+				},
+				{
+					"item": 7200,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 227,
+			"item": 13271,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1093,
+					"amount": 10
+				},
+				{
+					"item": 12419,
+					"amount": 10
+				},
+				{
+					"item": 7200,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 228,
+			"item": 13272,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1093,
+					"amount": 10
+				},
+				{
+					"item": 12475,
+					"amount": 10
+				},
+				{
+					"item": 7200,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 229,
+			"item": 13273,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1093,
+					"amount": 10
+				},
+				{
+					"item": 12420,
+					"amount": 10
+				},
+				{
+					"item": 7200,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 230,
+			"item": 13274,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 1093,
+					"amount": 10
+				},
+				{
+					"item": 12421,
+					"amount": 10
+				},
+				{
+					"item": 7200,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 231,
+			"item": 13275,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12422,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 232,
+			"item": 13276,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12423,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 233,
+			"item": 13277,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12424,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 234,
+			"item": 13278,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12425,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 235,
+			"item": 13279,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12426,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 236,
+			"item": 13280,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12427,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 237,
+			"item": 13281,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12428,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 238,
+			"item": 13282,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12436,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 239,
+			"item": 13283,
+			"item_level": 26,
+			"skill": 2494,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6297,
+					"amount": 10
+				},
+				{
+					"item": 12437,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 240,
+			"item": 12429,
+			"item_level": 27,
+			"skill": 2495,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11022,
+					"amount": 0
+				},
+				{
+					"item": 6248,
+					"amount": 1
+				},
+				{
+					"item": 6249,
+					"amount": 1
+				},
+				{
+					"item": 6250,
+					"amount": 1
+				},
+				{
+					"item": 6251,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 241,
+			"item": 12430,
+			"item_level": 27,
+			"skill": 2495,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11022,
+					"amount": 0
+				},
+				{
+					"item": 6248,
+					"amount": 1
+				},
+				{
+					"item": 6252,
+					"amount": 3
+				},
+				{
+					"item": 6253,
+					"amount": 2
+				}
+			]
+		},
+		{
+			"id": 242,
+			"item": 12431,
+			"item_level": 27,
+			"skill": 2495,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11022,
+					"amount": 0
+				},
+				{
+					"item": 6248,
+					"amount": 1
+				},
+				{
+					"item": 6254,
+					"amount": 2
+				},
+				{
+					"item": 6255,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 243,
+			"item": 12432,
+			"item_level": 27,
+			"skill": 2495,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11022,
+					"amount": 0
+				},
+				{
+					"item": 6248,
+					"amount": 1
+				},
+				{
+					"item": 6256,
+					"amount": 3
+				},
+				{
+					"item": 6257,
+					"amount": 2
+				},
+				{
+					"item": 6258,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 244,
+			"item": 12433,
+			"item_level": 27,
+			"skill": 2495,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11022,
+					"amount": 0
+				},
+				{
+					"item": 507,
+					"amount": 3
+				},
+				{
+					"item": 509,
+					"amount": 3
+				},
+				{
+					"item": 510,
+					"amount": 3
+				},
+				{
+					"item": 6248,
+					"amount": 1
+				},
+				{
+					"item": 6255,
+					"amount": 1
+				},
+				{
+					"item": 6259,
+					"amount": 3
+				}
+			]
+		},
+		{
+			"id": 245,
+			"item": 12434,
+			"item_level": 27,
+			"skill": 2495,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11022,
+					"amount": 0
+				},
+				{
+					"item": 6248,
+					"amount": 1
+				},
+				{
+					"item": 6260,
+					"amount": 2
+				},
+				{
+					"item": 6261,
+					"amount": 1
+				},
+				{
+					"item": 6262,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 251,
+			"item": 6210,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6284,
+					"amount": 0
+				},
+				{
+					"item": 576,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 252,
+			"item": 6211,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6284,
+					"amount": 0
+				},
+				{
+					"item": 1033,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 253,
+			"item": 6212,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6284,
+					"amount": 0
+				},
+				{
+					"item": 921,
+					"amount": 10
+				},
+				{
+					"item": 6244,
+					"amount": 2
+				},
+				{
+					"item": 7033,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 254,
+			"item": 12422,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11023,
+					"amount": 0
+				},
+				{
+					"item": 509,
+					"amount": 10
+				},
+				{
+					"item": 528,
+					"amount": 5
+				},
+				{
+					"item": 713,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 255,
+			"item": 12423,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11023,
+					"amount": 0
+				},
+				{
+					"item": 508,
+					"amount": 10
+				},
+				{
+					"item": 509,
+					"amount": 10
+				},
+				{
+					"item": 713,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 256,
+			"item": 12424,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11023,
+					"amount": 0
+				},
+				{
+					"item": 509,
+					"amount": 15
+				},
+				{
+					"item": 522,
+					"amount": 3
+				},
+				{
+					"item": 523,
+					"amount": 1
+				},
+				{
+					"item": 713,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 257,
+			"item": 12425,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11024,
+					"amount": 0
+				},
+				{
+					"item": 514,
+					"amount": 10
+				},
+				{
+					"item": 568,
+					"amount": 10
+				},
+				{
+					"item": 713,
+					"amount": 10
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 258,
+			"item": 12426,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11024,
+					"amount": 0
+				},
+				{
+					"item": 510,
+					"amount": 10
+				},
+				{
+					"item": 518,
+					"amount": 10
+				},
+				{
+					"item": 713,
+					"amount": 10
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 259,
+			"item": 12427,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 11024,
+					"amount": 0
+				},
+				{
+					"item": 510,
+					"amount": 15
+				},
+				{
+					"item": 526,
+					"amount": 10
+				},
+				{
+					"item": 713,
+					"amount": 10
+				},
+				{
+					"item": 7453,
+					"amount": 1
+				}
+			]
+		},
+		{
+			"id": 260,
+			"item": 12428,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6285,
+					"amount": 0
+				},
+				{
+					"item": 504,
+					"amount": 20
+				},
+				{
+					"item": 509,
+					"amount": 10
+				},
+				{
+					"item": 970,
+					"amount": 1
+				},
+				{
+					"item": 1092,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 261,
+			"item": 12436,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6285,
+					"amount": 0
+				},
+				{
+					"item": 510,
+					"amount": 10
+				},
+				{
+					"item": 514,
+					"amount": 10
+				},
+				{
+					"item": 518,
+					"amount": 10
+				},
+				{
+					"item": 1092,
+					"amount": 10
+				}
+			]
+		},
+		{
+			"id": 262,
+			"item": 12437,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6285,
+					"amount": 0
+				},
+				{
+					"item": 645,
+					"amount": 5
+				},
+				{
+					"item": 656,
+					"amount": 5
+				},
+				{
+					"item": 1092,
+					"amount": 10
+				},
+				{
+					"item": 7455,
+					"amount": 5
+				}
+			]
+		},
+		{
+			"id": 263,
+			"item": 12475,
+			"item_level": 29,
+			"skill": 2497,
+			"skill_level": 1,
+			"materials": [
+				{
+					"item": 6285,
+					"amount": 0
+				},
+				{
+					"item": 511,
+					"amount": 20
+				},
+				{
+					"item": 522,
+					"amount": 1
+				},
+				{
+					"item": 525,
+					"amount": 5
+				},
+				{
+					"item": 610,
+					"amount": 1
+				},
+				{
+					"item": 1092,
+					"amount": 10
+				}
+			]
+		}
+	]
+}

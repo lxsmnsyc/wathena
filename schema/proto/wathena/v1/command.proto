@@ -40,7 +40,21 @@ message Command {
     StoreSearchCommand store_search = 30;
     Memo memo = 31;
     QuestActive quest_active = 32;
+    SkillItemPick skill_item_pick = 33;
   }
+}
+
+// SkillItemPick answers a SkillItemList, as rAthena's
+// clif_parse_SelectArrow, clif_parse_RepairItem and
+// clif_parse_WeaponRefine. The server checks the pick again before it
+// runs, and forgets the list either way. A pick of another skill than
+// the open list's does nothing. A player who trades gets SkillFailed.
+message SkillItemPick {
+  uint32 skill_id = 1;
+  // index is the item's place in SkillItemList.items, from 0.
+  uint32 index = 2;
+  // cancel closes the list without a pick.
+  bool cancel = 3;
 }
 
 // QuestActive marks a quest of the player's log active or inactive, as
