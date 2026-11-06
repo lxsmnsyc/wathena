@@ -24,7 +24,7 @@
 - `take_item` with these options takes the copies that are not equipped first, then the equipped ones, in slot order, as `buildin_delitem_search` with an exact match. Too few take nothing.
 - With a refine, `count_item` also matches the signer (0 for none). It still leaves rentals out, unless `rentals` is set, as `script_countitem_sub` (script.cpp 7192). `take_item` takes rentals too: `buildin_delitem_search` reads no rental time.
 - A card 1 of 254 needs card 2 to be 0, as a named copy has: rAthena compares all four cards, so another card 2 matches nothing. Such a call is refused, and `R.match` raises an error for it. Cards 3 and 4 are read as 16-bit halves.
-- When the player has too few, `delitem2` ends the script, as rAthena's, which ends it and closes the dialog (script.cpp 8771): `if not player:take_item(...) then R.stop() end`. Plain `delitem`, `cartdelitem` and `storagedelitem` end it the same way since the fix after this decision (script.cpp 8647).
+- When the player has too few, `delitem2` ends the script, as rAthena's, which ends it and closes the dialog (script.cpp 8771): `if not player:take_item(...) then R.stop() end`. Plain `delitem`, `cartdelitem` and `storagedelitem` end it the same way since the fix of 2026-11-06 (script.cpp 8647).
 
 ### isequippedcnt (G12)
 
@@ -74,7 +74,8 @@
 
 ## Details to review
 
-- Plain `delitem` went on when the player had too few, where rAthena ends the script and closes the dialog. Fixed after this decision: `delitem`, `cartdelitem` and `storagedelitem` now end it, as `delitem2`.
+- Plain `delitem` went on when the player had too few, where rAthena ends the script and closes the dialog. Fixed on 2026-11-06: `delitem`, `cartdelitem` and `storagedelitem` now end it, as `delitem2`.
+- `cartdelitem` without a cart also ends the script. rAthena's goes on there (script.cpp 8601): it returns a failure without ending. `take_item` returns false for both cases, so the converter cannot tell them apart. A script rarely takes from a cart the player does not have.
 - A barter item that a barter sells a second time (barter_refine_1 and barter_refine_2: 5 items) does not convert. It needs `ShopBuyLine` to name the entry, a protocol change, and `shop_stock` keyed by entry, a migration. None of the 5 has a stock. The node barter-entries builds it.
 - A cost item with a refine never takes copies with cards, as cost items always did. rAthena's barter takes them. `shop:add_item`'s cost has no refine, so a script cannot make a refined cost (marketscripts.go). The shop window does not show the refine a cost asks for, since `ShopCostItem` has no refine: a protocol field. The server checks it.
 - rAthena's barter with a required refine of 0 takes +0 copies first, then the lowest above. The converter writes no refine for 0, which takes unrefined copies only. No barter of the tree asks for refine 0 on a refinable item.
