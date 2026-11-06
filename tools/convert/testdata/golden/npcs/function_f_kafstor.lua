@@ -118,7 +118,7 @@ return function(player, conversation, npc, ...)
   end
   if (type_ ~= 2) then
     if (player:count_item(CARGO_FREE_TICKET) ~= 0) then
-      player:take_item(CARGO_FREE_TICKET, 1)
+      if not player:take_item(CARGO_FREE_TICKET, 1) then R.stop() end
     else
       if (player.zeny < fee) then
         conversation:say("[Kafra Employee]")

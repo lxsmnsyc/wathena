@@ -243,20 +243,29 @@ func (b *body) getitembound(name string, item, amount, bound Expr, args []Expr, 
 // giveTake writes a give_item or take_item call with options, or none
 // for "". rAthena's commands do nothing for an amount of 0 or less.
 // wAthena's calls raise an error then, so such a call is left out, and a
-// computed amount goes through R, which checks it.
+// computed amount goes through R, which checks it. When the player has
+// too few, rAthena's delitem, cartdelitem and storagedelitem end the
+// script and close the dialog (script.cpp 8647), so take_item stops it.
 func (b *body) giveTake(name, method, it string, n val, opts string) {
 	args := []string{it, n.asInt()}
 	if opts != "" {
 		args = append(args, opts)
 	}
+	call := ""
 	switch {
 	case n.static != nil && *n.static <= 0:
 		b.n.c.zeroAmounts[b.n.line.Name] = true
 		b.line("-- %s with an amount of %d does nothing in rAthena.", name, *n.static)
+		return
 	case n.static != nil:
-		b.line("player:%s(%s)", method, strings.Join(args, ", "))
+		call = fmt.Sprintf("player:%s(%s)", method, strings.Join(args, ", "))
 	default:
 		b.n.c.checkedAmounts[b.n.line.Name] = true
-		b.line("R.%s(player, %s)", method, strings.Join(args, ", "))
+		call = fmt.Sprintf("R.%s(player, %s)", method, strings.Join(args, ", "))
 	}
+	if method == "take_item" {
+		b.line("if not %s then R.stop() end", call)
+		return
+	}
+	b.line("%s", call)
 }
