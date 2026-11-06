@@ -2563,11 +2563,11 @@ if (serverURL === null) {
     },
     (id) => itemTexts.label(id),
   );
-  view.onSkillItemList = (skillId, items) => {
+  view.onSkillItemList = (skillId, items, cooking) => {
     itemTexts
       .loadNames()
       .then(() => {
-        skillItems.show(skillId, items);
+        skillItems.show(skillId, items, cooking);
       })
       .catch(reportError);
   };

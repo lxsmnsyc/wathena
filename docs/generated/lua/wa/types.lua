@@ -517,6 +517,14 @@ function wa_Player:count_equipped(item) end
 ---@return boolean
 function wa_Player:open_storage(name) end
 
+---Opens the list of the recipes of an item level that the player can make, as rAthena's produce. The pick uses the recipe's skill and its success rate. A list without a recipe shows empty.
+---@param level integer An item level of produce_db: 21 for ores, 22 for potions, 23 for elemental converters, and so on. 1 to 10, weapon forging, raise an error.
+function wa_Player:open_produce(level) end
+
+---Opens a cooking kit's list, as rAthena's cooking. The success rate grows with the kit's level and the player's cooking mastery, which a dish raises and a failure lowers. Level 15 and up always succeed.
+---@param level integer The kit's item level of produce_db: 11 to 20 list every dish of levels 11 to 20; a level above 20 only its own.
+function wa_Player:open_cooking(level) end
+
 ---Opens the guild storage, as guildopenstorage. Returns true, or false and why: "no_guild", "no_storage", "no_permission", "in_use" or "already_open".
 ---@return boolean, string?
 function wa_Player:open_guild_storage() end

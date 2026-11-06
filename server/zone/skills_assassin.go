@@ -306,48 +306,12 @@ func (createDeadlyPoison) castendNoDamage(z *Zone, src, target *entity, d *skill
 	z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_STUFF_INSUFFICIENT)
 }
 
-// deadlyPoisonRecipe is the Poison Bottle's entry of produce_db.txt (the
-// same in both modes): Venom Canine, Cactus Needle, Bee Sting, Poison
-// Spore, Karvodailnirol, Berserk Potion and an Empty Bottle, one each,
-// for a player with ASC_CDP.
-var deadlyPoisonRecipe = []uint32{937, 952, 939, 7033, 972, 657, 713}
-
 // produceDeadlyPoison is skill_produce_mix for ASC_CDP with one Poison
-// Bottle: skill_can_produce_mix checks the skill and the materials, then
-// the materials are used. It succeeds at 20% plus 0.4% per DEX and 0.2%
-// per LUK. A failure costs a quarter of the player's max HP. It returns
+// Bottle (produce.go). It succeeds at 20% plus 0.4% per DEX and 0.2% per
+// LUK. A failure costs a quarter of the player's max HP. It returns
 // whether the bottle was made.
 func (z *Zone) produceDeadlyPoison(p *Player) bool {
-	if z.Items == nil || p.skillLevel(skill.IDCreateDeadly) < 1 {
-		return false
-	}
-	if _, ok := z.Items.Lookup(itemPoisonBottle); !ok {
-		return false
-	}
-	for _, id := range deadlyPoisonRecipe {
-		if z.countItem(p, id) < 1 {
-			return false
-		}
-	}
-	for _, id := range deadlyPoisonRecipe {
-		if _, ok := z.Items.Lookup(id); ok {
-			z.takeItems(p, id, 1)
-		}
-	}
-	st := p.entity.status
-	if st == nil {
-		return false
-	}
-	makePer := max(2000+40*st.Dex+20*st.Luk, 1)
-	if z.rand.IntN(10000) < makePer {
-		// A full inventory loses the bottle (skill_drop_items_full is
-		// off).
-		z.addItem(p, itemPoisonBottle, 1, skillOrigin(skill.IDCreateDeadly))
-		return true
-	}
-	// status_percent_damage of 25% of max HP, which can kill.
-	scEnv{z}.Damage(z.unit(p.entity), int64(st.MaxHP)*25/100, 0, true, false)
-	return false
+	return z.produceMix(p, skill.IDCreateDeadly, itemPoisonBottle, 1, -1, produceMenu{skill: p.menuSkill()})
 }
 
 // poisonReactBlock is Poison React's part of battle_weapon_attack: a

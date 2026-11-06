@@ -185,6 +185,7 @@ func (h *testHost) Heal(int64, bool, [2]int, [2]int) error             { return 
 func (h *testHost) Warp(int64, string, string, int, int) (bool, error) { return true, nil }
 func (h *testHost) ShowEffect(int64, int64, bool) error                { return nil }
 func (h *testHost) SkillLevel(int64, int64) (int, error)               { return 0, nil }
+func (h *testHost) OpenProduce(int64, int, bool) error                 { return nil }
 func (h *testHost) Equipped(_ int64, slot string) (int64, bool, error) {
 	id, ok := h.slots[slot]
 	return id, ok, nil

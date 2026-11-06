@@ -19,7 +19,7 @@ func TestSoulSiphonDamage(t *testing.T) {
 			t.Errorf("skill %d is not registered", id)
 		}
 	}
-	if Ported(IDAbracadabra) || Ported(IDCreateCon) {
-		t.Error("Hocus-pocus and Create Elemental Converter wait for their data and window")
+	if Ported(IDAbracadabra) || !Ported(IDCreateCon) {
+		t.Error("Hocus-pocus waits for its data and window; Create Elemental Converter opens the recipe list")
 	}
 }

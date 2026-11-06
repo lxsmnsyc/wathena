@@ -338,6 +338,10 @@ func TestGrimtoothNeedsHidingAndSplashes(t *testing.T) {
 // skill_produce_mix for ASC_CDP: the materials of produce_db.txt make a
 // Poison Bottle, and a player without them fails.
 func TestCreateDeadlyPoison(t *testing.T) {
+	// produce_db.txt's Poison Bottle: Venom Canine, Cactus Needle, Bee
+	// Sting, Poison Spore, Karvodailnirol, Berserk Potion and an Empty
+	// Bottle.
+	deadlyPoisonRecipe := []uint32{937, 952, 939, 7033, 972, 657, 713}
 	z := goldenZone(t, reference.Renewal)
 	p := assassinIn(t, z, 4013, 0, map[int]int{skill.IDCreateDeadly: 1})
 	for _, id := range deadlyPoisonRecipe {

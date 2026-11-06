@@ -45,9 +45,10 @@ func init() {
 
 		// Hocus-pocus picks a skill from abra_db, which the extracts do
 		// not have, and lets the player cast it through the item skill
-		// window. Create Elemental Converter needs the produce window.
+		// window. Create Elemental Converter opens its recipe list
+		// (produce.go).
 		skill.IDAbracadabra: notPorted{},
-		skill.IDCreateCon:   notPorted{},
+		skill.IDCreateCon:   createConverter{},
 	})
 }
 

@@ -19,3 +19,16 @@
 ## 2026-11-06, review fixes
 
 - Fresh review: picks while dead, during an NPC talk, vending or buying store, and of a slot that now holds another copy. Fixed: death, warps and leaving the map clear the list; pc_istrading's four cases fail the pick; the list keeps each line's item ID and serial. Tests added. A new cast replacing the list is kept and recorded as a deviation in 0073.
+
+## 2026-11-06, session 2 (step 1, part B)
+
+- Checked first: Prepare Potion and Create Elemental Converter still `notPorted`; `cooking` and `produce` still refused by the converter; Twilight Alchemy's `twilightRecipes` (5 hardcoded rows) still in skills_alchemist.go. produce_db is in crafting.json since part A.
+- Plan: reuse `SkillItemList`/`SkillItemPick` for recipe lists (additive fields: line materials, the list's item level; skill 0 for a script's list), a generic `canProduceMix`/`produceMix` over `Crafting.Produce`, `player:open_produce` and `player:open_cooking` (review decision 66), converter rules for `produce` and `cooking`.
+- Weapon forging (`produce 1` to `3`) left out: it needs the pick to carry star crumbs and element stones, and forged marks (element, star crumbs, maker) on items, which wAthena's items do not hold. The converter refuses it with a reason. Ores (`produce 21`) and the equip path for the Combination Kit's Novice Cutter use rAthena's formulas, without the forged mark.
+- Create Deadly Poison's `deadlyPoisonRecipe` was a second hardcoded produce_db row; it now goes through `produceMix` too.
+- Decision 0074, review decision 66. Converter: renewal usable 4940 -> 4947 full, pre-renewal 1333 -> 1339.
+
+## Next session
+
+- Weapon forging (rest of step 1): additions on `SkillItemPick` (star crumbs, element stones), a forged mark on copies (maker, element, star crumbs) and its battle effects, then lift the level 1-10 refusal in `OpenProduce` and the converter.
+- Step 2 (Warp Portal memo list, Item Appraisal, Change Cart, Decorate Cart, Open Buying Store) and step 3 (Hindsight, Abracadabra, party reach, ensembles).
