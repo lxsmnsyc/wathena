@@ -88,6 +88,9 @@ func itemAmount(c *script.Call, what string, least int64) (uint32, int, error) {
 
 func (r *Runtime) playerTakeItem(c *script.Call) error {
 	if !c.Arg(3).IsNil() {
+		if !c.Arg(4).IsNil() {
+			return errors.New("player:take_item: refine, cards and signed_by_character take from the inventory only, without from")
+		}
 		return r.playerStorageTake(c)
 	}
 	id, err := playerID(c)
@@ -106,6 +109,9 @@ func (r *Runtime) playerTakeItem(c *script.Call) error {
 	item, amount, err := itemAmount(c, "player:take_item", 1)
 	if err != nil {
 		return err
+	}
+	if !c.Arg(4).IsNil() {
+		return r.playerTakeItemSpec(c, id, item, amount)
 	}
 	ok, err := h.TakeItem(id, item, amount)
 	if err != nil {

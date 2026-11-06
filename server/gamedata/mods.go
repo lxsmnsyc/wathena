@@ -600,7 +600,12 @@ func npcShops(npcs []mod.NPC, items *mod.Items, currencies *currency.Table) (*sh
 						bad("%s: there is no item %q", it.Item, c.Item)
 						continue
 					}
-					si.Items = append(si.Items, shop.CostItem{ID: cid, Amount: c.Amount})
+					if d := byID[cid]; c.Refine > 0 && d != nil && !d.Refineable {
+						// rAthena refuses the line (barter_parseBodyNode).
+						bad("%s: %s cannot be refined, so a cost cannot ask for a refine", it.Item, c.Item)
+						continue
+					}
+					si.Items = append(si.Items, shop.CostItem{ID: cid, Amount: c.Amount, Refine: c.Refine})
 				}
 				for _, name := range slices.Sorted(maps.Keys(it.Cost.Currencies)) {
 					r := currencies.Resolve(name, n.Mod)

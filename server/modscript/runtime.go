@@ -92,6 +92,9 @@ type Jobs interface {
 	JobID(name string) (int, bool)
 	// BaseJobOf is a job record's base_job. ok is false without one.
 	BaseJobOf(job int) (int, bool)
+	// ModJobName is the display name of a mod's job. ok is false for
+	// core's jobs and jobs that do not exist.
+	ModJobName(job int) (string, bool)
 }
 
 // Options configure a zone's Runtime.
@@ -482,6 +485,7 @@ func (r *Runtime) init() error {
 		{"player_send_message", r.playerSendMessage},
 		{"player_give_item", r.playerGiveItem},
 		{"player_count_item", r.playerCountItem},
+		{"player_count_equipped", r.playerCountEquipped},
 		{"player_open_storage", r.playerOpenStorage},
 		{"player_open_guild_storage", r.playerOpenGuildStorage},
 		{"player_give_group", r.playerGiveGroup},
@@ -513,6 +517,7 @@ func (r *Runtime) init() error {
 		{"jobs_test", r.jobsTest},
 		{"jobs_id", r.jobsID},
 		{"jobs_next", r.jobsNext},
+		{"jobs_name", r.jobsName},
 		{"player_change_job", r.playerChangeJob},
 		{"player_rebirth", r.playerRebirth},
 		{"companions_id", r.companionsID},

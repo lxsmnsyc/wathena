@@ -290,6 +290,11 @@ func (n *npcConv) scanArrays(stmts []Stmt) {
 				if v, ok := staticGetd(e); ok && v.Index != nil {
 					mark(v)
 				}
+			case "getpartymember":
+				// The array form fills an array (decision 0072).
+				if len(e.Args) == 3 {
+					mark(e.Args[2])
+				}
 			}
 			n.markRefArgs(e.Name, e.Args, mark)
 			for _, a := range e.Args {
@@ -353,6 +358,10 @@ func (n *npcConv) scanArrays(stmts []Stmt) {
 			case "setarray", "deletearray", "cleararray", "copyarray", "explode":
 				if len(s.Args) > 0 {
 					mark(s.Args[0])
+				}
+			case "getpartymember":
+				if len(s.Args) == 3 {
+					mark(s.Args[2])
 				}
 			case "setd":
 				if len(s.Args) > 0 {

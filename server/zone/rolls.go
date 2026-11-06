@@ -386,10 +386,18 @@ func (z *Zone) equippedCards(p *Player, slot int) script.Value {
 }
 
 // equippedOptions is the random_options field.
-func equippedOptions(s *item.Slot) script.Value {
+func (z *Zone) equippedOptions(s *item.Slot) script.Value {
 	var list []script.Value
 	for _, o := range s.Options {
-		list = append(list, script.NewTable(script.KV("option", script.String(o.Name)),
+		// id is the record's rAthena option ID, for getequiprandomoption's
+		// ROA_ID. A mod's option has none.
+		id := 0
+		if z.Mods != nil && z.Mods.RandomOptions != nil {
+			if od := z.Mods.RandomOptions.Option(o.Name); od != nil {
+				id = od.ID
+			}
+		}
+		list = append(list, script.NewTable(script.KV("option", script.String(o.Name)), script.KV("id", script.Int(int64(id))),
 			script.KV("value", script.Int(int64(o.Value))), script.KV("param", script.Int(int64(o.Param)))))
 	}
 	return script.List(list...)

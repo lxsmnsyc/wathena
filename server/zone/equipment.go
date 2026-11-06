@@ -570,7 +570,7 @@ func (h scriptHost) EquippedField(id int64, field string) (script.Value, error) 
 	case "cards":
 		return h.z.equippedCards(ref.p, ref.slot), nil
 	case "random_options":
-		return equippedOptions(s), nil
+		return h.z.equippedOptions(s), nil
 	}
 	return script.Nil, errNoField(field)
 }

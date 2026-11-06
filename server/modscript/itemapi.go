@@ -43,6 +43,10 @@ type CountSpec struct {
 	// not broken, with that refine and exactly those cards. nil is any.
 	Refine *int
 	Cards  []uint32
+	// SignedBy, with Refine set, matches only copies named for that
+	// character, as card 1 CARD0_CREATE with the character ID in cards 3
+	// and 4. 0 matches copies named for no one.
+	SignedBy uint32
 	// Rentals counts only rentals, as rentalcountitem. Without it, only
 	// copies that are not rentals count, as countitem.
 	Rentals bool
@@ -78,6 +82,13 @@ type ItemActionHost interface {
 	GiveItemSpec(player int64, item uint32, amount int, spec ItemSpec, roll GiveRoll, bound item.Bound) (bool, error)
 	// CountItemSpec is countitem2 and rentalcountitem.
 	CountItemSpec(player int64, item uint32, spec CountSpec) (int, error)
+	// TakeItemSpec is delitem2: amount copies that match the spec leave
+	// the inventory, those not equipped first. It returns false, and
+	// takes nothing, when too few match.
+	TakeItemSpec(player int64, item uint32, amount int, spec CountSpec) (bool, error)
+	// CountEquipped is isequippedcnt: the amount of each worn copy of the
+	// item, or for a card, how many times it is in worn copies.
+	CountEquipped(player int64, item uint32) (int, error)
 	// DropItem is makeitem and makeitem2: the items on a free cell next
 	// to x, y of a map.
 	DropItem(mapName string, x, y int, item uint32, amount int, spec ItemSpec) error
@@ -233,36 +244,10 @@ func (r *Runtime) playerGiveItemSpec(c *script.Call, id int64, itemID uint32, am
 // rentals: Arg(3) holds them.
 func (r *Runtime) playerCountItemSpec(c *script.Call, id int64, itemID uint32) error {
 	const what = "player:count_item"
-	t, ok := c.Arg(3).AsTable()
-	if !ok {
-		return errors.New(what + ": the options must be a table")
-	}
-	var spec CountSpec
-	if v := t.Get("refine"); !v.IsNil() {
-		n, ok := v.AsInt()
-		if !ok || n < 0 || n > MaxRefineArg {
-			return fmt.Errorf("%s: refine is 0 to %d", what, MaxRefineArg)
-		}
-		refine := int(n)
-		spec.Refine = &refine
-	}
-	cards, err := readCards(what, t.Get("cards"))
+	spec, err := readCountSpec(what, c.Arg(3))
 	if err != nil {
 		return err
 	}
-	if cards != nil {
-		spec.Cards = cards
-	} else if v := t.Get("cards"); !v.IsNil() {
-		spec.Cards = []uint32{}
-	}
-	if spec.Refine == nil && spec.Cards != nil {
-		zero := 0
-		spec.Refine = &zero
-	}
-	if spec.Refine != nil && spec.Cards == nil {
-		spec.Cards = []uint32{}
-	}
-	spec.Rentals = t.Get("rentals").Truthy()
 	h, err := r.itemActionHost(what)
 	if err != nil {
 		return err
@@ -272,6 +257,101 @@ func (r *Runtime) playerCountItemSpec(c *script.Call, id int64, itemID uint32) e
 		return wrap(what, err)
 	}
 	c.Return(script.Int(int64(n)))
+	return nil
+}
+
+// readCountSpec reads the match options of count_item and take_item:
+// refine, cards, signed_by_character and rentals. A refine without cards
+// matches copies without cards, and cards or a signer without a refine
+// match refine 0, as countitem2's and delitem2's arguments.
+func readCountSpec(what string, v script.Value) (CountSpec, error) {
+	var spec CountSpec
+	t, ok := v.AsTable()
+	if !ok {
+		return spec, errors.New(what + ": the options must be a table")
+	}
+	if v := t.Get("refine"); !v.IsNil() {
+		n, ok := v.AsInt()
+		if !ok || n < 0 || n > MaxRefineArg {
+			return spec, fmt.Errorf("%s: refine is 0 to %d", what, MaxRefineArg)
+		}
+		refine := int(n)
+		spec.Refine = &refine
+	}
+	cards, err := readCards(what, t.Get("cards"))
+	if err != nil {
+		return spec, err
+	}
+	if cards != nil {
+		spec.Cards = cards
+	} else if v := t.Get("cards"); !v.IsNil() {
+		spec.Cards = []uint32{}
+	}
+	signed := t.Get("signed_by_character")
+	if !signed.IsNil() {
+		n, ok := signed.AsInt()
+		if !ok || n <= 0 || n > 1<<32-1 {
+			return spec, errors.New(what + ": signed_by_character is a character ID")
+		}
+		spec.SignedBy = uint32(n) // #nosec G115 -- checked above.
+	}
+	if spec.Refine == nil && (spec.Cards != nil || spec.SignedBy != 0) {
+		zero := 0
+		spec.Refine = &zero
+	}
+	if spec.Refine != nil && spec.Cards == nil {
+		spec.Cards = []uint32{}
+	}
+	spec.Rentals = t.Get("rentals").Truthy()
+	return spec, nil
+}
+
+// playerTakeItemSpec is player:take_item with refine, cards or
+// signed_by_character, as delitem2: Arg(4) holds them.
+func (r *Runtime) playerTakeItemSpec(c *script.Call, id int64, itemID uint32, amount int) error {
+	const what = "player:take_item"
+	spec, err := readCountSpec(what, c.Arg(4))
+	if err != nil {
+		return err
+	}
+	if spec.Rentals {
+		return errors.New(what + ": the options are from, refine, cards and signed_by_character")
+	}
+	h, err := r.itemActionHost(what)
+	if err != nil {
+		return err
+	}
+	ok, err := h.TakeItemSpec(id, itemID, amount, spec)
+	if err != nil {
+		return wrap(what, err)
+	}
+	c.Return(script.Bool(ok))
+	return nil
+}
+
+// playerCountEquipped is player:count_equipped(item), as isequippedcnt.
+func (r *Runtime) playerCountEquipped(c *script.Call) error {
+	const what = "player:count_equipped"
+	id, err := playerID(c)
+	if err != nil {
+		return err
+	}
+	if err := r.need(what, "game.read"); err != nil {
+		return err
+	}
+	n, ok := c.Arg(1).AsInt()
+	if !ok || n <= 0 || n > 1<<32-1 {
+		return errors.New(what + ": want an item ID from items.id")
+	}
+	h, err := r.itemActionHost(what)
+	if err != nil {
+		return err
+	}
+	count, err := h.CountEquipped(id, uint32(n)) // #nosec G115 -- checked above.
+	if err != nil {
+		return wrap(what, err)
+	}
+	c.Return(script.Int(int64(count)))
 	return nil
 }
 

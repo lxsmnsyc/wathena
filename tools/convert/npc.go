@@ -204,6 +204,9 @@ type npcConverter struct {
 	// and of a computed amount, which R checks.
 	zeroAmounts    map[string]bool
 	checkedAmounts map[string]bool
+	// openShops are the lines with a computed callshop that may name a
+	// shop that does not convert, by the shop's name (decision 0072).
+	openShops map[string]string
 	// shops are the shops and barters by rAthena's unique name, for
 	// callshop and the npcshop commands.
 	shops map[string]*shopRef
@@ -320,7 +323,7 @@ func ConvertNPCs(in NPCInput) (*NPCResult, error) {
 		mode: extract.Mode, consts: consts, modules: consts.Modules(),
 		items: map[uint32]string{}, itemIDs: map[string]uint32{}, sprites: map[string]uint32{}, spriteID: map[uint32]bool{},
 		jobs: map[string]string{}, functions: map[string]*npcLine{}, converted: map[string]*Function{}, paths: map[string]bool{},
-		zeroAmounts: map[string]bool{}, checkedAmounts: map[string]bool{},
+		zeroAmounts: map[string]bool{}, checkedAmounts: map[string]bool{}, openShops: map[string]string{},
 		monsters: map[int64]monsterInfo{}, monsterIDs: map[string]int64{}, shops: map[string]*shopRef{}, quests: in.Quests,
 		refArgs: map[string]map[int]bool{}, duplicated: map[string]bool{}, dupSpan: map[string]bool{}, itemTypes: map[uint32]string{}, groups: map[int64]string{},
 	}

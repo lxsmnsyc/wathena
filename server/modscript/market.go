@@ -9,6 +9,7 @@ import (
 
 	"github.com/lxsmnsyc/wathena/internal/script"
 	"github.com/lxsmnsyc/wathena/server/item"
+	"github.com/lxsmnsyc/wathena/server/mod"
 )
 
 // Mail, vending, buying stores, shops and currencies (proposal 0002,
@@ -586,8 +587,8 @@ func readShopSpec(what string, v script.Value, spec *ShopItemSpec) error {
 					return fmt.Errorf("%s: %q is not a field; a cost has zeny, items and currency", what, ck)
 				}
 			}
-			if len(spec.Items)+len(spec.Currencies) > 5 {
-				return errors.New(what + ": a cost takes at most 5 items and currencies together")
+			if len(spec.Items)+len(spec.Currencies) > mod.MaxCostLines {
+				return fmt.Errorf("%s: a cost takes at most %d items and currencies together", what, mod.MaxCostLines)
 			}
 		case "stock":
 			n, ok := f.Value.AsInt()

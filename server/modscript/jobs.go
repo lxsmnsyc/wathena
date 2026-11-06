@@ -93,6 +93,31 @@ func (r *Runtime) jobsNext(c *script.Call) error {
 	return nil
 }
 
+// jobsName is jobs.name: rAthena's job_name for core's jobs, and the
+// record's display name for a mod's job. A job that is neither is
+// "Unknown Job", as job_name's default.
+func (r *Runtime) jobsName(c *script.Call) error {
+	if err := r.need("jobs.name", "game.read"); err != nil {
+		return err
+	}
+	job, ok := c.Arg(0).AsInt()
+	if !ok {
+		return errors.New("jobs.name: want a job, such as player.job")
+	}
+	if r.opts.Jobs != nil && job >= 0 && job <= maxJobID {
+		if name, ok := r.opts.Jobs.ModJobName(int(job)); ok {
+			c.Return(script.String(name))
+			return nil
+		}
+	}
+	name, ok := rathenaJobNames[int(job)]
+	if !ok || job < 0 || job > maxJobID {
+		name = "Unknown Job"
+	}
+	c.Return(script.String(name))
+	return nil
+}
+
 // playerChangeJob is player:change_job(job, { force }). The prelude
 // passes force as the third argument.
 func (r *Runtime) playerChangeJob(c *script.Call) error {

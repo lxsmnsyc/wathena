@@ -59,6 +59,11 @@ func TestPartyCommandsConvert(t *testing.T) {
 		{`{ getpartymember getcharid(1),2; .@n = getarraysize($@partymemberaid); end; }`, []string{
 			`R.party_members(player.party, "account_id")`, "n = party_member_count_1",
 		}},
+		// The array form (decision 0072).
+		{`{ getpartymember getcharid(1),1,.@cid; for (.@i = 0; .@i < $@partymembercount; .@i++) mes "" + .@cid[.@i]; end; }`, []string{
+			`cid, party_member_count_1 = R.party_members_into(cid, player.party, "character_id")`, "(i < party_member_count_1)",
+		}},
+		{`{ getpartymember getcharid(1),0,.@names$; end; }`, []string{"names, party_member_count_1 = R.party_members_into(names, player.party, nil)"}},
 	} {
 		n := res.conv.newNPCConv(&npcLine{Kind: "script", Name: "X#t", Map: "prontera", Script: c.script})
 		lua, err := n.npcScript()
@@ -84,7 +89,8 @@ func TestPartyCommandsConvert(t *testing.T) {
 		{`{ party_changeleader .@p,150001; end; }`, "party_changeleader: another character"},
 		{`{ party_changeoption .@p,.@o,1; end; }`, "party_changeoption: a computed option"},
 		{`{ party_changeoption .@p,3,1; end; }`, "party_changeoption: an option other than 0, 1 and 2"},
-		{`{ getpartymember getcharid(1),0,.@names$; end; }`, "getpartymember: into an array of the script's own"},
+		{`{ getpartymember getcharid(1),0,.@ids; end; }`, "getpartymember: into an array other than a .@ array of the type's kind"},
+		{`{ getpartymember getcharid(1),1,$@ids; end; }`, "getpartymember: into an array other than a .@ array of the type's kind"},
 		{`{ mes $@partymembername$[0]; end; }`, "outside a function that calls getpartymember"},
 		{`{ mes getpartyleader(getcharid(1),1); end; }`, "getpartyleader: the leader's account ID (type 1), which the party API has only while the leader is online"},
 		{`{ mes getpartyleader(getcharid(1),3); end; }`, "getpartyleader: the leader's job (type 3)"},

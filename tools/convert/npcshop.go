@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -19,10 +21,13 @@ import (
 //     pointshop's an amount of the currency its variable becomes, and a
 //     cashshop's an amount of cash. A marketshop has a zeny price and a
 //     stock. A barter item costs zeny and items, with a stock.
+//   - A barter's required refine becomes the cost item's refine, which
+//     takes copies at it or at the lowest refine above it (decision
+//     0072).
 //   - Parts the shop format cannot hold are left out, and the shop
-//     converts partly: a barter item that is refined or takes refined
-//     items, one that takes more than 5 items, an item a table shop sells
-//     twice, and a marketshop item that starts with no stock.
+//     converts partly: a barter item that is sold refined, one that
+//     takes more than 6 items, an item a table shop sells twice, and a
+//     marketshop item that starts with no stock.
 //
 // A pointshop's variable becomes a currency: #CASHPOINTS is cash,
 // #KAFRAPOINTS is kafra, and any other variable is a new record of
@@ -97,7 +102,7 @@ type currencyRecord struct {
 
 // maxCostLines is the most items and currencies one cost takes, as
 // server/mod's MaxCostLines.
-const maxCostLines = 5
+const maxCostLines = 6
 
 // maxShopItems is the most items a shop sells, as server/mod's
 // MaxShopItems.
@@ -318,17 +323,6 @@ func (c *npcConverter) convertBarter(bl *barterLine, name string) *NPC {
 			skip("%s (index %d) takes %d kinds of items, and a cost takes at most %d", it.Item, it.Index, len(it.Required), maxCostLines)
 			continue
 		}
-		refined := ""
-		for _, r := range it.Required {
-			if r.Refine > 0 {
-				refined = fmt.Sprintf("%s refined to +%d or more", r.Item, r.Refine)
-				break
-			}
-		}
-		if refined != "" {
-			skip("%s (index %d) takes %s, and a cost cannot ask for a refine", it.Item, it.Index, refined)
-			continue
-		}
 		if seen[it.Item] {
 			skip("%s (index %d) is sold a second time, and a shop table names each item once", it.Item, it.Index)
 			continue
@@ -341,7 +335,13 @@ func (c *npcConverter) convertBarter(bl *barterLine, name string) *NPC {
 		if len(it.Required) > 0 {
 			var req []string
 			for _, r := range it.Required {
-				req = append(req, fmt.Sprintf("{item: %s, amount: %d}", yamlString(r.Item), max(r.Amount, 1)))
+				// A required refine takes copies at it, or the lowest
+				// refine above it (decision 0072).
+				refine := ""
+				if r.Refine > 0 {
+					refine = fmt.Sprintf(", refine: %d", r.Refine)
+				}
+				req = append(req, fmt.Sprintf("{item: %s, amount: %d%s}", yamlString(r.Item), max(r.Amount, 1), refine))
 			}
 			cost = append(cost, "items: ["+strings.Join(req, ", ")+"]")
 		}
@@ -405,6 +405,68 @@ func (b *body) shopNamed(name string, e Expr) (*shopRef, error) {
 		return nil, unsupported(name, "%s is a barter shop, which rAthena's npcshop commands do not change", *v.str)
 	}
 	return ref, nil
+}
+
+// shopText matches the string literals of a script, which may name the
+// shops a computed callshop opens.
+var shopText = regexp.MustCompile(`"([^"\\]*)"`)
+
+// callshopComputed converts callshop of a computed name (review decision
+// 60, G10): R.callshop finds the shop when the script runs, among the
+// shops the script names in its text and the shops whose names start
+// with the name's fixed text, such as "shop_ext171_" + .@str$. A name
+// that is no shop opens nothing, as rAthena's, which logs an error and
+// goes on. A shop that does not convert raises an error.
+func (b *body) callshopComputed(name val, e Expr) error {
+	var names []string
+	for _, m := range shopText.FindAllStringSubmatch(b.n.line.Script, -1) {
+		if b.n.c.shops[m[1]] != nil {
+			names = append(names, m[1])
+		}
+	}
+	if start := fixedStart(e); start != "" {
+		for n := range b.n.c.shops {
+			if strings.HasPrefix(n, start) {
+				names = append(names, n)
+			}
+		}
+	}
+	sort.Strings(names)
+	var parts []string
+	for i, n := range names {
+		if i > 0 && names[i-1] == n {
+			continue
+		}
+		ref := b.n.c.shops[n]
+		rec := "false"
+		if ref.npc.Status != None {
+			rec = luaString("core:" + ref.npc.Name)
+		} else {
+			b.n.c.openShops[b.n.line.Name] = n
+		}
+		parts = append(parts, fmt.Sprintf("[%s] = %s", luaString(n), rec))
+	}
+	if len(parts) == 0 {
+		return unsupported("callshop", "a computed shop, and the script names no shop")
+	}
+	b.line("R.callshop(player, %s, { %s })", name.asText(), strings.Join(parts, ", "))
+	return nil
+}
+
+// fixedStart is the text a string expression starts with: its first
+// part when it is a string literal, or "".
+func fixedStart(e Expr) string {
+	for {
+		bin, ok := e.(*Binary)
+		if !ok || bin.Op != "+" {
+			break
+		}
+		e = bin.X
+	}
+	if s, ok := e.(*Str); ok {
+		return s.Value
+	}
+	return ""
 }
 
 // staticItem returns an item argument's ID when it is fixed.

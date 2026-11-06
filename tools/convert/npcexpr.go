@@ -978,24 +978,44 @@ func (b *body) call(e *Call) (val, error) {
 		f.need("items")
 		return done(val{code: "items.name(" + it + ")", t: tStr}, nil)
 	case "mesitemlink":
-		// A second argument of true is the default: the name in
-		// brackets. false and a display name of its own need options
-		// that text.item_link does not have.
-		if len(args) == 2 {
-			if v, err := b.expr(args[1]); err != nil || v.static == nil || *v.static == 0 {
-				return val{}, unsupported(name, "without brackets or with a name of its own")
-			}
-			args = args[:1]
-		}
-		if len(args) != 1 {
+		// mesitemlink(<item>{, <brackets>{, <name>}}). text.item_link's
+		// link has no brackets, and the client draws the item's own name
+		// in a link, so the brackets argument changes nothing (decision
+		// 0072). It is still evaluated, for its effects. A name of its own
+		// goes in the link's text.
+		if len(args) < 1 || len(args) > 3 {
 			return val{}, unsupported(name, "arguments")
 		}
 		it, err := b.item(args[0])
 		if err != nil {
 			return val{}, err
 		}
-		f.need("text")
-		return done(val{code: "text.item_link(" + it + ")", t: tStr}, nil)
+		brackets := ""
+		if len(args) >= 2 {
+			v, err := b.expr(args[1])
+			if err != nil {
+				return val{}, err
+			}
+			if v.static == nil {
+				brackets = v.code
+			}
+		}
+		code := ""
+		if len(args) == 3 {
+			label, err := b.expr(args[2])
+			if err != nil {
+				return val{}, err
+			}
+			code = "R.item_link(" + it + ", " + label.asText() + ")"
+		} else {
+			f.need("text")
+			code = "text.item_link(" + it + ")"
+		}
+		if brackets != "" {
+			// Arguments run left to right: the link, then the brackets.
+			code = "R.first(" + code + ", " + brackets + ")"
+		}
+		return done(val{code: code, t: tStr}, nil)
 	case "getarraysize", "implode":
 		if len(args) == 0 {
 			return val{}, unsupported(name, "arguments")
@@ -1434,6 +1454,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 		if len(args) < 1 || len(args) > 2 {
 			return unsupported(name, "arguments")
 		}
+		if v, err := b.expr(args[0]); err == nil && v.str == nil {
+			return b.callshopComputed(v, args[0])
+		}
 		ref, err := b.shopNamed(name, args[0])
 		if err != nil {
 			return err
@@ -1560,6 +1583,14 @@ func (b *body) commandErr(name string, args []Expr) error {
 		return b.unloadnpc(args)
 	case "atcommand", "setbattleflag":
 		return unsupported(name, "%s", refusedCommands[name])
+	case "freeloop":
+		// freeloop lifts rAthena's loop limit. A call keeps its CPU
+		// budget, which the loops it guards stay far below (review
+		// decision 60, G11).
+		if len(args) > 1 {
+			return unsupported(name, "arguments")
+		}
+		b.line("-- freeloop: the call's CPU budget stays.")
 	default:
 		if ok, err := b.mapsCommand(name, args); ok {
 			return err

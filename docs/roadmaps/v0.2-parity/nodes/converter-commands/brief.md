@@ -1,7 +1,7 @@
 ---
 id: converter-commands
 title: Convert the remaining shop, item, party, guild and storage commands
-status: todo
+status: active
 priority: must
 type: feature
 outline: false

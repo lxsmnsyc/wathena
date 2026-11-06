@@ -304,6 +304,14 @@ func TestItemJobNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	tables = tables.WithJobs(jobs.StatusData())
+	// jobs.name reads a mod job's display name, and rAthena's names for
+	// core's jobs.
+	if name, ok := tables.ModJobName(desperado); !ok || name != "Desperado" {
+		t.Errorf("mod job name %q %v", name, ok)
+	}
+	if _, ok := tables.ModJobName(7); ok {
+		t.Error("a core job has a mod job name")
+	}
 	for job, want := range map[int]bool{7: true, 4008: true, 1: false, 24: false, desperado: true} {
 		m, _ := tables.MapID(job)
 		e, _ := tables.EquipMapID(job)

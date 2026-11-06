@@ -450,6 +450,8 @@ var Modules = []Module{
 			{Name: "class_flags", Params: []Param{{"job", "integer", ""}}, Returns: "integer", Doc: "The job's class flags, as eaclass and pc_jobid2mapid, or -1 for a job that does not exist. player.job_class is the player's."},
 			{Name: "from_class", Params: []Param{{"flags", "integer", "Class flags, as class_flags gives them."}, {"sex", `"male"|"female"|nil`, "male by default."}}, Returns: "integer",
 				Doc: "The job of class flags, as roclass and pc_mapid2jobid: a Bard or a Dancer by the sex. -1 for flags of no job."},
+			{Name: "name", Params: []Param{{"job", "integer", ""}}, Returns: "string",
+				Doc: "The job's name as players see it, as jobname: rAthena's job names for core's jobs, such as Swordsman, and the record's display_name for a mod's job. Unknown Job for a job that does not exist.", Permission: "game.read"},
 			{Name: "next_jobs", Params: []Param{{"job", "integer", ""}}, Returns: "integer[]",
 				Doc: "The jobs a job can change into, in job ID order: the jobs whose record lists it in changes_from. In core's records a Novice changes into a first class or a Super Novice, a High Novice into a transcendent first class, and a first class into its two second classes. Jobs that differ by sex, such as Bard and Dancer, are both listed. Other core jobs have none until third classes exist."},
 		},
@@ -551,7 +553,8 @@ var Classes = []Class{
 			{Name: "give_item", Params: []Param{itemParam, {"amount", "integer?", "1 to 30000. 1 by default."}, {"options", "wa.GiveItemOptions?", ""}}, Returns: "boolean", Doc: "Gives items, as getitem. Returns false when they do not fit.", Permission: "player.give_items"},
 			{Name: "give_item_from_group", Params: []Param{{"group", "integer", "A group from items.group."}}, Doc: "Gives one use of an item group, as getgroupitem.", Permission: "player.give_items"},
 			{Name: "count_item", Params: []Param{itemParam, {"options", "wa.FromOptions?", ""}}, Returns: "integer?", Doc: "How many of the item the player has, as countitem. With from, how many a storage or the cart holds, as storagecountitem and cartcountitem; nil when it cannot be read: no cart, or a storage window open.", Permission: "game.read"},
-			{Name: "take_item", Params: []Param{itemParam, {"amount", "integer", "1 or more."}, {"options", "wa.FromOptions?", ""}}, Returns: "boolean", Doc: "Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. Returns false, and takes nothing, when there are too few."},
+			{Name: "take_item", Params: []Param{itemParam, {"amount", "integer", "1 or more."}, {"options", "wa.FromOptions?", ""}}, Returns: "boolean", Doc: "Takes items, as delitem, or with from out of a storage or the cart, as storagedelitem and cartdelitem. With refine, cards or signed_by_character it takes only the copies count_item counts with them, and rentals too, those not equipped first, as delitem2. Returns false, and takes nothing, when there are too few."},
+			{Name: "count_equipped", Params: []Param{itemParam}, Returns: "integer", Doc: "How many of the item the player wears, as isequippedcnt: the amount of each worn copy, such as a quiver's arrows, or for a card, how many times it sits in worn copies. A copy worn in two slots counts once.", Permission: "game.read"},
 			{Name: "open_storage", Params: []Param{{"name", "string?", "An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. A mod reaches only its own records and core's: another mod's name raises an error. Nothing opens the account's storage."}}, Returns: "boolean", Doc: "Opens the account's storage or an extra storage, as openstorage and openstorage2. Returns false when the player has a storage open, or another character of the account has this one open. Scripts charge any fee."},
 			{Name: "open_guild_storage", Returns: "boolean, string?", Doc: "Opens the guild storage, as guildopenstorage. Returns true, or false and why: \"no_guild\", \"no_storage\", \"no_permission\", \"in_use\" or \"already_open\"."},
 			{Name: "get_currency", Params: []Param{currencyParam}, Returns: "integer", Doc: "How much of a currency of data/currencies.yml the player has, such as cash for rAthena's #CASHPOINTS. An account's currency is its account's.", Permission: "game.read"},
@@ -808,7 +811,7 @@ var Classes = []Class{
 	},
 	{
 		Name: "wa.RandomOption", Doc: "A random option of a copy, as rAthena's random options.",
-		Fields: []Field{{"option", "string", "The option's name in data/random_options.yml, such as max_hp."}, {"value", "integer", ""}, {"param", "integer", ""}},
+		Fields: []Field{{"option", "string", "The option's name in data/random_options.yml, such as max_hp."}, {"id", "integer", "The option record's id: rAthena's option ID for core's options, as getequiprandomoption's ROA_ID, and 0 for a mod's."}, {"value", "integer", ""}, {"param", "integer", ""}},
 	},
 	{
 		Name: "wa.ItemRoll", Doc: "The object of the item_roll hook: one roll of a new copy. The innermost result is the server's roll: from the roll's distribution when the item_rolls flag is on and the copy is rolled, the default otherwise.",
@@ -1684,10 +1687,11 @@ var Classes = []Class{
 		Fields: []Field{{"items", "table<integer, integer>?", "Item IDs and the amount of each to offer."}, {"zeny", "integer?", ""}},
 	},
 	{
-		Name: "wa.FromOptions", Doc: "Options of player:count_item and player:take_item.",
+		Name: "wa.FromOptions", Doc: "Options of player:count_item and player:take_item. from goes with no other option.",
 		Fields: []Field{{"from", "string?", `"storage", "cart" or an extra storage's name of data/storages.yml.`},
-			{"refine", "integer?", "Counts only identified copies that are not broken, with this refine and exactly cards, as countitem2. 0 with cards."},
+			{"refine", "integer?", "Counts only identified copies that are not broken, with this refine, exactly cards and signed_by_character, as countitem2. 0 with cards or signed_by_character."},
 			{"cards", "integer[]?", "The cards of countitem2: exactly these, in slot order. None with refine."},
+			{"signed_by_character", "integer?", "With refine, only copies named for this character ID, as countitem2's and delitem2's CARD0_CREATE in card 1 with the ID in cards 3 and 4. Without it, only copies named for no one."},
 			{"rentals", "boolean?", "Counts only rentals, as rentalcountitem. Without it, count_item counts only copies that are not rentals, as countitem."}},
 	},
 	{
@@ -1863,7 +1867,7 @@ var Classes = []Class{
 			{"restock", "string?", `When the stock fills again: "daily", "weekly", or a time such as "6h", "30m" or "2d". It needs a stock.`}},
 	},
 	{
-		Name: "wa.ShopCost", Doc: "A cost: zeny, items and currencies, each optional, at most 5 items and currencies together.",
+		Name: "wa.ShopCost", Doc: "A cost: zeny, items and currencies, each optional, at most 6 items and currencies together, as a barter's MAX_BARTER_REQUIREMENTS.",
 		Fields: []Field{{"zeny", "integer?", "0 to 2147483647. Discount lowers it when the shop allows it."},
 			{"items", "wa.ShopCostItem[]?", "Items the purchase takes, for one bought."},
 			{"currency", "table<string, integer>?", "Currencies of data/currencies.yml and the amount of each, for one bought, such as { cash = 100 }."}},

@@ -140,6 +140,9 @@ type ShopCost struct {
 type ShopCostItem struct {
 	Item   string
 	Amount int
+	// Refine, above 0, takes copies refined to it, or the lowest refine
+	// above it, as a barter's required refine. 0 takes unrefined copies.
+	Refine int
 }
 
 // npcFields are the fields of an NPC record.
@@ -470,13 +473,16 @@ func readShop(v any) (*Shop, error) {
 	return sh, nil
 }
 
+// MaxRefine is the highest refine a cost item asks for, as MAX_REFINE.
+const MaxRefine = 20
+
 // MaxStock is the most stock a shop item has, as rAthena's market and
 // barter stock.
 const MaxStock = 2_147_483_647
 
 // MaxCostLines is the most items and currencies one cost takes, as the
-// five required items of a barter (MAX_BARTER_REQUIREMENTS).
-const MaxCostLines = 5
+// six required items of a barter (MAX_BARTER_REQUIREMENTS).
+const MaxCostLines = 6
 
 // readCost reads a cost: zeny, items and currency, each optional.
 func readCost(v any) (*ShopCost, error) {
@@ -505,7 +511,7 @@ func readCost(v any) (*ShopCost, error) {
 				if !ok || !isText || name == "" {
 					return nil, fmt.Errorf("items[%d] is {item: <name>, amount: <n>}", j)
 				}
-				amount := 1
+				amount, refine := 1, 0
 				for ik, iv := range im {
 					switch ik {
 					case "item":
@@ -515,11 +521,17 @@ func readCost(v any) (*ShopCost, error) {
 							return nil, fmt.Errorf("items[%d]: amount is 1 to 30000", j)
 						}
 						amount = n
+					case "refine":
+						n, ok := iv.(int)
+						if !ok || n < 1 || n > MaxRefine {
+							return nil, fmt.Errorf("items[%d]: refine is 1 to %d", j, MaxRefine)
+						}
+						refine = n
 					default:
-						return nil, fmt.Errorf("items[%d]: %q is not a field; cost items have item and amount", j, ik)
+						return nil, fmt.Errorf("items[%d]: %q is not a field; cost items have item, amount and refine", j, ik)
 					}
 				}
-				c.Items = append(c.Items, ShopCostItem{Item: name, Amount: amount})
+				c.Items = append(c.Items, ShopCostItem{Item: name, Amount: amount, Refine: refine})
 			}
 		case "currency":
 			cm, ok := val.(map[string]any)

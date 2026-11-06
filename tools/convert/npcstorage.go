@@ -93,7 +93,7 @@ func (b *body) storageRead(name string, args []Expr) (v val, ok bool, err error)
 	if why := storageUnsupported(name); why != "" {
 		return val{}, true, unsupported(name, "%s", why)
 	}
-	return val{}, false, nil
+	return b.itemsRead(name, args)
 }
 
 // storageCommand converts the storage commands written as statements. ok
@@ -155,7 +155,7 @@ func (b *body) storageCommand(name string, args []Expr) (ok bool, err error) {
 	if why := storageUnsupported(name); why != "" {
 		return true, unsupported(name, "%s", why)
 	}
-	return false, nil
+	return b.itemsCommand(name, args)
 }
 
 // storageUnsupported is the reason a storage command does not convert,
