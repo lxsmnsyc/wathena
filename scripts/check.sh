@@ -18,6 +18,13 @@
 #             cache.
 #   test      unit, then go test -race ./.... Heavy tests on one
 #             goroutine skip under -race (decision 0022).
+#             unit and test run CHECK_TEST_JOBS test binaries at once
+#             (1 when unset) and CHECK_TEST_PARALLEL parallel tests in
+#             each (2 when unset). server/zone, tools/modkit and
+#             tools/convert each hold the game data, and each tools/modkit
+#             case loads a world. With Go's defaults of one per CPU, a
+#             machine with 8 GB swaps: server/zone took 1492 s instead
+#             of 118 s, and tools/modkit was killed.
 #   mods      generated Lua files, the sample mods with a wactl built
 #             with the procedural tag, a new mod
 #   lua       vendored Lua, lua.wasm, the WebAssembly build,
@@ -113,6 +120,9 @@ sqlc_version=v1.31.1
 golangci_version=2.14.0
 govulncheck_version=v1.8.0
 gosec_version=v2.30.0
+
+test_jobs="${CHECK_TEST_JOBS:-1}"
+test_parallel="${CHECK_TEST_PARALLEL:-2}"
 
 default_steps="vet test mods lua loadtest schema queries lint security fuzz client tinygo gen"
 all_steps="$default_steps compose browsers"
@@ -247,14 +257,14 @@ step_vet() {
 # pass, its duplication tests did too little work in their time.
 step_unit() {
 	# shellcheck disable=SC2046 # one argument per package.
-	go test -timeout 45m $(go list ./... | grep -v '/e2e$')
+	go test -p "$test_jobs" -parallel "$test_parallel" -timeout 45m $(go list ./... | grep -v '/e2e$')
 	# shellcheck disable=SC2046 # one argument per package.
-	go test -timeout 45m -tags procedural $(procedural_packages)
+	go test -p "$test_jobs" -parallel "$test_parallel" -timeout 45m -tags procedural $(procedural_packages)
 }
 
 step_test() {
 	step_unit
-	go test -race -timeout 45m ./...
+	go test -race -p "$test_jobs" -parallel "$test_parallel" -timeout 45m ./...
 }
 
 # The e2e package takes about 16 minutes with -race and a database.
