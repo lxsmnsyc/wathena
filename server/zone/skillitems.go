@@ -38,9 +38,41 @@ type skillMenu struct {
 	// target is Weapon Repair's target.
 	target *entity
 	// slots are the inventory slots of the lines, of the target for
-	// Weapon Repair. items are Arrow Crafting's source items.
-	slots []int
-	items []uint32
+	// Weapon Repair, and copies what each slot held when the list was
+	// sent. items are Arrow Crafting's source items.
+	slots  []int
+	copies []listedCopy
+	items  []uint32
+}
+
+// listedCopy is what a listed slot held: a pick of a slot that holds
+// another copy now is refused, so it never acts on an item the player
+// did not see.
+type listedCopy struct {
+	id     uint32
+	serial item.Serial
+}
+
+// add lists an inventory slot.
+func (m *skillMenu) add(slot int, s *item.Slot) {
+	m.slots = append(m.slots, slot)
+	m.copies = append(m.copies, listedCopy{s.ID, s.Serial})
+}
+
+// line returns the slot of line i when inv still holds the listed copy
+// there, or -1.
+func (m *skillMenu) line(i int, inv *item.Inventory) int {
+	if i < 0 || i >= len(m.slots) || inv == nil {
+		return -1
+	}
+	slot := m.slots[i]
+	if slot < 0 || slot >= len(inv.Slots) {
+		return -1
+	}
+	if s := &inv.Slots[slot]; s.ID != m.copies[i].id || s.Serial != m.copies[i].serial || s.Amount <= 0 {
+		return -1
+	}
+	return slot
 }
 
 // The materials of Weapon Repair and Upgrade Weapon by weapon or armor
@@ -185,7 +217,7 @@ func (weaponRepair) castendNoDamage(z *Zone, src, target *entity, d *skill.Def, 
 	m := &skillMenu{skill: d.ID, lv: lv, target: target}
 	var lines []*wathenav1.SkillListItem
 	for _, i := range brokenSlots(t) {
-		m.slots = append(m.slots, i)
+		m.add(i, &t.inventory.Slots[i])
 		lines = append(lines, listLine(&t.inventory.Slots[i]))
 	}
 	if len(lines) == 0 {
@@ -264,7 +296,7 @@ func (upgradeWeapon) castendNoDamage(z *Zone, src, _ *entity, d *skill.Def, _ in
 		if !ok || !def.IsWeapon() || def.WeaponLevel < 1 || firstSlot(p, materialAt(refineMaterials, def.WeaponLevel)) < 0 {
 			continue
 		}
-		m.slots = append(m.slots, i)
+		m.add(i, s)
 		lines = append(lines, listLine(s))
 	}
 	p.openSkillMenu(m, lines)
@@ -348,8 +380,10 @@ func (z *Zone) weaponRefine(p *Player, m *skillMenu, slot int) {
 
 // skillItemPick runs a pick of the open item list, as
 // clif_parse_SelectArrow, clif_parse_RepairItem and
-// clif_parse_WeaponRefine. The list closes either way. A player who
-// trades sees the skill fail, as rAthena refuses the pick then.
+// clif_parse_WeaponRefine. The list closes either way. A dead player's
+// list is gone (pc_dead clears it). A player who talks to an NPC, vends,
+// buys or trades sees the skill fail, as rAthena refuses the pick then.
+// A listed slot that holds another copy now does nothing.
 func (z *Zone) skillItemPick(p *Player, c *skillPickCommand) {
 	m := p.skillMenu
 	if m == nil || m.skill != int(c.skill) {
@@ -359,7 +393,12 @@ func (z *Zone) skillItemPick(p *Player, c *skillPickCommand) {
 	if c.cancel {
 		return
 	}
-	if p.trade != nil {
+	if p.entity.dead {
+		return
+	}
+	if p.trade != nil || p.talk != nil || p.vend != nil || p.buying != nil {
+		// pc_istrading: an NPC talk, a vending shop, a buying store or a
+		// trade.
 		z.skillFail(p.entity, m.skill, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		return
 	}
@@ -370,12 +409,14 @@ func (z *Zone) skillItemPick(p *Player, c *skillPickCommand) {
 			z.arrowCreate(p, m.items[i])
 		}
 	case skill.IDRepairWeapon:
-		if i < len(m.slots) {
-			z.repairWeapon(p, m, m.slots[i])
+		if t := m.target; t != nil && t.player != nil {
+			if slot := m.line(i, t.player.inventory); slot >= 0 {
+				z.repairWeapon(p, m, slot)
+			}
 		}
 	case skill.IDWeaponRefine:
-		if i < len(m.slots) {
-			z.weaponRefine(p, m, m.slots[i])
+		if slot := m.line(i, p.inventory); slot >= 0 {
+			z.weaponRefine(p, m, slot)
 		}
 	}
 }

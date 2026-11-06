@@ -390,8 +390,10 @@ func (z *Zone) die(e, killer *entity) {
 	z.statusesDied(e)
 	z.clearTimerSkills(e)
 	if p := e.player; p != nil {
-		// pc_dead: the spirit spheres go.
+		// pc_dead: the spirit spheres go, and so does a skill's item
+		// list (menuskill_id).
 		z.delSpiritBall(p, p.spiritBalls())
+		p.skillMenu = nil
 	}
 	z.castCancel(e, false)
 	e.pending = nil

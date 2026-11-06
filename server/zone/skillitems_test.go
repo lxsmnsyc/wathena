@@ -224,3 +224,119 @@ func TestSkillPickWhileTrading(t *testing.T) {
 		t.Errorf("failures %v, Phracon %d", f, z.countItem(p, itemPhracon))
 	}
 }
+
+// refineList is a smith in a renewal golden zone, with a Sword and
+// Phracon, whose Upgrade Weapon list is open.
+func refineList(t *testing.T) (*Zone, *Player, int) {
+	t.Helper()
+	z, p, _ := smithZone(t, reference.Renewal, smithAxe, 0)
+	withRefine(t, z, reference.Renewal)
+	sword := give(t, z, p, 1101, 1)
+	give(t, z, p, itemPhracon, 2)
+	cast(z, p, skill.IDWeaponRefine, 10, p.entity)
+	lists := skillLists(run(z, p, 50, 500))
+	// The Axe in hand is left out.
+	if len(lists) != 1 || fmt.Sprint(listItems(lists[0])) != "[1101]" || p.skillMenu == nil {
+		t.Fatalf("lists %v", lists)
+	}
+	return z, p, sword
+}
+
+// TestSkillPickDead checks that death closes the list, and that a dead
+// player's pick does nothing.
+func TestSkillPickDead(t *testing.T) {
+	z, p, sword := refineList(t)
+	z.die(p.entity, nil)
+	if p.skillMenu != nil {
+		t.Error("death kept the list")
+	}
+	pick(z, p, skill.IDWeaponRefine, 0)
+	if p.inventory.Slots[sword].Refine != 0 || z.countItem(p, itemPhracon) != 2 {
+		t.Error("a dead player refined")
+	}
+}
+
+// TestSkillPickWarp checks that a warp within the map closes the list.
+func TestSkillPickWarp(t *testing.T) {
+	z, p, sword := refineList(t)
+	z.teleport(p, 25, 25)
+	pick(z, p, skill.IDWeaponRefine, 0)
+	if p.skillMenu != nil || p.inventory.Slots[sword].Refine != 0 {
+		t.Error("the list stayed open after a warp")
+	}
+}
+
+// TestSkillPickBusy checks that a pick while talking to an NPC or with
+// an open shop fails, as pc_istrading.
+func TestSkillPickBusy(t *testing.T) {
+	for name, set := range map[string]func(*Player, bool){
+		"talk":    func(p *Player, on bool) { p.talk = map[bool]*talk{true: {}}[on] },
+		"vending": func(p *Player, on bool) { p.vend = map[bool]*vendShop{true: {}}[on] },
+		"buying":  func(p *Player, on bool) { p.buying = map[bool]*buyStore{true: {}}[on] },
+	} {
+		t.Run(name, func(t *testing.T) {
+			z, p, sword := refineList(t)
+			set(p, true)
+			pick(z, p, skill.IDWeaponRefine, 0)
+			set(p, false)
+			if f := skillFailures(run(z, p, 550, 550)); len(f) != 1 || p.inventory.Slots[sword].Refine != 0 || p.skillMenu != nil {
+				t.Errorf("failures %v, refine %d", f, p.inventory.Slots[sword].Refine)
+			}
+		})
+	}
+}
+
+// TestSkillPickChangedSlot checks that a pick of a slot that holds
+// another copy than the listed one does nothing.
+func TestSkillPickChangedSlot(t *testing.T) {
+	z, p, sword := refineList(t)
+	z.deleteItem(p, sword, 1, wathenav1.InventoryRemoveReason_INVENTORY_REMOVE_REASON_USED)
+	if s := give(t, z, p, 1104, 1); s != sword {
+		t.Fatalf("the Falchion went to slot %d, not %d", s, sword)
+	}
+	pick(z, p, skill.IDWeaponRefine, 0)
+	if p.inventory.Slots[sword].Refine != 0 || z.countItem(p, itemPhracon) != 2 {
+		t.Error("the pick refined another copy")
+	}
+}
+
+// TestSkillPickMisses checks a cancel, an index past the list and a pick
+// naming another skill: none refines. Cancel and the index close the
+// list; another skill leaves it open.
+func TestSkillPickMisses(t *testing.T) {
+	z, p, sword := refineList(t)
+	pick(z, p, skill.IDMakingArrow, 0)
+	if p.skillMenu == nil {
+		t.Fatal("a pick of another skill closed the list")
+	}
+	pick(z, p, skill.IDWeaponRefine, 5)
+	if p.skillMenu != nil {
+		t.Fatal("an index past the list kept it open")
+	}
+	z, p, sword = refineList(t)
+	z.handle(command{player: p, skillPick: &skillPickCommand{skill: skill.IDWeaponRefine, cancel: true}})
+	if p.skillMenu != nil {
+		t.Fatal("cancel kept the list open")
+	}
+	if p.inventory.Slots[sword].Refine != 0 || z.countItem(p, itemPhracon) != 2 {
+		t.Error("a missed pick refined")
+	}
+}
+
+// TestUpgradeWeaponNotRefineable checks that a weapon refine.yml cannot
+// refine is listed, as clif_item_refine_list does not check, and that
+// its pick fails and keeps the ore.
+func TestUpgradeWeaponNotRefineable(t *testing.T) {
+	z, p, _ := smithZone(t, reference.Renewal, smithAxe, 0)
+	withRefine(t, z, reference.Renewal)
+	give(t, z, p, 1177, 1)
+	give(t, z, p, itemPhracon, 1)
+	cast(z, p, skill.IDWeaponRefine, 10, p.entity)
+	if lists := skillLists(run(z, p, 50, 500)); len(lists) != 1 || fmt.Sprint(listItems(lists[0])) != "[1177]" {
+		t.Fatalf("lists %v", lists)
+	}
+	pick(z, p, skill.IDWeaponRefine, 0)
+	if f := skillFailures(run(z, p, 550, 550)); len(f) != 1 || z.countItem(p, itemPhracon) != 1 {
+		t.Errorf("failures %v, Phracon %d", f, z.countItem(p, itemPhracon))
+	}
+}

@@ -15,6 +15,7 @@ Partial outcome. Step 1 part B, step 2 and step 3 remain (log.md, "Next session"
 
 - Edited outside owned and shared paths, minimally: server/zone (the skill behaviors live there, not in server/skill), server/gateway (command dispatch and rate kind), server/gamedata/skills.go (load crafting.json), reference/rathena (new extract, embed list, embed test count, README), internal/reference/reference_test.go (extract list), client/src/gen (generated from the proto), docs/decisions/0073, server/README.md (skill list), and the rAthena fork (`extract.py`, commit `7885f522f`, not pushed, like the fork's other commits).
 - Step 1 split in two PRs: this one covers Arrow Crafting, Weapon Repair and Upgrade Weapon.
+- A new cast while a list is open replaces it; rAthena refuses the cast instead (decision 0073).
 
 ## Stubs left
 
@@ -33,6 +34,7 @@ Partial outcome. Step 1 part B, step 2 and step 3 remain (log.md, "Next session"
 ## Verification
 
 - `go test -p 1 -parallel 2 ./server/skill ./server/gamedata ./server/gateway ./internal/reference ./schema ./reference/rathena`: ok.
+- After review: `go test -p 1 -parallel 2 ./server/zone -run 'TestArrowCrafting|TestUpgradeWeapon|TestWeaponRepair|TestSkillPick'`: ok (adds death, warp, busy, changed slot, cancel, index, other skill and not refineable cases).
 - `go test -p 1 -parallel 2 ./server/zone -run 'Skill|Smith|Arrow|Upgrade|Repair|Alchemist|Twilight|Homunculus|Refine|Vending|Trade|Quest|Memo|Blacksmith|Maximize|Golden'`: ok.
 - client: `tsc --noEmit`, `vitest run src/viewer/skillItems.test.ts`, oxlint on the touched files: ok.
 - `scripts/check.sh lint`: passed. The full check is left to the orchestrator.

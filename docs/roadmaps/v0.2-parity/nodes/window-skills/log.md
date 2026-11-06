@@ -15,3 +15,7 @@
 - Needs a recipe list event (product + materials, maybe quantity) and a produce command, a generic `skill_can_produce_mix` / `skill_produce_mix` over `skill.DB.Crafting().Produce`, replacing `twilightRecipes`. Smithing (`produce` levels 1-3, 21) adds star crumbs and element stones and the forge rate.
 - Converter: `cooking` and `produce` need a Lua API (proposal 0002 amendment) and converter rules in tools/convert.
 - Then step 2 (Warp Portal memo list, Item Appraisal, Change Cart, Decorate Cart, Open Buying Store) and step 3 (Hindsight, Abracadabra, party reach, ensembles).
+
+## 2026-11-06, review fixes
+
+- Fresh review: picks while dead, during an NPC talk, vending or buying store, and of a slot that now holds another copy. Fixed: death, warps and leaving the map clear the list; pc_istrading's four cases fail the pick; the list keeps each line's item ID and serial. Tests added. A new cast replacing the list is kept and recorded as a deviation in 0073.

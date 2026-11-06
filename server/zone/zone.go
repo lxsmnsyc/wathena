@@ -1408,6 +1408,7 @@ func (z *Zone) finishLogout(p *Player) {
 func (z *Zone) leaveMap(p *Player, reason wathenav1.VanishReason) {
 	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
 	z.closeStores(p)
+	p.skillMenu = nil
 	if p.autotrade {
 		p.autotrade = false
 		if t := z.Autotraders; t != nil {

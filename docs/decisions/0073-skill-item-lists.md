@@ -22,8 +22,10 @@
 ### Protocol
 
 - One event and one command serve every menu skill that picks an item. `SkillItemList` holds the skill and its lines (item, refine, cards). `SkillItemPick` names the skill and a line by its place in the list, or cancels.
-- rAthena's client sends back an item ID (arrows) or an inventory index (repair, refine), and rAthena accepts any item the player has. The server here keeps the list (`Player.skillMenu`) and runs only a listed line, then checks it again as rAthena does. A pick of another skill does nothing. The list closes after any pick.
-- A pick during a trade fails with `SkillFailed`, as `pc_istrading` makes it.
+- rAthena's client sends back an item ID (arrows) or an inventory index (repair, refine), and rAthena accepts any item the player has. The server here keeps the list (`Player.skillMenu`) and runs only a listed line, then checks it again as rAthena does. For repair and refine the list keeps each line's copy (item ID and serial), and a pick of a slot that holds another copy now does nothing. A pick of another skill does nothing and leaves the list open. Any other pick closes it.
+- A pick while the player talks to an NPC, vends, has a buying store open or trades fails with `SkillFailed`, as `pc_istrading` makes it.
+- Death closes the list (`pc_dead`), and so does leaving the map or a warp within it (`unit_remove_map`). A dead player's pick does nothing.
+- Deviation: rAthena refuses any skill cast while a list is open, except Autospell (`clif_parse_UseSkillToId`). Here a new cast goes on, and its list replaces the open one.
 - Answers that rAthena sends as their own packets (`clif_upgrademessage`, `clif_item_repaireffect`) are system messages. Item changes are the usual inventory events.
 
 ### Behavior
