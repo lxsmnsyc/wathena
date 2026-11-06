@@ -1,28 +1,44 @@
 // The item list of a skill that asks for an item, as RO's Arrow Crafting,
-// Weapon Repair and Upgrade Weapon windows. The server sends
-// SkillItemList after the cast; a click on a line picks it, and Cancel or
-// Escape closes the list. The server checks the pick again and answers
+// Weapon Repair and Upgrade Weapon windows, and the recipe lists of
+// Prepare Potion, Create Elemental Converter and the produce and cooking
+// scripts. The server sends SkillItemList after the cast or the script; a
+// click on a line picks it, and Cancel or Escape closes the list. The server checks the pick again and answers
 // with inventory changes and a system message. Item names are only ever
 // set with textContent.
 
 import { button, element } from './forms';
 import { refinedLabel } from './itemText';
 
+/** A material of a recipe line, as SkillListMaterial. */
+export interface SkillItemMaterial {
+  itemId: number;
+  amount: number;
+}
+
 /** A line of the list, as SkillListItem. */
 export interface SkillItemLine {
   itemId: number;
   refine: number;
   cards: number[];
+  materials: SkillItemMaterial[];
 }
 
 /** Skill IDs of the skills that open the list. */
 export const SKILL_ARROW_CRAFTING = 147;
 export const SKILL_WEAPON_REPAIR = 108;
 export const SKILL_UPGRADE_WEAPON = 477;
+export const SKILL_PREPARE_POTION = 228;
+export const SKILL_CREATE_CONVERTER = 1007;
 
-/** The window's title for a skill. */
-export function skillItemTitle(skillId: number): string {
+/** The window's title for a skill, or for a script's list (skill 0). */
+export function skillItemTitle(skillId: number, cooking = false): string {
   switch (skillId) {
+    case 0:
+      return cooking ? 'Cooking' : 'Produce';
+    case SKILL_PREPARE_POTION:
+      return 'Prepare Potion';
+    case SKILL_CREATE_CONVERTER:
+      return 'Create Elemental Converter';
     case SKILL_ARROW_CRAFTING:
       return 'Arrow Crafting';
     case SKILL_WEAPON_REPAIR:
@@ -36,12 +52,32 @@ export function skillItemTitle(skillId: number): string {
 
 /** What an empty list says. */
 export function skillItemEmpty(skillId: number): string {
-  return skillId === SKILL_UPGRADE_WEAPON ? 'No weapon can be upgraded.' : 'No item can be used.';
+  switch (skillId) {
+    case SKILL_UPGRADE_WEAPON:
+      return 'No weapon can be upgraded.';
+    case 0:
+    case SKILL_PREPARE_POTION:
+    case SKILL_CREATE_CONVERTER:
+      return 'You lack the materials for every recipe.';
+    default:
+      return 'No item can be used.';
+  }
 }
 
-/** A line as it shows: "+7 Sword [3]", with its cards after it. */
+/**
+ * A line as it shows: "+7 Sword [3]", with its cards after it, or a
+ * recipe's product with its materials: "Red Potion: Potion Creation Guide,
+ * Red Herb, 5 Poison Spore". A material of amount 0 is held, not used.
+ */
 export function skillItemText(line: SkillItemLine, label: (itemId: number) => string): string {
   const name = refinedLabel(label(line.itemId), line.refine);
+  if (line.materials.length > 0) {
+    const parts: string[] = [];
+    for (const m of line.materials) {
+      parts.push(m.amount > 1 ? `${String(m.amount)} ${label(m.itemId)}` : label(m.itemId));
+    }
+    return `${name}: ${parts.join(', ')}`;
+  }
   if (line.cards.length === 0) {
     return name;
   }
@@ -82,9 +118,9 @@ export class SkillItemsWindow {
   }
 
   /** Shows a skill's list, replacing the one before. */
-  show(skillId: number, lines: SkillItemLine[]): void {
+  show(skillId: number, lines: SkillItemLine[], cooking = false): void {
     this.skillId = skillId;
-    this.title.textContent = skillItemTitle(skillId);
+    this.title.textContent = skillItemTitle(skillId, cooking);
     this.list.replaceChildren();
     for (const [index, line] of lines.entries()) {
       const li = element('li');

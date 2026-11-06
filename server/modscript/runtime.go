@@ -488,6 +488,7 @@ func (r *Runtime) init() error {
 		{"player_count_equipped", r.playerCountEquipped},
 		{"player_open_storage", r.playerOpenStorage},
 		{"player_open_guild_storage", r.playerOpenGuildStorage},
+		{"player_open_produce", r.playerOpenProduce},
 		{"player_give_group", r.playerGiveGroup},
 		{"player_heal", r.playerHeal},
 		{"player_warp", r.playerWarp},

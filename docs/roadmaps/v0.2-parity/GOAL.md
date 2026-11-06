@@ -65,10 +65,10 @@ After 5 more merged code nodes (counted from 2026-11-05), record the actual acti
 
 Nodes run one at a time, so each worker takes the next free number when it starts and notes it in its outcome:
 
-- Decision records: docs/decisions/NNNN-*.md, next 0067.
-- Review decisions (in proposal 0002): next 63.
+- Decision records: docs/decisions/NNNN-*.md, next 0075.
+- Review decisions (in proposal 0002): next 67.
 - Design proposals: docs/proposals/NNNN-*.md, next 0007 (0003 to 0006 are written).
-- Migrations: server/store/migrations/NNNNN_*.sql, next 00043.
+- Migrations: server/store/migrations/NNNNN_*.sql, next 00044.
 - `schema.Version` is 1; `release-v0.2.0` raises it.
 
 ## Hot files

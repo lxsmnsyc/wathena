@@ -1216,6 +1216,10 @@ Methods on player handles check their own permissions, such as `player.give_item
     - `wa.FromOptions` gets `signed_by_character`, a character ID: with a refine, `count_item` and `take_item` match only copies named for it, and without it only copies named for no one. `take_item` takes `refine`, `cards` and `signed_by_character`, the copies that are not equipped first, rentals too, as delitem2. `count_item` leaves rentals out with a refine too, as countitem2.
     - `wa.RandomOption` gets `id`, the record's rAthena option ID, 0 for a mod's option, as for no option.
     - A cost item of `data/npcs.yml` takes `refine`, 1 to 20: copies at it, or at the lowest refine above it. A refine above the mode's MAX_REFINE asks for MAX_REFINE, and a refine on an item that cannot be refined fails to load, as barter_parseBodyNode. A cost takes at most 6 items and currencies, up from 5, as MAX_BARTER_REQUIREMENTS. A barter that sells an item twice still does not convert: a purchase names the item, and the stock is kept by item (node barter-entries).
+66. Recipe lists, settled while building them (window-skills, [decision 0074](../decisions/0074-recipe-lists.md)). These add to API 1.0 only:
+    - `player:open_produce(level)` opens the list of the `produce_db` recipes of an item level the player can make, as rAthena's `produce`. `player:open_cooking(level)` opens a cooking kit's list, as `cooking`: levels 11 to 20 list every dish of those levels. Both need no permission, since the pick checks the skills and materials.
+    - Levels 1 to 10, weapon forging, raise an error until the pick can add star crumbs and element stones and copies hold a forged mark.
+    - A dish changes the core character variable `COOK_MASTERY`, as rAthena's SP_COOKMASTERY.
 
 ## Version
 

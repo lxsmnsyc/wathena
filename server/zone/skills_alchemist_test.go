@@ -442,17 +442,15 @@ func TestTwilightAlchemy(t *testing.T) {
 }
 
 // TestHomunculusSkillsWait checks that the skills that need a homunculus
-// or the recipe window fail before they start and cost nothing.
+// fail before they start and cost nothing.
 func TestHomunculusSkillsWait(t *testing.T) {
 	z := goldenZone(t, reference.Renewal)
-	p := alchemistIn(t, z, 18, 0, map[int]int{skill.IDCallHomunculus: 1, skill.IDPharmacy: 10})
+	p := alchemistIn(t, z, 18, 0, map[int]int{skill.IDCallHomunculus: 1})
 	give(t, z, p, 7142, 1)
-	give(t, z, p, 7134, 1)
 	sp := p.sp
 	cast(z, p, skill.IDCallHomunculus, 1, p.entity)
-	cast(z, p, skill.IDPharmacy, 10, p.entity)
 	ev := run(z, p, 50, 1000)
-	if f := skillFailures(ev); len(f) != 2 || p.sp != sp || z.countItem(p, 7142) != 1 || z.countItem(p, 7134) != 1 {
+	if f := skillFailures(ev); len(f) != 1 || p.sp != sp || z.countItem(p, 7142) != 1 {
 		t.Errorf("failures %v, SP %d of %d", f, p.sp, sp)
 	}
 }

@@ -658,8 +658,13 @@ export default class Online {
   onMusic: ((name: string) => void) | undefined;
   /** Called for a digital clock at the top of the screen, as rAthena's showdigit. */
   onDigits: ((kind: DigitsKind, value: number) => void) | undefined;
-  /** Called when a skill opens its item list, with the lines to pick from. */
-  onSkillItemList: ((skillId: number, items: SkillItemLine[]) => void) | undefined;
+  /**
+   * Called when a skill or a script opens its item list, with the lines to
+   * pick from. A script's recipe list has skill 0; cooking marks a cooking kit's.
+   */
+  onSkillItemList:
+    | ((skillId: number, items: SkillItemLine[], cooking: boolean) => void)
+    | undefined;
   /** Called when the server opens the quest log, with a quest or 0. */
   onQuestLogOpen: ((quest: number) => void) | undefined;
   /** Called for an announcement to the map or the world, with its color or 0. */
@@ -1290,7 +1295,9 @@ export default class Online {
               itemId: it.itemId,
               refine: it.refine,
               cards: [...it.cards],
+              materials: it.materials.map((m) => ({ itemId: m.itemId, amount: m.amount })),
             })),
+            e.body.value.cooking,
           );
           break;
         case 'questLogOpen':

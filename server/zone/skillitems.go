@@ -43,6 +43,10 @@ type skillMenu struct {
 	slots  []int
 	copies []listedCopy
 	items  []uint32
+	// produce is a recipe list's menu skill and value, and cooking marks
+	// a cooking kit's list (produce.go). items are its products.
+	produce produceMenu
+	cooking bool
 }
 
 // listedCopy is what a listed slot held: a pick of a slot that holds
@@ -404,6 +408,8 @@ func (z *Zone) skillItemPick(p *Player, c *skillPickCommand) {
 	}
 	i := int(c.index)
 	switch m.skill {
+	case 0, skill.IDPharmacy, skill.IDCreateCon:
+		z.recipePick(p, m, i)
 	case skill.IDMakingArrow:
 		if i < len(m.items) {
 			z.arrowCreate(p, m.items[i])

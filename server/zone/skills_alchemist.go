@@ -16,21 +16,19 @@ import (
 //     keep its heal;
 //   - the summons of Summon Flora, Summon Marine Sphere and Plant
 //     Cultivation, with their master and delete timer;
-//   - skill_produce_mix for Twilight Alchemy.
+//   - Twilight Alchemy, through skill_produce_mix (produce.go).
 //
 // Their damage formulas are in server/skill/alchemist.go. Axe Mastery,
 // Potion Research and Bioethics are passive.
 //
 // Skills that wait for another system fail before they start, so they
 // cost nothing:
-//   - Prepare Potion opens a recipe window (clif_skill_produce_mix_list),
-//     which the client does not have yet.
 //   - Call Homunculus, Vaporize and Homunculus Resurrection need a
 //     homunculus, which does not exist yet.
 
 func init() {
 	registerSkillImpls(map[int]any{
-		skill.IDPharmacy:          notPorted{},
+		skill.IDPharmacy:          preparePotion{},
 		skill.IDBomb:              bomb{},
 		skill.IDAcidTerror:        acidTerror{},
 		skill.IDPotionPitcher:     aidPotion{},
@@ -712,23 +710,24 @@ func (twilightAlchemy) castendNoDamage(z *Zone, src, target *entity, d *skill.De
 		if d.ID == skill.IDTwilight2 {
 			product = itemWhiteSlimPotion
 		}
-		if !z.produceMix(p, d.ID, product, 200, -1) {
+		if !z.produceMix(p, d.ID, product, 200, -1, produceMenu{skill: p.menuSkill()}) {
 			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		}
 	case skill.IDTwilight3:
 		// 100 Alcohol, 50 Acid Bottles and 50 Bottle Grenades, for 200
 		// Empty Bottles in all.
-		alcohol := z.canProduceMix(p, itemAlcohol, 100)
-		acid := z.canProduceMix(p, itemAcidBottle, 50)
-		fire := z.canProduceMix(p, itemFireBottle, 50)
+		menu := produceMenu{skill: p.menuSkill()}
+		alcohol := z.canProduceMix(p, itemAlcohol, -1, 100, menu.skill)
+		acid := z.canProduceMix(p, itemAcidBottle, -1, 50, menu.skill)
+		fire := z.canProduceMix(p, itemFireBottle, -1, 50, menu.skill)
 		if alcohol < 0 || acid < 0 || fire < 0 || z.countItem(p, itemEmptyBottle) < 200 {
 			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 			return
 		}
 		z.skillEffect(src, target, d, lv, int64(lv), true)
-		z.produceMix(p, d.ID, itemAlcohol, 100, alcohol)
-		z.produceMix(p, d.ID, itemAcidBottle, 50, acid)
-		z.produceMix(p, d.ID, itemFireBottle, 50, fire)
+		z.produceMix(p, d.ID, itemAlcohol, 100, alcohol, menu)
+		z.produceMix(p, d.ID, itemAcidBottle, 50, acid, menu)
+		z.produceMix(p, d.ID, itemFireBottle, 50, fire, menu)
 	}
 }
 
@@ -740,169 +739,6 @@ const (
 	itemFireBottle      = 7135 // ITEMID_FIRE_BOTTLE
 	itemAcidBottle      = 7136 // ITEMID_ACID_BOTTLE
 )
-
-// produceRecipe is an entry of rAthena's produce_db.txt: the product,
-// the skill and level it needs, and its materials. A material of amount
-// 0, such as a guide book, must be held but is not used.
-type produceRecipe struct {
-	item         uint32
-	skill, level int
-	materials    [][2]int
-}
-
-// twilightRecipes are the produce_db.txt entries Twilight Alchemy makes,
-// the same in both modes (db/pre-re and db/re/produce_db.txt), which the
-// extracts do not hold:
-//   - 121: White Potion, from the Potion Creation Guide, a White Herb
-//     and an Empty Potion Bottle.
-//   - 125: White Slim Potion, from the Condensed Potion Creation Guide, a
-//     White Potion, an Empty Test Tube and Witched Starsand.
-//   - 128: Bottle Grenade, from the Bottle Grenade Creation Guide,
-//     Alcohol, Fabric and an Empty Bottle.
-//   - 129: Acid Bottle, from the Acid Bottle Creation Guide, an Empty
-//     Bottle and Immortal Heart.
-//   - 139: Alcohol, from the Alcohol Creation Guide, an Empty Bottle, 5
-//     Poison Spores, 5 Stems and an Empty Test Tube. Entry 206, Alcohol by
-//     another skill, is left out: Twilight Alchemy's casters learn Prepare
-//     Potion, so entry 139 comes first.
-var twilightRecipes = []produceRecipe{
-	{itemWhitePotion, skill.IDPharmacy, 1, [][2]int{{7144, 0}, {509, 1}, {1093, 1}}},
-	{itemWhiteSlimPotion, skill.IDPharmacy, 1, [][2]int{{7133, 0}, {504, 1}, {1092, 1}, {1061, 1}}},
-	{itemFireBottle, skill.IDPharmacy, 1, [][2]int{{7128, 0}, {970, 1}, {1059, 1}, {713, 1}}},
-	{itemAcidBottle, skill.IDPharmacy, 1, [][2]int{{7129, 0}, {713, 1}, {929, 1}}},
-	{itemAlcohol, skill.IDPharmacy, 1, [][2]int{{7127, 0}, {713, 1}, {7033, 5}, {905, 5}, {1092, 1}}},
-}
-
-// canProduceMix is skill_can_produce_mix without a trigger: the index of
-// the recipe a player can make qty of, or -1. The player needs the
-// recipe's skill, room for the product, and the materials.
-func (z *Zone) canProduceMix(p *Player, product uint32, qty int) int {
-	if z.Items == nil {
-		return -1
-	}
-	if _, ok := z.Items.Lookup(product); !ok {
-		return -1
-	}
-	idx := -1
-	for i, r := range twilightRecipes {
-		if r.item != product {
-			continue
-		}
-		if r.skill > 0 && p.skillLevel(r.skill) < r.level {
-			continue
-		}
-		idx = i
-		break
-	}
-	if idx < 0 {
-		return -1
-	}
-	if z.overAmount(p, product, qty) {
-		return -1
-	}
-	for _, m := range twilightRecipes[idx].materials {
-		id := uint32(m[0]) // #nosec G115 -- item IDs are positive.
-		if m[1] == 0 {
-			if z.countItem(p, id) == 0 {
-				return -1
-			}
-			continue
-		}
-		if z.countItem(p, id) < qty*m[1] {
-			return -1
-		}
-	}
-	return idx
-}
-
-// overAmount is pc_checkadditem's CHKADDITEM_OVERAMOUNT: qty of an item
-// would not fit in its stack.
-func (z *Zone) overAmount(p *Player, id uint32, qty int) bool {
-	if qty > item.MaxAmount {
-		return true
-	}
-	d := z.Items.Get(id)
-	if !d.Stackable {
-		return false
-	}
-	if d.StackLimit > 0 && qty > d.StackLimit {
-		return true
-	}
-	for i, s := range p.inventory.Slots {
-		if s.ID != id {
-			continue
-		}
-		if qty > item.MaxAmount-s.Amount || d.StackLimit > 0 && qty > d.StackLimit-s.Amount {
-			return true
-		}
-		return i >= p.inventory.Size
-	}
-	return false
-}
-
-// produceMix is skill_produce_mix for the potions of Prepare Potion and
-// Twilight Alchemy: the materials of qty products are used, then each
-// product succeeds at make_per in 10,000. idx is the recipe, or -1 to
-// look it up. It reports whether any product was made.
-//   - The created items' maker name (produce_item_name_input) is not
-//     ported: the inventory has no field for it yet.
-//   - The fame of the potion rankings is not ported either.
-func (z *Zone) produceMix(p *Player, skillID int, product uint32, qty, idx int) bool {
-	if idx < 0 {
-		if idx = z.canProduceMix(p, product, qty); idx < 0 {
-			return false
-		}
-	}
-	qty = max(qty, 1)
-	for _, m := range twilightRecipes[idx].materials {
-		id := uint32(m[0]) // #nosec G115 -- item IDs are positive.
-		if _, ok := z.Items.Lookup(id); !ok {
-			continue
-		}
-		if z.countItem(p, id) == 0 {
-			return false
-		}
-		z.takeItems(p, id, qty*m[1])
-	}
-	st := p.entity.status
-	if st == nil {
-		return false
-	}
-	makePer := p.skillLevel(skill.IDLearningPotion)*50 + p.skillLevel(skill.IDPharmacy)*300 +
-		z.unit(p.entity).JobLevel()*20 + st.Int/2*10 + st.Dex*10 + st.Luk*10
-	// Homunculi, whose Instruction Change adds to it, do not exist yet.
-	switch product {
-	case itemWhitePotion:
-		makePer += (1+z.rand.IntN(100))*10 + 2000
-	case itemAlcohol:
-		makePer += (1+z.rand.IntN(100))*10 + 1000
-	case itemFireBottle, itemAcidBottle:
-		makePer += (1 + z.rand.IntN(100)) * 10
-	case itemWhiteSlimPotion:
-		makePer -= (1 + z.rand.IntN(100)) * 10
-	}
-	// potion_produce_rate is 100%. Baby jobs make 30% less.
-	if z.Status != nil {
-		if m, ok := z.Status.MapID(p.char.Job); ok && m&jcBaby != 0 {
-			makePer = makePer * 70 / 100
-		}
-	}
-	makePer = max(makePer, 1)
-	made := 0
-	if qty > 1 || z.rand.IntN(10000) < makePer {
-		for range qty {
-			if qty == 1 || z.rand.IntN(10000) < makePer {
-				made++
-			}
-		}
-	}
-	if made == 0 {
-		return false
-	}
-	// A full inventory loses them (skill_drop_items_full is off).
-	z.addItem(p, product, made, skillOrigin(skillID))
-	return true
-}
 
 // skillDamageBlocked is skill_additional_effect for a hit that a status
 // such as Pneuma blocked: Acid Terror's bleeding and armor break still
