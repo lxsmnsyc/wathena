@@ -31,7 +31,7 @@ func TestPlayersConvert(t *testing.T) {
 			`player = R.attachrid(player, R.player_field(maps.find_player(`, "player:give_item(", "player = nil",
 		}},
 		{`{ getitem 501,2,.@aid; delitem 501,1,getcharid(3); percentheal 50,50,.@cid; warpchar "prontera",150,150,.@cid; end; }`, []string{
-			"local player = R.by_account(", "if player ~= nil then", "player:give_item(", "player:take_item(",
+			"local player = R.by_account(", "if player ~= nil then", "player:give_item(", "if not player:take_item(RED_POTION, 1) then R.stop() end",
 			"local player = R.by_char(", "player:heal_percent { hp = 50, sp = 50 }", `player:warp("prontera", 150, 150)`,
 		}},
 		{`{ sc_start SC_BLESSING,1000,10,10000,0,.@gid; specialeffect2 EF_HEAL,AREA,"Bob"; end; }`, []string{

@@ -85,7 +85,7 @@ return function(player, conversation, npc, ...)
     do return 1 end
   end
   if ((player:count_item(CART_FREE_TICKET) > 0) and (R.arg(args, 0) ~= 2)) then
-    player:take_item(CART_FREE_TICKET, 1)
+    if not player:take_item(CART_FREE_TICKET, 1) then R.stop() end
   else
     rental_fee = (R.arg(args, 1) or 0)
     conversation:say("[Kafra Employee]", "The Pushcart rental", "fee is " .. rental_fee .. " zeny. Would", "you like to rent a Pushcart?")

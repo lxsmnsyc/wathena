@@ -224,7 +224,7 @@ return function()
           do return end
         end
         conversation:say("[Wayne]", "There you go~", "Thanks for using my", "service, and I hope that", "you come visit me again", "soon. Enjoy the monster", "races, fair adventurer~")
-        R.take_item(player, MARVELOUS_MEDAL, (pm[m] or 0))
+        if not R.take_item(player, MARVELOUS_MEDAL, (pm[m] or 0)) then R.stop() end
         R.give_item(player, (item_array[m2] or 0), (item_array[(m2 + 1)] or 0))
         do return end
       end

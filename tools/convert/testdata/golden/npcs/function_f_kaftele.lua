@@ -66,7 +66,7 @@ return function(player, conversation, npc, ...)
     do return end
   end
   if ((player:count_item(WARP_FREE_TICKET) > 0) and (R.arg(args, 0) ~= 2)) then
-    player:take_item(WARP_FREE_TICKET, 1)
+    if not player:take_item(WARP_FREE_TICKET, 1) then R.stop() end
   else
     if (player.zeny < R.aget(TEMP_WRPP, player, j, 0)) then
       conversation:say("[Kafra Employee]", "I'm sorry, but you don't have", "enough zeny for the Teleport", "Service. The fee to teleport", "to " .. R.aget(TEMP_WRPD_TEXT, player, j, "") .. " is " .. R.aget(TEMP_WRPP, player, j, 0) .. " zeny.")

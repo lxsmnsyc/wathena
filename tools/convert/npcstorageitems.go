@@ -133,8 +133,7 @@ func (b *body) delitem2(args []Expr) error {
 		return err
 	}
 	// rAthena ends the script, and closes the dialog, when the player
-	// has too few (script.cpp 8771). Plain delitem goes on (decision
-	// 0072).
+	// has too few (script.cpp 8771), as for delitem (giveTake).
 	n := vals[0]
 	switch {
 	case n.static != nil && *n.static <= 0:
