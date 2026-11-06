@@ -1,6 +1,6 @@
 # Outcome: converter-commands
 
-spent: not measured (one session, 1 active day).
+spent: ~546k tokens (worker, review and fix rounds), 1 active day.
 
 ## Built
 

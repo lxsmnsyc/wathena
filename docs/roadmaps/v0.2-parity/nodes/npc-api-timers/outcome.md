@@ -1,6 +1,6 @@
 # Outcome: npc-api-timers
 
-spent: not measured (about one session, one active day).
+spent: ~375k tokens (worker, review and fix rounds), 1 active day.
 
 ## Built
 

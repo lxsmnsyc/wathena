@@ -1,6 +1,6 @@
 # Outcome: converter-names
 
-spent: not measured (one session).
+spent: ~556k tokens (worker, review and fix rounds), 1 active day.
 
 ## Built
 
