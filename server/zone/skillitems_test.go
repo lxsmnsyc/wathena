@@ -304,7 +304,7 @@ func TestSkillPickChangedSlot(t *testing.T) {
 // naming another skill: none refines. Cancel and the index close the
 // list; another skill leaves it open.
 func TestSkillPickMisses(t *testing.T) {
-	z, p, sword := refineList(t)
+	z, p, _ := refineList(t)
 	pick(z, p, skill.IDMakingArrow, 0)
 	if p.skillMenu == nil {
 		t.Fatal("a pick of another skill closed the list")
@@ -313,7 +313,7 @@ func TestSkillPickMisses(t *testing.T) {
 	if p.skillMenu != nil {
 		t.Fatal("an index past the list kept it open")
 	}
-	z, p, sword = refineList(t)
+	z, p, sword := refineList(t)
 	z.handle(command{player: p, skillPick: &skillPickCommand{skill: skill.IDWeaponRefine, cancel: true}})
 	if p.skillMenu != nil {
 		t.Fatal("cancel kept the list open")
