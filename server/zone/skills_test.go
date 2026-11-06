@@ -33,6 +33,10 @@ func loadSkillSource(t *testing.T, mode reference.Mode) *skillSource {
 	if err := reference.LoadFile("extracts/"+string(mode)+"/skills.json", &d); err != nil {
 		t.Fatal(err)
 	}
+	d.Crafting = &skill.Crafting{}
+	if err := reference.LoadFile("extracts/"+string(mode)+"/crafting.json", d.Crafting); err != nil {
+		t.Fatal(err)
+	}
 	db, err := skill.Load(&d)
 	if err != nil {
 		t.Fatal(err)

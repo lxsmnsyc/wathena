@@ -69,7 +69,8 @@ type Names interface {
 // Clone returns a copy of the database. Put changes the copy only. The
 // skills are shared until Put replaces them.
 func (db *DB) Clone() *DB {
-	return &DB{renewal: db.renewal, byID: maps.Clone(db.byID), byName: maps.Clone(db.byName), order: slices.Clone(db.order)}
+	return &DB{renewal: db.renewal, byID: maps.Clone(db.byID), byName: maps.Clone(db.byName), order: slices.Clone(db.order),
+		crafting: db.crafting}
 }
 
 // Put adds a skill, or replaces the skill with its ID in its place.

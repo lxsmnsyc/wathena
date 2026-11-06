@@ -553,6 +553,19 @@ export class Connection {
   }
 
   /**
+   * Answers a skill's item list with the line at index, or closes it with
+   * cancel. The server checks the pick again.
+   */
+  skillItemPick(skillId: number, index: number, cancel = false): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'skillItemPick', value: { skillId, index, cancel } },
+      }),
+    });
+  }
+
+  /**
    * Marks a quest of the log active or inactive, as RO's quest window.
    * The server answers with a QuestUpdate.
    */

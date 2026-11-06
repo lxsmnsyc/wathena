@@ -114,18 +114,20 @@ var skillImpls = map[int]any{
 	skill.IDPickStone:      pickStone{},
 	skill.IDThrowStone:     throwStone{},
 
+	// Arrow Crafting opens its item list (skillitems.go).
+	skill.IDMakingArrow: makingArrow{},
+
 	// Skills that need windows the client does not have yet: Warp
 	// Portal's and Teleport's destination menus, Item Appraisal's list,
-	// Arrow Crafting's list, carts and the buying store skill, which
-	// player:open_buying_store replaces.
-	skill.IDWarp:        notPorted{},
-	skill.IDIdentify:    notPorted{},
-	skill.IDVending:     vendingSkill{},
-	skill.IDMakingArrow: notPorted{},
-	skill.IDChangeCart:  notPorted{},
-	idCallBaby:          notPorted{},
-	idBuyingStore:       notPorted{},
-	idCartDecorate:      notPorted{},
+	// carts and the buying store skill, which player:open_buying_store
+	// replaces.
+	skill.IDWarp:       notPorted{},
+	skill.IDIdentify:   notPorted{},
+	skill.IDVending:    vendingSkill{},
+	skill.IDChangeCart: notPorted{},
+	idCallBaby:         notPorted{},
+	idBuyingStore:      notPorted{},
+	idCartDecorate:     notPorted{},
 }
 
 // registerSkillImpls adds skill behaviors from another file, once each.

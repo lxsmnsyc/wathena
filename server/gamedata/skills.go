@@ -32,8 +32,8 @@ type skillExtracts struct {
 	err    error
 }
 
-// LoadSkillData reads a mode's skills.json and skill_trees.json. The
-// result is shared: do not change it.
+// LoadSkillData reads a mode's skills.json, skill_trees.json and
+// crafting.json. The result is shared: do not change it.
 func LoadSkillData(mode reference.Mode) (*skill.Data, *skill.TreeData, error) {
 	v, _ := skillData.LoadOrStore(mode, &skillExtracts{})
 	e := v.(*skillExtracts)
@@ -45,6 +45,11 @@ func LoadSkillData(mode reference.Mode) (*skill.Data, *skill.TreeData, error) {
 			return
 		}
 		if err := reference.LoadFile(dir+"skill_trees.json", e.trees); err != nil {
+			e.err = err
+			return
+		}
+		e.skills.Crafting = &skill.Crafting{}
+		if err := reference.LoadFile(dir+"crafting.json", e.skills.Crafting); err != nil {
 			e.err = err
 		}
 	})

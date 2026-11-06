@@ -3035,3 +3035,19 @@ body.touch #chat-bar button {
     bottom: calc(150px + env(safe-area-inset-bottom));
   }
 }
+
+#skill-items .skill-items-title {
+  margin: 0;
+  font-size: 1em;
+}
+
+#skill-items .skill-items-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#skill-items .skill-items-list button {
+  width: 100%;
+  text-align: left;
+}

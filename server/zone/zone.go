@@ -206,6 +206,8 @@ type Player struct {
 	buySetup int
 	buying   *buyStore
 	search   *storeSearch
+	// skillMenu is the open item list of a menu skill (skillitems.go).
+	skillMenu *skillMenu
 	// remote is the store a store search opened from afar, which the
 	// player may buy from or sell to without range checks.
 	remote market.Key
@@ -460,6 +462,8 @@ type command struct {
 	memo bool
 	// questActive is the quest window's active toggle (quests.go).
 	questActive *questActiveCommand
+	// skillPick answers a skill's item list (skillitems.go).
+	skillPick *skillPickCommand
 }
 
 type useSkillCommand struct {
@@ -1404,6 +1408,7 @@ func (z *Zone) finishLogout(p *Player) {
 func (z *Zone) leaveMap(p *Player, reason wathenav1.VanishReason) {
 	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
 	z.closeStores(p)
+	p.skillMenu = nil
 	if p.autotrade {
 		p.autotrade = false
 		if t := z.Autotraders; t != nil {
@@ -1541,6 +1546,9 @@ func (z *Zone) handle(c command) {
 	}
 	if c.questActive != nil {
 		z.questActive(p, c.questActive)
+	}
+	if c.skillPick != nil {
+		z.skillItemPick(p, c.skillPick)
 	}
 	me := p.entity
 	if me.dead {
