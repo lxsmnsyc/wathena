@@ -401,7 +401,14 @@ func (w *World) exportCharacter(v *store.OfflineView, skills []db.SkillsRow, blo
 		Position: account.ExportPosition{Map: c.Map, X: c.X, Y: c.Y}, CreatedAt: c.CreatedAt.UTC(), Party: v.Party, Guild: v.Guild,
 		Skills: []account.ExportSkill{}, Inventory: w.exportItems(c.Items), Cart: []account.ExportItem{},
 		Storages: []account.ExportStorage{}, Mail: []account.ExportMail{}, Currencies: w.exportCurrencies(c.Currencies),
-		BlockList: slices.Clone(blocks), Quests: w.exportQuests(c.Quests)}
+		BlockList: slices.Clone(blocks), Quests: w.exportQuests(c.Quests),
+		EnteredMaps: slices.Clone(c.Visited), MemoPoints: make([]account.ExportMemo, 0, len(c.Memos))}
+	if e.EnteredMaps == nil {
+		e.EnteredMaps = []string{}
+	}
+	for i, m := range c.Memos {
+		e.MemoPoints = append(e.MemoPoints, account.ExportMemo{Slot: i, Map: m.Map, X: m.X, Y: m.Y})
+	}
 	if e.BlockList == nil {
 		e.BlockList = []string{}
 	}

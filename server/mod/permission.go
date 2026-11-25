@@ -54,9 +54,9 @@ var Permissions = []Permission{
 	// player.expand_limits is review decision 32's: player:expand.
 	{Name: "player.expand_limits", Approval: true, Allows: "raise and lower a player's inventory, cart and storage slots within the ruleset's limits"},
 	// spawns.modify is review decision 44's: the spawn_table hook.
-	{Name: "spawns.modify", Approval: true, Allows: "change the monsters a new procedural world spawns on its fields and dungeons"},
+	{Name: "spawns.modify", Approval: true, Flagged: true, Allows: "change the monsters a new procedural world spawns on its fields and dungeons"},
 	// world.generate is review decision 46's: wa.generation.
-	{Name: "world.generate", Approval: true, Allows: "add places, objects, bosses and quest templates to a new procedural world's maps"},
+	{Name: "world.generate", Approval: true, Flagged: true, Allows: "add places, objects, bosses and quest templates to a new procedural world's maps"},
 	// data.core_override is review decision 52's: data overlays that
 	// change the prices, drops, exp or reserved chat words of records
 	// other mods added, core's too.

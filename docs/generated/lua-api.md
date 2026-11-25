@@ -4276,8 +4276,6 @@ Closes the player's storage window, as the client's close button.
 
 Gives the player's account a staff role, as if it logged in with two-factor login, so player:get_staff_role and player:has_staff_permission see it.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | A player handle. |
@@ -4297,8 +4295,6 @@ Opens a shop for the player, as player:open_shop, and buys, as the shop window's
 
 Plans a restart that many minutes from the test's time, as staff do on the admin screens: restart_planned runs with { at, reason } in the world's zone, and the lines its handlers send go out. Nothing restarts.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `minutes` | `integer` | 1 to 10080, as the admin screens allow. |
@@ -4308,8 +4304,6 @@ Provisional: not reviewed in proposal 0002 yet.
 
 Rotates a dungeon at once, as staff force a rotation: its floors take the date of its style's next rotation after the world's time, or after the date it rotated to before, with new layouts and spawns. The points on the old floors move to the nearest town's save spot, and dungeon_rotated runs with { dungeon, date } in the world's zone. Returns the date, such as "2026-10-23". A case that runs on one of the dungeon's floors cannot rotate it, since a test world runs one map.
 
-Provisional: not reviewed in proposal 0002 yet.
-
 | Parameter | Type | Meaning |
 |---|---|---|
 | `dungeon` | `string` | A dungeon of the test world, by its ID: its style's name without the mod prefix, such as crypt. Its style must have a rotation. |
@@ -4317,8 +4311,6 @@ Provisional: not reviewed in proposal 0002 yet.
 #### `testWorld:change_region(x, y) → string, integer`
 
 Changes the region of a field at once, as staff force a world change: its fields generate again with their next season and a new biome, with new spawns. The points on them move to the region's town's save spot, and region_changed runs with { region, season } in the world's zone. Returns the region, its town's ID such as "t1", and its new season. A case that runs on one of the region's fields cannot change it.
-
-Provisional: not reviewed in proposal 0002 yet.
 
 | Parameter | Type | Meaning |
 |---|---|---|

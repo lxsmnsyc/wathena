@@ -116,4 +116,4 @@ These need a decision before they are built, since they would be new API or chan
 - A way to read a map's stored spawns in Lua, so a mod or a test can check them without counting monsters.
 - A dungeon style field for its spawn biome. Today a floor's biome is its tileset.
 - The theme chance of 1 in 3 as a setting or a record field.
-- Whether `spawns.modify` should be a flagged permission, as `rules.override` is.
+- Whether `spawns.modify` should be a flagged permission, as `rules.override` is. Answered by decision [0077](0077-world-generation-fixes.md): it is.

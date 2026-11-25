@@ -16,6 +16,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/spawns"
 	"github.com/lxsmnsyc/wathena/server/worldevent"
 	"github.com/lxsmnsyc/wathena/server/zone"
+	"github.com/lxsmnsyc/wathena/shared/gen"
 )
 
 // Monster overlays (data/monsters.yml) and world events
@@ -715,9 +716,15 @@ func (n eventNames) resolve(set *mod.Set, r *mod.Record, d *worldevent.Def) erro
 }
 
 // IsField reports whether a map is a field: a map whose ID has "_fild",
-// as rAthena names its fields, such as prt_fild08. Typed events with a
-// level band use fields only.
-func IsField(id string) bool { return strings.Contains(id, "_fild") }
+// as rAthena names its fields, such as prt_fild08, or a procedural
+// world's field ID, such as gen:field:0:0 (review decision 62, I4).
+// Typed events with a level band use fields only.
+func IsField(id string) bool {
+	if _, _, ok := gen.ParseFieldID(id); ok {
+		return true
+	}
+	return strings.Contains(id, "_fild")
+}
 
 // FieldLevels is the level of each field with spawns, by map ID: the
 // middle level of its monsters, weighted by their amounts, leaving out

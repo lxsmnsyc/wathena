@@ -3068,25 +3068,9 @@ local core_internal = readonly("wa.internal", {
 		call(H.core_guild_storage_log, id)
 	end,
 	-- The procedural NPCs of decision 0044: the world's quests, quest
-	-- rewards, skill points for the job guilds, and the refiner.
+	-- rewards and the refiner.
 	world_quests = function()
 		return call(H.core_world_quests)
-	end,
-	give_exp = function(player, base, job)
-		local id = player_ids[player]
-		check(id ~= nil, "give_exp: want a player handle")
-		check(math_type(base) == "integer" and math_type(job) == "integer", "give_exp: base and job must be integers")
-		call(H.core_give_exp, id, base, job)
-	end,
-	skill_points = function(player)
-		local id = player_ids[player]
-		check(id ~= nil, "skill_points: want a player handle")
-		return (call(H.core_skill_points, id))
-	end,
-	weight = function(player)
-		local id = player_ids[player]
-		check(id ~= nil, "weight: want a player handle")
-		return (call(H.core_weight, id))
 	end,
 	refine_info = function(player, slot)
 		local id = player_ids[player]

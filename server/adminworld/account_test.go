@@ -135,6 +135,9 @@ func TestAccountPageExport(t *testing.T) {
 	// The quest log (decision 0043), with a quest whose record is gone.
 	e.exec(`INSERT INTO character_quests (character_id, quest_id, ord, state, ends_at, count1) VALUES
 		($1, 1100, 0, 1, '2026-10-17 04:00:00+00', 2), ($1, 1000500, 1, 2, NULL, 0)`, id)
+	// The entered maps and memo points (review decision 62, B6).
+	e.exec(`INSERT INTO character_maps (character_id, map_id) VALUES ($1, 'gen:town:t1'), ($1, 'gen:field:0:0')`, id)
+	e.exec(`INSERT INTO character_memos (character_id, slot, map_id, x, y) VALUES ($1, 0, 'gen:field:0:0', 10, 12), ($1, 1, 'gen:town:t1', 5, 6)`, id)
 	ex, err := page.Export(e.ctx, acc)
 	if err != nil {
 		t.Fatal(err)
@@ -143,6 +146,11 @@ func TestAccountPageExport(t *testing.T) {
 		t.Fatalf("characters %+v", ex.Characters)
 	}
 	c := ex.Characters[0]
+	if !slices.Equal(c.EnteredMaps, []string{"gen:town:t1", "gen:field:0:0"}) ||
+		len(c.MemoPoints) != 2 || c.MemoPoints[0] != (account.ExportMemo{Slot: 0, Map: "gen:field:0:0", X: 10, Y: 12}) ||
+		c.MemoPoints[1] != (account.ExportMemo{Slot: 1, Map: "gen:town:t1", X: 5, Y: 6}) {
+		t.Errorf("entered maps %v, memo points %+v", c.EnteredMaps, c.MemoPoints)
+	}
 	if c.Name != "Exporter" || c.Sex != "male" || len(c.Inventory) != 1 || c.Inventory[0].Name != "Red Potion" ||
 		len(c.Skills) != 1 || c.Skills[0].Level != 10 || len(c.Mail) != 1 || c.Mail[0].Body != "A gift" ||
 		!slices.Equal(c.BlockList, []string{"Pest"}) {

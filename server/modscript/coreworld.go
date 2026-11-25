@@ -52,13 +52,6 @@ type RefineInfo struct {
 type CoreWorldHost interface {
 	// WorldQuests lists the world's quests, by ID.
 	WorldQuests() []CoreQuest
-	// GiveExp gives a player base and job exp, as a quest reward.
-	GiveExp(player, base, job int64) error
-	// SkillPoints is the player's unused skill points, rAthena's
-	// SkillPoint.
-	SkillPoints(player int64) (int, error)
-	// Weight is the weight the player carries, rAthena's Weight.
-	Weight(player int64) (int, error)
 	// RefineInfo reads the item in an equipment slot for the refiner.
 	// ok is false for an empty slot.
 	RefineInfo(player int64, slot string) (RefineInfo, bool, error)
@@ -115,34 +108,6 @@ func (r *Runtime) coreWorldQuests(c *script.Call) error {
 	return nil
 }
 
-func (r *Runtime) coreGiveExp(c *script.Call) error {
-	h, err := r.coreWorldHost("give_exp")
-	if err != nil {
-		return err
-	}
-	if err := r.mutating("give_exp"); err != nil {
-		return err
-	}
-	base, job := c.Int(1), c.Int(2)
-	if base < 0 || job < 0 {
-		return errors.New("give_exp: the exp must be 0 or more")
-	}
-	return h.GiveExp(c.Int(0), base, job)
-}
-
-func (r *Runtime) coreSkillPoints(c *script.Call) error {
-	h, err := r.coreWorldHost("skill_points")
-	if err != nil {
-		return err
-	}
-	n, err := h.SkillPoints(c.Int(0))
-	if err != nil {
-		return err
-	}
-	c.Return(script.Int(int64(n)))
-	return nil
-}
-
 func (r *Runtime) coreRefineInfo(c *script.Call) error {
 	h, err := r.coreWorldHost("refine_info")
 	if err != nil {
@@ -178,18 +143,5 @@ func (r *Runtime) coreRefine(c *script.Call) error {
 		return err
 	}
 	c.Return(script.String(res))
-	return nil
-}
-
-func (r *Runtime) coreWeight(c *script.Call) error {
-	h, err := r.coreWorldHost("weight")
-	if err != nil {
-		return err
-	}
-	n, err := h.Weight(c.Int(0))
-	if err != nil {
-		return err
-	}
-	c.Return(script.Int(int64(n)))
 	return nil
 }

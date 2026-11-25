@@ -130,13 +130,4 @@ func (h scriptHost) Refine(player int64, slot string) (string, error) {
 	return "success", nil
 }
 
-// Weight is the weight the player carries, rAthena's Weight.
-func (h scriptHost) Weight(player int64) (int, error) {
-	p, err := h.player(player)
-	if err != nil {
-		return 0, err
-	}
-	return p.inventory.Weight, nil
-}
-
 var _ modscript.CoreWorldHost = scriptHost{}

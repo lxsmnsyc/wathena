@@ -145,6 +145,20 @@ type ExportCharacter struct {
 	// Quests are the character's quest log (decision 0043), in the
 	// order it took them.
 	Quests []ExportQuest `json:"quests"`
+	// EnteredMaps are the IDs of the generated maps the character entered,
+	// in the order it first entered them (review decision 62, B6).
+	EnteredMaps []string `json:"entered_maps"`
+	// MemoPoints are its Warp Portal memo points, newest first.
+	MemoPoints []ExportMemo `json:"memo_points"`
+}
+
+// ExportMemo is a Warp Portal memo point: the slot (0 is the newest), the
+// map's ID and the cell.
+type ExportMemo struct {
+	Slot int    `json:"slot"`
+	Map  string `json:"map"`
+	X    int    `json:"x"`
+	Y    int    `json:"y"`
 }
 
 // ExportVariable is a mod's saved variable (proposal 0002, "Variables"):

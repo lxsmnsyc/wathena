@@ -289,3 +289,32 @@ func TestJail(t *testing.T) {
 		t.Errorf("freed at %d,%d, jailed %v", e.x, e.y, z.jailed(alice))
 	}
 }
+
+// TestJailReturnMapRemoved checks that a freed jailed player whose return
+// map no longer runs goes to the save point (review decision 62, F8).
+func TestJailReturnMapRemoved(t *testing.T) {
+	w := newSocialWorld(nil, "map/a")
+	z := w.zones[0]
+	z.Jail = Jail{Map: "map/a", Cells: [][2]int{{5, 5}}}
+	alice := w.join(z, "Alice")
+	w.step(50)
+	alice.entity.x, alice.entity.y = 20, 21
+	events(alice)
+	alice.record.SaveMap, alice.record.SaveX, alice.record.SaveY = "map/a", 12, 13
+	z.addSanction(alice, character.SanctionJail, 2, "botting", "test")
+	w.step(100)
+	if e := alice.entity; e.x != 5 || e.y != 5 {
+		t.Fatalf("jailed at %d,%d", e.x, e.y)
+	}
+	// The map the player came from is removed while it is in jail.
+	for i := range alice.sanctions {
+		if alice.sanctions[i].Kind == character.SanctionJail {
+			alice.sanctions[i].ReturnMap = "map/removed"
+		}
+	}
+	w.now = w.now.Add(2*time.Minute + time.Second)
+	w.step(1200)
+	if e := alice.entity; e.x != 12 || e.y != 13 || z.jailed(alice) {
+		t.Errorf("freed at %d,%d, jailed %v; want the save point 12,13", e.x, e.y, z.jailed(alice))
+	}
+}
