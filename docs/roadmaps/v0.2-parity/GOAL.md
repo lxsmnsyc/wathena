@@ -117,8 +117,8 @@ strategy.md:
 - Known issues: Go and gosec, check.sh volumes -> check-hygiene; disk space -> Constraints; kRO client copy -> inbox; no CI -> dropped (decision 0026).
 - Signing and SBOM (phase 8 step 1) -> signed-releases.
 - Phase 9 items -> mod-tooling, signed-releases, api-reference-site, client-data-template, mod-index, modding-exit.
-- Phase 10: 1 -> pre-renewal-parity; 2 -> pets, homunculus, sieges-* (and the rest of tier 2 -> tier3-systems); 3 -> third-classes; 4 -> extract-folders and the converter nodes; 5 -> distributed-mode; 6 -> client-plugin-api; 7 -> headless-client; 8 -> other-clients; 9 -> js-ts-mods.
-- Section 17: JS/TS -> js-ts-mods; Lua API redesign -> dropped: API 1.0 shipped; one state per mod and crash recovery -> lua-state-per-mod.
+- Phase 10: 1 -> pre-renewal-parity; 2 -> pets, homunculus, sieges-* (and the rest of tier 2 -> tier3-systems); 3 -> third-classes; 4 -> extract-folders and the converter nodes; 5 -> distributed-mode; 6 -> client-plugin-api; 7 -> headless-client; 8 -> other-clients; 9 -> dropped (js-ts-mods, maintainer, 2026-11-25).
+- Section 17: JS/TS -> dropped (js-ts-mods, maintainer, 2026-11-25); Lua API redesign -> dropped: API 1.0 shipped; one state per mod and crash recovery -> lua-state-per-mod.
 - "Left:" lines of phases 2-7 that are not above (Safari and amd64 runs, live economy dashboards, guild trial dungeon, quest art, map cache on disk, touch input extras, Prometheus measurements) -> inbox.
 
 Parity gaps (docs/generated, 2026-10-26):

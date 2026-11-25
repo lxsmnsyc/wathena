@@ -1,7 +1,8 @@
 ---
 id: js-ts-mods
 title: JS and TS mods, then the scriptc port
-status: todo
+status: dropped
+dropped: removed by the maintainer on 2026-11-25. scriptc 0.4.16 still misses most of decision 0061's conditions; mods stay in Lua
 priority: later
 type: feature
 outline: true
