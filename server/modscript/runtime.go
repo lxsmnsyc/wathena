@@ -571,6 +571,12 @@ func (r *Runtime) init() error {
 		{"player_change_currency", r.playerChangeCurrency},
 		{"player_send_mail", r.playerSendMail},
 		{"player_market_call", r.playerMarketCall},
+		{"player_navigate", r.playerNavigate},
+		{"chat_room_open", r.chatRoomOpen},
+		{"chat_room_close", r.chatRoomClose},
+		{"npc_chat_room", r.npcChatRoom},
+		{"chat_room_field", r.chatRoomField},
+		{"chat_room_call", r.chatRoomCall},
 		{"world_get_shop", r.worldGetShop},
 		{"shop_call", r.shopCall},
 		{"items_name", r.itemsName},
@@ -1213,6 +1219,10 @@ var Events = map[string][]string{
 	// A restart was planned or cancelled, in every zone (review decision
 	// 36).
 	"restart_planned": {KindMod, KindNPC, KindEvent},
+	// A player joined or left a chat room on the context's map
+	// (proposal 0006, section 2).
+	"chat_room_join":  {KindMod, KindNPC, KindEvent},
+	"chat_room_leave": {KindMod, KindNPC, KindEvent},
 	// A castle's owner changed, in every zone (proposal 0004).
 	"castle_change": {KindMod, KindNPC, KindEvent},
 	// A rotating dungeon rotated, or a region changed, in every zone

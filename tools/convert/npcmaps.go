@@ -25,14 +25,13 @@ var cellRefused = map[string]string{
 	"water":          "water cells are not in the server's map data",
 	"basilica":       "wAthena's Basilica keeps no cell flag, and battlegrounds do not exist",
 	"land_protector": "Land Protector does not exist",
-	"no_chat":        "chat rooms do not exist",
 	"maelstrom":      "Maelstrom does not exist",
 	"ice_wall":       "wAthena's Ice Wall keeps no cell flag",
 	"npc":            "touch areas read their NPCs, not a cell flag",
 }
 
 // mapFlagRefused are rAthena's map flags that maps.set_flag refuses,
-// grouped by why. nomemo is the flag wAthena has.
+// grouped by why. nomemo and nochat are the flags wAthena has.
 var mapFlagRefused = map[string]string{}
 
 func init() {
@@ -45,7 +44,6 @@ func init() {
 	refuse("sieges do not exist", "gvg", "gvg_noparty", "gvg_castle", "gvg_dungeon", "gvg_te", "gvg_te_castle")
 	refuse("battlegrounds do not exist", "battleground")
 	refuse("the client draws no weather", "snow", "fog", "sakura", "leaves", "rain", "clouds", "clouds2", "fireworks")
-	refuse("chat rooms do not exist", "nochat")
 	refuse("day and night do not exist", "nightenabled")
 }
 

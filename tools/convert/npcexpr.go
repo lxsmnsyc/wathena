@@ -934,6 +934,9 @@ func (b *body) call(e *Call) (val, error) {
 		return val{}, unsupported("strcharinfo", "other than the name, the party, the guild and the map")
 	case "strnpcinfo":
 		return done(b.strnpcinfo(args))
+	case "getwaitingroomstate", "checkchatting":
+		v, _, err := b.roomValue(name, args)
+		return done(v, err)
 	case "donpcevent":
 		return done(b.donpcevent(args))
 	case "cmdothernpc":
@@ -1349,7 +1352,7 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		// A negative amount takes HP or SP, and never HP below 1 (review
-		// decision 56).
+		// decision 56), except -100, which kills (decision 60).
 		var parts []string
 		if hp.static == nil || *hp.static != 0 {
 			parts = append(parts, "hp = "+hp.asInt())
@@ -1608,6 +1611,12 @@ func (b *body) commandErr(name string, args []Expr) error {
 			return err
 		}
 		if ok, err := b.presentCommand(name, args); ok {
+			return err
+		}
+		if ok, err := b.naviCommand(name, args); ok {
+			return err
+		}
+		if ok, err := b.roomCommand(name, args); ok {
 			return err
 		}
 		if ok, err := b.questCommand(name, args); ok {

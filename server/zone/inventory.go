@@ -357,8 +357,8 @@ func (z *Zone) heal(p *Player, h *item.Heal) {
 	st := e.status
 	hp, sp := h.Roll(z.rand)
 	if h.Command == "percentheal" {
-		// A negative rate takes HP or SP (review decision 56).
-		z.percentLoss(p, item.PercentLoss(hp, st.MaxHP), item.PercentLoss(sp, st.MaxSP))
+		// A negative rate takes HP or SP; -100 kills (review decision 60).
+		z.percentLoss(p, item.PercentLoss(hp, st.MaxHP), item.PercentLoss(sp, st.MaxSP), hp <= -100)
 		hp, sp = item.PercentHeal(hp, sp, st.MaxHP, st.MaxSP)
 	} else {
 		hp, sp = item.ItemHeal(hp, sp, st.Vit, st.Int, p.char.Skills)
@@ -386,22 +386,26 @@ func (z *Zone) heal(p *Player, h *item.Heal) {
 
 // percentLoss takes HP and SP for a percentheal with a negative rate,
 // as status_percent_damage does with status_damage's passive flag: no
-// damage number, and no status ends. HP stays at 1 or more, as
-// status_percent_change's "must not kill" cap. rAthena kills at -100;
-// wAthena does not (review decision 56). SP stops at 0.
-func (z *Zone) percentLoss(p *Player, hp, sp int) {
+// damage number, and no status ends. A rate above -100 keeps HP at 1 or
+// more, as status_percent_change's "must not kill" cap. -100 or less
+// kills, as rAthena's kill flag is set there (review decision 60, E4).
+// SP stops at 0. A dead player loses nothing.
+func (z *Zone) percentLoss(p *Player, hp, sp int, kill bool) {
 	if hp <= 0 && sp <= 0 {
 		return
 	}
 	e := p.entity
-	if take := min(int64(hp), e.hp-1); take > 0 && !e.dead {
-		e.hp -= take
-		e.hpChanged = true
+	if e.dead || e.hp <= 0 {
+		return
 	}
-	if take := min(int64(sp), p.sp); take > 0 {
-		p.sp -= take
-		if s := z.battleStats(p); s != nil {
-			p.pending = append(p.pending, s)
+	take := int64(hp)
+	if !kill {
+		take = min(take, e.hp-1)
+	}
+	z.zap(e, max(take, 0), min(int64(sp), p.sp))
+	if sp > 0 {
+		if st := z.battleStats(p); st != nil {
+			p.pending = append(p.pending, st)
 		}
 	}
 }

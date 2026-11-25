@@ -220,6 +220,10 @@ func (f *equipFixture) equip(t *testing.T, job, level int, id, card uint32, refi
 		handles[i] = f.next
 		f.h.equipped[f.next] = s.ID
 		f.h.refine[f.next] = s.Refine
+		if f.h.positions == nil {
+			f.h.positions = map[int64]uint32{}
+		}
+		f.h.positions[f.next] = s.Equip
 		for name, bit := range slotBits {
 			if s.Equip&bit != 0 {
 				f.h.slots[name] = f.next

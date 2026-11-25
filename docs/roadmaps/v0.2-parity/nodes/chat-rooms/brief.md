@@ -1,12 +1,13 @@
 ---
 id: chat-rooms
 title: NPC and player chat rooms
-status: todo
+status: done
 priority: must
 type: feature
 outline: false
 milestone: v0.2.0
 size: M
+spent: 650000
 spike: false
 gate: false
 owns:

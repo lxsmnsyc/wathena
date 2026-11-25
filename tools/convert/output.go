@@ -104,6 +104,8 @@ func friendly(feature string) string {
 		return "item enchanting"
 	case name == "itemskill" || name == "unitskilluseid" || name == "skilleffect":
 		return "skills used by items"
+	case name == "throwable":
+		return "throwing skills"
 	case name == "callfunc":
 		return "NPC functions"
 	case name == "bonus_script":

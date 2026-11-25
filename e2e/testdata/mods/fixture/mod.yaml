@@ -35,5 +35,6 @@ permissions:
   - events.schedule
   - events.control
   - player.expand_limits
+  - chat_rooms.manage
 scripts:
   - scripts/main.lua

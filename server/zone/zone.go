@@ -28,6 +28,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/navi"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -243,6 +244,14 @@ type Player struct {
 
 	// arrival is set while a player that warped from another zone joins.
 	arrival *handoff
+	// navi is where the player's navigation points, and naviAt when it
+	// last asked for one (navi.go). Neither is saved.
+	navi   *naviTarget
+	naviAt int64
+	// room is the chat room the player is in, and roomSeen the version of
+	// each room the client was shown (chatroom.go).
+	room     *room
+	roomSeen map[uint32]uint32
 	// mapChange is set until the first frame after a warp from another
 	// zone, which starts with MapChange.
 	mapChange bool
@@ -343,6 +352,9 @@ type Player struct {
 	// transform is the monster the player looks like while
 	// player:transform lasts, or 0 (playeractions.go).
 	transform uint32
+	// font is the chat font setfont chose, or 0. The client shows no
+	// font yet (playeractions.go).
+	font int64
 	// setLook are the headgear views setlook gave, top, middle and
 	// bottom, as rAthena's setlook_head_*, or 0.
 	setLook [3]uint32
@@ -464,6 +476,10 @@ type command struct {
 	questActive *questActiveCommand
 	// skillPick answers a skill's item list (skillitems.go).
 	skillPick *skillPickCommand
+	// navi is a <NAVI> link or the cancel of a route (navi.go).
+	navi *naviCommand
+	// chatRoom is a chat room action (chatroom.go).
+	chatRoom *wathenav1.ChatRoomCommand
 }
 
 type useSkillCommand struct {
@@ -817,6 +833,11 @@ type Zone struct {
 
 	// warps are the map's warps, in load order.
 	warps []Warp
+	// naviEdges are the warps that routes may use, for the other zones
+	// to read (navi.go). NaviExtra are the edges of data/navi.yml, which
+	// the world shares.
+	naviEdges atomic.Pointer[[]navi.Edge]
+	NaviExtra []navi.Edge
 	// asleep is set while the zone has no players and its ticker is off.
 	asleep bool
 	// nextRentalCheck is when the zone checks rentals next, in zone
@@ -829,6 +850,11 @@ type Zone struct {
 	loot
 	// chats are this tick's local chat lines.
 	chats []chatLine
+	// rooms are the zone's chat rooms by ID, and roomLast the last ID
+	// given (chatroom.go).
+	rooms    map[uint32]*room
+	roomIDs  []uint32
+	roomLast uint32
 	// used are this tick's item uses.
 	used []used
 	// prevHeal and nextHeal are when natural regen last ran and next
@@ -1162,6 +1188,7 @@ func (z *Zone) join(p *Player) joinResult {
 		x, y = z.arrivalCell(x, y)
 		p.ackSeq, p.rewarp, p.mapChange = h.ackSeq, h.rewarp, true
 		p.gmHidden = h.gmHidden
+		p.navi = h.navi
 	case c.Map != z.Map || z.grid.NoPass(x, y):
 		// A character from another map, or one on a cell that is no
 		// longer walkable, starts at the start cell. A character that
@@ -1189,6 +1216,10 @@ func (z *Zone) join(p *Player) joinResult {
 	p.itemDelays = map[uint32]int64{}
 	p.statusDelays = map[string]int64{}
 	if h != nil {
+		// So does the navigation, with a route from this map.
+		if p.navi != nil {
+			z.sendNavi(p)
+		}
 		// Item waits go on across the map change.
 		p.canUseItem = z.now + h.canUseItem
 		for id, left := range h.itemDelays {
@@ -1406,6 +1437,7 @@ func (z *Zone) finishLogout(p *Player) {
 // leaveMap is the end of leave: the player's stores, trades and storage
 // close, it is saved and it vanishes.
 func (z *Zone) leaveMap(p *Player, reason wathenav1.VanishReason) {
+	z.leaveRoom(p, wathenav1.ChatRoomChange_CHAT_ROOM_CHANGE_LEAVE)
 	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
 	z.closeStores(p)
 	p.skillMenu = nil
@@ -1474,6 +1506,9 @@ func (z *Zone) handle(c command) {
 	}
 	if c.seq > p.ackSeq {
 		p.ackSeq = c.seq
+	}
+	if p.room != nil {
+		z.roomGuard(p, &c)
 	}
 	if c.raise != nil {
 		// rAthena lets a dead player raise stats.
@@ -1549,6 +1584,12 @@ func (z *Zone) handle(c command) {
 	}
 	if c.skillPick != nil {
 		z.skillItemPick(p, c.skillPick)
+	}
+	if c.navi != nil {
+		z.naviCommand(p, c.navi)
+	}
+	if c.chatRoom != nil {
+		z.chatRoomCommand(p, c.chatRoom)
 	}
 	me := p.entity
 	if me.dead {
@@ -1841,6 +1882,7 @@ func (z *Zone) update(p *Player) {
 	events = append(events, z.emotionEvents(p)...)
 	events = append(events, z.usedEvents(p)...)
 	events = append(events, z.chatEvents(p)...)
+	events = append(events, z.roomEvents(p)...)
 	events = append(events, p.pending...)
 	p.pending = nil
 	if len(events) == 0 {

@@ -41,6 +41,21 @@ const HelloTimeout = 10 * time.Second
 // clif_parse_StatusUp reads the amount as one byte.
 const MaxRaise = 255
 
+// The longest values of a ChatRoomCommand, in bytes: 36 characters of
+// 4 bytes, 8 characters of 4 bytes, and a name.
+const (
+	MaxRoomTitle    = 144
+	MaxRoomPassword = 32
+	MaxRoomName     = 64
+)
+
+// MaxNaviMap is the longest map name of a NaviCommand, and MaxNaviCell
+// the largest cell it may name (proposal 0006, section 5).
+const (
+	MaxNaviMap  = 64
+	MaxNaviCell = 1<<16 - 1
+)
+
 // Sessions checks the session token of Hello.
 type Sessions interface {
 	// Check returns who a token names. It returns ErrSessionInvalid for
@@ -631,6 +646,8 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 				queued = p.PartyChat(seq, text)
 			case wathenav1.ChatChannel_CHAT_CHANNEL_GUILD:
 				queued = p.GuildChat(seq, text)
+			case wathenav1.ChatChannel_CHAT_CHANNEL_ROOM:
+				queued = p.RoomChat(seq, text)
 			default:
 				queued = p.Ack(seq)
 			}
@@ -698,6 +715,23 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 		case m.GetCommand().HasSkillItemPick():
 			k := m.GetCommand().GetSkillItemPick()
 			queued = p.SkillItemPick(seq, k.GetSkillId(), k.GetIndex(), k.GetCancel())
+		case m.GetCommand().HasChatRoom():
+			c := m.GetCommand().GetChatRoom()
+			if c.GetAction() < wathenav1.ChatRoomAction_CHAT_ROOM_ACTION_CREATE || c.GetAction() > wathenav1.ChatRoomAction_CHAT_ROOM_ACTION_KICK ||
+				len(c.GetTitle()) > MaxRoomTitle || len(c.GetPassword()) > MaxRoomPassword || len(c.GetName()) > MaxRoomName || c.GetLimit() > 255 {
+				// A value out of range is no room the game knows.
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.ChatRoom(seq, c)
+		case m.GetCommand().HasNavi():
+			n := m.GetCommand().GetNavi()
+			if len(n.GetMap()) > MaxNaviMap || n.GetX() > MaxNaviCell || n.GetY() > MaxNaviCell || n.GetServices() > 255 || n.GetMonster() > MaxNaviCell {
+				// A value out of range is no map or cell of the game.
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.Navi(seq, n.GetMap(), n.GetX(), n.GetY(), n.GetMonster(), n.GetServices(), n.GetHideWindow(), n.GetCancel())
 		case m.GetCommand().HasQuestActive():
 			q := m.GetCommand().GetQuestActive()
 			queued = p.QuestActive(seq, q.GetId(), q.GetActive())

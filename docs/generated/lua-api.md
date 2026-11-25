@@ -48,6 +48,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.statuses`](#wastatuses) | Status effects, from rAthena's SC_ names, and the statuses mods define. |
 | [`wa.effects`](#waeffects) | Effects for entity:show_effect, from rAthena's EF_ names. |
 | [`wa.headgear_effects`](#waheadgear_effects) | Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names. |
+| [`wa.navigation`](#wanavigation) | Services of player:navigate_to, from rAthena's NAV_ names. |
 | [`wa.emotions`](#waemotions) | Emotions for npc:show_emotion, from rAthena's ET_ names. |
 | [`wa.jobs`](#wajobs) | Jobs, from rAthena's JOB_ names, and job tests. The job tests work with mod jobs too. |
 | [`wa.testing`](#watesting) | Test cases. It exists only under wactl mod test, never in a running server. |
@@ -477,7 +478,7 @@ Permission: `player.warp`.
 
 #### `maps.set_cells(map, x1, y1, x2, y2, kind, on, options?)`
 
-Turns a kind of cell on or off in a rectangle, as setcell (review decision 58). walkable and shootable change where units walk and shoot. The players' clients are not told, as rAthena's setcell sends nothing; with send, the map's players get the cells, and players who enter later get them too, as setwall sends a wall's cells. no_vending and no_buying_store refuse shops there. Kinds whose systems do not exist raise an error. The map's zone changes them after the current step.
+Turns a kind of cell on or off in a rectangle, as setcell (review decision 58). walkable and shootable change where units walk and shoot. The players' clients are not told, as rAthena's setcell sends nothing; with send, the map's players get the cells, and players who enter later get them too, as setwall sends a wall's cells. no_vending and no_buying_store refuse shops there, and no_chat refuses player chat rooms. Kinds whose systems do not exist raise an error. The map's zone changes them after the current step.
 
 Permission: `maps.control`.
 
@@ -507,7 +508,7 @@ Permission: `game.read`.
 
 #### `maps.set_flag(map, flag, value)`
 
-Sets a map flag, as setmapflag and removemapflag (review decision 58). nomemo is the flag wAthena has. Other flags raise an error that says why: their systems do not exist, or their effects are not built. The map's zone sets it after the current step.
+Sets a map flag, as setmapflag and removemapflag (review decision 58). nomemo and nochat are the flags wAthena has: nochat refuses player chat rooms on the map. Other flags raise an error that says why: their systems do not exist, or their effects are not built. The map's zone sets it after the current step.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -1488,6 +1489,16 @@ Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names.
 
 Constants: [lua-constants.md](lua-constants.md#waheadgear_effects).
 
+### wa.navigation
+
+```lua
+local navigation = require "wa.navigation"
+```
+
+Services of player:navigate_to, from rAthena's NAV_ names.
+
+Constants: [lua-constants.md](lua-constants.md#wanavigation).
+
 ### wa.emotions
 
 ```lua
@@ -1653,6 +1664,8 @@ A player. Each access looks the player up again. A handle to a player who left t
 | `x` | `integer` |  |
 | `y` | `integer` |  |
 | `character_id` | `integer` | The database ID, 0 without a database. |
+| `chat_room` | `wa.ChatRoom?` | The chat room the player is in, or nil. |
+| `in_chat_room` | `boolean` | Whether the player is in a chat room, as checkchatting. |
 | `account_id` | `integer` | The database ID, 0 without a database. |
 | `party` | `wa.Party?` | The player's party, or nil. |
 | `guild` | `wa.Guild?` | The player's guild, or nil. |
@@ -1822,6 +1835,15 @@ Opens the store search window, as searchstores, over the vending shops and buyin
 |---|---|---|
 | `search` | `wa.StoreSearchSpec` |  |
 
+#### `player:navigate_to(map, options?) → boolean`
+
+Shows the player a route to a map on the client's navigation window, as navigateto (proposal 0006, section 5). The route goes over the warps between maps, and over the airship, Kafra and scroll trips of data/navi.yml that services allows. A target with no route shows alone. The route is made again when the player changes map, until the player reaches the map. Returns false when no map of this world has the name, which is every classic map in a procedural world.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map's name, such as prontera. |
+| `options` | `wa.NavigateOptions?` |  |
+
 #### `player:open_buying_store(store) → boolean`
 
 Opens the buying store setup window, as buyingstore. The player then picks what to buy. Returns false when the player is vending, has a buying store open, or is trading, as buyingstore_setup.
@@ -1869,7 +1891,7 @@ Heals as itemheal, with its bonuses from VIT, INT and skills.
 
 #### `player:heal_percent(heal)`
 
-Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1 (review decision 56).
+Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1, except at -100, which kills (review decisions 56 and 60).
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2066,14 +2088,23 @@ Pushes the player cells in a direction, as pushpc's unit_blown, up to the first 
 | `direction` | `integer` | 0 north to 7 north-east, counterclockwise, as rAthena's DIR_. |
 | `cells` | `integer` | -25 to 25. A negative count pushes the other way. |
 
-#### `player:transform(monster, milliseconds) → boolean`
+#### `player:transform(monster, milliseconds, options?) → boolean`
 
-The player looks like the monster for the time, as transform's SC_MONSTER_TRANSFORM. Returns false when the status does not start.
+The player looks like the monster for the time, as transform's SC_MONSTER_TRANSFORM, or active_transform's SC_ACTIVE_MONSTER_TRANSFORM with active. The status option starts a status for the same time, and the transform's end ends it. Returns false when the status does not start.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `monster` | `integer` | From monsters.id. Not the Emperium. |
 | `milliseconds` | `integer` | 0 does nothing. |
+| `options` | `wa.TransformOptions?` |  |
+
+#### `player:set_font(font)`
+
+Chooses the chat font, as setfont: the font, or 0 when the player already had it. The client shows no fonts yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `font` | `integer` | 0 or more. |
 
 #### `player:open_book(book, page)`
 
@@ -2773,6 +2804,28 @@ Shows an icon over the NPC to one player, as showevent. It stays while the playe
 | `icon` | `wa.QuestIcon?` | nil removes the icon. |
 | `options` | `wa.ShowQuestIconOptions?` |  |
 
+#### `npc:open_chat_room(options) → wa.ChatRoom?`
+
+Opens a waiting room at the NPC, as waitingroom (proposal 0006, section 2). Players join it from the client's room bubble. It takes limit - 1 players: the NPC counts. After a join that brings the users to the trigger, the event runs on its NPC with no player. The room is not saved, and goes with the NPC or npc:close_chat_room. Returns nil when the NPC has a room already, as rAthena logs and ignores. An NPC of another mod needs npcs.control.
+
+Permission: `chat_rooms.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `options` | `wa.ChatRoomOptions` |  |
+
+#### `npc:close_chat_room() → boolean`
+
+Deletes the NPC's room and makes its members leave, as delwaitingroom. Returns false when it had none.
+
+Permission: `chat_rooms.manage`.
+
+#### `npc:chat_room() → wa.ChatRoom?`
+
+The NPC's room, or nil: getwaitingroomstate's room. An NPC of another map has none to read.
+
+Permission: `game.read`.
+
 #### `npc:show()`
 
 Shows the NPC, as enablenpc: it shows, takes clicks, and its touch area works again. A player who stands in the area gets the touch event, as npc_enable_target (npc.cpp 1100). It does not uncloak the NPC. Another mod's NPC needs npcs.control.
@@ -3030,6 +3083,7 @@ An equipped copy: the instance of an equip context, or what player:get_equipped 
 | `refine` | `integer` |  |
 | `enchant_grade` | `integer` | 0 for none, 1 to 4 for D to A. |
 | `wearer` | `wa.Player` |  |
+| `position` | `integer` | The EQP_ positions the copy sits in, as getitempos: the position's bit, such as 128 for the left accessory. |
 | `weapon_type` | `integer` |  |
 | `weapon_level` | `integer` |  |
 | `armor_level` | `integer` |  |
@@ -3820,6 +3874,100 @@ The object of the castle_change event.
 | `castle` | `wa.Castle` | The castle, whose owner is the new one. |
 | `previous_owner_id` | `integer` | The previous owner's guild ID, 0 for none. |
 
+### wa.ChatRoom
+
+A chat room of an NPC (npc:open_chat_room) or a player (proposal 0006, section 2). Two handles of one room are equal. Its fields read the current state and raise an error once the room is gone. Rooms are zone-local and not saved.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `title` | `string` | At most 36 characters. |
+| `limit` | `integer` | The most users, at most 20. An NPC room takes one player fewer: the NPC counts. |
+| `trigger` | `integer` | The number of users that runs the event, 0 to 127. |
+| `trigger_disabled` | `boolean` | Set by disable_event, as bit 0x80 of rAthena's trigger. |
+| `event` | `string` | The label an NPC room runs, "NPC name::label", or "". |
+| `users` | `integer` | The members, not counting an NPC. |
+| `password` | `string` | Empty for an NPC room, and for a mod without chat_rooms.manage. |
+| `public` | `boolean` | NPC rooms are public. |
+| `full` | `boolean` | users >= limit, getwaitingroomstate(32). The join test of an NPC room counts the NPC, so a room can be refused before it is full. |
+| `triggered` | `boolean` | users >= trigger and the trigger is on, getwaitingroomstate(33). |
+| `owner` | `wa.Player?` | The owner of a player room, or nil for an NPC room. |
+| `npc` | `boolean` | Whether the room belongs to an NPC. |
+
+#### `chatRoom:members() → wa.Player[]`
+
+The players in the room, in join order.
+
+Permission: `game.read`.
+
+#### `chatRoom:enable_event()`
+
+Turns the trigger on and runs its check at once, as enablewaitingroomevent.
+
+Permission: `chat_rooms.manage`.
+
+#### `chatRoom:disable_event()`
+
+Turns the trigger off, as disablewaitingroomevent: joins do not run the event.
+
+Permission: `chat_rooms.manage`.
+
+#### `chatRoom:kick(name) → boolean`
+
+Makes the member leave, as waitingroomkick. Returns false when no member has the name.
+
+Permission: `chat_rooms.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `name` | `string` | A member's name. |
+
+#### `chatRoom:kick_all() → integer`
+
+Makes every member leave, last first, as kickwaitingroomall. Returns how many left.
+
+Permission: `chat_rooms.manage`.
+
+#### `chatRoom:warp_members(map, x?, y?, n?) → wa.Player[]`
+
+Warps the first n members in join order, as warpwaitingpc. Each pays the room's fee, and the loop stops at the first that cannot pay. Returns the players it warped.
+
+Permission: `chat_rooms.manage`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map's name, "Random" for a random cell of the room's map, or "SavePoint" for each player's save point. |
+| `x` | `integer?` |  |
+| `y` | `integer?` |  |
+| `n` | `integer?` | How many players. The trigger by default. |
+
+### wa.ChatRoomOptions
+
+The options of npc:open_chat_room, as the arguments of waitingroom.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `title` | `string` | 1 to 36 characters. |
+| `limit` | `integer` | The most users, counting the NPC; at most 20. A room of 0 is never joined: a bubble with a title. |
+| `event` | `string?` | The label to run, "NPC name::OnLabel", with the NPC's name in its mod or its full record name. |
+| `trigger` | `integer?` | The users that run the event, 0 to 127. The limit by default. |
+| `zeny` | `integer?` | The fee warp_members takes from each member. 0 by default. |
+| `min_level` | `integer?` | The least base level to join. 1 by default. |
+| `max_level` | `integer?` | The highest base level to join. The level cap by default. |
+
+### wa.ChatRoomEvent
+
+The object of the chat_room_join and chat_room_leave events.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` | The player's name. |
+| `player` | `wa.Player?` | Who joined or left, or nil when the player warped or logged out and is gone from the map by the time the handler runs. |
+| `room` | `wa.ChatRoom?` | The room, or nil when the player's leaving deleted it. |
+| `title` | `string` |  |
+| `npc` | `boolean` | Whether the room is an NPC's. |
+| `users` | `integer` | The members after the change. |
+| `kicked` | `boolean` | Whether the player was kicked. |
+
 ### wa.GuildChange
 
 The object of the guild_change event.
@@ -3884,7 +4032,7 @@ The object of the chat event and the chat hook: a line a player says. The hook r
 | Field | Type | Meaning |
 |---|---|---|
 | `player` | `wa.Player` | The speaker. |
-| `channel` | `string` | "public" for local chat, "whisper", "party", "guild", or a channel's name without its #, such as trade. |
+| `channel` | `string` | "public" for local chat, "whisper", "party", "guild", "room" for a chat room, or a channel's name without its #, such as trade. |
 | `text` | `string` | The line, after the chat filter. |
 | `to` | `string?` | A whisper's target name. nil for other channels. |
 | `map` | `string` | The speaker's map. |
@@ -4316,6 +4464,14 @@ Changes the region of a field at once, as staff force a world change: its fields
 |---|---|---|
 | `x` | `integer` | A field's x on the grid. The test world's field is 0, 0. |
 | `y` | `integer` | A field's y on the grid. |
+
+#### `testWorld:open_chat_room(spec) → wa.ChatRoom`
+
+Opens a player room for the owner, as the client's create without the checks of the map and the skills, and joins the members through the join checks. Fails when a member cannot join.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `spec` | `wa.TestChatRoomSpec` |  |
 
 #### `testWorld:get_mails(player) → wa.TestMail[]`
 
@@ -4845,6 +5001,20 @@ Options of player:give_item.
 | `to` | `string?` | Where the copies go: "storage", "cart" or an extra storage's name, instead of the inventory. They follow the place's restrictions and bound rules. |
 | `bound` | `wa.Bound?` | Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares. |
 
+### wa.TestChatRoomSpec
+
+The room of world:open_chat_room.
+
+It exists only in tests that `wactl mod test` runs.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `owner` | `wa.Player` |  |
+| `title` | `string` | 1 to 36 characters. |
+| `limit` | `integer?` | 1 to 20. 20 by default. |
+| `password` | `string?` | Up to 8 characters. The room is public without one. |
+| `members` | `wa.Player[]?` | Players that join in order. |
+
 ### wa.TestMail
 
 A mail as world:get_mails shows it.
@@ -4893,6 +5063,16 @@ Options of player:count_item and player:take_item. from goes with no other optio
 | `cards` | `integer[]?` | The cards of countitem2: exactly these, in slot order. None with refine. |
 | `signed_by_character` | `integer?` | With refine, only copies named for this character ID, as countitem2's and delitem2's CARD0_CREATE in card 1 with the ID in cards 3 and 4. Without it, only copies named for no one. |
 | `rentals` | `boolean?` | Counts only rentals, as rentalcountitem. Without it, count_item counts only copies that are not rentals, as countitem. |
+
+### wa.TransformOptions
+
+Options of player:transform.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `active` | `boolean?` | active_transform: SC_ACTIVE_MONSTER_TRANSFORM, which the client shows as an active transform. |
+| `status` | `integer?` | A status from wa.statuses that starts with the transform, as transform's status argument. |
+| `values` | `integer[]?` | Up to 4 values of the status: val1 to val4. |
 
 ### wa.GiveExpOptions
 
@@ -5170,6 +5350,18 @@ The store search of player:search_stores.
 |---|---|---|
 | `uses` | `integer` | How many searches the window allows, 1 to 1000. |
 | `effect` | `"show"\|"open"\|nil` | What a click on a result does: "show" (the default) shows the store's place, as SEARCHSTORE_EFFECT_NORMAL; "open" opens the store, as SEARCHSTORE_EFFECT_REMOTE, when it is on the player's map. |
+
+### wa.NavigateOptions
+
+Options of player:navigate_to, as the arguments of rAthena's navigateto.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `x` | `integer?` | The target cell's x, 0 for none. |
+| `y` | `integer?` | The target cell's y, 0 for none. |
+| `monster` | `integer?` | A monster ID of the map to hunt. The cell is left out then. |
+| `services` | `integer?` | A value of wa.navigation: the airship, scroll and Kafra trips the route may use. NAV_KAFRA_AND_AIRSHIP by default. |
+| `hide_window` | `boolean?` | Keeps the navigation window closed. True by default. |
 
 ### wa.BuyingStoreSpec
 
@@ -5766,7 +5958,7 @@ Changes the NPC's value.
 | `status_start` | mod, event | `event: wa.StatusEvent` | A status started on an entity of the context's map, or started again. Options narrow it. |
 | `status_end` | mod, event | `event: wa.StatusEvent` | A status ended. Options narrow it. |
 | `status_tick` | mod, event | `event: wa.StatusEvent` | A status that ticks did its tick, such as poison taking HP, or a mod status with tick_milliseconds. Options narrow it. |
-| `chat` | mod, npc, event | `message: wa.ChatMessage` | A player on the context's map said a line: local chat, a whisper, a party line, or a channel line. It runs after the line went out. Options narrow it. Whispers, party and guild lines reach only a mod with rules.override, which the chat hook needs too. |
+| `chat` | mod, npc, event | `message: wa.ChatMessage` | A player on the context's map said a line: local chat, a whisper, a party line, a chat room line, or a channel line. It runs after the line went out. Options narrow it. Whispers, party, guild and room lines reach only a mod with rules.override, which the chat hook needs too. |
 | `party_join` | mod, event | `join: wa.PartyMembership` | A player of the context's map joined a party: an accepted invite, or a wa.parties call. It does not fire for a player who makes a party itself. |
 | `party_leave` | mod, event | `leave: wa.PartyMembership` | A player of the context's map left its party. A member who is offline gets no event. |
 | `party_change` | mod, event | `change: wa.PartyChange` | A party's leader or options changed, by a change made on the context's map. |
@@ -5781,6 +5973,8 @@ Changes the NPC's value.
 | `mail` | mod, npc, event | `mail: wa.Mail` | A mail went out from the context's map: a player's, or a script's player:send_mail. |
 | `world_event_start` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event started, on any map. Every zone's handlers run. |
 | `world_event_end` | mod, npc, event | `event: wa.WorldEvent` | A run of a world event ended, on any map, with its result. Every zone's handlers run. |
+| `chat_room_join` | mod, npc, event | `event: wa.ChatRoomEvent` | A player of the context's map joined a chat room, an NPC's or a player's, after the join checks and before the trigger event. |
+| `chat_room_leave` | mod, npc, event | `event: wa.ChatRoomEvent` | A player of the context's map left a chat room: it left, was kicked, walked, warped, died or logged out. A player room that this empties is gone: room is nil. |
 | `castle_change` | mod, npc, event | `change: wa.CastleChange` | A castle's owner changed: castle:set_owner, staff, or a guild that broke up. Every zone's handlers run (proposal 0004). |
 | `restart_planned` | mod, npc, event | `restart: wa.RestartPlan` | Staff planned a server restart from the admin screens, or cancelled it. Every zone's handlers run. At the restart time the server saves every character, disconnects every player and stops, so a handler can end a mod's event in time. |
 | `dungeon_rotated` | mod, npc, event | `rotation: wa.DungeonRotation` | A rotating dungeon got new floors, on schedule or because staff forced it. Every zone's handlers run, after the players and points of the old floors moved to the nearest town. |
@@ -5801,7 +5995,7 @@ A context's kind.
 
 An event name of wa.events.
 
-`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `untouch`, `npc_event`, `monster_touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `castle_change`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
+`login`, `logout`, `map_enter`, `death`, `base_level_up`, `job_level_up`, `job_change`, `click`, `touch`, `untouch`, `npc_event`, `monster_touch`, `use`, `damage`, `skill_used`, `cast`, `unequip`, `status_start`, `status_end`, `status_tick`, `chat`, `party_join`, `party_leave`, `party_change`, `guild_join`, `guild_leave`, `guild_change`, `trade`, `shop_buy`, `shop_sell`, `vend`, `buying_store_sale`, `mail`, `world_event_start`, `world_event_end`, `chat_room_join`, `chat_room_leave`, `castle_change`, `restart_planned`, `dungeon_rotated`, `region_changed`, `quest_add`, `quest_progress`, `quest_complete`
 
 ### wa.BonusName
 
@@ -5895,13 +6089,13 @@ An AI of spawning.monsters, as rAthena's AI_ types.
 
 ### wa.CellKind
 
-A kind of cell of maps.set_cells, as setcell's cell_ types. water, npc, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error: their systems do not exist or keep no cell flag.
+A kind of cell of maps.set_cells, as setcell's cell_ types. water, npc, basilica, land_protector, maelstrom and ice_wall raise an error: their systems do not exist or keep no cell flag.
 
 `walkable`, `shootable`, `water`, `npc`, `basilica`, `land_protector`, `no_vending`, `no_chat`, `maelstrom`, `ice_wall`, `no_buying_store`
 
 ### wa.CellCheck
 
-A check of maps.check_cell, as checkcell's cell_chk types. water, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error.
+A check of maps.check_cell, as checkcell's cell_chk types. water, basilica, land_protector, maelstrom and ice_wall raise an error.
 
 `wall`, `water`, `cliff`, `pass`, `reach`, `no_pass`, `no_reach`, `stack`, `npc`, `basilica`, `land_protector`, `no_vending`, `no_chat`, `maelstrom`, `ice_wall`, `no_buying_store`
 

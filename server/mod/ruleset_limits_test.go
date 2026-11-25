@@ -161,6 +161,8 @@ var boundTests = map[string][]string{
 	"mail_return_days":            {"server/mail:TestExpiry"},
 	"mail_delete_days":            {"server/mail:TestExpiry"},
 	"mail_return_empty":           {"server/mail:TestExpiry"},
+	"chat_room_max_users":         {"server/zone:TestChatRoomRules"},
+	"chat_room_title":             {"server/zone:TestChatRoomRules"},
 }
 
 // TestEveryLimitAndRuleTested fails for a limit or rule without a

@@ -19,6 +19,9 @@ var goldenItems = []string{
 	"Sword_Guardian_Card", "Tae_Goo_Lyeon", "Shadow_Staff", "BF_Spear1", "C_Flutter_Butterfly", "Ice_Falchon",
 	"Book_Of_The_Apocalypse", "Erhu", "Time_Gap_SS_Dagger1", "Altas_Weapon", "Veteran_Sword", "Green_Potion",
 	"Str_Dish01", "RWC_Cele_Fire", "Center_Potion",
+	// Item effects (decision 0078).
+	"Trans_Scroll_Gazeti", "Cool_Towel", "Giant_Lance", "Dea_Staff", "Ghoul_Leg_IL", "VIT_Biscuit_Stick",
+	"Red_Envelope", "Two_Dragon_Ring", "Rudo_Card", "Mysterious_Powder",
 }
 
 func TestGolden(t *testing.T) {
@@ -207,6 +210,18 @@ func TestConvertUse(t *testing.T) {
 		{"sc_start4 SC_STRFOOD,1200000,10,0,0,0;", "player:start_status(statuses.strfood, { milliseconds = 1200000, level = 10, keep_duration = true })"},
 		{"sc_start2 SC_POISON,-1,1,30;", `player:start_status(statuses.poison, { milliseconds = "forever", values = { 30 }, keep_duration = true })`},
 		{"sc_end SC_POISON;", "player:end_status(statuses.poison)"},
+		{"heal 100,-50;", "player:heal(100, -50)"},
+		{"getexp 100,50;", "player:give_exp(100, 50)"},
+		{"getexp2(100,-50);", "player:give_exp(100, -50, { raw = true })"},
+		{`skilleffect "AL_BLESSING",10;`, "player:show_skill_effect(AL_BLESSING, 10)"},
+		{`showscript "Hello";`, `player:say_aloud("Hello")`},
+		{`showscript "Hello",playerattached(),SELF;`, `player:say_aloud("Hello", { to = "self" })`},
+		{"setfont 1;", "player:set_font(1)"},
+		{"transform 1002,60000;", "player:transform(PORING, 60000)"},
+		{"transform 1002,60000,SC_MTF_ASPD,20,5;", "player:transform(PORING, 60000, { status = statuses.mtf_aspd, values = { 20, 5 } })"},
+		{"transform 1002,60000,SC_NONE;", "player:transform(PORING, 60000)"},
+		{"active_transform 1002,6000;", "player:transform(PORING, 6000, { active = true })"},
+		{`bonus_script "{ bonus bHPRecovRate,rand(11,33); }",60;`, "random.integer(11, 33)"},
 		{"produce 21;", "player:open_produce(21)"},
 		{"cooking 11;", "player:open_cooking(11)"},
 		{"if (BaseLevel < 20) cooking 30; else cooking 11;", "player:open_cooking(30)"},
@@ -229,6 +244,23 @@ func TestConvertUse(t *testing.T) {
 	it = convertOne(t, "Usable", "sc_end SC_ALL;")
 	if it.Status != None || it.Lua != "" || unsupportedSummary(it) != "status effects" {
 		t.Errorf("sc_end SC_ALL: %s %q %v", it.Status, it.Lua, it.Unsupported)
+	}
+}
+
+// TestConvertEquipEffects checks the effects of equipment that start
+// statuses and act when an autobonus triggers.
+func TestConvertEquipEffects(t *testing.T) {
+	for _, tc := range []struct{ typ, script, want string }{
+		{"Card", "sc_start SC_FIREWEAPON,180000,1;", "player:start_status(statuses.fireweapon, { milliseconds = 180000, keep_duration = true })"},
+		{"Armor", "sc_start SC_SUMMER,INFINITE_TICK,0;", `player:start_status(statuses.summer, { milliseconds = "forever", level = 0, keep_duration = true })`},
+		{"Card", `autobonus "{ bonus bStr,5; sc_start SC_ENDURE,6000,1; heal 0,-10; }",40,6000,BF_WEAPON,"{ showscript \"Hi\"; }";`,
+			"end, { restart = active })\n      player:start_status(statuses.endure, { milliseconds = 6000, keep_duration = true })\n      player:heal(0, -10)\n      player:say_aloud(\"Hi\")"},
+		{"Armor", ".@p = getitempos(); if (.@p == EQP_ACC_L) bonus bStr,5;", "equipped.position == 128"},
+	} {
+		it := convertOne(t, tc.typ, tc.script)
+		if !strings.Contains(it.Lua, tc.want) || it.Status != Full {
+			t.Errorf("%s: want %q in\n%s\n%v", tc.script, tc.want, it.Lua, it.Unsupported)
+		}
 	}
 }
 

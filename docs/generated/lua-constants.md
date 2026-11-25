@@ -2590,6 +2590,21 @@ Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names.
 | `wl_telekinesis_intense` | 34 | `HAT_EF_WL_TELEKINESIS_INTENSE` |
 | `yellowfly3` | 30 | `HAT_EF_YELLOWFLY3` |
 
+## wa.navigation
+
+Services of player:navigate_to, from rAthena's NAV_ names.
+
+| Name | Value | rAthena |
+|---|---|---|
+| `airship_and_scroll` | 11 | `NAV_AIRSHIP_AND_SCROLL` |
+| `airship_only` | 1 | `NAV_AIRSHIP_ONLY` |
+| `all` | 111 | `NAV_ALL` |
+| `kafra_and_airship` | 101 | `NAV_KAFRA_AND_AIRSHIP` |
+| `kafra_and_scroll` | 110 | `NAV_KAFRA_AND_SCROLL` |
+| `kafra_only` | 100 | `NAV_KAFRA_ONLY` |
+| `none` | 0 | `NAV_NONE` |
+| `scroll_only` | 10 | `NAV_SCROLL_ONLY` |
+
 ## wa.emotions
 
 Emotions for npc:show_emotion, from rAthena's ET_ names.

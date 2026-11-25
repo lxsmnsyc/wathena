@@ -135,13 +135,14 @@ func kindOf(m *wathenav1.ClientMessage) commandKind {
 		return kindAction
 	case c.HasDropItem():
 		return kindDrop
-	case c.HasNpcClick(), c.HasNpcReply(), c.HasShopBuy(), c.HasShopSell(), c.HasShopClose(), c.HasSkillItemPick():
+	case c.HasNpcClick(), c.HasNpcReply(), c.HasShopBuy(), c.HasShopSell(), c.HasShopClose(), c.HasSkillItemPick(),
+		c.HasNavi():
 		return kindNpc
 	case c.HasStorage():
 		return kindStorage
 	case c.HasParty(), c.HasFriend(), c.HasPartyBooking(), c.HasGuild(), c.HasTrade(), c.HasMail(),
 		c.HasVending(), c.HasBuyingStore(), c.HasBlock(), c.HasReport(), c.HasChannel(), c.HasMemo(),
-		c.HasQuestActive():
+		c.HasQuestActive(), c.HasChatRoom():
 		return kindSocial
 	case c.HasStoreSearch():
 		// Only a query scans the stores. Pages, clicks and closes follow

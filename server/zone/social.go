@@ -61,6 +61,8 @@ const (
 	chatParty
 	// chatGuild is guild chat (guild.go).
 	chatGuild
+	// chatRoom is the chat of the player's chat room (chatroom.go).
+	chatRoom
 )
 
 type chatCommand struct {
@@ -248,6 +250,9 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 	if cmd.kind == chatGuild {
 		ev.Channel, protoChannel = "guild", wathenav1.ChatChannel_CHAT_CHANNEL_GUILD
 	}
+	if cmd.kind == chatRoom {
+		ev.Channel, protoChannel = "room", wathenav1.ChatChannel_CHAT_CHANNEL_ROOM
+	}
 	if cmd.kind == chatChannel {
 		protoChannel, ev.To = wathenav1.ChatChannel_CHAT_CHANNEL_NAMED, ""
 		n, ok := chat.NormalizeChannel(cmd.to)
@@ -336,6 +341,16 @@ func (z *Zone) say(p *Player, cmd *chatCommand) {
 			return
 		}
 		line.To = info.Name
+	case chatRoom:
+		// A room's lines go to its members only and are not logged: the
+		// chat log's kinds have no room.
+		if p.room == nil {
+			refuse(wathenav1.ChatRefusal_CHAT_REFUSAL_NOT_IN_CHANNEL)
+			return
+		}
+		z.roomSay(p, text)
+		z.scriptEvents = append(z.scriptEvents, scriptEvent{name: "chat", chat: &ev})
+		return
 	case chatParty:
 		// party_send_message: a player without a party says nothing.
 		line.Kind = chat.LineParty

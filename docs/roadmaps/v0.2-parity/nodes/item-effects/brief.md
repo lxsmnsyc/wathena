@@ -1,12 +1,13 @@
 ---
 id: item-effects
 title: Item scripts: autobonus effects, statuses, transforms and bonus scripts
-status: todo
+status: done
 priority: must
 type: feature
 outline: false
 milestone: v0.2.0
 size: M
+spent: 399000
 spike: false
 verify: go test ./tools/convert ./server/item ./server/statuschange
 gate: false

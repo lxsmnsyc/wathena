@@ -1,6 +1,7 @@
 import type { AssetStore } from '../assets/store';
 import type { NpcDialog } from '../gen/wathena/v1/event_pb';
 import { ImagePosition } from '../gen/wathena/v1/event_pb';
+import { type NaviLink, parseNaviInfo } from './navi';
 
 // The NPC dialog window, as RO's: the NPC's lines, then a Next or Close
 // button, a menu, or an input. Lines keep RO's color codes and item
@@ -13,10 +14,13 @@ export interface DialogRun {
   color: string | undefined;
   /** The item a link names. */
   item?: number;
+  /** The navigation a link starts. */
+  navi?: NaviLink;
 }
 
-/** A color code, ^rrggbb, or an item link. */
-const TOKENS = /\^([0-9a-fA-F]{6})|<ITEMLINK>(.*?)<INFO>(\d{1,10})<\/INFO><\/ITEMLINK>/g;
+/** A color code, ^rrggbb, an item link, or a navigation link. */
+const TOKENS =
+  /\^([0-9a-fA-F]{6})|<ITEMLINK>(.*?)<INFO>(\d{1,10})<\/INFO><\/ITEMLINK>|<NAVI>(.*?)<INFO>([^<]{1,200})<\/INFO><\/NAVI>/g;
 
 /** The longest line the window keeps, in UTF-16 units. */
 const MAX_LINE = 1024;
@@ -27,8 +31,10 @@ export const MAX_LINES = 200;
 /**
  * Splits a dialog line into runs: text in one color, as itemText's
  * colorRuns, and item links, <ITEMLINK>name<INFO>id</INFO></ITEMLINK>,
- * as runs that name their item. Runs without text are left out, except
- * links.
+ * as runs that name their item. Navigation links,
+ * <NAVI>name<INFO>map,x,y,services,monster,hide</INFO></NAVI>, are runs
+ * that name their target; one that does not read is plain text. Runs
+ * without text are left out, except links.
  */
 export function dialogRuns(line: string): DialogRun[] {
   const text = line.slice(0, MAX_LINE);
@@ -39,7 +45,10 @@ export function dialogRuns(line: string): DialogRun[] {
     if (m.index > last) {
       out.push({ text: text.slice(last, m.index), color });
     }
-    if (m[1] === undefined) {
+    if (m[4] !== undefined) {
+      const navi = parseNaviInfo(m[4], m[5] ?? '');
+      out.push(navi === undefined ? { text: m[4], color } : { text: m[4], color, navi });
+    } else if (m[1] === undefined) {
       out.push({ text: m[2] ?? '', color, item: Number(m[3]) });
     } else {
       color = `#${m[1].toLowerCase()}`;
@@ -76,6 +85,8 @@ export interface DialogActions {
   number: (dialog: number, value: bigint) => void;
   text: (dialog: number, value: string) => void;
   close: (dialog: number) => void;
+  /** Starts the navigation of a <NAVI> link. */
+  navi: (link: NaviLink) => void;
 }
 
 /** Checks a number input against the prompt's range. */
@@ -257,6 +268,22 @@ export class DialogWindow {
   private line(text: string): HTMLDivElement {
     const div = document.createElement('div');
     for (const run of dialogRuns(text)) {
+      const navi = run.navi;
+      if (navi !== undefined) {
+        const link = document.createElement('button');
+        link.type = 'button';
+        link.className = 'navi-link';
+        link.textContent = run.text;
+        link.title = `Navigate to ${navi.map}`;
+        if (run.color !== undefined) {
+          link.style.color = run.color;
+        }
+        link.addEventListener('click', () => {
+          this.actions.navi(navi);
+        });
+        div.append(link);
+        continue;
+      }
       const span = document.createElement('span');
       span.textContent = run.item === undefined ? run.text : this.label(run.item);
       if (run.item !== undefined) {

@@ -41,7 +41,57 @@ message Command {
     Memo memo = 31;
     QuestActive quest_active = 32;
     SkillItemPick skill_item_pick = 33;
+    NaviCommand navi = 34;
+    ChatRoomCommand chat_room = 35;
   }
+}
+
+// ChatRoomCommand is a player's chat room action (proposal 0006, section
+// 2): create a room, join one, leave, change the room, hand it over, or
+// kick. The server checks every rule of rAthena's chat.cpp; a refusal
+// comes back as ChatRoomResult. A player in a room says its lines with
+// Chat on CHAT_CHANNEL_ROOM.
+message ChatRoomCommand {
+  ChatRoomAction action = 1;
+  // room is the room to join, from ChatRoomShow.
+  uint32 room = 2;
+  // password is for JOIN, CREATE and CHANGE, at most 8 characters.
+  string password = 3;
+  // title is for CREATE and CHANGE, 1 to 36 characters.
+  string title = 4;
+  // limit is for CREATE and CHANGE, 1 to 20.
+  uint32 limit = 5;
+  // public is for CREATE and CHANGE: a public room needs no password.
+  bool public = 6;
+  // name is the member for OWNER and KICK.
+  string name = 7;
+}
+
+enum ChatRoomAction {
+  CHAT_ROOM_ACTION_UNSPECIFIED = 0;
+  CHAT_ROOM_ACTION_CREATE = 1;
+  CHAT_ROOM_ACTION_JOIN = 2;
+  CHAT_ROOM_ACTION_LEAVE = 3;
+  CHAT_ROOM_ACTION_CHANGE = 4;
+  CHAT_ROOM_ACTION_OWNER = 5;
+  CHAT_ROOM_ACTION_KICK = 6;
+}
+
+// NaviCommand is a <NAVI> link of a dialog, or the cancel of a route
+// (proposal 0006, section 5). The server checks that the map runs, and
+// answers with a NaviRoute. A request within one second of the last is
+// dropped. The fields are the arguments of navigateto.
+message NaviCommand {
+  // map is a map name such as prontera.
+  string map = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+  uint32 monster = 4;
+  // services is a NAV_* value.
+  uint32 services = 5;
+  bool hide_window = 6;
+  // cancel ends the player's navigation. The other fields are ignored.
+  bool cancel = 7;
 }
 
 // SkillItemPick answers a SkillItemList, as rAthena's
@@ -143,6 +193,9 @@ enum ChatChannel {
   // NAMED is a chat channel such as #global or #trade, as rAthena's
   // channel system. ChatMessage.channel_name names it.
   CHAT_CHANNEL_NAMED = 8;
+  // ROOM is the chat of the room the player is in (proposal 0006,
+  // section 2). from is 0 and from_name names the speaker.
+  CHAT_CHANNEL_ROOM = 9;
 }
 
 // ChannelCommand joins or leaves a chat channel, or asks for the list of

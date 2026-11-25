@@ -558,6 +558,15 @@ var playerFields = map[string]func(h scriptHost, p *Player) script.Value{
 	"x":            func(_ scriptHost, p *Player) script.Value { return intValue(p.entity.x) },
 	"y":            func(_ scriptHost, p *Player) script.Value { return intValue(p.entity.y) },
 	"character_id": func(_ scriptHost, p *Player) script.Value { return script.Int(p.record.ID) },
+	// chat_room is the ID of the player's chat room, which the prelude
+	// makes a wa.ChatRoom, or nil (chatroom.go).
+	"chat_room": func(_ scriptHost, p *Player) script.Value {
+		if p.room == nil {
+			return script.Nil
+		}
+		return script.Int(int64(p.room.ID))
+	},
+	"in_chat_room": func(_ scriptHost, p *Player) script.Value { return script.Bool(p.room != nil) },
 	"account_id":   func(_ scriptHost, p *Player) script.Value { return script.Int(p.record.AccountID) },
 	"party": func(h scriptHost, p *Player) script.Value {
 		if p.soc == nil {

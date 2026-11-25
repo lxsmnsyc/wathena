@@ -568,6 +568,7 @@ func runAll(name string, args []string) error {
 		}
 		z.Chat, z.Jail, z.Clock, z.Social, z.Storages, z.Castles = hub, jail, clock, socials, storages, castles
 		z.Mail, z.Market, z.Autotraders = mails, stores, autotraders
+		z.NaviExtra = loaded.all.Navi
 		z.Staff, z.Moved = staffRoles, moved
 		z.SetWarps(ws)
 		z.SetNPCs(npcs)

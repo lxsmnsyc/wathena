@@ -665,6 +665,27 @@ func (w *testWorld) Do(op string, args []script.Value) ([]script.Value, error) {
 			return nil, fmt.Errorf("world:close_storage: %w", err)
 		}
 		return nil, nil
+	case "open_chat_room":
+		owner, _ := args[0].AsInt()
+		title, _ := args[1].AsString()
+		password, _ := args[2].AsString()
+		limit, _ := args[3].AsInt()
+		var members []int64
+		if t, ok := args[4].AsTable(); ok {
+			for i := int64(1); ; i++ {
+				v := t.Index(i)
+				if v.IsNil() {
+					break
+				}
+				m, _ := v.AsInt()
+				members = append(members, m)
+			}
+		}
+		id, err := w.h.OpenChatRoom(owner, title, password, int(limit), members)
+		if err != nil {
+			return nil, fmt.Errorf("world:open_chat_room: %w", err)
+		}
+		return []script.Value{script.Int(id)}, nil
 	case "get_chat":
 		p, _ := args[0].AsInt()
 		var list []script.Value

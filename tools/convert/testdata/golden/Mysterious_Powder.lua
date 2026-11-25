@@ -1,0 +1,3 @@
+-- status: none
+-- unsupported: throwing skills
+-- details: throwable ammo: its script runs on the target of a throw skill

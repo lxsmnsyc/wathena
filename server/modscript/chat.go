@@ -60,20 +60,20 @@ const (
 )
 
 // Chat channels of the chat event that are not channel names.
-var chatKinds = []string{"public", "whisper", "party", "guild"}
+var chatKinds = []string{"public", "whisper", "party", "guild", "room"}
 
 // PrivateChatPermission is the permission that hears private lines in
 // the chat event. The chat hook needs it too, and sees every line.
 const PrivateChatPermission = "rules.override"
 
 // IsPrivateChat reports whether a line of a channel of the chat event is
-// private: a whisper, or a party or guild line.
+// private: a whisper, or a party, guild or chat room line.
 func IsPrivateChat(channel string) bool {
-	return channel == "whisper" || channel == "party" || channel == "guild"
+	return channel == "whisper" || channel == "party" || channel == "guild" || channel == "room"
 }
 
 // IsChatKind reports whether a channel of the chat event is one of
-// public, whisper, party and guild, which no chat channel may be named.
+// public, whisper, party, guild and room, which no chat channel may be named.
 func IsChatKind(name string) bool { return slices.Contains(chatKinds, name) }
 
 // ChatMessage is the object of the chat event and the chat hook: a line
@@ -81,8 +81,8 @@ func IsChatKind(name string) bool { return slices.Contains(chatKinds, name) }
 type ChatMessage struct {
 	// Player is the speaker's player ID in the zone.
 	Player int64
-	// Channel is "public", "whisper", "party", "guild" or a channel's
-	// name without its #.
+	// Channel is "public", "whisper", "party", "guild", "room" or a
+	// channel's name without its #.
 	Channel string
 	Text    string
 	// To is a whisper's target name, or "".
@@ -130,7 +130,7 @@ func readChatFilter(v script.Value) (*chatFilter, error) {
 			}
 			n, ok := chat.NormalizeChannel(s)
 			if !ok {
-				return nil, errors.New(`events.on("chat"): channel is "public", "whisper", "party", "guild" or a channel's name`)
+				return nil, errors.New(`events.on("chat"): channel is "public", "whisper", "party", "guild", "room" or a channel's name`)
 			}
 			f.channel = n
 		case "map":

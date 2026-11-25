@@ -177,8 +177,17 @@ end
 
 -- Players are handles: each access looks the player up again, and fails
 -- once the player has left.
+local function check(cond, message)
+	if not cond then
+		error(message, 3)
+	end
+end
+
 local player_ids
 local new_player
+-- Chat rooms (proposal 0006, section 2): the handle is made below, after
+-- the NPC handles.
+local new_chat_room
 -- town_ids is set with the town handles below, for player:has_visited.
 local town_ids
 local new_equipped
@@ -539,6 +548,21 @@ new_player, player_ids = handle_type("player", {
 	autotrade = function(self)
 		return (call(H.player_market_call, player_ids[self], "autotrade"))
 	end,
+	navigate_to = function(self, map, opts)
+		if type(map) ~= "string" then
+			error("player:navigate_to: want a map's name, such as \"prontera\"", 2)
+		end
+		if opts == nil then
+			opts = {}
+		elseif type(opts) ~= "table" then
+			error("player:navigate_to: opts is a table, such as { x = 150, y = 150, services = navigation.kafra_and_airship }", 2)
+		end
+		local hide = opts.hide_window
+		if hide == nil then
+			hide = true
+		end
+		return (call(H.player_navigate, player_ids[self], map, opts.x or 0, opts.y or 0, opts.monster or 0, opts.services or 101, hide))
+	end,
 	search_stores = function(self, spec)
 		if type(spec) ~= "table" then
 			error("player:search_stores: want a table, such as { uses = 10, effect = \"show\" }", 2)
@@ -682,6 +706,9 @@ new_player, player_ids = handle_type("player", {
 	end
 	if key == "guild" and value ~= nil then
 		return new_guild(value)
+	end
+	if key == "chat_room" and value ~= nil then
+		return new_chat_room(value)
 	end
 	if key == "look" then
 		return readonly("look", value)
@@ -864,6 +891,37 @@ new_npc, npc_ids = handle_type("npc", {
 	remove = function(self)
 		call(H.npc_control, npc_ids[self], "remove")
 	end,
+	-- Chat rooms (proposal 0006, section 2): waitingroom, delwaitingroom
+	-- and getwaitingroomstate.
+	open_chat_room = function(self, spec)
+		check(type(spec) == "table", "npc:open_chat_room: want a table such as { title = \"Arena\", limit = 10 }")
+		for k in pairs(spec) do
+			check(k == "title" or k == "limit" or k == "event" or k == "trigger" or k == "zeny" or k == "min_level" or k == "max_level",
+				"npc:open_chat_room: there is no option " .. tostring(k) .. "; the options are title, limit, event, trigger, zeny, min_level and max_level")
+		end
+		check(type(spec.title) == "string" and spec.title ~= "", "npc:open_chat_room: title is a string")
+		check(math_type(spec.limit) == "integer" and spec.limit >= 0, "npc:open_chat_room: limit is an integer from 0; a room of 0 only shows its title")
+		check(spec.event == nil or type(spec.event) == "string", "npc:open_chat_room: event is a label such as \"Arena::OnStart\"")
+		for _, k in ipairs({ "trigger", "zeny", "min_level", "max_level" }) do
+			check(spec[k] == nil or math_type(spec[k]) == "integer", "npc:open_chat_room: " .. k .. " is an integer")
+		end
+		local id = call(H.chat_room_open, npc_ids[self], spec.title, spec.limit, spec.event or "", spec.trigger or -1,
+			spec.zeny or 0, spec.min_level or 0, spec.max_level or 0)
+		if id == nil then
+			return nil
+		end
+		return new_chat_room(id)
+	end,
+	close_chat_room = function(self)
+		return (call(H.chat_room_close, npc_ids[self]))
+	end,
+	chat_room = function(self)
+		local id = call(H.npc_chat_room, npc_ids[self])
+		if id == nil then
+			return nil
+		end
+		return new_chat_room(id)
+	end,
 	-- Events between NPCs: donpcevent, and doevent with a player.
 	fire_event = function(self, name, options)
 		local id
@@ -893,6 +951,56 @@ new_npc, npc_ids = handle_type("npc", {
 	end
 	return value
 end, false, "npc")
+
+-- A chat room: the handle's ID is the room's ID in its zone. Reads fail
+-- once the room is gone.
+local chat_room_ids
+new_chat_room, chat_room_ids = handle_type("chat room", {
+	members = function(self)
+		local out = {}
+		for i, id in ipairs(call(H.chat_room_call, chat_room_ids[self], "members")) do
+			out[i] = new_player(id)
+		end
+		return out
+	end,
+	enable_event = function(self)
+		call(H.chat_room_call, chat_room_ids[self], "enable_event")
+	end,
+	disable_event = function(self)
+		call(H.chat_room_call, chat_room_ids[self], "disable_event")
+	end,
+	kick = function(self, name)
+		check(type(name) == "string", "room:kick: want a player's name")
+		return (call(H.chat_room_call, chat_room_ids[self], "kick", name))
+	end,
+	kick_all = function(self)
+		return (call(H.chat_room_call, chat_room_ids[self], "kick_all"))
+	end,
+	warp_members = function(self, map, x, y, n)
+		check(type(map) == "string", "room:warp_members: want a map's name, \"Random\" or \"SavePoint\"")
+		check(x == nil or math_type(x) == "integer", "room:warp_members: x is an integer")
+		check(y == nil or math_type(y) == "integer", "room:warp_members: y is an integer")
+		check(n == nil or math_type(n) == "integer", "room:warp_members: n is an integer")
+		if n == nil then
+			-- warpwaitingpc warps the trigger's number of players.
+			n = call(H.chat_room_field, chat_room_ids[self], "trigger")
+		end
+		local out = {}
+		for i, id in ipairs(call(H.chat_room_call, chat_room_ids[self], "warp_members", map, x or 0, y or 0, n)) do
+			out[i] = new_player(id)
+		end
+		return out
+	end,
+}, function(id, key)
+	local ok, value = pcall(H.chat_room_field, id, key)
+	if not ok then
+		error(value, 3)
+	end
+	if key == "owner" and value ~= nil then
+		return new_player(value)
+	end
+	return value
+end, true)
 
 -- entity_handle makes the handle of an entity of a kind.
 local function entity_handle(kind, id)
@@ -1217,8 +1325,19 @@ end
 player_methods.push = function(self, direction, cells)
 	return (call(H.player_action, player_ids[self], "push", direction, cells))
 end
-player_methods.transform = function(self, monster, milliseconds)
-	return (call(H.player_action, player_ids[self], "transform", monster, milliseconds))
+player_methods.transform = function(self, monster, milliseconds, options)
+	options = present_options("player:transform", options, { active = true, status = true, values = true })
+	local values = options.values
+	if values == nil then
+		values = {}
+	elseif type(values) ~= "table" or #values > 4 then
+		error("player:transform: values must be a list of up to 4 integers", 2)
+	end
+	return (call(H.player_action, player_ids[self], "transform", monster, milliseconds, options.active == true,
+		options.status, values[1], values[2], values[3], values[4]))
+end
+player_methods.set_font = function(self, font)
+	return (call(H.player_action, player_ids[self], "set_font", font))
 end
 player_methods.open_book = function(self, book, page)
 	return (call(H.player_action, player_ids[self], "open_book", book, page))
@@ -1293,12 +1412,6 @@ new_timer, timer_ids = handle_type("timer", {
 		return (call(H.timers_cancel, timer_ids[self]))
 	end,
 })
-
-local function check(cond, message)
-	if not cond then
-		error(message, 3)
-	end
-end
 
 local api = {}
 
@@ -2791,6 +2904,20 @@ new_world, world_ids = handle_type("test world", {
 		check(m ~= nil, "world:kill: want a monster handle")
 		return (world_call("kill", id, m))
 	end,
+	open_chat_room = function(self, spec)
+		check(type(spec) == "table", "world:open_chat_room: want a table such as { owner = player, title = \"Room\" }")
+		local owner = player_ids[spec.owner]
+		check(owner ~= nil, "world:open_chat_room: owner is a player from world:new_player")
+		check(type(spec.title) == "string", "world:open_chat_room: title is a string")
+		check(spec.limit == nil or math_type(spec.limit) == "integer", "world:open_chat_room: limit is an integer")
+		check(spec.password == nil or type(spec.password) == "string", "world:open_chat_room: password is a string")
+		local members = {}
+		for i, m in ipairs(spec.members or {}) do
+			members[i] = player_ids[m]
+			check(members[i] ~= nil, "world:open_chat_room: members are players from world:new_player")
+		end
+		return new_chat_room((world_call("open_chat_room", owner, spec.title, spec.password or "", spec.limit or 20, members)))
+	end,
 	set_time = function(self, time, time_zone)
 		check(type(time) == "string", "world:set_time: want a time such as \"2026-10-31 19:58\"")
 		check(time_zone == nil or type(time_zone) == "string", "world:set_time: the time zone must be an IANA name, such as \"Asia/Manila\"")
@@ -3237,6 +3364,19 @@ function R.invoke(fn, ...)
 				fields.options = readonly("party options", value.options)
 			end
 			value = readonly("party event", fields)
+		elseif kind == "chat_room_event" then
+			-- chat_room_join and chat_room_leave: player and room are
+			-- handles. player is nil once the player is gone from the map, and room
+			-- once the room is gone.
+			local fields = { name = value.name, title = value.title, npc = value.npc, users = value.users, kicked = value.kicked }
+			-- A player who warped or logged out is gone from the map by now.
+			if pcall(H.player_field, value.player, "kind") then
+				fields.player = new_player(value.player)
+			end
+			if value.room ~= nil then
+				fields.room = new_chat_room(value.room)
+			end
+			value = readonly("chat room event", fields)
 		elseif kind == "castle_change" then
 			-- castle_change (proposal 0004): castle is a handle.
 			value = readonly("castle change", { castle = new_castle(value.castle), previous_owner_id = value.previous_owner_id })

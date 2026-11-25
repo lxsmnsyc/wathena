@@ -1,12 +1,13 @@
 ---
 id: navigation
 title: Client navigation
-status: todo
+status: done
 priority: must
 type: feature
 outline: false
 milestone: v0.2.0
 size: M
+spent: 379000
 spike: false
 gate: false
 added: 2026-10-27

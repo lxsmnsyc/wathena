@@ -69,9 +69,13 @@ type PlayerActionHost interface {
 	// Push is pushpc: unit_blown by cells in a direction, 0 north to 7
 	// north-east, as rAthena's DIR_.
 	Push(player int64, direction, cells int) error
-	// Transform is transform: the player looks like a monster for ms.
-	// It returns false when the player cannot transform.
-	Transform(player, monster, ms int64) (bool, error)
+	// Transform is transform and active_transform: the player looks like
+	// a monster for ms, and the status of the options starts with it. It
+	// returns false when the player cannot transform.
+	Transform(player, monster, ms int64, opts TransformOptions) (bool, error)
+	// SetFont is setfont: a font of 0 or more. The player's font is
+	// that, or 0 when it already was.
+	SetFont(player, font int64) error
 	// OpenBook is readbook.
 	OpenBook(player, book, page int64) error
 	// SavePoint is getsavepoint: the map's name and the cell.
@@ -83,6 +87,18 @@ type PlayerActionHost interface {
 	// HasOption is checkoption: whether any bit of mask is set in the
 	// player's options.
 	HasOption(player int64, mask int) (bool, error)
+}
+
+// TransformOptions are the options of player:transform.
+type TransformOptions struct {
+	// Active is active_transform: SC_ACTIVE_MONSTER_TRANSFORM.
+	Active bool
+	// Status starts with the transform when HasStatus is set, with Values
+	// as its val1 to val4, for the transform's time. The transform's
+	// end ends it.
+	HasStatus bool
+	Status    int64
+	Values    [4]int64
 }
 
 func (r *Runtime) playerActionHost(what string) (PlayerActionHost, error) {
@@ -222,12 +238,37 @@ func (r *Runtime) playerAction(c *script.Call) error {
 		if !ok2 || ms < 0 || ms > 1<<40 {
 			return errors.New(what + ": milliseconds must be 0 or more")
 		}
-		ok, err := h.Transform(id, m, ms)
+		opts := TransformOptions{Active: arg(2).Truthy()}
+		if v := arg(3); !v.IsNil() {
+			st, ok := v.AsInt()
+			if !ok || st < 0 || st > 1<<20 {
+				return errors.New(what + ": status must be a status from wa.statuses")
+			}
+			opts.HasStatus, opts.Status = true, st
+		}
+		for i := range opts.Values {
+			v := arg(4 + i)
+			if v.IsNil() {
+				continue
+			}
+			n, ok := v.AsInt()
+			if !ok || n < -(1<<31) || n > 1<<31-1 {
+				return errors.New(what + ": values must be up to 4 integers that fit in 32 bits")
+			}
+			opts.Values[i] = n
+		}
+		ok, err := h.Transform(id, m, ms, opts)
 		if err != nil {
 			return wrap(what, err)
 		}
 		c.Return(script.Bool(ok))
 		return nil
+	case "set_font":
+		font, ok := arg(0).AsInt()
+		if !ok || font < 0 || font > 1<<31-1 {
+			return errors.New(what + ": want a font of 0 or more")
+		}
+		return wrap(what, h.SetFont(id, font))
 	case "open_book":
 		book, ok1 := arg(0).AsInt()
 		page, ok2 := arg(1).AsInt()

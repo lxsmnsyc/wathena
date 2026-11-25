@@ -125,7 +125,128 @@ message Event {
     BookOpen book_open = 113;
     MapCells map_cells = 114;
     SkillItemList skill_item_list = 115;
+    ChatRoomShow chat_room_show = 128;
+    ChatRoomClear chat_room_clear = 129;
+    ChatRoomJoined chat_room_joined = 130;
+    ChatRoomMember chat_room_member = 131;
+    ChatRoomResult chat_room_result = 132;
+    NaviRoute navi_route = 138;
   }
+}
+
+// ChatRoomShow shows a room above its owner or NPC, or updates a room the
+// client knows (proposal 0006, section 2; rAthena's clif_dispchat). It is
+// sent to the players that see the room's cell, and again when the user
+// count or the status changes.
+message ChatRoomShow {
+  // room is the room's ID in this zone.
+  uint32 room = 1;
+  // owner is the owner's or the NPC's entity ID for this connection.
+  uint32 owner = 2;
+  string title = 3;
+  uint32 users = 4;
+  uint32 limit = 5;
+  bool public = 6;
+  bool npc = 7;
+  // min_level, max_level and zeny are the conditions of an NPC room.
+  uint32 min_level = 8;
+  uint32 max_level = 9;
+  uint32 zeny = 10;
+}
+
+// ChatRoomClear removes a room's bubble.
+message ChatRoomClear {
+  uint32 room = 1;
+}
+
+// ChatRoomJoined is the member's own view of its room, on a join or a
+// creation (clif_joinchatok, clif_createchat).
+message ChatRoomJoined {
+  uint32 room = 1;
+  // members are the names in join order. The owner of a player room is
+  // first.
+  repeated string members = 2;
+  // owner is the owner's name, or empty for an NPC room.
+  string owner = 3;
+  string title = 4;
+  uint32 limit = 5;
+  bool public = 6;
+}
+
+// ChatRoomMember tells the members of a room that someone joined, left,
+// was kicked, became owner or that the room's status changed.
+message ChatRoomMember {
+  uint32 room = 1;
+  string name = 2;
+  ChatRoomChange change = 3;
+  // For CHAT_ROOM_CHANGE_STATUS: the room's new title, limit and public
+  // flag.
+  string title = 4;
+  uint32 limit = 5;
+  bool public = 6;
+}
+
+enum ChatRoomChange {
+  CHAT_ROOM_CHANGE_UNSPECIFIED = 0;
+  CHAT_ROOM_CHANGE_JOIN = 1;
+  CHAT_ROOM_CHANGE_LEAVE = 2;
+  CHAT_ROOM_CHANGE_KICKED = 3;
+  CHAT_ROOM_CHANGE_OWNER = 4;
+  CHAT_ROOM_CHANGE_STATUS = 5;
+}
+
+// ChatRoomResult answers a join or a create (clif_joinchatfail,
+// clif_createchat).
+message ChatRoomResult {
+  ChatRoomOutcome outcome = 1;
+}
+
+enum ChatRoomOutcome {
+  CHAT_ROOM_OUTCOME_UNSPECIFIED = 0;
+  CHAT_ROOM_OUTCOME_OK = 1;
+  CHAT_ROOM_OUTCOME_FULL = 2;
+  CHAT_ROOM_OUTCOME_WRONG_PASSWORD = 3;
+  CHAT_ROOM_OUTCOME_KICKED = 4;
+  CHAT_ROOM_OUTCOME_NO_ZENY = 5;
+  CHAT_ROOM_OUTCOME_LEVEL_LOW = 6;
+  CHAT_ROOM_OUTCOME_LEVEL_HIGH = 7;
+  CHAT_ROOM_OUTCOME_NOT_ALLOWED = 8;
+}
+
+// NaviRoute is the route of the client's navigation window (proposal
+// 0006, section 5), as rAthena's clif_navigateTo with the route drawn by
+// the server. The first three fields are the target. A route is sent when
+// the server's navigate_to ran or a NaviCommand arrived, and again when
+// the player changes map on the way, until the target map is reached.
+message NaviRoute {
+  // map is the target's map name without the map/ prefix, such as
+  // prontera.
+  string map = 1;
+  // x and y are the target cell, or 0 for none.
+  uint32 x = 2;
+  uint32 y = 3;
+  // monster is a monster ID to hunt on the target map, or 0.
+  uint32 monster = 4;
+  // services is the NAV_* value the request allowed.
+  uint32 services = 5;
+  // hide_window keeps the navigation window closed.
+  bool hide_window = 6;
+  // found is set when a route exists. Without it the client shows the
+  // target alone. A route of no steps means the player is on the target
+  // map.
+  bool found = 7;
+  // steps are the legs, first leg first.
+  repeated NaviStep steps = 8;
+  // cancel ends the navigation: the other fields are empty.
+  bool cancel = 9;
+}
+
+// NaviStep is one leg of a route: leave map at the cell, toward the next
+// step.
+message NaviStep {
+  string map = 1;
+  uint32 x = 2;
+  uint32 y = 3;
 }
 
 // SkillItemList opens the item list of a skill that asks the player to

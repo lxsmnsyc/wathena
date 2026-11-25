@@ -22,6 +22,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/item"
 	"github.com/lxsmnsyc/wathena/server/layout"
 	"github.com/lxsmnsyc/wathena/server/mod"
+	"github.com/lxsmnsyc/wathena/server/navi"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/quest"
 	"github.com/lxsmnsyc/wathena/server/rules"
@@ -110,6 +111,11 @@ type Mods struct {
 	// (proposal 0004). CastleOverlay is their merge.
 	Castles       []*castle.Record
 	CastleOverlay *mod.Overlay
+	// Navi are the extra edges of the client's navigation, from the mods'
+	// data/navi.yml (proposal 0006, section 5). NaviOverlay is their
+	// merge.
+	Navi        []navi.Edge
+	NaviOverlay *mod.Overlay
 	// Currencies are the currencies: core's with the mods'
 	// data/currencies.yml. CurrencyOverlay is their merge.
 	Currencies      *currency.Table
@@ -355,6 +361,12 @@ func LoadMods(ctx context.Context, found []*mod.Mod, cfg mod.Config, mode refere
 		return nil, err
 	}
 	for _, n := range out.CastleOverlay.Notes {
+		log.Warn("mods: " + n)
+	}
+	if out.Navi, out.NaviOverlay, err = modNavi(set); err != nil {
+		return nil, err
+	}
+	for _, n := range out.NaviOverlay.Notes {
 		log.Warn("mods: " + n)
 	}
 	for _, a := range assigned.Assigned {

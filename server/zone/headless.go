@@ -935,6 +935,18 @@ func (h *Headless) CloseStorage(player int64) error {
 	return nil
 }
 
+// OpenChatRoom opens a player room for wa.testing's world:open_chat_room
+// and joins the members through the join checks. It returns the room's
+// ID.
+func (h *Headless) OpenChatRoom(owner int64, title, password string, limit int, members []int64) (int64, error) {
+	id, err := scriptHost{z: h.z}.OpenPlayerRoom(owner, title, password, limit, password == "", members)
+	if err != nil {
+		return 0, err
+	}
+	h.step(0)
+	return id, nil
+}
+
 // Buy buys from a shop of data/npcs.yml for wa.testing's world:buy, as
 // player:open_shop then the window's Buy. It returns true when the
 // purchase went through, and otherwise the outcome's name in lower

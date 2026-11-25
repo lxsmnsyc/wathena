@@ -1122,7 +1122,7 @@ Methods on player handles check their own permissions, such as `player.give_item
 
 56. Classic mode follow-ups (phase 8 step 6). The user approved these on 2026-10-19:
     - **Touch with a conversation.** A `touch` handler may open a conversation with the player, as rAthena's `OnTouch` does. The converter then converts touch labels with dialogs. A touch while the player is already in a conversation waits until it ends, as rAthena queues it.
-    - **Taking HP and SP.** `player:heal_percent` accepts negative values, as rAthena's `percentheal` does. A negative value never takes HP below 1.
+    - **Taking HP and SP.** `player:heal_percent` accepts negative values, as rAthena's `percentheal` does. A negative value never takes HP below 1, except -100, which kills (review decision 60).
     - **Extract size.** Extracts stay JSON in git. The binaries embed gzipped copies made at build time.
     - **NPC-to-NPC commands** (`donpcevent`, enable and disable, cloaking, `getvariableofnpc`) stay in phase 10 with the converter review of review decision 32.
 
@@ -1220,6 +1220,20 @@ Methods on player handles check their own permissions, such as `player.give_item
     - `player:open_produce(level)` opens the list of the `produce_db` recipes of an item level the player can make, as rAthena's `produce`. `player:open_cooking(level)` opens a cooking kit's list, as `cooking`: levels 11 to 20 list every dish of those levels. Both need no permission, since the pick checks the skills and materials.
     - Levels 1 to 10, weapon forging, raise an error until the pick can add star crumbs and element stones and copies hold a forged mark.
     - A dish changes the core character variable `COOK_MASTERY`, as rAthena's SP_COOKMASTERY.
+67. Item effects, settled while building them (item-effects, [decision 0078](../decisions/0078-item-effects.md)). These add to API 1.0 only:
+    - `player:transform(monster, milliseconds, options)` takes `active`, `status` and `values`. `active` starts SC_ACTIVE_MONSTER_TRANSFORM, as `active_transform`. `status` starts a status from `wa.statuses` for the same time, with `values` as its val1 to val4, as the status argument of `transform`; the transform keeps it in val2, so the transform's end ends it. A new transform of the same kind ends the old one first.
+    - `player:set_font(font)` chooses the chat font, as `setfont`: the font, or 0 when the player already had it. The client shows no fonts yet.
+    - `wa.EquippedItem` gets `position`, the EQP_ bit of the slot the copy sits in, as `getitempos`.
+    - `player:heal_percent` with -100 or less kills, as `percentheal`: this replaces review decision 56's rule for -100 (review decision 60, E4).
+68. Client navigation, settled while building it (navigation, [decision 0079](../decisions/0079-client-navigation.md), [proposal 0006](0006-small-systems.md) section 5). These add to API 1.0 only:
+    - `player:navigate_to(map, { x, y, monster, services, hide_window })` shows the player a route on the client's navigation window, as `navigateto`. It needs no permission. `services` is a value of the new `wa.navigation` constants (rAthena's `NAV_*`, default `navigation.kafra_and_airship`), and `hide_window` is true by default. It returns false when no map of this world has the name, which is every classic map in a procedural world.
+    - The route goes over the visible warps between maps. A mod adds airship, Kafra and scroll trips in the optional `data/navi.yml` (`from`, `to`, `x`, `y`, `to_x`, `to_y`, `service`), which a request uses when `services` allows the kind. Core ships none.
+69. Chat rooms, settled while building them (chat-rooms, [decision 0080](../decisions/0080-chat-rooms.md), [proposal 0006](0006-small-systems.md) section 2). These add to API 1.0 only:
+    - The permission `chat_rooms.manage` (approval needed, not flagged) covers `npc:open_chat_room`, `npc:close_chat_room` and the methods `enable_event`, `disable_event`, `kick`, `kick_all` and `warp_members` of `wa.ChatRoom`. An NPC of another mod also needs `npcs.control`. Reads need `game.read`: `npc:chat_room()`, `player.chat_room`, `player.in_chat_room`, the fields of `wa.ChatRoom` and `members()`.
+    - `npc:open_chat_room({ title, limit, event, trigger, zeny, min_level, max_level })` is `waitingroom` and returns a `wa.ChatRoom`, or nil when the NPC has a room. `event` is a label as a string, `"<NPC>::OnLabel"`; a function is not taken yet. `warp_members(map, x, y, n)` is `warpwaitingpc` and returns the players it warped.
+    - The events `chat_room_join` and `chat_room_leave` get `wa.ChatRoomEvent`: `{ name, player, room, title, npc, users, kicked }`. `player` is nil for a player that warped or logged out. The `chat` event's channel `"room"` is a player's line in its room, and private as a whisper.
+    - `wa.testing`: `world:open_chat_room({ owner, title, limit, password, members })`.
+    - Ruleset rules `chat_room_max_users` and `chat_room_title`. The staff permission `chat.no_kick` (admin and game_master) stops a kick from a player's room, as rAthena's `no_chat_kick`.
 
 ## Version
 
@@ -1650,7 +1664,7 @@ On 2026-10-26 the open items of this list moved to the roadmap at [roadmaps/v0.2
    - The Lua API changes of part A are those of decision 55: the record field `touch: {x_span, y_span}`, each 0 to 100 cells and needing a `script`, and the NPC events `touch` and `untouch` with the player.
    - The Lua API changes of part B are those of decision 56:
      - `touch` handlers get `(player, conversation)` and run in a conversation, as `click` handlers. A touch while the player talks waits until the conversation ends: at most 2 wait, the first 100 ms after the end, and only if the player is still in the area, as rAthena's `eventqueue`.
-     - `player:heal_percent` takes negative amounts, which take that percent of the maximum and never take HP below 1. rAthena kills at -100.
+     - `player:heal_percent` takes negative amounts, which take that percent of the maximum and never take HP below 1, except -100, which kills (review decision 60).
    - No other Lua API change was made.
    - `touch` fires once each time a player comes into the area, for hidden and dead players too, as rAthena's `OnTouch`. `untouch` fires on a step out, a warp or a logout, with no conversation. They run only in the NPC's own context, and as a click does for the CPU budget.
    - Converted `OnTouch_` runs through `R.touch_one`, for one player at a time, as rAthena's `touching_id`.
@@ -1727,7 +1741,7 @@ On 2026-10-26 the open items of this list moved to the roadmap at [roadmaps/v0.2
    - Details to review, in decision 0065:
      - API that 0002b does not name: `maps.count_monsters`, `maps.get_flag`, `spawning.monsters`' `label` and `rectangle`, `maps.remove_monsters`' options, `maps.warp_players`' `to_rectangle`, and `maps.find_free_cell`'s options.
      - Wanted, not built: `warpparty` from one map with a range and its special targets, `areawarp` to `Random`, monster handles by game ID for `$@mobid` and the unit commands on monsters, and `maps.find_entities` on another map.
-     - Not built: `maps.can_enter`, which needs WoE:TE map flags, and every map flag but `nomemo`, refused with its reason.
+     - Not built: `maps.can_enter`, which needs WoE:TE map flags, and every map flag but `nomemo` and `nochat`, refused with its reason.
      - Labels run after the step that killed the monsters, with no player when their NPC is on another map. Dead players stay on map warps. `setcell` sends its cells to the players, which rAthena's does not.
 45. Build review decision 59: players across zones, more calls for parity, `maps.control`, and fixes of differences from rAthena. Done on 2026-10-21 ([decision 0066](../decisions/0066-npc-api-follow-ups.md)).
    - API: `maps.find_player` and `maps.find_player_by_id` on every map, handles of players of other maps, the player events of every map in NPC contexts, `npc:set_sprite`'s `keep` and `to`, `npc:stop`'s `send_cell`, `player:play_sound`'s `to`, `npc:move_to`'s direction, `npc:walk_to`'s `label`, `world.play_music`, `maps.play_music`'s `rectangle`, `equipped:destroy`'s `refine_failure`, `monster.game_id`, `maps.find_monster`, handles of monsters of other maps, `spawning.monsters`' handles on another map, `maps.find_entities` on another map, `party:warp`'s targets, `from`, `range_x`, `range_y` and `player`, `maps.warp_players` to `"random"`, `maps.set_cells`' `send`, and the permission `maps.control`. Group 4's calls are no longer provisional.

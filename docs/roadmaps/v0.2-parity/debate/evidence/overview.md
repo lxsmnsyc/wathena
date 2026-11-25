@@ -76,7 +76,7 @@ v0.2.0 is tagged with 1:1 parity with rAthena (strategy.md section 14.2a) for ev
 - [ ] **client-plugin-api**: Web client plugin API [later, L, outline, wave -] (after release-v0.2.0)
 - [ ] **distributed-mode**: Distributed deployment and 7,500-bot load tests [later, XL, outline, wave -] (after release-v0.2.0)
 - [ ] **headless-client**: Headless web client [later, L, outline, wave -] (after release-v0.2.0)
-- [ ] **js-ts-mods**: JS and TS mods, then the scriptc port [later, XL, outline, wave -] (after release-v0.2.0)
+- [x] **js-ts-mods**: JS and TS mods, then the scriptc port [dropped by the maintainer, 2026-11-25]
 - [ ] **lua-state-per-mod**: One Lua state per mod and zone crash recovery [later, L, outline, wave -] (after release-v0.2.0)
 - [ ] **other-clients**: Other clients [later, XL, outline, wave -] (after release-v0.2.0)
 

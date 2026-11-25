@@ -222,6 +222,10 @@ var RuleBounds = []Bound{
 	{Name: "mail_return_days", Default: 15, Min: 0, Max: 3650, About: "the days before a mail goes back to its sender, or 0 for never (mail_return_days)"},
 	{Name: "mail_delete_days", Default: 15, Min: 0, Max: 3650, About: "the days before a mail that came back is deleted, or 0 for never (mail_delete_days)"},
 	{Name: "mail_return_empty", Default: 1, Min: 0, Max: 1, Bool: true, About: "a mail without attachments goes back to its sender too (mail_return_empty)"},
+	// The chat room rules of proposal 0006, section 18. chat_warpportal waits
+	// for the Warp Portal skill unit, which wAthena does not have yet.
+	{Name: "chat_room_max_users", Default: 20, Min: 1, Max: 20, About: "the most users of a chat room (MAX_CHAT_USERS)"},
+	{Name: "chat_room_title", Default: 36, Min: 1, Max: 36, About: "the longest title of a chat room, in characters (CHATROOM_TITLE_SIZE)"},
 }
 
 // Market holds the vending, buying store, store search and mail rules of

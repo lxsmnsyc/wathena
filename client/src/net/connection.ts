@@ -8,6 +8,7 @@ import {
   BuyingStoreCommandSchema,
   type ChannelAction,
   ChatChannel,
+  ChatRoomAction,
   CommandSchema,
   FriendCommandSchema,
   GuildCommandSchema,
@@ -562,6 +563,88 @@ export class Connection {
       value: create(CommandSchema, {
         body: { case: 'skillItemPick', value: { skillId, index, cancel } },
       }),
+    });
+  }
+
+  /**
+   * Asks for a route to a map, as a <NAVI> link of a dialog does. The
+   * server answers with a NaviRoute, or ignores a map that does not run
+   * and requests within a second of the last.
+   */
+  navi(target: {
+    map: string;
+    x: number;
+    y: number;
+    monster: number;
+    services: number;
+    hideWindow: boolean;
+  }): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'navi', value: { ...target, cancel: false } } }),
+    });
+  }
+
+  /** Makes a chat room (proposal 0006, section 2). The server answers with a ChatRoomResult. */
+  chatRoomCreate(title: string, password: string, limit: number, isPublic: boolean): void {
+    this.chatRoom({ action: ChatRoomAction.CREATE, title, password, limit, public: isPublic });
+  }
+
+  /** Joins a room of a ChatRoomShow. */
+  chatRoomJoin(room: number, password: string): void {
+    this.chatRoom({ action: ChatRoomAction.JOIN, room, password });
+  }
+
+  /** Leaves the room. */
+  chatRoomLeave(): void {
+    this.chatRoom({ action: ChatRoomAction.LEAVE });
+  }
+
+  /** Changes the room's title, password, limit and public flag, as its owner. */
+  chatRoomChange(title: string, password: string, limit: number, isPublic: boolean): void {
+    this.chatRoom({ action: ChatRoomAction.CHANGE, title, password, limit, public: isPublic });
+  }
+
+  /** Hands the room to a member, as its owner. */
+  chatRoomOwner(name: string): void {
+    this.chatRoom({ action: ChatRoomAction.OWNER, name });
+  }
+
+  /** Kicks a member, as the owner of a player room. */
+  chatRoomKick(name: string): void {
+    this.chatRoom({ action: ChatRoomAction.KICK, name });
+  }
+
+  /** Says a line to the room the player is in. */
+  roomChat(text: string): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, {
+        body: { case: 'chat', value: { channel: ChatChannel.ROOM, text } },
+      }),
+    });
+  }
+
+  private chatRoom(value: {
+    action: ChatRoomAction;
+    room?: number;
+    password?: string;
+    title?: string;
+    limit?: number;
+    public?: boolean;
+    name?: string;
+  }): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'chatRoom', value } }),
+    });
+  }
+
+  /** Ends the navigation. */
+  naviCancel(): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'navi', value: { cancel: true } } }),
     });
   }
 

@@ -47,8 +47,8 @@ func (p *Player) isBlocked(flag uint32) bool { return p.blocked&flag != 0 }
 
 // The statuses of player:transform, by rAthena's IDs.
 const (
-	scMonsterTransform       = 566
-	scActiveMonsterTransform = 638
+	scMonsterTransform       = sc.SCMonsterTransform
+	scActiveMonsterTransform = sc.SCActiveMonsterTransform
 	// monsterEmperium is MOBID_EMPERIUM, which montransform refuses.
 	monsterEmperium = 1288
 )
@@ -252,10 +252,14 @@ func (h scriptHost) Push(player int64, direction, cells int) error {
 	return nil
 }
 
-// Transform is transform (script.cpp 23777): SC_MONSTER_TRANSFORM with
-// the monster in val1. A monster that does not exist, or the Emperium,
-// is refused. 0 milliseconds does nothing.
-func (h scriptHost) Transform(player, monster, ms int64) (bool, error) {
+// Transform is transform and active_transform (script.cpp 23777):
+// SC_MONSTER_TRANSFORM, or SC_ACTIVE_MONSTER_TRANSFORM, with the monster
+// in val1. A monster that does not exist, or the Emperium, is refused. 0
+// milliseconds does nothing. The status of the options starts for the
+// same time, and the transform keeps it in val2, so the transform's end
+// ends it (status.cpp 13814). The previous transform of the same kind
+// ends first.
+func (h scriptHost) Transform(player, monster, ms int64, opts modscript.TransformOptions) (bool, error) {
 	p, err := h.player(player)
 	if err != nil {
 		return false, err
@@ -267,19 +271,49 @@ func (h scriptHost) Transform(player, monster, ms int64) (bool, error) {
 	if ms == 0 {
 		return true, nil
 	}
+	typ := scMonsterTransform
+	if opts.Active {
+		typ = scActiveMonsterTransform
+	}
 	en := z.statusEngine()
-	if en == nil || z.Statuses == nil || z.Statuses.Get(scMonsterTransform) == nil {
+	if en == nil || z.Statuses == nil || z.Statuses.Get(typ) == nil {
 		return false, errors.New("the statuses are not loaded")
 	}
+	if opts.HasStatus && z.Statuses.Get(int(opts.Status)) == nil {
+		return false, errors.New("the status does not exist")
+	}
 	u := z.unit(p.entity)
-	en.End(u, scMonsterTransform, sc.ReasonReplaced)
-	ok := en.Start(u, u, sc.Start{Type: scMonsterTransform, Rate: 10000, Val1: int(monster), Duration: ms, Reason: sc.ReasonScript,
-		Flag: sc.NoAvoid | sc.NoTickDef | sc.NoRateDef})
+	en.End(u, typ, sc.ReasonReplaced)
+	start := sc.Start{Type: typ, Rate: 10000, Val1: int(monster), Duration: ms, Reason: sc.ReasonScript,
+		Flag: sc.NoAvoid | sc.NoTickDef | sc.NoRateDef}
+	if opts.HasStatus {
+		start.Val2 = int(opts.Status)
+	}
+	ok := en.Start(u, u, start)
 	if ok {
 		p.transform = uint32(monster) // #nosec G115 -- checked by the runtime.
 		z.updateLook(p)
+		if opts.HasStatus {
+			en.Start(u, u, sc.Start{Type: int(opts.Status), Rate: 10000, Val1: int(opts.Values[0]), Val2: int(opts.Values[1]),
+				Val3: int(opts.Values[2]), Val4: int(opts.Values[3]), Duration: ms, Reason: sc.ReasonScript, Flag: sc.NoAvoid})
+		}
 	}
 	return ok, nil
+}
+
+// SetFont is setfont (script.cpp 22386): the chat font is the one given,
+// or 0 when the player already had it. The client shows no fonts yet.
+func (h scriptHost) SetFont(player, font int64) error {
+	p, err := h.player(player)
+	if err != nil {
+		return err
+	}
+	if p.font != font {
+		p.font = font
+	} else {
+		p.font = 0
+	}
+	return nil
 }
 
 // transformEnded takes a player's monster look off when its transform

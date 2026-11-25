@@ -322,6 +322,13 @@ func (c *itemConv) call(e *Call, sc scope, vars func(*Var) (Expr, error)) (Expr,
 			return nil, err
 		}
 		return &Read{Lua: "equipped.refine", NonNeg: true}, nil
+	case "getitempos":
+		// The EQP_ position the copy sits in, as current_equip_item_index's
+		// equip field.
+		if err := equipOnly(); err != nil {
+			return nil, err
+		}
+		return &Read{Lua: "equipped.position", NonNeg: true}, nil
 	case "getenchantgrade":
 		if err := equipOnly(); err != nil {
 			return nil, err
@@ -473,7 +480,7 @@ func (c *itemConv) call(e *Call, sc scope, vars func(*Var) (Expr, error)) (Expr,
 		}
 		return nil, unsupported(name, "with a computed exponent")
 	case "rand":
-		if sc != scopeUse {
+		if sc != scopeUse && !c.rollOnce {
 			return nil, unsupported("rand", "in an equip script, where bonuses must not change between recalculations")
 		}
 		c.file.need("random")

@@ -74,6 +74,8 @@ var Permissions = []Permission{
 	// owners and values, placing guardians, and starting and ending
 	// sieges. Another mod's castle, core's too, also needs npcs.control.
 	{Name: "castles.manage", Approval: true, Allows: "change castle owners and values, place guardians, and start and end sieges"},
+	// chat_rooms.manage is proposal 0006's (section 12): NPC chat rooms.
+	{Name: "chat_rooms.manage", Approval: true, Allows: "open, close and empty NPC chat rooms and warp their members"},
 }
 
 // LookupPermission returns a permission by name.

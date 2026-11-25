@@ -26,6 +26,36 @@ describe('dialogRuns', () => {
     ]);
   });
 
+  it('reads navigation links as runs that name their target', () => {
+    expect(
+      dialogRuns(
+        'Go to ^B9062F<NAVI>[Pub]<INFO>prontera,150,160,0,000,0</INFO></NAVI>^000000 now.',
+      ),
+    ).toEqual([
+      { text: 'Go to ', color: undefined },
+      {
+        text: '[Pub]',
+        color: '#b9062f',
+        navi: {
+          name: '[Pub]',
+          map: 'prontera',
+          x: 150,
+          y: 160,
+          services: 0,
+          monster: 0,
+          hideWindow: false,
+        },
+      },
+      { text: ' now.', color: '#000000' },
+    ]);
+  });
+
+  it('shows a navigation link that does not read as its name', () => {
+    expect(dialogRuns('<NAVI>[Pub]<INFO>nowhere</INFO></NAVI>')).toEqual([
+      { text: '[Pub]', color: undefined },
+    ]);
+  });
+
   it('keeps markup as text', () => {
     expect(dialogRuns('<b>bold</b> <ITEMLINK>x</ITEMLINK>')).toEqual([
       { text: '<b>bold</b> <ITEMLINK>x</ITEMLINK>', color: undefined },

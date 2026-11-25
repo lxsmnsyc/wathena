@@ -93,6 +93,9 @@ type converter struct {
 	bonusCanon   map[string]string
 	jobs         map[string]string
 	skillNames   map[string]string
+	// throwable holds the lowercase names of the items of the item group
+	// THROWABLE, whose ammo scripts run on a target, not on equip.
+	throwable map[string]bool
 }
 
 // ConvertItems converts every item script of a mode.
@@ -124,8 +127,13 @@ func newConverter(in Input) (*converter, error) {
 	}
 	var groups struct {
 		Groups []struct {
-			ID   int64  `json:"id"`
-			Name string `json:"name"`
+			ID        int64  `json:"id"`
+			Name      string `json:"name"`
+			Subgroups []struct {
+				Entries []struct {
+					Item string `json:"item"`
+				} `json:"entries"`
+			} `json:"subgroups"`
 		} `json:"groups"`
 	}
 	if err := json.NewDecoder(in.Groups).Decode(&groups); err != nil {
@@ -148,7 +156,7 @@ func newConverter(in Input) (*converter, error) {
 		consts: consts, modules: consts.Modules(),
 		items: map[uint32]string{}, itemByName: map[string]string{}, itemIDs: map[string]uint32{},
 		monsters: map[int64]string{}, groups: map[int64]string{}, bonusByValue: map[int64]string{}, bonusCanon: map[string]string{},
-		jobs: map[string]string{}, skillNames: map[string]string{},
+		jobs: map[string]string{}, skillNames: map[string]string{}, throwable: map[string]bool{},
 	}
 	for _, it := range tables.Items {
 		c.items[it.ID] = it.AegisName
@@ -160,6 +168,13 @@ func newConverter(in Input) (*converter, error) {
 	}
 	for _, g := range groups.Groups {
 		c.groups[g.ID] = g.Name
+		if g.Name == "THROWABLE" {
+			for _, sg := range g.Subgroups {
+				for _, e := range sg.Entries {
+					c.throwable[strings.ToLower(e.Item)] = true
+				}
+			}
+		}
 	}
 	var bonusNames []string
 	for n := range consts.Constants {
@@ -236,6 +251,9 @@ type itemConv struct {
 	switches, autobonuses int
 	// unequipping is set while an unequip script converts.
 	unequipping bool
+	// rollOnce is set while a bonus_script converts: its rand rolls once,
+	// when the script runs, and the bonus keeps the value.
+	rollOnce bool
 }
 
 func (c *converter) convertItem(it *ItemScript) *Item {

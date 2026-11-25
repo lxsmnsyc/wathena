@@ -67,6 +67,16 @@ func (c *itemConv) bonusFeature(cmd string, args []Expr) string {
 // equipItem converts an equipment item or card.
 func (c *itemConv) equipItem(it *ItemScript) {
 	out := c.item
+	// rAthena does not run the script of a throwable item when it is
+	// equipped (status_calc_pc_, IG_THROWABLE): the throw skills run it
+	// on their target, and wAthena has none of them.
+	if c.conv.throwable[strings.ToLower(it.AegisName)] {
+		if b, err := Parse(it.Script); err == nil && len(b.Stmts) > 0 {
+			c.fail("throwable ammo", unsupported("throwable ammo", "its script runs on the target of a throw skill"))
+			out.Status = None
+			return
+		}
+	}
 	var setup []string
 	var data []string
 	static := true
@@ -261,7 +271,16 @@ func (c *itemConv) equipEffect(e effect) ([]string, []string, error) {
 		}
 		return t.body(), nil, nil
 	case "sc_start", "sc_start2", "sc_start4", "sc_end":
-		return nil, nil, unsupported("status effects", "%s", cmd)
+		// The status starts when the item is equipped, and the item's
+		// unequip script ends it.
+		if e.guard != nil {
+			return nil, nil, unsupported("conditional "+cmd, "")
+		}
+		t := c.newImperative(1)
+		if err := t.commandErr(&Command{Name: cmd, Args: e.args}); err != nil {
+			return nil, nil, err
+		}
+		return t.body(), nil, nil
 	}
 	return nil, nil, unsupported(cmd, "")
 }
@@ -370,8 +389,23 @@ func (c *itemConv) autobonus(cmd string, args []Expr, guard Expr) ([]string, err
 	if err != nil {
 		return nil, err
 	}
-	var inner []string
+	var inner, once []string
 	for _, e := range effects {
+		cmd := strings.ToLower(e.cmd.Name)
+		if autobonusActions[cmd] {
+			// Actions in the bonus script happen once, when the autobonus
+			// triggers, before its effect script; the bonuses are what
+			// the timer's function adds.
+			if e.guard != nil {
+				return nil, unsupported("conditional "+cmd, "")
+			}
+			t := c.newImperative(3)
+			if err := t.commandErr(&Command{Name: cmd, Args: e.args}); err != nil {
+				return nil, err
+			}
+			once = append(once, t.body()...)
+			continue
+		}
 		lines, _, err := c.equipEffect(e)
 		if err != nil {
 			return nil, err
@@ -412,9 +446,17 @@ func (c *itemConv) autobonus(cmd string, args []Expr, guard Expr) ([]string, err
 	}
 	out = append(out, inner...)
 	out = append(out, fmt.Sprintf("      end, { restart = %s })", active))
+	out = append(out, once...)
 	out = append(out, after...)
 	out = append(out, "    end", "  end)")
 	return out, nil
+}
+
+// autobonusActions are the commands of an autobonus's bonus script that
+// act once, when it triggers, instead of adding bonuses.
+var autobonusActions = map[string]bool{
+	"sc_start": true, "sc_start2": true, "sc_start4": true, "sc_end": true,
+	"heal": true, "specialeffect2": true, "showscript": true,
 }
 
 // scriptText flattens a script given as a string, or as strings and

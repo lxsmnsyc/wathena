@@ -252,6 +252,7 @@ Each limit has a range:
 | `npcs.control` | Needs the owner's approval. It shows, hides, cloaks and removes other mods' NPCs, core's too, and sends them events ("NPCs of the world" below, review decision 58). A mod's own NPCs need no permission. |
 | `maps.control` | Needs approval, and is logged as a warning at each start. It kills a map's monsters with `maps.remove_monsters` and changes its cells with `maps.set_cells` ("Maps, areas and monsters" below, review decision 59). |
 | `player.expand_limits` | Needs the owner's approval. It raises and lowers a player's inventory, cart and storage slots with `player:expand`, within the ruleset's limits (review decision 32). |
+| `chat_rooms.manage` | Needs the owner's approval. It opens, closes and empties NPC chat rooms and warps their members ("Chat rooms" below, review decision 69). |
 | `spawns.modify` | Needs the owner's approval, and is logged as a warning at each start. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
 | `world.generate` | Needs the owner's approval, and is logged as a warning at each start. It adds generation layers and quest templates with `wa.generation`, which add places, objects, bosses and quests to a new procedural world (review decision 46). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. `rules.override` also lets the `chat` event hear whispers, party and guild lines ("Chat" below). |
@@ -343,6 +344,26 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 - `display_name` is the name players see, 1 to 24 characters. It is the name without the mod prefix when left out.
 - `owner` is `account`, which the account's characters share, or `character`. It is `account` when left out.
 - `max` is the most a player holds, 1 to 2,147,483,647, the default. A give over it is lost.
+
+### Navigation trips: data/navi.yml
+
+Trips that the client's navigation window may route over besides the warps (proposal 0006, section 5): airships, Kafra teleports and scrolls. Core has none.
+
+```yaml
+- name: airship_izlude_to_juno
+  from: izlude
+  to: yuno
+  x: 200
+  y: 200
+  to_x: 50
+  to_y: 60
+  service: airship
+```
+
+- A record becomes `<mod ID>:<name>`. Every field is required.
+- `from` and `to` are map names that differ. `x` and `y` are the cell to leave `from` at, `to_x` and `to_y` the cell to arrive at, 0 to 65,535.
+- `service` is `airship`, `kafra` or `scroll`. A route uses the trip only when the request's `services` (a value of `wa.navigation`) has that service.
+- A trip goes one way. Add the way back as a second record.
 
 ### NPCs: data/npcs.yml
 
@@ -1630,8 +1651,8 @@ end
 | `maps.count_players(map, { rectangle })` | `getmapusers`, `getareausers` | nil for a map that does not run. |
 | `maps.warp_players(map, to_map, x, y, { rectangle, to_rectangle, party, guild })` | `mapwarp`, `areawarp` | Needs `player.warp`. `to_rectangle` picks a random walkable cell of the target. `to_map` `"random"` moves each player to a random cell of its own map, as areawarp's `"Random"`. Dead players move too, as rAthena's. |
 | `party:warp(map, x, y, { from, range_x, range_y, player })` | `warpparty` | Needs `player.warp`. Every online member that lives, on any map or on `from`. A range picks a random walkable cell near the cell. `map` may be a target: `"random"`, `"save_point"`, `"save_point_all"`, `"leader"` or `"random_all"`. `save_point` and `random_all` need `player`. |
-| `maps.set_cells(map, x1, y1, x2, y2, kind, on, { send })`, `maps.check_cell(map, x, y, kind)` | `setcell`, `checkcell` | `set_cells` needs `maps.control`. `walkable`, `shootable`, `no_vending` and `no_buying_store`. The players' clients learn of the cells only with `send`, as `setwall` sends a wall's cells; rAthena's `setcell` sends nothing. |
-| `maps.set_flag(map, flag, value)`, `maps.get_flag(map, flag)` | `setmapflag`, `removemapflag`, `getmapflag` | `nomemo`. Other flags raise an error that says why. |
+| `maps.set_cells(map, x1, y1, x2, y2, kind, on, { send })`, `maps.check_cell(map, x, y, kind)` | `setcell`, `checkcell` | `set_cells` needs `maps.control`. `walkable`, `shootable`, `no_vending`, `no_buying_store` and `no_chat`. The players' clients learn of the cells only with `send`, as `setwall` sends a wall's cells; rAthena's `setcell` sends nothing. |
+| `maps.set_flag(map, flag, value)`, `maps.get_flag(map, flag)` | `setmapflag`, `removemapflag`, `getmapflag` | `nomemo` and `nochat`. Other flags raise an error that says why. |
 | `maps.find_free_cell(map, { x, y, range_x, range_y, reachable_from })` | `getfreecell` | A random walkable cell, or nil. |
 | `maps.announce(map, text, { rectangle })` | `areaannounce` | The players of the rectangle. |
 | `monsters.get(monster)` | `getmonsterinfo` | The monster's record: level, HP, exp, stats, ranges, size, race, element and modes. |
@@ -1647,7 +1668,7 @@ end
 - `size` shows the baby or giant body effect. The stats stay, as rAthena's `mob_size_influence` is off by default.
 - A monster with an `ai` and no master fights the monsters without one, and those fight it unless its AI is `wave_mode`. Players may hit it. It gives exp and drops nothing, unless it is a `sphere`.
 - `maps.set_cells` refuses `water`, `npc`, `basilica`, `land_protector`, `no_chat`, `maelstrom` and `ice_wall`: their systems do not exist, or keep no cell flag.
-- `maps.set_flag` refuses every flag but `nomemo`, with the reason: PvP, sieges, battlegrounds, weather and chat rooms do not exist, and the other flags' effects are not built yet. `maps.get_flag` gives false for them.
+- `maps.set_flag` refuses every flag but `nomemo` and `nochat`, with the reason: PvP, sieges, battlegrounds and weather do not exist, and the other flags' effects are not built yet. `maps.get_flag` gives false for them.
 - `maps.find_entities { map = "other", ... }` reads the players, monsters and NPCs of another map as of its zone's last step. The area is `x` and `y` with `radius`, `rectangle` or `cells`, with no entity filters.
 - `maps.can_enter` (`jobcanentermap`) is not built: it needs the WoE:TE map flags of sieges.
 
@@ -1917,6 +1938,18 @@ Rules:
 - Players make guilds from the client with an Emperium, invite by position, and the master changes positions, the notice, the skills and the relations. Guild storage opens from core's Guild Warehouse Manager in renewal towns, and from `player:open_guild_storage()` ("Storage, cart and trade" below).
 - In `wactl mod test`, a test case's own code needs no permission to make and change guilds.
 
+### Chat rooms
+
+Review decision 69 and [decision 0080](../docs/decisions/0080-chat-rooms.md) add rAthena's chat rooms: waiting rooms of NPCs, and rooms that players make from the client. A room lives in one zone and is not saved: a restart empties it, and an NPC makes its room again in its setup. Reads need `game.read`. Changes need `chat_rooms.manage`, and `npcs.control` for an NPC of another mod.
+
+- `npc:open_chat_room({ title, limit, event, trigger, zeny, min_level, max_level })` is `waitingroom`. The NPC counts as a user, so the room takes `limit - 1` players, and a limit of 0 makes a bubble nobody can join. `event` is `"<NPC's full name>::OnLabel"`, and runs on that NPC with no player when a join brings the users to `trigger` (the limit by default). `zeny` is the fee `warp_members` takes, `min_level` and `max_level` bound the base level of a joiner. It returns the room, or nil when the NPC has one already. The room goes with the NPC or with `npc:close_chat_room()`, which is `delwaitingroom`.
+- `npc:chat_room()` and `player.chat_room` give the `wa.ChatRoom` of an NPC or of a player, or nil. `player.in_chat_room` is `checkchatting`.
+- A `wa.ChatRoom` reads `title`, `limit`, `trigger`, `trigger_disabled`, `event`, `users`, `password`, `public`, `full` (`users >= limit`, `getwaitingroomstate(32)`), `triggered`, `owner` and `npc`, and `members()` lists its players in join order. `enable_event()` runs the trigger check at once. `disable_event()` stops the trigger. `kick(name)` and `kick_all()` make members leave. `warp_members(map, x, y, n)` is `warpwaitingpc`: the first `n` players (the trigger by default), in join order, each pays `zeny` and stops the loop when one cannot. `map` may be `"Random"` or `"SavePoint"`.
+- `chat_room_join` and `chat_room_leave` run for players of the context's map with `{ name, player, room, title, npc, users, kicked }`. `player` is nil when the player already left the map, and `room` when the leave deleted it.
+- A player in a room cannot use items or skills, trade, buy, sell, click NPCs or attack, and its chat goes to the room only (the `chat` event's channel is `"room"`, private like a whisper). A walk, a warp, a death or a logout makes it leave. The map flag `nochat` and the cell kind `no_chat` of `maps.set_flag` and `maps.set_cells` refuse rooms that players make. In a test, `world:open_chat_room({ owner, title, limit, password, members })` makes a player room and joins the members.
+- `room.password` reads as empty for a mod without `chat_rooms.manage`, except for NPC rooms, which have none. The staff permission `chat.join_all` joins a locked room without its password, and `chat.no_kick` stops a kick.
+- The rules `chat_room_max_users` (20) and `chat_room_title` (36) of a ruleset cut the limit and the title.
+
 ### Storage, cart and trade
 
 Storage, carts, bound items and trades follow proposal 0002, review decision 29. [examples/bank](examples/bank) uses each part.
@@ -2148,6 +2181,7 @@ end
 | `player:take_currency(name, n)` | `currencies.modify` for another mod's currency | Takes a currency. Returns false, and takes nothing, when the player has too little. |
 | `player:send_mail({ to, sender, title, body, zeny, items })` | `mail.send` | Sends a mail, as rAthena's `mail` command. `to` is a name, a character ID or a player handle, the player by default. The recipient may be offline. `items` lists `{ item, amount, roll, bound }`, made for the mail. |
 | `player:open_mail()` | None | Opens the mailbox, as `openmail`. Returns false when the player trades, vends, runs a buying store or has a storage open. |
+| `player:navigate_to(map, { x, y, monster, services, hide_window })` | None | Shows a route to a map on the client's navigation window, as `navigateto`. The route goes over the warps and the trips of `data/navi.yml` that `services` (a value of `wa.navigation`) allows. Returns false when no map of the world has the name. |
 | `player:autotrade()` | None | Closes the connection and keeps the player's store open, as `@autotrade`. Returns false without a store. |
 | `player:search_stores({ uses, effect })` | None | Opens the store search, as `searchstores`. `effect` is `"show"` (the default) or `"open"`. |
 | `player:open_buying_store({ slots })` | None | Opens the buying store setup with 1 to 5 slots, as `buyingstore`. |
