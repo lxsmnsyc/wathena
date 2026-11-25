@@ -45,7 +45,7 @@ Coverage, from the reports, before and after:
 `player:heal_percent` takes a negative amount, as `percentheal`:
 
 - A negative rate takes that percent of the maximum HP or SP, as `status_percent_damage` and `status_percent_change`: -100 or less takes the maximum, and a loss below 1 takes 1. A positive rate beside it still heals.
-- HP never goes below 1, as decision 56 says. rAthena kills at -100 (`hp == -100` sets the kill flag). That is the one difference, and it changes the Poison Bottle of item scripts (`percentheal -100,-100` for jobs other than Assassin Cross and Guillotine Cross), which leaves 1 HP instead of killing.
+- HP never goes below 1, as decision 56 says, except -100, which kills as rAthena does (review decision 60, [decision 0078](0078-item-effects.md); the text after this was true until then). rAthena kills at -100 (`hp == -100` sets the kill flag). That is the one difference, and it changes the Poison Bottle of item scripts (`percentheal -100,-100` for jobs other than Assassin Cross and Guillotine Cross), which leaves 1 HP instead of killing.
 - The loss is passive, as `status_damage`'s flag 1: no damage number, and no status ends. SP stops at 0.
 - `item.PercentLoss` computes it, and the zone's `percentLoss` applies it.
 

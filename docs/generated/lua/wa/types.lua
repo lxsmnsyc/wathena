@@ -594,7 +594,7 @@ function wa_Player:give_zeny(amount) end
 ---@param heal wa.HealSpec
 function wa_Player:item_heal(heal) end
 
----Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1 (review decision 56).
+---Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1, except at -100, which kills (review decisions 56 and 60).
 ---@param heal wa.HealSpec Amounts in percent, from -100 to 100.
 function wa_Player:heal_percent(heal) end
 
@@ -718,11 +718,16 @@ function wa_Player:unequip_all() end
 ---@param cells integer -25 to 25. A negative count pushes the other way.
 function wa_Player:push(direction, cells) end
 
----The player looks like the monster for the time, as transform's SC_MONSTER_TRANSFORM. Returns false when the status does not start.
+---The player looks like the monster for the time, as transform's SC_MONSTER_TRANSFORM, or active_transform's SC_ACTIVE_MONSTER_TRANSFORM with active. The status option starts a status for the same time, and the transform's end ends it. Returns false when the status does not start.
 ---@param monster integer From monsters.id. Not the Emperium.
 ---@param milliseconds integer 0 does nothing.
+---@param options? wa.TransformOptions
 ---@return boolean
-function wa_Player:transform(monster, milliseconds) end
+function wa_Player:transform(monster, milliseconds, options) end
+
+---Chooses the chat font, as setfont: the font, or 0 when the player already had it. The client shows no fonts yet.
+---@param font integer 0 or more.
+function wa_Player:set_font(font) end
 
 ---Opens a book at a page, as readbook. The client shows the book's text from its data.
 ---@param book integer The book's item ID.
@@ -1362,6 +1367,7 @@ function wa_Npc:get_statuses() end
 ---@field refine integer
 ---@field enchant_grade integer 0 for none, 1 to 4 for D to A.
 ---@field wearer wa.Player
+---@field position integer The EQP_ positions the copy sits in, as getitempos: the position's bit, such as 128 for the left accessory.
 ---@field weapon_type integer
 ---@field weapon_level integer
 ---@field armor_level integer
@@ -2713,6 +2719,13 @@ local wa_TradeOffer = {}
 ---@field signed_by_character integer? With refine, only copies named for this character ID, as countitem2's and delitem2's CARD0_CREATE in card 1 with the ID in cards 3 and 4. Without it, only copies named for no one.
 ---@field rentals boolean? Counts only rentals, as rentalcountitem. Without it, count_item counts only copies that are not rentals, as countitem.
 local wa_FromOptions = {}
+
+---Options of player:transform.
+---@class wa.TransformOptions
+---@field active boolean? active_transform: SC_ACTIVE_MONSTER_TRANSFORM, which the client shows as an active transform.
+---@field status integer? A status from wa.statuses that starts with the transform, as transform's status argument.
+---@field values integer[]? Up to 4 values of the status: val1 to val4.
+local wa_TransformOptions = {}
 
 ---Options of player:give_exp.
 ---@class wa.GiveExpOptions

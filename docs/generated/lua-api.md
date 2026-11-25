@@ -1869,7 +1869,7 @@ Heals as itemheal, with its bonuses from VIT, INT and skills.
 
 #### `player:heal_percent(heal)`
 
-Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1 (review decision 56).
+Heals as percentheal. A negative amount takes that percent of the maximum HP or SP, and never takes HP below 1, except at -100, which kills (review decisions 56 and 60).
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -2066,14 +2066,23 @@ Pushes the player cells in a direction, as pushpc's unit_blown, up to the first 
 | `direction` | `integer` | 0 north to 7 north-east, counterclockwise, as rAthena's DIR_. |
 | `cells` | `integer` | -25 to 25. A negative count pushes the other way. |
 
-#### `player:transform(monster, milliseconds) → boolean`
+#### `player:transform(monster, milliseconds, options?) → boolean`
 
-The player looks like the monster for the time, as transform's SC_MONSTER_TRANSFORM. Returns false when the status does not start.
+The player looks like the monster for the time, as transform's SC_MONSTER_TRANSFORM, or active_transform's SC_ACTIVE_MONSTER_TRANSFORM with active. The status option starts a status for the same time, and the transform's end ends it. Returns false when the status does not start.
 
 | Parameter | Type | Meaning |
 |---|---|---|
 | `monster` | `integer` | From monsters.id. Not the Emperium. |
 | `milliseconds` | `integer` | 0 does nothing. |
+| `options` | `wa.TransformOptions?` |  |
+
+#### `player:set_font(font)`
+
+Chooses the chat font, as setfont: the font, or 0 when the player already had it. The client shows no fonts yet.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `font` | `integer` | 0 or more. |
 
 #### `player:open_book(book, page)`
 
@@ -3030,6 +3039,7 @@ An equipped copy: the instance of an equip context, or what player:get_equipped 
 | `refine` | `integer` |  |
 | `enchant_grade` | `integer` | 0 for none, 1 to 4 for D to A. |
 | `wearer` | `wa.Player` |  |
+| `position` | `integer` | The EQP_ positions the copy sits in, as getitempos: the position's bit, such as 128 for the left accessory. |
 | `weapon_type` | `integer` |  |
 | `weapon_level` | `integer` |  |
 | `armor_level` | `integer` |  |
@@ -4893,6 +4903,16 @@ Options of player:count_item and player:take_item. from goes with no other optio
 | `cards` | `integer[]?` | The cards of countitem2: exactly these, in slot order. None with refine. |
 | `signed_by_character` | `integer?` | With refine, only copies named for this character ID, as countitem2's and delitem2's CARD0_CREATE in card 1 with the ID in cards 3 and 4. Without it, only copies named for no one. |
 | `rentals` | `boolean?` | Counts only rentals, as rentalcountitem. Without it, count_item counts only copies that are not rentals, as countitem. |
+
+### wa.TransformOptions
+
+Options of player:transform.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `active` | `boolean?` | active_transform: SC_ACTIVE_MONSTER_TRANSFORM, which the client shows as an active transform. |
+| `status` | `integer?` | A status from wa.statuses that starts with the transform, as transform's status argument. |
+| `values` | `integer[]?` | Up to 4 values of the status: val1 to val4. |
 
 ### wa.GiveExpOptions
 

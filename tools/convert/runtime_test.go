@@ -45,6 +45,9 @@ func loadCore(t *testing.T, mode reference.Mode) *Core {
 // equipped copies by handle ID. It records nothing: the tests read the
 // bonuses.
 type testHost struct {
+	// PresentHost is nil: testHost answers the two calls of item scripts
+	// (SayAloud and ShowSkillEffect) and no other.
+	modscript.PresentHost
 	job, baseLevel, jobLevel int
 	stats                    status.Stats
 	jobs                     *status.Tables
@@ -55,8 +58,11 @@ type testHost struct {
 	// refine and defs give the refine and item data of equipped copies,
 	// and slots the copy in each equipment slot.
 	refine map[int64]int
-	defs   map[uint32]*item.Def
-	slots  map[string]int64
+	// positions are the EQP_ bits of equipped copies; a copy with none
+	// sits in the left accessory.
+	positions map[int64]uint32
+	defs      map[uint32]*item.Def
+	slots     map[string]int64
 	// statuses is the mode's status data; started counts status starts.
 	statuses *sc.DB
 	started  int
@@ -219,6 +225,12 @@ func (h *testHost) EquippedField(id int64, field string) (script.Value, error) {
 		return script.Int(int64(v)), nil
 	case "enchant_grade":
 		return script.Int(0), nil
+	case "position":
+		if pos, ok := h.positions[id]; ok {
+			return script.Int(int64(pos)), nil
+		}
+		// EQP_ACC_L: the left accessory.
+		return script.Int(0x80), nil
 	}
 	return script.Nil, fmt.Errorf("equipped item has no field %q", field)
 }

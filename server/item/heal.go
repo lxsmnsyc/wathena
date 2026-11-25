@@ -67,8 +67,8 @@ func PercentHeal(hpRate, spRate, maxHP, maxSP int) (int, int) {
 // negative rate takes that percent of the maximum, through
 // status_percent_damage and status_percent_change. -100 or less takes
 // the maximum, and a rate that takes less than 1 takes 1. A rate of 0
-// or more takes nothing. The caller keeps HP at 1 or more (review
-// decision 56).
+// or more takes nothing. The caller keeps HP at 1 or more, unless
+// the rate is -100 or less, which kills (review decision 60).
 func PercentLoss(rate, maxValue int) int {
 	switch {
 	case rate >= 0:

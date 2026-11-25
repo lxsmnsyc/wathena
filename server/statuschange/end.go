@@ -39,6 +39,11 @@ func (en *Engine) end(u Unit, typ int, expired bool, reason Reason) bool {
 		if c := sc.Get(SCEndure); c != nil && c.Val4 == 0 {
 			en.End(u, SCEndure, ReasonReplaced)
 		}
+	case SCMonsterTransform, SCActiveMonsterTransform:
+		// The status that came with the transform (val2) ends with it.
+		if val2 != 0 {
+			en.End(u, val2, reason)
+		}
 	case SCIntravision:
 		// Required for overlapping.
 		recalcAll = true

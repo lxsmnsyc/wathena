@@ -3,8 +3,12 @@ package convert
 import (
 	"fmt"
 	"hash/fnv"
+	"regexp"
 	"strings"
 )
+
+// rolledAmount is a bonus amount that is a roll, written as a function.
+var rolledAmount = regexp.MustCompile(`function\(\) return (random\.integer\([^()]*\)) end`)
 
 // rAthena's SCSTART_ flags of sc_start, and the options they become
 // (proposal 0002, review decision 19).
@@ -170,6 +174,11 @@ func (t *imperative) bonusScript(args []Expr) error {
 		}
 	}
 	src := strings.TrimSpace(str.Value)
+	// rAthena runs the script again at each recalculation, and its rand
+	// rolls each time. Here rand rolls once, as the item is used, and the
+	// bonus keeps the value (decision 0078).
+	t.c.rollOnce = true
+	defer func() { t.c.rollOnce = false }()
 	effects, err := t.c.equipScriptEnv(strings.Trim(src, "{}"), nil)
 	if err != nil {
 		return err
@@ -192,14 +201,20 @@ func (t *imperative) bonusScript(args []Expr) error {
 			return err
 		}
 		for _, w := range calls {
-			if !w.isStatic() {
-				return unsupported(name, "with computed bonuses")
-			}
 			l, err := t.c.luaBonus(w, nil)
 			if err != nil {
 				return err
 			}
-			entries = append(entries, "{ "+strings.TrimSuffix(strings.TrimPrefix(l, "bonuses.add("), ")")+" }")
+			entry := "{ " + strings.TrimSuffix(strings.TrimPrefix(l, "bonuses.add("), ")") + " }"
+			if !w.isStatic() {
+				// A rolled amount is a value of the table. Any other
+				// computed amount would change at each recalculation.
+				entry = rolledAmount.ReplaceAllString(entry, "$1")
+				if strings.Contains(entry, "function()") {
+					return unsupported(name, "with computed bonuses")
+				}
+			}
+			entries = append(entries, entry)
 		}
 	}
 	if len(entries) == 0 {
@@ -245,6 +260,108 @@ func (t *imperative) bonusScript(args []Expr) error {
 		t.line("})")
 	} else {
 		t.line("}, { %s })", strings.Join(opts, ", "))
+	}
+	return nil
+}
+
+// isSelfID reports whether an argument is the attached player's own
+// game ID, as playerattached() and getattachedrid().
+func (t *imperative) isSelfID(e Expr) bool {
+	call, ok := e.(*Call)
+	return ok && len(call.Args) == 0 &&
+		(strings.EqualFold(call.Name, "playerattached") || strings.EqualFold(call.Name, "getattachedrid"))
+}
+
+// showScript converts showscript "<text>"{,<game ID>{,<send target>}}
+// (script.cpp 24370) to player:say_aloud. The text shows over the
+// player's head. rAthena's packet has no name in front; say_aloud has
+// one (decision 0078). SELF is the player alone, and the default AREA
+// everyone who sees the player. Another unit or another target does not
+// convert.
+func (t *imperative) showScript(args []Expr) error {
+	const name = "showscript"
+	if len(args) < 1 || len(args) > 3 {
+		return unsupported(name, "arguments")
+	}
+	str, ok := args[0].(*Str)
+	if !ok {
+		return unsupported(name, "a computed text")
+	}
+	if len(str.Value) == 0 || len(str.Value) > 255 {
+		return unsupported(name, "a text of %d bytes", len(str.Value))
+	}
+	if len(args) >= 2 && !t.isSelfID(args[1]) {
+		return unsupported(name, "on another unit")
+	}
+	if len(args) == 3 {
+		v, ok := t.staticNum(args[2])
+		switch {
+		case !ok:
+			return unsupported(name, "a computed target")
+		case v == 24:
+			t.line("player:say_aloud(%s, { to = \"self\" })", luaString(str.Value))
+			return nil
+		case v != 2:
+			return unsupported(name, "the send target %d", v)
+		}
+	}
+	t.line("player:say_aloud(%s)", luaString(str.Value))
+	return nil
+}
+
+// transform converts transform and active_transform
+// <monster>,<milliseconds>{,<status>{,<val1>{,<val2>{,<val3>{,<val4>}}}}}
+// (script.cpp 23777) to player:transform. The status that goes with the
+// transform becomes the option status and its values. active_transform
+// is the option active.
+func (t *imperative) transform(name string, args []Expr) error {
+	if len(args) < 2 || len(args) > 7 {
+		return unsupported(name, "arguments")
+	}
+	m, err := t.c.resolve(args[0], scopeUse, nil)
+	if err != nil {
+		return err
+	}
+	mob, err := t.c.ref(kMonster, m)
+	if err != nil {
+		return err
+	}
+	ms, err := t.num(args[1])
+	if err != nil {
+		return err
+	}
+	var opts []string
+	if name == "active_transform" {
+		opts = append(opts, "active = true")
+	}
+	if len(args) > 2 {
+		// SC_NONE, -1, is no status.
+		if v, ok := t.staticNum(args[2]); !ok || v != -1 {
+			st, err := t.constArg(args[2], "statuses")
+			if err != nil {
+				return err
+			}
+			opts = append(opts, "status = "+st)
+			var vals []string
+			for _, a := range args[3:] {
+				v, err := t.num(a)
+				if err != nil {
+					return err
+				}
+				vals = append(vals, v)
+			}
+			for len(vals) > 0 && vals[len(vals)-1] == "0" {
+				vals = vals[:len(vals)-1]
+			}
+			if len(vals) > 0 {
+				opts = append(opts, "values = { "+strings.Join(vals, ", ")+" }")
+			}
+		}
+	}
+	if len(opts) == 0 {
+		t.line("player:transform(%s, %s)", mob, ms)
+	} else {
+		t.line("player:transform(%s, %s, { %s })", mob, ms, strings.Join(opts, ", "))
 	}
 	return nil
 }

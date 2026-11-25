@@ -556,6 +556,9 @@ func (h scriptHost) EquippedField(id int64, field string) (script.Value, error) 
 		return script.Int(0), nil
 	case "wearer":
 		return script.Int(int64(ref.p.charID)), nil
+	case "position":
+		// getitempos: the EQP_ positions the copy sits in.
+		return script.Int(int64(s.Equip)), nil
 	case "weapon_type":
 		if !d.IsWeapon() {
 			return script.Int(0), nil

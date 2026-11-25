@@ -8,8 +8,8 @@ Baselines with nothing equipped: 67 of 67 match.
 
 | | Records | Not fully converted | Not equipped | Compared | Stats match | Damage matches | All match |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Equipment | 10169 | 173 | 0 | 9996 | 9996 | 9996 | 9996 |
-| Cards | 1545 | 42 | 0 | 1503 | 1503 | 1503 | 1503 |
+| Equipment | 10169 | 123 | 0 | 10046 | 10046 | 10046 | 10046 |
+| Cards | 1545 | 6 | 0 | 1539 | 1539 | 1539 | 1539 |
 
 Not fully converted: the item or card has a script part the converter cannot convert yet (docs/generated/item-scripts-renewal.md). Not equipped: the sample player cannot equip it in wAthena.
 

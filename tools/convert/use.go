@@ -496,6 +496,74 @@ func (t *imperative) commandErr(s *Command) error {
 		return nil
 	case "bonus_script":
 		return t.bonusScript(args)
+	case "heal":
+		// heal <hp>,<sp> is status_heal with flag 1: player:heal.
+		if len(args) != 2 {
+			return unsupported(name, "arguments")
+		}
+		hp, err := t.num(args[0])
+		if err != nil {
+			return err
+		}
+		sp, err := t.num(args[1])
+		if err != nil {
+			return err
+		}
+		t.line("player:heal(%s, %s)", hp, sp)
+		return nil
+	case "getexp", "getexp2":
+		// getexp2 gives exp with no rate and no guild tax, and takes it
+		// with a negative amount: the option raw.
+		if len(args) != 2 {
+			return unsupported(name, "arguments, or for another character")
+		}
+		base, err := t.num(args[0])
+		if err != nil {
+			return err
+		}
+		job, err := t.num(args[1])
+		if err != nil {
+			return err
+		}
+		if name == "getexp2" {
+			t.line("player:give_exp(%s, %s, { raw = true })", base, job)
+		} else {
+			t.line("player:give_exp(%s, %s)", base, job)
+		}
+		return nil
+	case "skilleffect":
+		// skilleffect <skill>,<level>{,<game ID>}: the effect on the
+		// player. An effect on another unit does not convert.
+		if len(args) < 2 || len(args) > 3 {
+			return unsupported(name, "arguments")
+		}
+		if len(args) == 3 && !t.isSelfID(args[2]) {
+			return unsupported(name, "on another character")
+		}
+		sk, err := c.skillArg(args[0])
+		if err != nil {
+			return err
+		}
+		lv, err := t.num(args[1])
+		if err != nil {
+			return err
+		}
+		t.line("player:show_skill_effect(%s, %s)", sk, lv)
+		return nil
+	case "showscript":
+		return t.showScript(args)
+	case "setfont":
+		if len(args) != 1 {
+			return unsupported(name, "arguments")
+		}
+		font, err := t.num(args[0])
+		if err != nil {
+			return err
+		}
+		t.line("player:set_font(%s)", font)
+		return nil
+	case "transform", "active_transform":
+		return t.transform(name, args)
 	case "produce", "cooking":
 		// <item level>: the list of produce_db's recipes of the level, as
 		// clif_skill_produce_mix_list and clif_cooking_list.

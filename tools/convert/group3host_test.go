@@ -17,9 +17,12 @@ func (h *testHost) Blocked(int64) (uint32, error)                      { return 
 func (h *testHost) SetItemsLocked(*modscript.Conversation, bool) error { return nil }
 func (h *testHost) UnequipAll(int64) error                             { return nil }
 func (h *testHost) Push(int64, int, int) error                         { return nil }
-func (h *testHost) Transform(int64, int64, int64) (bool, error)        { return true, nil }
-func (h *testHost) OpenBook(int64, int64, int64) error                 { return nil }
-func (h *testHost) SavePoint(int64) (string, int, int, error)          { return "prontera", 156, 191, nil }
+func (h *testHost) Transform(int64, int64, int64, modscript.TransformOptions) (bool, error) {
+	return true, nil
+}
+func (h *testHost) SetFont(int64, int64) error                { return nil }
+func (h *testHost) OpenBook(int64, int64, int64) error        { return nil }
+func (h *testHost) SavePoint(int64) (string, int, int, error) { return "prontera", 156, 191, nil }
 func (h *testHost) Inventory(int64) ([]modscript.InventoryEntry, error) {
 	return []modscript.InventoryEntry{{Slot: 0, Item: 501, Amount: 3, Identified: true, Tradable: true}}, nil
 }
@@ -80,3 +83,8 @@ func (h *testHost) ResetStat(int64, int, int) (bool, error)                     
 func (h *testHost) GiveSkill(int64, int, int, modscript.SkillKind) (bool, error) { return true, nil }
 
 var _ modscript.JobHost = (*testHost)(nil)
+
+// SayAloud is showscript's say_aloud, and ShowSkillEffect skilleffect:
+// they show nothing.
+func (h *testHost) SayAloud(modscript.Entity, string, modscript.SendTarget, int64) error { return nil }
+func (h *testHost) ShowSkillEffect(modscript.Entity, int64, int64) error                 { return nil }

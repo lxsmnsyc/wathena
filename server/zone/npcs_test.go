@@ -395,10 +395,10 @@ func TestReloadMidConversation(t *testing.T) {
 	}
 }
 
-// TestHealPercentTakes checks review decision 56: player:heal_percent
+// TestHealPercentTakes checks review decisions 56 and 60: player:heal_percent
 // with a negative amount takes that percent of the maximum, as
-// percentheal, and never takes HP below 1. A positive amount still
-// heals, beside a negative one.
+// percentheal. Above -100 it never takes HP below 1, and -100 kills. A
+// positive amount still heals, beside a negative one.
 func TestHealPercentTakes(t *testing.T) {
 	z, p, n, logs := npcZone(t, `
 local events = require "wa.events"
@@ -407,8 +407,9 @@ return function()
   events.on("click", function(player)
     step = step + 1
     if step == 1 then player:heal_percent { hp = -30, sp = -50 } end
-    if step == 2 then player:heal_percent { hp = -100, sp = -100 } end
+    if step == 2 then player:heal_percent { hp = -99, sp = -100 } end
     if step == 3 then player:heal_percent { hp = 10, sp = -1 } end
+    if step == 4 then player:heal_percent { hp = -100 } end
   end)
 end`)
 	p.entity.hp, p.sp = 150, 50
@@ -418,12 +419,16 @@ end`)
 	}
 	click(z, p, n)
 	if p.entity.hp != 1 || p.sp != 0 || p.entity.dead {
-		t.Fatalf("-100%%: HP %d, SP %d, dead %v, want 1 and 0", p.entity.hp, p.sp, p.entity.dead)
+		t.Fatalf("-99%% and -100%%: HP %d, SP %d, dead %v, want 1 and 0", p.entity.hp, p.sp, p.entity.dead)
 	}
 	p.sp = 10
 	click(z, p, n)
 	// 10% of 200 HP heals 20. -1% of 50 SP is 0, which takes 1.
 	if p.entity.hp != 21 || p.sp != 9 {
 		t.Fatalf("10%% and -1%%: HP %d, SP %d, want 21 and 9", p.entity.hp, p.sp)
+	}
+	click(z, p, n)
+	if !p.entity.dead {
+		t.Fatalf("-100%%: HP %d, dead %v, want dead", p.entity.hp, p.entity.dead)
 	}
 }

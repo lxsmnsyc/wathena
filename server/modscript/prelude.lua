@@ -1217,8 +1217,19 @@ end
 player_methods.push = function(self, direction, cells)
 	return (call(H.player_action, player_ids[self], "push", direction, cells))
 end
-player_methods.transform = function(self, monster, milliseconds)
-	return (call(H.player_action, player_ids[self], "transform", monster, milliseconds))
+player_methods.transform = function(self, monster, milliseconds, options)
+	options = present_options("player:transform", options, { active = true, status = true, values = true })
+	local values = options.values
+	if values == nil then
+		values = {}
+	elseif type(values) ~= "table" or #values > 4 then
+		error("player:transform: values must be a list of up to 4 integers", 2)
+	end
+	return (call(H.player_action, player_ids[self], "transform", monster, milliseconds, options.active == true,
+		options.status, values[1], values[2], values[3], values[4]))
+end
+player_methods.set_font = function(self, font)
+	return (call(H.player_action, player_ids[self], "set_font", font))
 end
 player_methods.open_book = function(self, book, page)
 	return (call(H.player_action, player_ids[self], "open_book", book, page))

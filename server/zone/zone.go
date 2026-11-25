@@ -343,6 +343,9 @@ type Player struct {
 	// transform is the monster the player looks like while
 	// player:transform lasts, or 0 (playeractions.go).
 	transform uint32
+	// font is the chat font setfont chose, or 0. The client shows no
+	// font yet (playeractions.go).
+	font int64
 	// setLook are the headgear views setlook gave, top, middle and
 	// bottom, as rAthena's setlook_head_*, or 0.
 	setLook [3]uint32
