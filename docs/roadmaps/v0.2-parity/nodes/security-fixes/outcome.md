@@ -1,5 +1,7 @@
 # Outcome: security-fixes
 
+spent: about 303k tokens (worker with one fix round 193k, fresh review 110k), 1 active day (2026-11-25)
+
 ## Built
 
 None of the five fixes existed on batch/v0.2-parity. All were built. Decision record number taken: 0076 (docs/decisions/0076-security-and-operations-fixes.md). No review decision, proposal or migration number taken.
