@@ -1,6 +1,6 @@
 # Outcome: bonus-damage-taken
 
-spent: not measured (about one session, one active day)
+spent: about 141k tokens (worker, self review), 1 active day (2026-11-25)
 
 ## Built
 
