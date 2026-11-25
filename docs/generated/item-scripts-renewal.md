@@ -9,7 +9,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | Kind | Items with scripts | Full | Partly | Not | Static data | Lua files |
 |---|---:|---:|---:|---:|---:|---:|
 | Equipment and cards | 14108 | 13829 (98.0%) | 112 | 167 | 6125 | 7808 |
-| Usable | 5280 | 4940 (93.6%) | 58 | 282 | 0 | 4940 |
+| Usable | 5280 | 4947 (93.7%) | 58 | 275 | 0 | 4947 |
 | Delayed use | 665 | 16 (2.4%) | 12 | 637 | 0 | 16 |
 
 - Static data: equipment whose scripts are only constant bonuses. They become `bonuses` in item data, and the server applies them without Lua.
@@ -283,12 +283,12 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `variables` | 10 | 0 | 1 | 9 | 0 | Zeny keeps state outside the script (4); RouletteBronze keeps state outside the script (2); CharMoves keeps state outside the script (1); ... |
 | `getexp2` | 9 | 0 | 0 | 9 | 0 | not supported (9) |
 | `setfont` | 9 | 0 | 0 | 9 | 0 | not supported (9) |
-| `cooking` | 6 | 0 | 0 | 6 | 0 | not supported (7) |
+| `cooking` | 6 | 6 | 0 | 0 | 6 |  |
 | `itemskill` | 5 | 1 | 3 | 1 | 1 | skills used by items (4) |
 | `makerune` | 5 | 0 | 0 | 5 | 0 | not supported (5) |
 | `monster` | 5 | 0 | 0 | 5 | 0 | not supported (5) |
 | `heal` | 4 | 0 | 3 | 1 | 0 | not supported (4) |
-| `produce` | 4 | 0 | 0 | 4 | 0 | not supported (4) |
+| `produce` | 4 | 1 | 0 | 3 | 1 | weapon forging (3) |
 | `searchstores` | 4 | 0 | 0 | 4 | 0 | not supported (4) |
 | `announce` | 3 | 0 | 0 | 3 | 0 | not supported (3) |
 | `input` | 3 | 0 | 0 | 3 | 0 | not supported (3) |

@@ -818,11 +818,11 @@ Players learn and cast skills, as rAthena's ([decision 0011](../docs/decisions/0
 
 Skills that need something the server or the client does not have yet fail before they start, so they cost nothing:
 
-- A window: Warp Portal, Item Appraisal, Change Cart, Decorate Cart, Open Buying Store, Hindsight, Abracadabra, Create Elemental Converter and Prepare Potion.
+- A window: Warp Portal, Item Appraisal, Change Cart, Decorate Cart, Open Buying Store, Hindsight and Abracadabra.
 - A homunculus: Call Homunculus, Vaporize and Resurrect Homunculus.
 - Call Baby, which needs a family.
 
-Vending opens its setup window. Arrow Crafting, Weapon Repair and Upgrade Weapon open an item list (`SkillItemList`), and the pick (`SkillItemPick`) crafts arrows from `create_arrow_db.yml`, repairs a broken item, or refines a weapon with refine.yml's Normal chance ([decision 0073](../docs/decisions/0073-skill-item-lists.md)).
+Vending opens its setup window. Arrow Crafting, Weapon Repair and Upgrade Weapon open an item list (`SkillItemList`), and the pick (`SkillItemPick`) crafts arrows from `create_arrow_db.yml`, repairs a broken item, or refines a weapon with refine.yml's Normal chance ([decision 0073](../docs/decisions/0073-skill-item-lists.md)). Prepare Potion and Create Elemental Converter list the recipes of `produce_db.txt` the player has the materials for, and the pick makes one with rAthena's `skill_produce_mix` rate. Item scripts open the same list with `produce` and `cooking` (`player:open_produce`, `player:open_cooking`), except weapon forging ([decision 0074](../docs/decisions/0074-recipe-lists.md)).
 
 Teleport warps to a random cell at both levels, since it has no menu. Party skills reach only the caster, and Devotion and Redemptio fail, as rAthena does for a player without a party. Ensembles need a partner in the same party, so they fail before they start.
 

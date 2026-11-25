@@ -78,6 +78,7 @@ func init() {
 		IDSoulBurn:        soulSiphon{},
 		IDMindBreaker:     Base{},
 		IDMemorize:        Base{},
+		IDCreateCon:       Base{},
 		IDFogWall:         Base{},
 		IDSpiderWeb:       Base{},
 		IDDoubleCasting:   Base{},

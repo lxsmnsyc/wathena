@@ -340,6 +340,12 @@ new_player, player_ids = handle_type("player", {
 	open_guild_storage = function(self)
 		return call(H.player_open_guild_storage, player_ids[self])
 	end,
+	open_produce = function(self, level)
+		call(H.player_open_produce, player_ids[self], level, false)
+	end,
+	open_cooking = function(self, level)
+		call(H.player_open_produce, player_ids[self], level, true)
+	end,
 	give_item_from_group = function(self, group)
 		return (call(H.player_give_group, player_ids[self], group))
 	end,

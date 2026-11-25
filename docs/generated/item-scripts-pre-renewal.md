@@ -9,7 +9,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | Kind | Items with scripts | Full | Partly | Not | Static data | Lua files |
 |---|---:|---:|---:|---:|---:|---:|
 | Equipment and cards | 1995 | 1947 (97.6%) | 24 | 24 | 1667 | 298 |
-| Usable | 1537 | 1333 (86.7%) | 12 | 192 | 0 | 1333 |
+| Usable | 1537 | 1339 (87.1%) | 12 | 186 | 0 | 1339 |
 | Delayed use | 70 | 12 (17.1%) | 5 | 53 | 0 | 12 |
 
 - Static data: equipment whose scripts are only constant bonuses. They become `bonuses` in item data, and the server applies them without Lua.
@@ -190,10 +190,10 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `sc_start4` | 9 | 9 | 0 | 0 | 9 |  |
 | `setfont` | 9 | 0 | 0 | 9 | 0 | not supported (9) |
 | `skilleffect` | 9 | 0 | 9 | 0 | 0 | not supported (9) |
-| `cooking` | 5 | 0 | 0 | 5 | 0 | not supported (5) |
+| `cooking` | 5 | 5 | 0 | 0 | 5 |  |
 | `makerune` | 5 | 0 | 0 | 5 | 0 | not supported (5) |
 | `monster` | 4 | 0 | 0 | 4 | 0 | not supported (4) |
-| `produce` | 4 | 0 | 0 | 4 | 0 | not supported (4) |
+| `produce` | 4 | 1 | 0 | 3 | 1 | weapon forging (3) |
 | `mercenary_sc_start` | 3 | 0 | 0 | 3 | 0 | not supported (3) |
 | `searchstores` | 3 | 0 | 0 | 3 | 0 | not supported (3) |
 | `variables` | 3 | 0 | 0 | 3 | 0 | Zeny keeps state outside the script (3) |

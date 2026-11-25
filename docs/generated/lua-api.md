@@ -1748,6 +1748,22 @@ Opens the account's storage or an extra storage, as openstorage and openstorage2
 |---|---|---|
 | `name` | `string?` | An extra storage of data/storages.yml. A name without a mod prefix is the calling mod's record, then core's. A mod reaches only its own records and core's: another mod's name raises an error. Nothing opens the account's storage. |
 
+#### `player:open_produce(level)`
+
+Opens the list of the recipes of an item level that the player can make, as rAthena's produce. The pick uses the recipe's skill and its success rate. A list without a recipe shows empty.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `level` | `integer` | An item level of produce_db: 21 for ores, 22 for potions, 23 for elemental converters, and so on. 1 to 10, weapon forging, raise an error. |
+
+#### `player:open_cooking(level)`
+
+Opens a cooking kit's list, as rAthena's cooking. The success rate grows with the kit's level and the player's cooking mastery, which a dish raises and a failure lowers. Level 15 and up always succeed.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `level` | `integer` | The kit's item level of produce_db: 11 to 20 list every dish of levels 11 to 20; a level above 20 only its own. |
+
 #### `player:open_guild_storage() → boolean, string?`
 
 Opens the guild storage, as guildopenstorage. Returns true, or false and why: "no_guild", "no_storage", "no_permission", "in_use" or "already_open".

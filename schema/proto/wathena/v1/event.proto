@@ -136,10 +136,21 @@ message Event {
 //     clif_item_repair_list.
 //   - Upgrade Weapon lists the weapons it can refine, as
 //     clif_item_refine_list. The list may be empty.
+//   - Prepare Potion and Create Elemental Converter list the products
+//     the player has the materials for, as clif_skill_produce_mix_list
+//     and clif_elementalconverter_list. Each line holds its materials.
+//   - A script's recipe list (player:open_produce, player:open_cooking,
+//     rAthena's produce and cooking) has skill 0 and the item level it
+//     lists, as clif_skill_produce_mix_list and clif_cooking_list.
 // The answer is SkillItemPick. A new list replaces the one before.
 message SkillItemList {
   uint32 skill_id = 1;
   repeated SkillListItem items = 2;
+  // item_level is the produce_db item level of a recipe list: 1 to 3 for
+  // weapons, 11 to 20 for cooking (cooking is true), 21 and up for other
+  // products. 0 for a list of items.
+  uint32 item_level = 3;
+  bool cooking = 4;
 }
 
 // SkillListItem is one line of a SkillItemList. SkillItemPick names it by
@@ -149,6 +160,16 @@ message SkillListItem {
   uint32 refine = 2;
   // cards are the card IDs in the item's slots, in slot order.
   repeated uint32 cards = 3;
+  // materials are a recipe's materials, for a product line. A material
+  // of amount 0 must be held but is not used.
+  repeated SkillListMaterial materials = 4;
+}
+
+// SkillListMaterial is a material of a recipe and the amount one product
+// uses.
+message SkillListMaterial {
+  uint32 item_id = 1;
+  uint32 amount = 2;
 }
 
 // MapCells changes cells of the player's map, as rAthena's

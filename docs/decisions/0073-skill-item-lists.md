@@ -4,7 +4,7 @@
 - Date: 2026-11-06.
 - Code: [server/zone](../../server/zone) (`skillitems.go`, `skillimpls.go`, `skills_blacksmith.go`, `zone.go`), [server/skill](../../server/skill) (`crafting.go`, `data.go`, `mods.go`), [server/gamedata](../../server/gamedata) (`skills.go`), [server/gateway](../../server/gateway) (`gateway.go`, `limits.go`), [client/src/viewer](../../client/src/viewer) (`skillItems.ts`, `main.ts`, `online.ts`), [client/src/net](../../client/src/net) (`connection.ts`).
 - Docs: [proposal 0001](../proposals/0001-protocol.md) ("Breaks"), [reference/rathena/README.md](../../reference/rathena/README.md) ("Crafting"), [server/README.md](../../server/README.md).
-- Builds part of step 1 of the window-skills node (docs/roadmaps/v0.2-parity/nodes/window-skills/brief.md). Prepare Potion, Create Elemental Converter, `cooking` and `produce` follow.
+- Builds part of step 1 of the window-skills node (docs/roadmaps/v0.2-parity/nodes/window-skills/brief.md). Prepare Potion, Create Elemental Converter, `cooking` and `produce` follow in [decision 0074](0074-recipe-lists.md).
 - Lua API: none. Protocol: `SkillItemList`, `SkillListItem` and the command `SkillItemPick`, additive. Data: `crafting.json` per mode. Store: none. Permission: none.
 
 ## Context

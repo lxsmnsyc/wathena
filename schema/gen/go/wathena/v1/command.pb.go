@@ -1742,8 +1742,10 @@ func (*command_QuestActive) isCommand_Body() {}
 func (*command_SkillItemPick) isCommand_Body() {}
 
 // SkillItemPick answers a SkillItemList, as rAthena's
-// clif_parse_SelectArrow, clif_parse_RepairItem and
-// clif_parse_WeaponRefine. The server checks the pick again before it
+// clif_parse_SelectArrow, clif_parse_RepairItem,
+// clif_parse_WeaponRefine, clif_parse_ProduceMix and clif_parse_Cooking.
+// A script's recipe list is answered with skill 0. The server checks the
+// pick again before it
 // runs, and forgets the list either way. A pick of another skill than
 // the open list's does nothing. A player who trades gets SkillFailed.
 type SkillItemPick struct {

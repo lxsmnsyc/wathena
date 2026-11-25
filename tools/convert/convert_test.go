@@ -202,6 +202,9 @@ func TestConvertUse(t *testing.T) {
 		{"sc_start4 SC_STRFOOD,1200000,10,0,0,0;", "player:start_status(statuses.strfood, { milliseconds = 1200000, level = 10, keep_duration = true })"},
 		{"sc_start2 SC_POISON,-1,1,30;", `player:start_status(statuses.poison, { milliseconds = "forever", values = { 30 }, keep_duration = true })`},
 		{"sc_end SC_POISON;", "player:end_status(statuses.poison)"},
+		{"produce 21;", "player:open_produce(21)"},
+		{"cooking 11;", "player:open_cooking(11)"},
+		{"if (BaseLevel < 20) cooking 30; else cooking 11;", "player:open_cooking(30)"},
 		{`bonus_script "{ bonus bStr,5; }",60,1025,0,EFST_ATTACK_PROPERTY_FIRE;`, "{ \"str\", 5 },\n    }, { ends_on = { \"death\" }, on_repeat = \"extend\", icon = "},
 		{`bonus_script "{ bonus bStr,5; }",60,2049;`, "{ \"str\", 5 },\n    }, { ends_on = { \"death\" }, on_repeat = \"add\" })"},
 		{`bonus_script "{ bonus bStr,5; }",60,3072;`, "{ \"str\", 5 },\n    }, { on_repeat = \"extend\" })"},
@@ -214,7 +217,11 @@ func TestConvertUse(t *testing.T) {
 			t.Errorf("%s: want %q in\n%s\n%v", tc.script, tc.want, it.Lua, it.Unsupported)
 		}
 	}
-	it := convertOne(t, "Usable", "sc_end SC_ALL;")
+	it := convertOne(t, "Usable", "produce 1;")
+	if it.Status != None || len(it.Unsupported) != 1 || !strings.Contains(it.Unsupported[0], "weapon forging") {
+		t.Errorf("produce 1: %s %q %v", it.Status, it.Lua, it.Unsupported)
+	}
+	it = convertOne(t, "Usable", "sc_end SC_ALL;")
 	if it.Status != None || it.Lua != "" || unsupportedSummary(it) != "status effects" {
 		t.Errorf("sc_end SC_ALL: %s %q %v", it.Status, it.Lua, it.Unsupported)
 	}

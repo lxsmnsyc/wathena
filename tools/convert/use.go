@@ -496,6 +496,27 @@ func (t *imperative) commandErr(s *Command) error {
 		return nil
 	case "bonus_script":
 		return t.bonusScript(args)
+	case "produce", "cooking":
+		// <item level>: the list of produce_db's recipes of the level, as
+		// clif_skill_produce_mix_list and clif_cooking_list.
+		if len(args) != 1 {
+			return unsupported(name, "arguments")
+		}
+		lv, ok := t.staticNum(args[0])
+		if !ok {
+			return unsupported(name, "a computed item level")
+		}
+		if lv <= 10 {
+			// The pick cannot add star crumbs or element stones, and
+			// copies hold no forged mark.
+			return unsupported(name, "weapon forging")
+		}
+		if lv > 1000 {
+			return unsupported(name, "arguments")
+		}
+		method := map[string]string{"produce": "open_produce", "cooking": "open_cooking"}[name]
+		t.line("player:%s(%d)", method, lv)
+		return nil
 	}
 	return unsupported(name, "")
 }
