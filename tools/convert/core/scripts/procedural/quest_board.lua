@@ -51,7 +51,7 @@ local function offer(player, conversation, q, state)
   if q.kind == "delivery" then
     lines[#lines + 1] = "Go to " .. (maps.get_display_name(q.to) or q.to) .. "'s quest board."
   end
-  lines[#lines + 1] = "Reward: " .. q.base_exp .. " base exp, " .. q.job_exp .. " job exp and " .. q.zeny .. " zeny."
+  lines[#lines + 1] = "Reward: " .. Q.describe(q) .. "."
   conversation:say(NAME, table.unpack(lines))
   conversation:wait_for_next()
   if conversation:choose("Take it", "Not now") ~= 1 then

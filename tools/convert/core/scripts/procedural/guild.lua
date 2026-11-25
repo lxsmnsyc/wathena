@@ -15,7 +15,6 @@ local events = require "wa.events"
 local jobs = require "wa.jobs"
 local skills = require "wa.skills"
 local effects = require "wa.effects"
-local internal = require "wa.internal"
 local Q = require "core.procedural.quests"
 
 local BASIC_SKILL = skills.id "NV_BASIC"
@@ -137,7 +136,7 @@ return function(family)
           conversation:say(title, "Come back at job level 40.")
           return
         end
-        if internal.skill_points(player) > 0 then
+        if player.skill_points > 0 then
           conversation:say(title, "Use all your skill points first.")
           return
         end

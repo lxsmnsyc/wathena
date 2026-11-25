@@ -46,6 +46,14 @@ func validText(s string, maxLen int) bool {
 
 func validMap(s string) bool { return len(s) <= 64 && mapPattern.MatchString(s) }
 
+// afterChange returns the context for the audit row of a change the
+// world applied already. It outlives the request, so a client that hangs
+// up or a timeout does not leave a change without its row, or answer an
+// error for a change that happened (review decision 61).
+func afterChange(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(ctx), requestTimeout)
+}
+
 func (h *Handler) worldView(ctx context.Context, w http.ResponseWriter, r *http.Request, _ caller) {
 	if !h.worldOnly(w) {
 		return
@@ -87,7 +95,9 @@ func (h *Handler) announce(ctx context.Context, w http.ResponseWriter, r *http.R
 	if where == "" {
 		where = "world"
 	}
-	if err := h.writeAudit(ctx, h.q, c, "world.announce", target{name: where}, map[string]any{"text": text}, "", false); err != nil {
+	actx, done := afterChange(ctx)
+	defer done()
+	if err := h.writeAudit(actx, h.q, c, "world.announce", target{name: where}, map[string]any{"text": text}, "", false); err != nil {
 		h.unavailable(w, r, err)
 		return
 	}
@@ -121,7 +131,9 @@ func (h *Handler) planRestart(ctx context.Context, w http.ResponseWriter, r *htt
 		h.worldFailed(w, r, err)
 		return
 	}
-	if err := h.writeAudit(ctx, h.q, c, "world.restart", target{name: "world"},
+	actx, done := afterChange(ctx)
+	defer done()
+	if err := h.writeAudit(actx, h.q, c, "world.restart", target{name: "world"},
 		map[string]any{"at": at.UTC().Format("2006-01-02T15:04:05Z"), "message": message}, reason, false); err != nil {
 		h.unavailable(w, r, err)
 		return
@@ -149,7 +161,9 @@ func (h *Handler) cancelRestart(ctx context.Context, w http.ResponseWriter, r *h
 		h.worldFailed(w, r, err)
 		return
 	}
-	if err := h.writeAudit(ctx, h.q, c, "world.restart_cancel", target{name: "world"},
+	actx, done := afterChange(ctx)
+	defer done()
+	if err := h.writeAudit(actx, h.q, c, "world.restart_cancel", target{name: "world"},
 		map[string]any{"at": p.GetAt().AsTime().UTC().Format("2006-01-02T15:04:05Z")}, reason, false); err != nil {
 		h.unavailable(w, r, err)
 		return

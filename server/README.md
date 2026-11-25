@@ -40,8 +40,10 @@ Go services: gateway, account, world, and zone. See docs/strategy.md, section 4.
 ```text
 scripts/release.sh                     every target
 scripts/release.sh linux/amd64         only the targets named
+scripts/release.sh --check-tools       only check the tools
 ```
 
+- Before a build, and with `--check-tools`, it checks that Go is at least the `go` line of go.mod, zig is exactly 0.16.0, Node has major version 26, and pnpm is the `packageManager` version of client/package.json. It then runs `go mod verify`. A mismatch stops the build with the tool and both versions. `scripts/check.sh all` runs the same check as its `tools` step.
 - Targets: `linux/amd64`, `linux/arm64`, `darwin/arm64` and `windows/amd64`. The darwin build needs a Mac with `xcrun`.
 - It builds `waserver` with the web client built in, `wactl` and `wabots`, all with the tag `procedural`. These binaries run procedural and classic worlds. `wactl world new --mode` picks a world's mode, and procedural is the default.
 - The version is the output of `git describe --tags --always --dirty`. `waserver version` and `wactl version` print it with the build's world modes, such as `v0.1.0 (modes: classic, procedural)`.
@@ -323,7 +325,7 @@ A procedural world's town services, quest boards, job guilds, rebirth NPC and th
 - It then picks each town's 6 quest board quests from the quest templates and the stored spawns of the town's fields within 2 warps, further when none fits, with the town's secret node. Rewards scale with the town's band. Each class family's guild goes to one of the three lowest towns whose band starts at level 20 or lower, or to the lowest town when no band starts that low (docs/decisions/0047-guild-towns-and-release-build.md), near its `guild` place, with a hunt and a collect quest for the first and the second job tests, of monsters near levels 10 and 45. A `rebirth` place goes to the largest town of the highest band, and a `quest_board` place near each square.
 - It writes `world_places`, `world_objects` and `world_quests` (migration 00034) with the layout, and the bosses into `world_spawns`. It prints how many quests, places and objects the world has, and the layers' notes.
 - `waserver` reads them as the game role. The places join their maps' places, for NPC records with `place` and `wa.places`, and `/gen/maps/<id>.json` lists them with the objects, which clients draw. Each quest becomes a quest record with its ID, from 900,000, named by its ID as core's are. A quest whose monster or item no longer loads is left out with a warning. The log says `world content loaded`.
-- Core's NPCs of procedural worlds stand at the places: a Kafra at `storage`, an Innkeeper at `inn`, a Refiner at `blacksmith`, dealers at `shop:tool`, `shop:weapon` and `shop:armor`, the Quest Board, the guild masters and the Valkyrie. They reach the world's quests, quest rewards, skill points, weight and the refiner through `wa.internal`, which only core may require.
+- Core's NPCs of procedural worlds stand at the places: a Kafra at `storage`, an Innkeeper at `inn`, a Refiner at `blacksmith`, dealers at `shop:tool`, `shop:weapon` and `shop:armor`, the Quest Board, the guild masters and the Valkyrie. They reach the world's quests and the refiner through `wa.internal`, which only core may require.
 - Dev worlds without a database have no content: no quest boards, guilds or rebirth NPC. Their services stand at the templates' places.
 
 ### Rotations and world changes
@@ -502,7 +504,7 @@ Settings come from the defaults, then the YAML file that `--config` names, then 
 | `chat.log_days` | none | none | Deprecated: use `retention.chat_days`. It still works, with a warning. Set with a different `retention.chat_days`, it is an error. |
 | `retention.login_ip_days`, `retention.chat_days`, `retention.item_log_days`, `retention.audit_days` | none | `90`, `30`, `180`, `730` | Days the server keeps login records with IP addresses, chat lines, the item and zeny logs, and the GM audit log. `login_ip_days` and `chat_days` are 1 to 3650. `item_log_days` and `audit_days` are 30 to 3650. A period longer than its default logs a warning at start and shows one on the admin World screen. See "Retention". |
 | `jail.map`, `jail.cells` | none | `sec_pri`, `[[49, 75], [24, 75]]` | Where jailed players go, as rAthena's `MAP_JAIL` and `pc_jail`. A jail map that does not run logs a warning. |
-| `staff.owners` | none | none | Account names with the `owner` role, for worlds made before the owner ID. `waserver` warns at start when it is set. See "Staff and admin tools". |
+| `staff.owners` | none | none | Account names with the `owner` role, for worlds made before the owner ID. `waserver` warns at start when it is set, and refuses to start for a name with no account (not with `--dev`). See "Staff and admin tools". |
 | `staff.roles` | none | `admin`, `game_master`, `moderator` | Role names and their permissions. A list replaces the defaults. |
 | `privacy.contact` | none | none | How players reach the owner about their data, such as an email address, on `/account/privacy`. At most 1,000 bytes. |
 | `privacy.text` | none | none | The owner's privacy notice, as plain text with paragraphs at blank lines. At most 20,000 bytes. See "The account page". |
@@ -1010,7 +1012,7 @@ Staff roles, the admin API, the GM audit log, moderation, GM commands, the world
 The owner role has every permission. It comes from two places:
 
 - The world's owner account, which `wactl world new` records by ID in `world.owner_account_id` (migration 00040, review decision 54). The role follows the ID, so a rename or a new account with the same name changes nothing.
-- `staff.owners`, a list of account names. It still works, for worlds made before migration 00040. `waserver` logs a warning at start whenever it is set, and another for each name with no account.
+- `staff.owners`, a list of account names. It still works, for worlds made before migration 00040. `waserver` logs a warning at start whenever it is set. It refuses to start while a name has no account, except with `--dev`, where it logs a warning for each.
 
 The other roles come from the config:
 

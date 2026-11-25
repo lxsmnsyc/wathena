@@ -10,7 +10,6 @@
 local events = require "wa.events"
 local jobs = require "wa.jobs"
 local effects = require "wa.effects"
-local internal = require "wa.internal"
 
 local NAME = "[Valkyrie]"
 local KNIFE, COTTON_SHIRT = 1202, 2302
@@ -33,12 +32,12 @@ return function()
       conversation:say(NAME, "Come back as a second class", "at base level 99 and job level 50.")
       return
     end
-    if internal.weight(player) > 0 or player.zeny > 0 or player.cart ~= nil or player.companion ~= nil or player.mount ~= nil then
+    if player.weight > 0 or player.zeny > 0 or player.cart ~= nil or player.companion ~= nil or player.mount ~= nil then
       conversation:say(NAME, "You cannot bring anything into your new life.", "Leave your items, your zeny, your cart,",
         "your falcon and your mount behind.")
       return
     end
-    if internal.skill_points(player) > 0 then
+    if player.skill_points > 0 then
       conversation:say(NAME, "Use all your skill points first.")
       return
     end

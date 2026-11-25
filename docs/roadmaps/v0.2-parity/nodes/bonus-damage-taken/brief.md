@@ -1,7 +1,7 @@
 ---
 id: bonus-damage-taken
 title: Bonus sums for damage taken with three options
-status: todo
+status: done
 priority: must
 type: feature
 outline: false

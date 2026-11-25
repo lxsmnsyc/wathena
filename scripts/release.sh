@@ -6,6 +6,8 @@
 #
 #   scripts/release.sh                       every target, into dist/<version>
 #   scripts/release.sh linux/amd64 ...       only the targets named
+#   scripts/release.sh --check-tools         only check the tools, then
+#                                            run go mod verify
 #
 # Targets: linux/amd64, linux/arm64, darwin/arm64 and windows/amd64.
 #
@@ -39,14 +41,76 @@
 # darwin build needs the macOS SDK, so it runs on a Mac with xcrun only.
 # wactl and wabots need no cgo.
 #
-# Tools: Go of go.mod, zig 0.16.0, Node 26 and pnpm (scripts/check.sh
-# lists the versions and hashes). Nothing is signed and there is no
+# Tools: Go of go.mod, zig 0.16.0, Node 26 and pnpm of client/package.json
+# (scripts/check.sh lists the versions and hashes). Every run checks
+# them first, and runs go mod verify. Nothing is signed and there is no
 # software bill of materials, since nothing is published.
 set -euo pipefail
 root=$(git rev-parse --show-toplevel)
 cd "$root"
 
+zig_version=0.16.0
+node_major=26
+
+# check_tools fails when a tool is missing or is not the version the
+# release was written for, and runs go mod verify.
+check_tools() {
+	local bad=0 tool want have
+	for tool in go zig node pnpm; do
+		if ! command -v "$tool" >/dev/null 2>&1; then
+			echo "release.sh: $tool is not on PATH" >&2
+			bad=1
+		fi
+	done
+	if [ "$bad" = 1 ]; then
+		return 1
+	fi
+	# A tool that crashes gives an empty version, so the message below
+	# still prints under set -e.
+	# Go: at least the go line of go.mod. Only the numbers count: a
+	# release candidate "1.25rc1" is 1.25, and "devel go1.28-abc" is 1.28.
+	want=$(sed -n 's/^go \([0-9][0-9.]*\).*$/\1/p' go.mod | head -1)
+	have=$(go env GOVERSION 2>/dev/null | sed -n 's/.*go\([0-9][0-9]*\.[0-9][0-9.]*\).*/\1/p' | head -1) || have=""
+	have=${have%.}
+	if [ -z "$want" ] || [ -z "$have" ] || [ "$(printf '%s\n%s\n' "$want" "$have" | sort -V | head -1)" != "$want" ]; then
+		echo "release.sh: go ${have:-unknown} is older than go.mod's ${want:-unknown}" >&2
+		bad=1
+	fi
+	# zig: exactly the pinned version.
+	have=$(zig version 2>/dev/null) || have=""
+	if [ "$have" != "$zig_version" ]; then
+		echo "release.sh: zig ${have:-unknown}, but the release needs $zig_version" >&2
+		bad=1
+	fi
+	# Node: the major only.
+	have=$(node --version 2>/dev/null | sed 's/^v//; s/\..*//') || have=""
+	if [ "$have" != "$node_major" ]; then
+		echo "release.sh: node major ${have:-unknown}, but the release needs $node_major" >&2
+		bad=1
+	fi
+	# pnpm: the packageManager of the client. It picks the pinned
+	# version inside client/.
+	want=$(sed -n 's/.*"packageManager": *"pnpm@\([^"+]*\).*/\1/p' client/package.json | head -1)
+	have=$(cd client && pnpm --version 2>/dev/null) || have=""
+	if [ -z "$want" ] || [ "$have" != "$want" ]; then
+		echo "release.sh: pnpm ${have:-unknown}, but client/package.json needs ${want:-unknown}" >&2
+		bad=1
+	fi
+	if [ "$bad" = 1 ]; then
+		return 1
+	fi
+	if ! go mod verify >/dev/null; then
+		echo "release.sh: go mod verify failed" >&2
+		return 1
+	fi
+	echo "tools ok: go $(go env GOVERSION), zig $(zig version), node $(node --version), pnpm $(cd client && pnpm --version)"
+}
+
 all_targets="linux/amd64 linux/arm64 darwin/arm64 windows/amd64"
+if [ "${1:-}" = --check-tools ] && [ $# -eq 1 ]; then
+	check_tools
+	exit
+fi
 targets=("$@")
 if [ ${#targets[@]} -eq 0 ]; then
 	read -r -a targets <<<"$all_targets"
@@ -61,12 +125,7 @@ for t in "${targets[@]}"; do
 	esac
 done
 
-for tool in go zig pnpm; do
-	if ! command -v "$tool" >/dev/null 2>&1; then
-		echo "release.sh: $tool is not on PATH" >&2
-		exit 1
-	fi
-done
+check_tools || exit 1
 
 version=$(git describe --tags --always --dirty)
 out="dist/$version"

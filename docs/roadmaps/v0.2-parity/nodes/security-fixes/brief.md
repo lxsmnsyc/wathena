@@ -1,7 +1,7 @@
 ---
 id: security-fixes
 title: Security and operations fixes for v0.2.0
-status: todo
+status: done
 priority: must
 type: fix
 outline: false

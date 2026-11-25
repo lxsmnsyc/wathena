@@ -8,7 +8,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Kind | Items with scripts | Full | Partly | Not | Static data | Lua files |
 |---|---:|---:|---:|---:|---:|---:|
-| Equipment and cards | 14108 | 13829 (98.0%) | 112 | 167 | 6125 | 7808 |
+| Equipment and cards | 14108 | 13833 (98.1%) | 109 | 166 | 6127 | 7807 |
 | Usable | 5280 | 4947 (93.7%) | 58 | 275 | 0 | 4947 |
 | Delayed use | 665 | 16 (2.4%) | 12 | 637 | 0 | 16 |
 
@@ -19,7 +19,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| `skill` | 493 | 485 | 8 | 0 | 491 | unknown skill: DC_FORTUNEKISS2 (2); unknown skill: BA_POEMBRAGI2 (1) |
+| `skill` | 493 | 487 | 6 | 0 | 491 | unknown skill: DC_FORTUNEKISS2 (2); unknown skill: BA_POEMBRAGI2 (1) |
 | `autobonus` | 367 | 320 | 37 | 10 | 325 | effect script (35); status effects: sc_start (6); parameter Hp (2); ... |
 | `hateffect` | 213 | 211 | 2 | 0 | 213 |  |
 | `specialeffect2` | 144 | 123 | 20 | 1 | 142 | variables: EF_ENCHANCE is a character variable or an unknown constant (2) |
@@ -61,16 +61,16 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus bMaxHP` | 1486 | 1485 | 1 | 0 | 1486 |  |
 | `bonus bAtkRate` | 1370 | 1367 | 3 | 0 | 1370 |  |
 | `bonus bMatkRate` | 1232 | 1228 | 4 | 0 | 1232 |  |
-| `bonus bMdef` | 1229 | 1219 | 10 | 0 | 1229 |  |
+| `bonus bMdef` | 1229 | 1221 | 8 | 0 | 1229 |  |
 | `bonus bLongAtkRate` | 1225 | 1218 | 7 | 0 | 1225 |  |
-| `bonus bMaxHPrate` | 1202 | 1185 | 17 | 0 | 1202 |  |
+| `bonus bMaxHPrate` | 1202 | 1186 | 16 | 0 | 1202 |  |
 | `bonus bAspdRate` | 1134 | 1129 | 5 | 0 | 1134 |  |
 | `bonus bVariableCastrate` | 1058 | 1054 | 4 | 0 | 1058 |  |
 | `bonus bDelayrate` | 1029 | 1021 | 8 | 0 | 1029 |  |
 | `bonus2 bMagicAtkEle` | 1007 | 1003 | 4 | 0 | 1007 |  |
 | `bonus2 bAddRace` | 851 | 846 | 5 | 0 | 851 |  |
 | `bonus2 bSubRace` | 787 | 783 | 4 | 0 | 787 |  |
-| `bonus bMaxSPrate` | 782 | 773 | 9 | 0 | 782 |  |
+| `bonus bMaxSPrate` | 782 | 774 | 8 | 0 | 782 |  |
 | `bonus bPatk` | 782 | 781 | 1 | 0 | 782 |  |
 | `bonus bShortAtkRate` | 688 | 686 | 2 | 0 | 688 |  |
 | `bonus bInt` | 687 | 669 | 18 | 0 | 687 |  |
@@ -91,7 +91,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus bAllStats` | 420 | 417 | 3 | 0 | 420 |  |
 | `bonus bAgi` | 391 | 388 | 3 | 0 | 391 |  |
 | `bonus2 bMagicAddSize` | 376 | 376 | 0 | 0 | 376 |  |
-| `bonus bFlee` | 362 | 358 | 4 | 0 | 362 |  |
+| `bonus bFlee` | 362 | 360 | 2 | 0 | 362 |  |
 | `bonus bFixedCast` | 360 | 358 | 2 | 0 | 360 |  |
 | `bonus bVit` | 346 | 328 | 18 | 0 | 346 |  |
 | `bonus bPow` | 316 | 315 | 1 | 0 | 316 |  |
@@ -99,7 +99,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus2 bMagicAddEle` | 299 | 298 | 1 | 0 | 299 |  |
 | `bonus bLuk` | 284 | 267 | 17 | 0 | 284 |  |
 | `bonus2 bIgnoreDefRaceRate` | 262 | 262 | 0 | 0 | 262 |  |
-| `bonus3 bAutoSpell` | 260 | 257 | 2 | 1 | 259 | invalid bonus: bonuses.add("cast"): argument 2 is a skill level, from 1 (1) |
+| `bonus3 bAutoSpell` | 260 | 258 | 2 | 0 | 260 |  |
 | `bonus bAtkEle` | 256 | 254 | 2 | 0 | 256 |  |
 | `bonus bHealPower` | 253 | 251 | 2 | 0 | 253 |  |
 | `bonus bAspd` | 250 | 248 | 2 | 0 | 250 |  |
@@ -151,7 +151,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus2 bAddRace2` | 46 | 46 | 0 | 0 | 46 |  |
 | `bonus2 bDropAddRace` | 43 | 40 | 3 | 0 | 43 |  |
 | `bonus bMagicSPGainValue` | 41 | 41 | 0 | 0 | 41 |  |
-| `bonus2 bHPRegenRate` | 40 | 38 | 2 | 0 | 39 | invalid bonus: bonuses.add("hp_gain_over_time"): argument 2 must be a value, not a function: only the amount can be c... (1) |
+| `bonus2 bHPRegenRate` | 40 | 39 | 1 | 0 | 40 |  |
 | `bonus2 bIgnoreMdefClassRate` | 40 | 38 | 2 | 0 | 40 |  |
 | `bonus2 bHPLossRate` | 38 | 15 | 23 | 0 | 38 |  |
 | `bonus2 bAddItemHealRate` | 36 | 36 | 0 | 0 | 36 |  |
@@ -160,7 +160,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus3 bAddEff` | 35 | 33 | 2 | 0 | 35 |  |
 | `bonus bSta` | 34 | 34 | 0 | 0 | 34 |  |
 | `bonus2 bMagicAddRace2` | 34 | 34 | 0 | 0 | 34 |  |
-| `bonus2 bSPRegenRate` | 33 | 31 | 2 | 0 | 32 | invalid bonus: bonuses.add("sp_gain_over_time"): argument 2 must be a value, not a function: only the amount can be c... (1) |
+| `bonus2 bSPRegenRate` | 33 | 32 | 1 | 0 | 33 |  |
 | `bonus bMagicHPGainValue` | 31 | 31 | 0 | 0 | 31 |  |
 | `bonus4 bAutoSpellWhenHit` | 31 | 31 | 0 | 0 | 31 |  |
 | `bonus bIgnoreDefRace` | 30 | 30 | 0 | 0 | 30 |  |
@@ -177,7 +177,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus2 bWeaponDamageRate` | 20 | 20 | 0 | 0 | 20 |  |
 | `bonus4 bAutoSpell` | 20 | 20 | 0 | 0 | 20 |  |
 | `bonus2 bSkillVariableCast` | 18 | 17 | 1 | 0 | 18 |  |
-| `bonus bUnbreakableGarment` | 17 | 15 | 2 | 0 | 17 |  |
+| `bonus bUnbreakableGarment` | 17 | 17 | 0 | 0 | 17 |  |
 | `bonus3 bAddEffOnSkill` | 17 | 17 | 0 | 0 | 17 |  |
 | `bonus bBreakArmorRate` | 16 | 16 | 0 | 0 | 16 |  |
 | `bonus bLongSPGainValue` | 16 | 16 | 0 | 0 | 16 |  |
@@ -224,7 +224,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus2 bGetZenyNum` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus2 bRegenPercentHP` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus3 bSPVanishRaceRate` | 3 | 3 | 0 | 0 | 3 |  |
-| `bonus3 bSubEle` | 3 | 1 | 2 | 0 | 1 | invalid bonus: bonuses.add("damage_taken"): this combination of options has no rAthena sum; see 0002a, "Damage and da... (2) |
+| `bonus3 bSubEle` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus4 bSetDefRace` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus4 bSetMDefRace` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus bClassChange` | 2 | 2 | 0 | 0 | 2 |  |

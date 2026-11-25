@@ -282,8 +282,16 @@ func (w *World) tryRestore(ctx context.Context, r admin.Restore, to mail.Recipie
 }
 
 // resultTimeout bounds the reads of a restore's answer, after the
-// restore happened.
+// restore happened, and the rows of a change the world applied.
 const resultTimeout = 10 * time.Second
+
+// afterChange returns the context for the rows of a change the zone
+// applied already. It outlives the request, so a client that hangs up or
+// a timeout does not leave the change without its row, or answer an
+// error for a change that happened (review decision 61).
+func afterChange(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(ctx), resultTimeout)
+}
 
 // load loads a held offline character for the restore.
 func (run *restoreRun) load(ctx context.Context, id int64) error {

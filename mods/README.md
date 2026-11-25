@@ -252,8 +252,8 @@ Each limit has a range:
 | `npcs.control` | Needs the owner's approval. It shows, hides, cloaks and removes other mods' NPCs, core's too, and sends them events ("NPCs of the world" below, review decision 58). A mod's own NPCs need no permission. |
 | `maps.control` | Needs approval, and is logged as a warning at each start. It kills a map's monsters with `maps.remove_monsters` and changes its cells with `maps.set_cells` ("Maps, areas and monsters" below, review decision 59). |
 | `player.expand_limits` | Needs the owner's approval. It raises and lowers a player's inventory, cart and storage slots with `player:expand`, within the ruleset's limits (review decision 32). |
-| `spawns.modify` | Needs the owner's approval. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
-| `world.generate` | Needs the owner's approval. It adds generation layers and quest templates with `wa.generation`, which add places, objects, bosses and quests to a new procedural world (review decision 46). |
+| `spawns.modify` | Needs the owner's approval, and is logged as a warning at each start. It adds `spawn_table` hooks, which change the monsters a new procedural world spawns (review decision 44). |
+| `world.generate` | Needs the owner's approval, and is logged as a warning at each start. It adds generation layers and quest templates with `wa.generation`, which add places, objects, bosses and quests to a new procedural world (review decision 46). |
 | `rules.override`, `admin.commands`, `net.http`, `items.modify_rolls`, `player.sanction` | Needs approval, and is logged as a warning at each start. `player.sanction` (mute and jail players) is flagged for review in proposal 0002, review decision 26. `rules.override` also lets the `chat` event hear whispers, party and guild lines ("Chat" below). |
 | `player.skills` | Needs approval, and is logged as a warning at each start. It gives players skills and skill levels outside their skill tree, without skill points, with `player:give_skill` (review decision 57). |
 | `data.core_override` | Needs approval, and is logged as a warning at each start. It changes the prices, drops and exp of records that other mods added, core's too, and the chat filter's words ("Data overlays" below, review decision 52). |
@@ -2450,6 +2450,7 @@ end
 - `next(spawns)` runs the rest of the chain on a list, the hook's own when left out, and returns its list. The innermost list is the one the world drew.
 - A list with a bad entry fails the hook, which is left out. The server keeps its own rules over the result: aggressive monsters stay 15 cells from arrivals and bosses 30 cells from warps to towns, and a boss as `common` or `uncommon` is left out with a warning.
 - It needs `spawns.modify`, and a mod context.
+- Hooks do not re-check the economy. After a hook changes the lists, run `wactl sim economy --config waserver.yml` to compare each field's exp and zeny per hour with its band's targets (decision 0046).
 
 ### Status effects
 

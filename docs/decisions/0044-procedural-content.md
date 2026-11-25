@@ -91,7 +91,7 @@ The refiner ports `refinemain` of `npc/merchants/refine.txt`:
 - `generation.on("map", function(map, node) ... end)` adds a layer in a mod context. `map` is read-only: `id`, `kind`, `biome`, `tileset`, `band`, `width`, `height` and `places`. The node has `child(label)`, `stream()` and `hash(x, y)`, and a stream `integer(minimum, maximum)` and `chance(numerator, denominator)`, from ChaCha8 (the node's `SecretStream`). A layer has no other source of randomness, so `wa.random` raises an error while it runs (strategy section 8.7).
 - A layer returns nil or `{ places, objects, bosses }`: at most 32 places `{ tags, x, y }`, 256 objects `{ model, x, y, turn }` and 8 bosses `{ monster, role, x, y, respawn }`. The prelude checks the shapes, and the server the rules above.
 - `generation.quest_template(record)` adds a template, a record of `data/quest_templates.yml` with its name, which gets the mod's prefix.
-- Both need `world.generate`, which needs the owner's approval and is not flagged. In a running zone the calls record what they get, and nothing runs it.
+- Both need `world.generate`, which needs the owner's approval and is not flagged. Since decision [0077](0077-world-generation-fixes.md), it is flagged. In a running zone the calls record what they get, and nothing runs it.
 - `wactl mod test` runs the layers once when it makes a test world, and the test world's quest boards, guilds and rebirth place follow, from its spawn lists before the hooks. The layers' bosses join a list after its hooks.
 
 ### Objects in the client
@@ -143,4 +143,4 @@ These need a decision before they are built, since they would be new API or chan
 - A places scope of fields, such as `"field:any"`, so NPC records can stand at places that layers add to fields.
 - Objects of a mod's own art, beside the tilesets' props.
 - Whether board quests should have time limits or a daily reset, and whether a done quest should be taken again at once, as now.
-- Whether `world.generate` should be flagged.
+- Whether `world.generate` should be flagged. Answered by decision [0077](0077-world-generation-fixes.md): it is.

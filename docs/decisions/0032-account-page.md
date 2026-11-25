@@ -82,6 +82,8 @@ A character has:
 - `inventory`: the items, with the equipment. An item has `serial`, `item_id`, `name`, `amount`, `slot`, `refine`, `cards`, `equip` (the equip location bits where it is worn, or 0), `identified`, `bound` and `rolls` (name to value).
 - `cart`, `storages` (the character's own extra storages), `mail` (`id`, `from`, `title`, `body`, `sent_at`, `zeny`, `read`, `returned`, `items`), `currencies` and `block_list`.
 - `variables`: the mods' saved variables of the character, as the account's `variables`. Added by decision 0036.
+- `quests`: the quest log. Added by decision 0043.
+- `entered_maps`: the IDs of the generated maps the character entered, in the order it first entered them. `memo_points`: its Warp Portal memo points, newest first, each with `slot`, `map`, `x` and `y`. Added by decision 0077 (review decision 62), in version 1; both are `[]` when empty.
 
 What it never holds: the password or its hash, the TOTP secret, recovery codes or their hashes, passkey credentials, public keys or user handles, session or ticket tokens or their hashes, and other accounts' data beyond the names and IDs in the logs and reports. `TestExportHasNoSecrets` checks the file for each of them in text, hex and base64, and checks that no field name starts with a word such as `token` or `session`. Since decision 0036 it checks the field names alone, so a mod variable's name or value may hold such a word.
 

@@ -27,6 +27,7 @@ package admin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -184,19 +185,27 @@ func (h *Handler) MissingOwners(ctx context.Context) ([]string, error) {
 	return missing, nil
 }
 
-// WarnMissingOwners logs a warning for each name of staff.owners that
-// has no account. The server calls it at startup.
-func (h *Handler) WarnMissingOwners(ctx context.Context) {
+// CheckOwners fails when a name of staff.owners has no account, since
+// whoever signs up first with that name becomes an owner. With dev it
+// logs a warning for each name instead. The server calls it at startup
+// (review decision 61).
+func (h *Handler) CheckOwners(ctx context.Context, dev bool) error {
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 	missing, err := h.MissingOwners(ctx)
 	if err != nil {
-		h.log.Warn("cannot check the accounts of staff.owners", "err", err)
-		return
+		return fmt.Errorf("cannot check the accounts of staff.owners: %w", err)
 	}
-	for _, o := range missing {
-		h.log.Warn("staff.owners names an account that does not exist. Sign up with this name now: whoever signs up with it first becomes an owner.", "owner", o)
+	if len(missing) == 0 {
+		return nil
 	}
+	if dev {
+		for _, o := range missing {
+			h.log.Warn("staff.owners names an account that does not exist. Sign up with this name now: whoever signs up with it first becomes an owner.", "owner", o)
+		}
+		return nil
+	}
+	return fmt.Errorf("staff.owners names accounts that do not exist: %s. Signup runs inside waserver, so remove the names from staff.owners, start the server, sign up with each name, then add the names back. Or start once with --dev on a loopback address. Whoever signs up with a listed name first becomes an owner", strings.Join(missing, ", "))
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

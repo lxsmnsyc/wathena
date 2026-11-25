@@ -733,3 +733,26 @@ func TestNPCHiddenName(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+// TestSpawnsAndGenerationFlagged checks that spawns.modify and
+// world.generate need approval and are flagged, so the loader warns for
+// each mod that has them (review decision 62, C5 and E6).
+func TestSpawnsAndGenerationFlagged(t *testing.T) {
+	for _, name := range []string{"spawns.modify", "world.generate"} {
+		if p, ok := LookupPermission(name); !ok || !p.Approval || !p.Flagged {
+			t.Errorf("%s %+v %v, want approval and flagged", name, p, ok)
+		}
+	}
+	dir := t.TempDir()
+	writeMod(t, dir, "a", map[string]string{"mod.yaml": manifest("example.a", "permissions: [spawns.modify, world.generate]")})
+	s, err := resolve(t, dir, Config{Approve: map[string][]string{"example.a": {"spawns.modify", "world.generate"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	notes := strings.Join(s.Notes, "\n")
+	for _, name := range []string{"spawns.modify", "world.generate"} {
+		if !strings.Contains(notes, "flagged permission "+name) {
+			t.Errorf("no warning for %s in notes %s", name, notes)
+		}
+	}
+}

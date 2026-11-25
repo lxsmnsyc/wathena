@@ -177,3 +177,27 @@ func TestJob(t *testing.T) {
 		t.Errorf("a run without the account pool skipped the audit log: %+v", res)
 	}
 }
+
+// TestJobClockSkew: a process clock one hour ahead of the database does
+// not make a run with a 30-day period fail. The database refuses a
+// cutoff later than 30 days ago by its own clock, so the job takes its
+// cutoffs from the database clock (review decision 61).
+func TestJobClockSkew(t *testing.T) {
+	admin := storetest.Migrated(t)
+	game := storetest.As(t, admin, "wathena_game")
+	account := storetest.As(t, admin, "wathena_account")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	defer retention.SetWallClock(func() time.Time { return time.Now().Add(time.Hour) })()
+	periods := retention.Defaults
+	periods.ItemLogDays, periods.AuditDays = retention.MinLogDays, retention.MinLogDays
+	j := &retention.Job{Game: game, Account: account, Periods: periods, Log: slog.New(slog.DiscardHandler)}
+	if res, err := j.RunOnce(ctx); err != nil || res.Skipped {
+		t.Fatalf("a run with the process clock one hour ahead: %+v %v", res, err)
+	}
+	// A clock the job is given wins over the database's.
+	j.Clock = func() time.Time { return time.Now().Add(time.Hour) }
+	if _, err := j.RunOnce(ctx); err == nil {
+		t.Error("a run with a Clock one hour ahead worked: the Clock does not win")
+	}
+}

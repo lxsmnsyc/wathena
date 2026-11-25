@@ -11,6 +11,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const databaseNow = `-- name: DatabaseNow :one
+SELECT now()::timestamptz AS now
+`
+
+// DatabaseNow is the database's clock. The retention job takes its
+// cutoffs from it, since the log functions refuse a cutoff by this clock
+// and a process clock that runs ahead would make them refuse every run.
+func (q *Queries) DatabaseNow(ctx context.Context) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, databaseNow)
+	var now pgtype.Timestamptz
+	err := row.Scan(&now)
+	return now, err
+}
+
 const deleteOldLogins = `-- name: DeleteOldLogins :execrows
 DELETE FROM account_logins
 WHERE id IN (SELECT l.id FROM account_logins l WHERE l.at < $1 LIMIT 10000)

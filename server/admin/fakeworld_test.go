@@ -180,6 +180,7 @@ func (w *world) Announce(_ context.Context, text, mapName string) error {
 		return admin.ErrNotFound
 	}
 	w.announcements = append(w.announcements, mapName+": "+text)
+	w.ended()
 	return nil
 }
 
@@ -193,6 +194,7 @@ func (w *world) PlanRestart(_ context.Context, o admin.RestartOrder) (*adminv1.R
 		return nil, &admin.WorldError{Code: "bad_request", Message: "Too soon."}
 	}
 	w.restart = &o
+	w.ended()
 	return adminv1.RestartPlan_builder{At: timestamppb.New(o.At), Reason: o.Reason, Message: o.Message, PlannedBy: o.AccountName}.Build(), nil
 }
 
@@ -204,6 +206,7 @@ func (w *world) CancelRestart(context.Context) (*adminv1.RestartPlan, error) {
 	}
 	p := adminv1.RestartPlan_builder{At: timestamppb.New(w.restart.At), Reason: w.restart.Reason}.Build()
 	w.restart = nil
+	w.ended()
 	return p, nil
 }
 

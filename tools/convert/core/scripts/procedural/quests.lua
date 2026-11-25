@@ -9,6 +9,7 @@
 
 local internal = require "wa.internal"
 local maps = require "wa.maps"
+local rules = require "wa.rules"
 local items = require "wa.items"
 
 local Q = {}
@@ -61,13 +62,28 @@ function Q.take(player, q)
   return true
 end
 
+-- exp_of is the exp a quest gives: its amounts times quest_exp_rate, as
+-- getexp (player:give_exp) scales them, before the guild's tax.
+local function exp_of(q)
+  local rate = rules.get("quest_exp_rate")
+  return math.floor(q.base_exp * rate / 100), math.floor(q.job_exp * rate / 100)
+end
+
+-- describe says what a quest gives.
+function Q.describe(q)
+  local base, job = exp_of(q)
+  return base .. " base exp, " .. job .. " job exp and " .. q.zeny .. " zeny"
+end
+
 -- reward gives a quest's reward, and describes it.
 function Q.reward(player, q)
-  internal.give_exp(player, q.base_exp, q.job_exp)
+  if q.base_exp > 0 or q.job_exp > 0 then
+    player:give_exp(q.base_exp, q.job_exp)
+  end
   if q.zeny > 0 then
     player:give_zeny(q.zeny)
   end
-  return q.base_exp .. " base exp, " .. q.job_exp .. " job exp and " .. q.zeny .. " zeny"
+  return Q.describe(q)
 end
 
 return Q

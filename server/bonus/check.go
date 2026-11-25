@@ -176,11 +176,20 @@ func checkArgs(s *Spec, b *Bonus) error {
 		}
 	}
 	for i := len(s.Subject) + 1; i < len(b.Args); i++ {
-		if b.Args[i].Computed {
+		// The interval of a regen bonus may be computed, as rAthena's
+		// cards whose interval depends on the refine (bHPRegenRate).
+		if b.Args[i].Computed && !isInterval(s, i) {
 			return fmt.Errorf("argument %d must be a value, not a function: only the amount can be computed", i+1)
 		}
 	}
 	return nil
+}
+
+// isInterval reports whether argument i of a bonus is its interval.
+func isInterval(s *Spec, i int) bool {
+	// The loop in checkArgs starts after the subject and the amount.
+	k := i - len(s.Subject) - 1
+	return k >= 0 && k < len(s.Extra) && s.Extra[k] == "interval"
 }
 
 func argWords(s *Spec) string {
@@ -412,8 +421,10 @@ func DamageGroup(name string, o *Options) string {
 				return "bSubRace"
 			}
 			// The list with trigger flags: a range or an attack type
-			// tells it from a plain kind, which has no sum.
-			if only("kind", "range", "attack", "from") && flags {
+			// tells it from a plain kind, which has no sum. Physical
+			// alone is BF_WEAPON, whose omitted ranges and attack types
+			// fill in to all of them.
+			if only("kind", "range", "attack", "from") && (flags || o.Kind == "physical") {
 				return "bSubRace (bonus3)"
 			}
 		case "class":
@@ -450,7 +461,7 @@ func DamageGroup(name string, o *Options) string {
 		if only("element") {
 			return "bSubEle"
 		}
-		if only("kind", "range", "attack", "element") && flags {
+		if only("kind", "range", "attack", "element") && (flags || o.Kind == "physical") {
 			return "bSubEle (bonus3)"
 		}
 	case o.Has("kind"):

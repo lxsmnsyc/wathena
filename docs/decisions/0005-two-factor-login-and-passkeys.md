@@ -136,7 +136,7 @@ WebAuthn needs `navigator.credentials`, so the account service now has one scrip
   - Making new recovery codes.
   - Adding and removing passkeys.
   - Later, changing the password.
-- Otherwise the player goes to `/account/reauth`. It asks for the password, and the code when TOTP is on, or a passkey. Passing it sets the session's `authenticated_at`.
+- Otherwise the player goes to `/account/reauth`. It asks for the password, and the code when TOTP is on, or a passkey. Passing it sets the session's `authenticated_at`. Since decision 0076, a passkey reauth needs user verification.
 - Turning TOTP off asks for the password and a code in its own form, so it needs no separate reauth.
 - The reauth page uses the login rate limits. Its `next` must be a path under `/account/`.
 

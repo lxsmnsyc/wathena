@@ -18,25 +18,3 @@ func (h scriptHost) WorldQuests() []modscript.CoreQuest {
 	}
 	return slices.Clone(h.z.Mods.World)
 }
-
-// GiveExp gives a player a quest's exp, as rAthena's getexp: the guild
-// tax, level ups and their effects follow as for a kill's exp.
-func (h scriptHost) GiveExp(player, base, job int64) error {
-	p, err := h.player(player)
-	if err != nil {
-		return err
-	}
-	if base > 0 || job > 0 {
-		h.z.gainExp(p, base, job)
-	}
-	return nil
-}
-
-// SkillPoints is the player's unused skill points.
-func (h scriptHost) SkillPoints(player int64) (int, error) {
-	p, err := h.player(player)
-	if err != nil {
-		return 0, err
-	}
-	return p.progress.SkillPoints, nil
-}

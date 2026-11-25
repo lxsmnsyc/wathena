@@ -876,7 +876,9 @@ func runAll(name string, args []string) error {
 		if err != nil {
 			return err
 		}
-		adminAPI.WarnMissingOwners(ctx)
+		if err := adminAPI.CheckOwners(ctx, cfg.Dev); err != nil {
+			return err
+		}
 	}
 	go w.Run(ctx)
 	go scheduler.Run(ctx)

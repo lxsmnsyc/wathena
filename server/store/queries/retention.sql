@@ -47,3 +47,9 @@ ON CONFLICT (id) DO UPDATE SET last_run = EXCLUDED.last_run,
 -- before the first run.
 SELECT last_run, last_success, login_ips, chat, item_log, zeny_log, audit, partitions, last_error
 FROM retention_status WHERE id;
+
+-- name: DatabaseNow :one
+-- DatabaseNow is the database's clock. The retention job takes its
+-- cutoffs from it, since the log functions refuse a cutoff by this clock
+-- and a process clock that runs ahead would make them refuse every run.
+SELECT now()::timestamptz AS now;

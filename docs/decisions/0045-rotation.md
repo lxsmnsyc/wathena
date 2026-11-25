@@ -113,7 +113,7 @@ The events and the two test helpers of review decision 47, and nothing else. Pro
 
 - The `spawn_table` hooks and generation layers on rotating floors and changed fields, which would run outside world creation (review items).
 - World quests that name monsters of a changed region's fields keep their monsters; a board quest may name a monster no field has after a change.
-- Jail return points on removed maps: a jailed player released after its return map went is placed as a character on a map that does not run.
+- Jail return points on removed maps: a jailed player released after its return map went is placed as a character on a map that does not run. Done: the code sends the player to the save point, and decision [0077](0077-world-generation-fixes.md) adds the test.
 - A forced change that waits does not last across a restart.
 - Mod switches that staff made after the start do not reach the zones a change adds until the next start.
 - A run on a real amd64 machine.

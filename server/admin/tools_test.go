@@ -128,6 +128,35 @@ func TestRestartCalls(t *testing.T) {
 	}
 }
 
+// TestAuditAfterEndedRequest: the audit rows of an announcement and of a
+// restart's plan and cancel are written, and the answer is success, when
+// the request ends while the zone applies the change (review decision
+// 61).
+func TestAuditAfterEndedRequest(t *testing.T) {
+	e := setup(t, options{limits: manyCalls})
+	adm := e.withRole("Admin", "admin")
+	csrf := e.me(adm).GetCsrfToken()
+	e.world.mu.Lock()
+	e.world.endRequest = true
+	e.world.mu.Unlock()
+	at := time.Now().Add(30 * time.Minute).Truncate(time.Second)
+	status, b := e.call(adm, "POST", "announce", csrf, adminv1.AnnounceRequest_builder{Text: "Hello"}.Build())
+	if status != http.StatusOK {
+		t.Errorf("announce: %d %s", status, b)
+	}
+	status, b = e.call(adm, "POST", "restart", csrf, adminv1.RestartRequest_builder{Reason: "maintenance", At: timestamppb.New(at)}.Build())
+	if status != http.StatusOK {
+		t.Errorf("plan: %d %s", status, b)
+	}
+	status, b = e.call(adm, "DELETE", "restart?reason=done", csrf, nil)
+	if status != http.StatusOK {
+		t.Errorf("cancel: %d %s", status, b)
+	}
+	if got := strings.Join(e.auditActions("world."), "|"); got != "Admin world.announce world|Admin world.restart world maintenance|Admin world.restart_cancel world done" {
+		t.Errorf("audit rows %q", got)
+	}
+}
+
 // TestEventCalls: GET /events, the start, stop and reset of an event,
 // and PATCH /events/{name}, with events.control.
 func TestEventCalls(t *testing.T) {

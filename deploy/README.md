@@ -67,7 +67,7 @@ The world:
 - The command records the account's ID as the world's owner, so the account has the owner role with no change to `waserver.yml` (review decision 54). The role counts once the account turns on TOTP or a passkey and logs in with a TOTP code, a recovery code, or a passkey that checks a PIN or a fingerprint. A passkey that skips that check logs in without the role. The admin screens are then at `https://WATHENA_DOMAIN/admin` (server/README.md, "Staff and admin tools").
 - `staff.owners` in `waserver.yml` still gives the owner role by account name, for worlds made before this change. The server logs a warning at start whenever it is set. If you use it:
   - List only names that already have an account. Whoever signs up first with a listed name becomes an owner.
-  - At startup the server logs a warning for each listed name that has no account.
+  - `waserver` refuses to start while a listed name has no account, and the error names it. Signup runs inside `waserver`, so to fix it remove the name from the list, start the server, sign up with that name, and add the name back. Or start once with `--dev` on a loopback address, which logs a warning instead.
 
 The backup key is made on your own machine. See "The backup key".
 
@@ -131,7 +131,7 @@ Secrets never go into `.env`, the Compose file, the config file, an image, a pro
 | `backup_identity` | `backup-verify` | Only for the `verify` profile, which you copy here yourself. `secrets.sh` never makes it. `WATHENA_BACKUP_IDENTITY` can name another file. |
 
 - Compose secrets on one machine are bind-mounted files. Anyone with root or Docker access on the host can read them.
-- `secrets/` is only open to its owner. The files in it are readable by others, so the containers' users can read their mounted copies. Compose without Swarm cannot set a secret file's owner or mode in the container.
+- `secrets/` is only open to its owner. The files in it are readable by others, so the containers' users can read their mounted copies. Compose without Swarm cannot set a secret file's owner or mode in the container. This is an accepted risk: the 0700 folder is the control, and `secrets.sh` checks it on every run, so run it again after you copy or move the stack.
 - `secrets.sh` refuses to run when `secrets/` is not a folder of your user with mode 0700. When you copy or move the stack, keep the mode, such as with `rsync -a` or `cp -a`, and check it with `ls -ld secrets`.
 - Back up `secrets/`, and above all `account_secret_key`, apart from the database backups. Keep the backup identity apart from both.
 - To change a password, delete its file, run `./secrets.sh`, then `docker compose up -d --wait --force-recreate`. `db-init` sets the new password.

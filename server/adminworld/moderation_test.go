@@ -20,6 +20,9 @@ type kicker struct {
 	st    *store.Store
 	mu    sync.Mutex
 	kicks []string
+	// hangup ends the request that asked for the kick, as a client that
+	// disconnects does while the kick happens.
+	hangup context.CancelFunc
 }
 
 func (k *kicker) Kick(_ context.Context, ids []int64, reason wathenav1.DisconnectReason, text string) []int64 {
@@ -32,6 +35,9 @@ func (k *kicker) Kick(_ context.Context, ids []int64, reason wathenav1.Disconnec
 		}
 	}
 	k.kicks = append(k.kicks, reason.String()+" "+text)
+	if k.hangup != nil {
+		k.hangup()
+	}
 	return out
 }
 
@@ -55,6 +61,30 @@ func code(err error) string {
 		return err.Error()
 	}
 	return ""
+}
+
+// TestKickRowAfterEndedRequest: a kick whose request ends while the
+// character is kicked still gets its row and audit row, and the answer
+// is success (review decision 61).
+func TestKickRowAfterEndedRequest(t *testing.T) {
+	e := setup(t)
+	id := e.character("Kicked")
+	s := e.login(id)
+	defer s.Leave()
+	ctx, cancel := context.WithCancel(e.ctx)
+	defer cancel()
+	e.kicker.hangup = cancel
+	k, err := e.aw.Sanction(ctx, admin.SanctionOrder{Actor: moderator, Kind: "kick", Character: id, Reason: "afk"})
+	if err != nil || k.GetId() == 0 {
+		t.Fatalf("kick %v %v", k, err)
+	}
+	var rows, audits int
+	if err := e.admin.QueryRow(e.ctx, "SELECT count(*) FROM sanctions WHERE character_id = $1 AND kind = 'kick'", id).Scan(&rows); err != nil || rows != 1 {
+		t.Errorf("%d kick rows, %v", rows, err)
+	}
+	if err := e.admin.QueryRow(e.ctx, "SELECT count(*) FROM staff_audit WHERE action = 'moderation.kick'").Scan(&audits); err != nil || audits != 1 {
+		t.Errorf("%d audit rows, %v", audits, err)
+	}
 }
 
 // TestSanctions: a mute and a jail of an online and an offline

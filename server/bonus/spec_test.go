@@ -15,6 +15,12 @@ func TestCheck(t *testing.T) {
 		{Name: "max_hp", Args: []Num{{Value: 10}}, Options: Options{Percent: true, Set: map[string]bool{"percent": true}}},
 		{Name: "damage", Args: []Num{{Value: 10}}, Options: Options{Kind: "physical", Against: &Target{Key: "race", Value: 7}, Set: map[string]bool{"kind": true, "against": true}}},
 		{Name: "unbreakable_weapon"},
+		// bonus3 bSubRace and bSubEle with BF_WEAPON: physical alone is
+		// the list entry with every range and attack type.
+		{Name: "damage_taken", Args: []Num{{Value: -5}}, Options: Options{Kind: "physical", From: &Target{Key: "race", Value: 7}, Set: map[string]bool{"kind": true, "from": true}}},
+		{Name: "damage_taken", Args: []Num{{Value: -5}}, Options: Options{Kind: "physical", Element: 1, Set: map[string]bool{"kind": true, "element": true}}},
+		// A regen interval that depends on the refine.
+		{Name: "hp_gain_over_time", Args: []Num{{Value: 50}, {Computed: true}}},
 	}
 	for _, b := range ok {
 		if err := Check(b); err != nil {
@@ -23,6 +29,8 @@ func TestCheck(t *testing.T) {
 	}
 	bad := []*Bonus{
 		{Name: "str"},
+		{Name: "hp_gain_over_time", Args: []Num{{Value: 50}, {Value: 1000}, {Computed: true}}},
+		{Name: "damage", Args: []Num{{Computed: true}, {Computed: true}}},
 		{Name: "natural_hp_recovery", Args: []Num{{Value: 5}}},
 		{Name: "cast", Args: []Num{{Value: 19}, {Value: 3}}},
 		{Name: "damage_taken", Args: []Num{{Value: -5}}, Options: Options{Kind: "magic", From: &Target{Key: "race", Value: 7}, Set: map[string]bool{"kind": true, "from": true}}},

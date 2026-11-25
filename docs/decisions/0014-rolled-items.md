@@ -60,6 +60,5 @@ Strategy section 5.4 shows a card's script reading `equipped.rolls.boss_damage`.
 
 - Identifying items: Item Appraisal and Magnifiers need a window. Until then, rolled copies with hidden rolls stay unidentified, and their hidden values never show. They can still be worn.
 - Rolls on crafting and quest rewards, roll searches in vending, and handles for inventory copies, which review decision 23 leaves for later.
-- The ten `RACE_WEAPON_TOLERACE_*` options (`bSubRace` with `BF_WEAPON`), which have no `damage_taken` sum. No group uses them.
 - Item names and descriptions of mod items in the client's tables (phase 6). The client shows a mod item as "Item 2000000".
 - Item logs in the database.

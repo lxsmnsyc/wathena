@@ -51,6 +51,12 @@ func LockRetention(ctx context.Context, pool *pgxpool.Pool) (unlock func(), ok b
 	}, true, nil
 }
 
+// DatabaseNow returns the database's clock. pool is the game role's.
+func DatabaseNow(ctx context.Context, pool *pgxpool.Pool) (time.Time, error) {
+	t, err := db.New(pool).DatabaseNow(ctx)
+	return t.Time, err
+}
+
 // DeleteOldChatLines deletes the chat lines from before a time, except
 // those of open reports, in batches, and returns how many went.
 func DeleteOldChatLines(ctx context.Context, pool *pgxpool.Pool, before time.Time) (int64, error) {

@@ -840,3 +840,39 @@ func TestBanEndsAccountSessions(t *testing.T) {
 		t.Errorf("another account lost its session: %s", body)
 	}
 }
+
+// TestPasskeyReauthNeedsUserVerification checks that a passkey that
+// skipped user verification cannot renew a login, with or without TOTP
+// on the account (review decision 61).
+func TestPasskeyReauthNeedsUserVerification(t *testing.T) {
+	clock := &fakeClock{now: time.Now()}
+	e := setup(t, func(c *account.Config) {
+		twoFactor(t, clock)(c)
+		c.PublicURL = passkeyOrigin
+	})
+	c := e.c
+	e.signup(c, "Reauther", password)
+	csrf := e.pageCSRF(c, "/account/settings")
+	status, options := e.postJSON(c, "/account/passkeys/register/begin", csrf, []byte(`{"name":"Test key"}`))
+	if status != http.StatusOK {
+		t.Fatalf("register begin: %d %s", status, options)
+	}
+	key := newSoftKey(t, passkeyOrigin)
+	if status, b := e.postJSON(c, "/account/passkeys/register/finish", csrf, key.create(options)); status != http.StatusOK {
+		t.Fatalf("register finish: %d %s", status, b)
+	}
+	key.uv = false
+	e.ageSessions()
+	csrf = e.pageCSRF(c, "/account/reauth")
+	status, options = e.postJSON(c, "/account/passkeys/login/begin", csrf, []byte(`{"purpose":"reauth"}`))
+	if status != http.StatusOK {
+		t.Fatalf("reauth begin: %d %s", status, options)
+	}
+	status, b := e.postJSON(c, "/account/passkeys/login/finish?next=%2Faccount%2Fsettings", csrf, key.get(options))
+	if status != http.StatusForbidden || !strings.Contains(string(b), "verify") {
+		t.Errorf("reauth without UV and without TOTP: %d %s", status, b)
+	}
+	if status, b := e.postJSON(c, "/account/passkeys/register/begin", e.pageCSRF(c, "/account/settings"), []byte(`{}`)); status != http.StatusForbidden {
+		t.Errorf("the session was renewed: %d %s", status, b)
+	}
+}

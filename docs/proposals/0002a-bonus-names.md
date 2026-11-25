@@ -63,7 +63,7 @@ Counts:
 7. **Arguments have a fixed order.** The converter reorders rAthena's arguments to fit:
    1. what the bonus produces or applies to, if the name needs it: a status for `cause_status`, a skill and level for `cast` and `skill`, an element for `attack_element`;
    2. the amount;
-   3. other numbers, such as the interval of `hp_gain_over_time`;
+   3. other numbers, such as the interval of `hp_gain_over_time`, which may be a function (the Sealed cards' interval depends on the refine);
    4. the options table.
 8. **The value is the change to the named quantity.** A positive value raises the quantity, and a negative value lowers it. `"damage_taken"` with `-15` means 15% less damage taken. This flips the sign of rAthena's reduction bonuses. The calls in the table show the flip as `-n`, and the "Sign" column marks the 22 flipped types.
 9. **Stacking is an option.** See "Stacking".
@@ -159,13 +159,13 @@ rAthena keeps one sum per bonus type, such as one sum per race for `bAddRace`. I
 | Options | rAthena sum |
 |---|---|
 | `from = { race }` | `bonus2 bSubRace` |
-| `kind`, `range`, and `attack` from a `bf` flag, `from = { race }` | `bonus3 bSubRace` (the list with trigger flags) |
+| `kind`, `range`, and `attack` from a `bf` flag, `from = { race }` | `bonus3 bSubRace` (the list with trigger flags; `kind = "physical"` alone is `BF_WEAPON`) |
 | `from = { class }` | `bSubClass` |
 | `from = { size }` | `bSubSize` |
 | `kind = "physical"`, `from = { size }` | `bWeaponSubSize` |
 | `kind = "magic"`, `from = { size }` | `bMagicSubSize` |
 | `element` | `bonus2 bSubEle` |
-| `kind`, `range`, and `attack` from a `bf` flag, `element` | `bonus3 bSubEle` (the list with trigger flags) |
+| `kind`, `range`, and `attack` from a `bf` flag, `element` | `bonus3 bSubEle` (the list with trigger flags; `kind = "physical"` alone is `BF_WEAPON`) |
 | `kind = "physical"`, `from = { element }` | `bSubDefEle` |
 | `kind = "magic"`, `from = { element }` | `bMagicSubDefEle` |
 | `from = { monster_group }` | `bSubRace2` |
