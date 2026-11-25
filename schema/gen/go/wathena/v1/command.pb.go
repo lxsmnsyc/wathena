@@ -535,6 +535,15 @@ func (x *Command) GetSkillItemPick() *SkillItemPick {
 	return nil
 }
 
+func (x *Command) GetNavi() *NaviCommand {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Body.(*command_Navi); ok {
+			return x.Navi
+		}
+	}
+	return nil
+}
+
 func (x *Command) SetWalkTo(v *WalkTo) {
 	if v == nil {
 		x.xxx_hidden_Body = nil
@@ -797,6 +806,14 @@ func (x *Command) SetSkillItemPick(v *SkillItemPick) {
 		return
 	}
 	x.xxx_hidden_Body = &command_SkillItemPick{v}
+}
+
+func (x *Command) SetNavi(v *NaviCommand) {
+	if v == nil {
+		x.xxx_hidden_Body = nil
+		return
+	}
+	x.xxx_hidden_Body = &command_Navi{v}
 }
 
 func (x *Command) HasBody() bool {
@@ -1070,6 +1087,14 @@ func (x *Command) HasSkillItemPick() bool {
 	return ok
 }
 
+func (x *Command) HasNavi() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Body.(*command_Navi)
+	return ok
+}
+
 func (x *Command) ClearBody() {
 	x.xxx_hidden_Body = nil
 }
@@ -1272,6 +1297,12 @@ func (x *Command) ClearSkillItemPick() {
 	}
 }
 
+func (x *Command) ClearNavi() {
+	if _, ok := x.xxx_hidden_Body.(*command_Navi); ok {
+		x.xxx_hidden_Body = nil
+	}
+}
+
 const Command_Body_not_set_case case_Command_Body = 0
 const Command_WalkTo_case case_Command_Body = 1
 const Command_Attack_case case_Command_Body = 2
@@ -1306,6 +1337,7 @@ const Command_StoreSearch_case case_Command_Body = 30
 const Command_Memo_case case_Command_Body = 31
 const Command_QuestActive_case case_Command_Body = 32
 const Command_SkillItemPick_case case_Command_Body = 33
+const Command_Navi_case case_Command_Body = 34
 
 func (x *Command) WhichBody() case_Command_Body {
 	if x == nil {
@@ -1378,6 +1410,8 @@ func (x *Command) WhichBody() case_Command_Body {
 		return Command_QuestActive_case
 	case *command_SkillItemPick:
 		return Command_SkillItemPick_case
+	case *command_Navi:
+		return Command_Navi_case
 	default:
 		return Command_Body_not_set_case
 	}
@@ -1420,6 +1454,7 @@ type Command_builder struct {
 	Memo          *Memo
 	QuestActive   *QuestActive
 	SkillItemPick *SkillItemPick
+	Navi          *NaviCommand
 	// -- end of xxx_hidden_Body
 }
 
@@ -1525,6 +1560,9 @@ func (b0 Command_builder) Build() *Command {
 	}
 	if b.SkillItemPick != nil {
 		x.xxx_hidden_Body = &command_SkillItemPick{b.SkillItemPick}
+	}
+	if b.Navi != nil {
+		x.xxx_hidden_Body = &command_Navi{b.Navi}
 	}
 	return m0
 }
@@ -1675,6 +1713,10 @@ type command_SkillItemPick struct {
 	SkillItemPick *SkillItemPick `protobuf:"bytes,33,opt,name=skill_item_pick,json=skillItemPick,proto3,oneof"`
 }
 
+type command_Navi struct {
+	Navi *NaviCommand `protobuf:"bytes,34,opt,name=navi,proto3,oneof"`
+}
+
 func (*command_WalkTo) isCommand_Body() {}
 
 func (*command_Attack) isCommand_Body() {}
@@ -1741,6 +1783,156 @@ func (*command_QuestActive) isCommand_Body() {}
 
 func (*command_SkillItemPick) isCommand_Body() {}
 
+func (*command_Navi) isCommand_Body() {}
+
+// NaviCommand is a <NAVI> link of a dialog, or the cancel of a route
+// (proposal 0006, section 5). The server checks that the map runs, and
+// answers with a NaviRoute. A request within one second of the last is
+// dropped. The fields are the arguments of navigateto.
+type NaviCommand struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Map        string                 `protobuf:"bytes,1,opt,name=map,proto3"`
+	xxx_hidden_X          uint32                 `protobuf:"varint,2,opt,name=x,proto3"`
+	xxx_hidden_Y          uint32                 `protobuf:"varint,3,opt,name=y,proto3"`
+	xxx_hidden_Monster    uint32                 `protobuf:"varint,4,opt,name=monster,proto3"`
+	xxx_hidden_Services   uint32                 `protobuf:"varint,5,opt,name=services,proto3"`
+	xxx_hidden_HideWindow bool                   `protobuf:"varint,6,opt,name=hide_window,json=hideWindow,proto3"`
+	xxx_hidden_Cancel     bool                   `protobuf:"varint,7,opt,name=cancel,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *NaviCommand) Reset() {
+	*x = NaviCommand{}
+	mi := &file_wathena_v1_command_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NaviCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NaviCommand) ProtoMessage() {}
+
+func (x *NaviCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_wathena_v1_command_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *NaviCommand) GetMap() string {
+	if x != nil {
+		return x.xxx_hidden_Map
+	}
+	return ""
+}
+
+func (x *NaviCommand) GetX() uint32 {
+	if x != nil {
+		return x.xxx_hidden_X
+	}
+	return 0
+}
+
+func (x *NaviCommand) GetY() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Y
+	}
+	return 0
+}
+
+func (x *NaviCommand) GetMonster() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Monster
+	}
+	return 0
+}
+
+func (x *NaviCommand) GetServices() uint32 {
+	if x != nil {
+		return x.xxx_hidden_Services
+	}
+	return 0
+}
+
+func (x *NaviCommand) GetHideWindow() bool {
+	if x != nil {
+		return x.xxx_hidden_HideWindow
+	}
+	return false
+}
+
+func (x *NaviCommand) GetCancel() bool {
+	if x != nil {
+		return x.xxx_hidden_Cancel
+	}
+	return false
+}
+
+func (x *NaviCommand) SetMap(v string) {
+	x.xxx_hidden_Map = v
+}
+
+func (x *NaviCommand) SetX(v uint32) {
+	x.xxx_hidden_X = v
+}
+
+func (x *NaviCommand) SetY(v uint32) {
+	x.xxx_hidden_Y = v
+}
+
+func (x *NaviCommand) SetMonster(v uint32) {
+	x.xxx_hidden_Monster = v
+}
+
+func (x *NaviCommand) SetServices(v uint32) {
+	x.xxx_hidden_Services = v
+}
+
+func (x *NaviCommand) SetHideWindow(v bool) {
+	x.xxx_hidden_HideWindow = v
+}
+
+func (x *NaviCommand) SetCancel(v bool) {
+	x.xxx_hidden_Cancel = v
+}
+
+type NaviCommand_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// map is a map name such as prontera.
+	Map     string
+	X       uint32
+	Y       uint32
+	Monster uint32
+	// services is a NAV_* value.
+	Services   uint32
+	HideWindow bool
+	// cancel ends the player's navigation. The other fields are ignored.
+	Cancel bool
+}
+
+func (b0 NaviCommand_builder) Build() *NaviCommand {
+	m0 := &NaviCommand{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Map = b.Map
+	x.xxx_hidden_X = b.X
+	x.xxx_hidden_Y = b.Y
+	x.xxx_hidden_Monster = b.Monster
+	x.xxx_hidden_Services = b.Services
+	x.xxx_hidden_HideWindow = b.HideWindow
+	x.xxx_hidden_Cancel = b.Cancel
+	return m0
+}
+
 // SkillItemPick answers a SkillItemList, as rAthena's
 // clif_parse_SelectArrow, clif_parse_RepairItem,
 // clif_parse_WeaponRefine, clif_parse_ProduceMix and clif_parse_Cooking.
@@ -1759,7 +1951,7 @@ type SkillItemPick struct {
 
 func (x *SkillItemPick) Reset() {
 	*x = SkillItemPick{}
-	mi := &file_wathena_v1_command_proto_msgTypes[1]
+	mi := &file_wathena_v1_command_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1771,7 +1963,7 @@ func (x *SkillItemPick) String() string {
 func (*SkillItemPick) ProtoMessage() {}
 
 func (x *SkillItemPick) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[1]
+	mi := &file_wathena_v1_command_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1850,7 +2042,7 @@ type QuestActive struct {
 
 func (x *QuestActive) Reset() {
 	*x = QuestActive{}
-	mi := &file_wathena_v1_command_proto_msgTypes[2]
+	mi := &file_wathena_v1_command_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1862,7 +2054,7 @@ func (x *QuestActive) String() string {
 func (*QuestActive) ProtoMessage() {}
 
 func (x *QuestActive) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[2]
+	mi := &file_wathena_v1_command_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1925,7 +2117,7 @@ type Memo struct {
 
 func (x *Memo) Reset() {
 	*x = Memo{}
-	mi := &file_wathena_v1_command_proto_msgTypes[3]
+	mi := &file_wathena_v1_command_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1937,7 +2129,7 @@ func (x *Memo) String() string {
 func (*Memo) ProtoMessage() {}
 
 func (x *Memo) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[3]
+	mi := &file_wathena_v1_command_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1970,7 +2162,7 @@ type WalkTo struct {
 
 func (x *WalkTo) Reset() {
 	*x = WalkTo{}
-	mi := &file_wathena_v1_command_proto_msgTypes[4]
+	mi := &file_wathena_v1_command_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1982,7 +2174,7 @@ func (x *WalkTo) String() string {
 func (*WalkTo) ProtoMessage() {}
 
 func (x *WalkTo) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[4]
+	mi := &file_wathena_v1_command_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2041,7 +2233,7 @@ type Attack struct {
 
 func (x *Attack) Reset() {
 	*x = Attack{}
-	mi := &file_wathena_v1_command_proto_msgTypes[5]
+	mi := &file_wathena_v1_command_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2053,7 +2245,7 @@ func (x *Attack) String() string {
 func (*Attack) ProtoMessage() {}
 
 func (x *Attack) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[5]
+	mi := &file_wathena_v1_command_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2116,7 +2308,7 @@ type UseSkill struct {
 
 func (x *UseSkill) Reset() {
 	*x = UseSkill{}
-	mi := &file_wathena_v1_command_proto_msgTypes[6]
+	mi := &file_wathena_v1_command_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2128,7 +2320,7 @@ func (x *UseSkill) String() string {
 func (*UseSkill) ProtoMessage() {}
 
 func (x *UseSkill) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[6]
+	mi := &file_wathena_v1_command_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2279,7 +2471,7 @@ func (b0 UseSkill_builder) Build() *UseSkill {
 type case_UseSkill_Target protoreflect.FieldNumber
 
 func (x case_UseSkill_Target) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[6].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[7].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -2313,7 +2505,7 @@ type LearnSkill struct {
 
 func (x *LearnSkill) Reset() {
 	*x = LearnSkill{}
-	mi := &file_wathena_v1_command_proto_msgTypes[7]
+	mi := &file_wathena_v1_command_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2325,7 +2517,7 @@ func (x *LearnSkill) String() string {
 func (*LearnSkill) ProtoMessage() {}
 
 func (x *LearnSkill) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[7]
+	mi := &file_wathena_v1_command_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2371,7 +2563,7 @@ type Cell struct {
 
 func (x *Cell) Reset() {
 	*x = Cell{}
-	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2383,7 +2575,7 @@ func (x *Cell) String() string {
 func (*Cell) ProtoMessage() {}
 
 func (x *Cell) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[8]
+	mi := &file_wathena_v1_command_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2446,7 +2638,7 @@ type Chat struct {
 
 func (x *Chat) Reset() {
 	*x = Chat{}
-	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	mi := &file_wathena_v1_command_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2458,7 +2650,7 @@ func (x *Chat) String() string {
 func (*Chat) ProtoMessage() {}
 
 func (x *Chat) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[9]
+	mi := &file_wathena_v1_command_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2550,7 +2742,7 @@ type ChannelCommand struct {
 
 func (x *ChannelCommand) Reset() {
 	*x = ChannelCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	mi := &file_wathena_v1_command_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2562,7 +2754,7 @@ func (x *ChannelCommand) String() string {
 func (*ChannelCommand) ProtoMessage() {}
 
 func (x *ChannelCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[10]
+	mi := &file_wathena_v1_command_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2627,7 +2819,7 @@ type Block struct {
 
 func (x *Block) Reset() {
 	*x = Block{}
-	mi := &file_wathena_v1_command_proto_msgTypes[11]
+	mi := &file_wathena_v1_command_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2639,7 +2831,7 @@ func (x *Block) String() string {
 func (*Block) ProtoMessage() {}
 
 func (x *Block) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[11]
+	mi := &file_wathena_v1_command_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2705,7 +2897,7 @@ type Report struct {
 
 func (x *Report) Reset() {
 	*x = Report{}
-	mi := &file_wathena_v1_command_proto_msgTypes[12]
+	mi := &file_wathena_v1_command_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2717,7 +2909,7 @@ func (x *Report) String() string {
 func (*Report) ProtoMessage() {}
 
 func (x *Report) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[12]
+	mi := &file_wathena_v1_command_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2826,7 +3018,7 @@ type NpcClick struct {
 
 func (x *NpcClick) Reset() {
 	*x = NpcClick{}
-	mi := &file_wathena_v1_command_proto_msgTypes[13]
+	mi := &file_wathena_v1_command_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2838,7 +3030,7 @@ func (x *NpcClick) String() string {
 func (*NpcClick) ProtoMessage() {}
 
 func (x *NpcClick) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[13]
+	mi := &file_wathena_v1_command_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2885,7 +3077,7 @@ type NpcReply struct {
 
 func (x *NpcReply) Reset() {
 	*x = NpcReply{}
-	mi := &file_wathena_v1_command_proto_msgTypes[14]
+	mi := &file_wathena_v1_command_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2897,7 +3089,7 @@ func (x *NpcReply) String() string {
 func (*NpcReply) ProtoMessage() {}
 
 func (x *NpcReply) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[14]
+	mi := &file_wathena_v1_command_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3140,7 +3332,7 @@ func (b0 NpcReply_builder) Build() *NpcReply {
 type case_NpcReply_Answer protoreflect.FieldNumber
 
 func (x case_NpcReply_Answer) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[14].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[15].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -3201,7 +3393,7 @@ type ShopBuy struct {
 
 func (x *ShopBuy) Reset() {
 	*x = ShopBuy{}
-	mi := &file_wathena_v1_command_proto_msgTypes[15]
+	mi := &file_wathena_v1_command_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3213,7 +3405,7 @@ func (x *ShopBuy) String() string {
 func (*ShopBuy) ProtoMessage() {}
 
 func (x *ShopBuy) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[15]
+	mi := &file_wathena_v1_command_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3276,7 +3468,7 @@ type ShopBuyLine struct {
 
 func (x *ShopBuyLine) Reset() {
 	*x = ShopBuyLine{}
-	mi := &file_wathena_v1_command_proto_msgTypes[16]
+	mi := &file_wathena_v1_command_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3288,7 +3480,7 @@ func (x *ShopBuyLine) String() string {
 func (*ShopBuyLine) ProtoMessage() {}
 
 func (x *ShopBuyLine) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[16]
+	mi := &file_wathena_v1_command_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3351,7 +3543,7 @@ type ShopSell struct {
 
 func (x *ShopSell) Reset() {
 	*x = ShopSell{}
-	mi := &file_wathena_v1_command_proto_msgTypes[17]
+	mi := &file_wathena_v1_command_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3363,7 +3555,7 @@ func (x *ShopSell) String() string {
 func (*ShopSell) ProtoMessage() {}
 
 func (x *ShopSell) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[17]
+	mi := &file_wathena_v1_command_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3425,7 +3617,7 @@ type ShopSellLine struct {
 
 func (x *ShopSellLine) Reset() {
 	*x = ShopSellLine{}
-	mi := &file_wathena_v1_command_proto_msgTypes[18]
+	mi := &file_wathena_v1_command_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3437,7 +3629,7 @@ func (x *ShopSellLine) String() string {
 func (*ShopSellLine) ProtoMessage() {}
 
 func (x *ShopSellLine) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[18]
+	mi := &file_wathena_v1_command_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3498,7 +3690,7 @@ type ShopClose struct {
 
 func (x *ShopClose) Reset() {
 	*x = ShopClose{}
-	mi := &file_wathena_v1_command_proto_msgTypes[19]
+	mi := &file_wathena_v1_command_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3510,7 +3702,7 @@ func (x *ShopClose) String() string {
 func (*ShopClose) ProtoMessage() {}
 
 func (x *ShopClose) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[19]
+	mi := &file_wathena_v1_command_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3557,7 +3749,7 @@ type UseItem struct {
 
 func (x *UseItem) Reset() {
 	*x = UseItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[20]
+	mi := &file_wathena_v1_command_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3569,7 +3761,7 @@ func (x *UseItem) String() string {
 func (*UseItem) ProtoMessage() {}
 
 func (x *UseItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[20]
+	mi := &file_wathena_v1_command_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3620,7 +3812,7 @@ type DropItem struct {
 
 func (x *DropItem) Reset() {
 	*x = DropItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[21]
+	mi := &file_wathena_v1_command_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3632,7 +3824,7 @@ func (x *DropItem) String() string {
 func (*DropItem) ProtoMessage() {}
 
 func (x *DropItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[21]
+	mi := &file_wathena_v1_command_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3693,7 +3885,7 @@ type PickUp struct {
 
 func (x *PickUp) Reset() {
 	*x = PickUp{}
-	mi := &file_wathena_v1_command_proto_msgTypes[22]
+	mi := &file_wathena_v1_command_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3705,7 +3897,7 @@ func (x *PickUp) String() string {
 func (*PickUp) ProtoMessage() {}
 
 func (x *PickUp) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[22]
+	mi := &file_wathena_v1_command_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3754,7 +3946,7 @@ type RaiseStat struct {
 
 func (x *RaiseStat) Reset() {
 	*x = RaiseStat{}
-	mi := &file_wathena_v1_command_proto_msgTypes[23]
+	mi := &file_wathena_v1_command_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3766,7 +3958,7 @@ func (x *RaiseStat) String() string {
 func (*RaiseStat) ProtoMessage() {}
 
 func (x *RaiseStat) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[23]
+	mi := &file_wathena_v1_command_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3828,7 +4020,7 @@ type EquipItem struct {
 
 func (x *EquipItem) Reset() {
 	*x = EquipItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[24]
+	mi := &file_wathena_v1_command_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3840,7 +4032,7 @@ func (x *EquipItem) String() string {
 func (*EquipItem) ProtoMessage() {}
 
 func (x *EquipItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[24]
+	mi := &file_wathena_v1_command_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3903,7 +4095,7 @@ type UnequipItem struct {
 
 func (x *UnequipItem) Reset() {
 	*x = UnequipItem{}
-	mi := &file_wathena_v1_command_proto_msgTypes[25]
+	mi := &file_wathena_v1_command_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3915,7 +4107,7 @@ func (x *UnequipItem) String() string {
 func (*UnequipItem) ProtoMessage() {}
 
 func (x *UnequipItem) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[25]
+	mi := &file_wathena_v1_command_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3964,7 +4156,7 @@ type InsertCard struct {
 
 func (x *InsertCard) Reset() {
 	*x = InsertCard{}
-	mi := &file_wathena_v1_command_proto_msgTypes[26]
+	mi := &file_wathena_v1_command_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3976,7 +4168,7 @@ func (x *InsertCard) String() string {
 func (*InsertCard) ProtoMessage() {}
 
 func (x *InsertCard) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[26]
+	mi := &file_wathena_v1_command_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4038,7 +4230,7 @@ type PartyCommand struct {
 
 func (x *PartyCommand) Reset() {
 	*x = PartyCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[27]
+	mi := &file_wathena_v1_command_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4050,7 +4242,7 @@ func (x *PartyCommand) String() string {
 func (*PartyCommand) ProtoMessage() {}
 
 func (x *PartyCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[27]
+	mi := &file_wathena_v1_command_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4364,7 +4556,7 @@ func (b0 PartyCommand_builder) Build() *PartyCommand {
 type case_PartyCommand_Action protoreflect.FieldNumber
 
 func (x case_PartyCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[27].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[28].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -4440,7 +4632,7 @@ type PartyCreate struct {
 
 func (x *PartyCreate) Reset() {
 	*x = PartyCreate{}
-	mi := &file_wathena_v1_command_proto_msgTypes[28]
+	mi := &file_wathena_v1_command_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4452,7 +4644,7 @@ func (x *PartyCreate) String() string {
 func (*PartyCreate) ProtoMessage() {}
 
 func (x *PartyCreate) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[28]
+	mi := &file_wathena_v1_command_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4525,7 +4717,7 @@ type PartyReply struct {
 
 func (x *PartyReply) Reset() {
 	*x = PartyReply{}
-	mi := &file_wathena_v1_command_proto_msgTypes[29]
+	mi := &file_wathena_v1_command_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4537,7 +4729,7 @@ func (x *PartyReply) String() string {
 func (*PartyReply) ProtoMessage() {}
 
 func (x *PartyReply) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[29]
+	mi := &file_wathena_v1_command_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4600,7 +4792,7 @@ type PartyOptions struct {
 
 func (x *PartyOptions) Reset() {
 	*x = PartyOptions{}
-	mi := &file_wathena_v1_command_proto_msgTypes[30]
+	mi := &file_wathena_v1_command_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4612,7 +4804,7 @@ func (x *PartyOptions) String() string {
 func (*PartyOptions) ProtoMessage() {}
 
 func (x *PartyOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[30]
+	mi := &file_wathena_v1_command_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4691,7 +4883,7 @@ type FriendCommand struct {
 
 func (x *FriendCommand) Reset() {
 	*x = FriendCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[31]
+	mi := &file_wathena_v1_command_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4703,7 +4895,7 @@ func (x *FriendCommand) String() string {
 func (*FriendCommand) ProtoMessage() {}
 
 func (x *FriendCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[31]
+	mi := &file_wathena_v1_command_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4865,7 +5057,7 @@ func (b0 FriendCommand_builder) Build() *FriendCommand {
 type case_FriendCommand_Action protoreflect.FieldNumber
 
 func (x case_FriendCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[31].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[32].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -4909,7 +5101,7 @@ type FriendReply struct {
 
 func (x *FriendReply) Reset() {
 	*x = FriendReply{}
-	mi := &file_wathena_v1_command_proto_msgTypes[32]
+	mi := &file_wathena_v1_command_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4921,7 +5113,7 @@ func (x *FriendReply) String() string {
 func (*FriendReply) ProtoMessage() {}
 
 func (x *FriendReply) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[32]
+	mi := &file_wathena_v1_command_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4982,7 +5174,7 @@ type PartyBookingCommand struct {
 
 func (x *PartyBookingCommand) Reset() {
 	*x = PartyBookingCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[33]
+	mi := &file_wathena_v1_command_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4994,7 +5186,7 @@ func (x *PartyBookingCommand) String() string {
 func (*PartyBookingCommand) ProtoMessage() {}
 
 func (x *PartyBookingCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[33]
+	mi := &file_wathena_v1_command_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5156,7 +5348,7 @@ func (b0 PartyBookingCommand_builder) Build() *PartyBookingCommand {
 type case_PartyBookingCommand_Action protoreflect.FieldNumber
 
 func (x case_PartyBookingCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[33].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[34].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -5200,7 +5392,7 @@ type PartyBookingAd struct {
 
 func (x *PartyBookingAd) Reset() {
 	*x = PartyBookingAd{}
-	mi := &file_wathena_v1_command_proto_msgTypes[34]
+	mi := &file_wathena_v1_command_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5212,7 +5404,7 @@ func (x *PartyBookingAd) String() string {
 func (*PartyBookingAd) ProtoMessage() {}
 
 func (x *PartyBookingAd) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[34]
+	mi := &file_wathena_v1_command_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5303,7 +5495,7 @@ type PartyBookingSearch struct {
 
 func (x *PartyBookingSearch) Reset() {
 	*x = PartyBookingSearch{}
-	mi := &file_wathena_v1_command_proto_msgTypes[35]
+	mi := &file_wathena_v1_command_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5315,7 +5507,7 @@ func (x *PartyBookingSearch) String() string {
 func (*PartyBookingSearch) ProtoMessage() {}
 
 func (x *PartyBookingSearch) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[35]
+	mi := &file_wathena_v1_command_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5394,7 +5586,7 @@ type GuildCommand struct {
 
 func (x *GuildCommand) Reset() {
 	*x = GuildCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[36]
+	mi := &file_wathena_v1_command_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5406,7 +5598,7 @@ func (x *GuildCommand) String() string {
 func (*GuildCommand) ProtoMessage() {}
 
 func (x *GuildCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[36]
+	mi := &file_wathena_v1_command_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5988,7 +6180,7 @@ func (b0 GuildCommand_builder) Build() *GuildCommand {
 type case_GuildCommand_Action protoreflect.FieldNumber
 
 func (x case_GuildCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[36].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[37].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -6120,7 +6312,7 @@ type GuildReply struct {
 
 func (x *GuildReply) Reset() {
 	*x = GuildReply{}
-	mi := &file_wathena_v1_command_proto_msgTypes[37]
+	mi := &file_wathena_v1_command_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6132,7 +6324,7 @@ func (x *GuildReply) String() string {
 func (*GuildReply) ProtoMessage() {}
 
 func (x *GuildReply) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[37]
+	mi := &file_wathena_v1_command_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6192,7 +6384,7 @@ type GuildExpel struct {
 
 func (x *GuildExpel) Reset() {
 	*x = GuildExpel{}
-	mi := &file_wathena_v1_command_proto_msgTypes[38]
+	mi := &file_wathena_v1_command_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6204,7 +6396,7 @@ func (x *GuildExpel) String() string {
 func (*GuildExpel) ProtoMessage() {}
 
 func (x *GuildExpel) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[38]
+	mi := &file_wathena_v1_command_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6263,7 +6455,7 @@ type GuildPositions struct {
 
 func (x *GuildPositions) Reset() {
 	*x = GuildPositions{}
-	mi := &file_wathena_v1_command_proto_msgTypes[39]
+	mi := &file_wathena_v1_command_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6275,7 +6467,7 @@ func (x *GuildPositions) String() string {
 func (*GuildPositions) ProtoMessage() {}
 
 func (x *GuildPositions) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[39]
+	mi := &file_wathena_v1_command_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6329,7 +6521,7 @@ type GuildPosition struct {
 
 func (x *GuildPosition) Reset() {
 	*x = GuildPosition{}
-	mi := &file_wathena_v1_command_proto_msgTypes[40]
+	mi := &file_wathena_v1_command_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6341,7 +6533,7 @@ func (x *GuildPosition) String() string {
 func (*GuildPosition) ProtoMessage() {}
 
 func (x *GuildPosition) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[40]
+	mi := &file_wathena_v1_command_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6456,7 +6648,7 @@ type GuildMemberPosition struct {
 
 func (x *GuildMemberPosition) Reset() {
 	*x = GuildMemberPosition{}
-	mi := &file_wathena_v1_command_proto_msgTypes[41]
+	mi := &file_wathena_v1_command_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6468,7 +6660,7 @@ func (x *GuildMemberPosition) String() string {
 func (*GuildMemberPosition) ProtoMessage() {}
 
 func (x *GuildMemberPosition) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[41]
+	mi := &file_wathena_v1_command_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6528,7 +6720,7 @@ type GuildNotice struct {
 
 func (x *GuildNotice) Reset() {
 	*x = GuildNotice{}
-	mi := &file_wathena_v1_command_proto_msgTypes[42]
+	mi := &file_wathena_v1_command_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6540,7 +6732,7 @@ func (x *GuildNotice) String() string {
 func (*GuildNotice) ProtoMessage() {}
 
 func (x *GuildNotice) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[42]
+	mi := &file_wathena_v1_command_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6600,7 +6792,7 @@ type GuildRelationEnd struct {
 
 func (x *GuildRelationEnd) Reset() {
 	*x = GuildRelationEnd{}
-	mi := &file_wathena_v1_command_proto_msgTypes[43]
+	mi := &file_wathena_v1_command_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6612,7 +6804,7 @@ func (x *GuildRelationEnd) String() string {
 func (*GuildRelationEnd) ProtoMessage() {}
 
 func (x *GuildRelationEnd) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[43]
+	mi := &file_wathena_v1_command_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6677,7 +6869,7 @@ type StorageCommand struct {
 
 func (x *StorageCommand) Reset() {
 	*x = StorageCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[44]
+	mi := &file_wathena_v1_command_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6689,7 +6881,7 @@ func (x *StorageCommand) String() string {
 func (*StorageCommand) ProtoMessage() {}
 
 func (x *StorageCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[44]
+	mi := &file_wathena_v1_command_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7051,7 +7243,7 @@ func (b0 StorageCommand_builder) Build() *StorageCommand {
 type case_StorageCommand_Action protoreflect.FieldNumber
 
 func (x case_StorageCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[44].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[45].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -7135,7 +7327,7 @@ type StorageMove struct {
 
 func (x *StorageMove) Reset() {
 	*x = StorageMove{}
-	mi := &file_wathena_v1_command_proto_msgTypes[45]
+	mi := &file_wathena_v1_command_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7147,7 +7339,7 @@ func (x *StorageMove) String() string {
 func (*StorageMove) ProtoMessage() {}
 
 func (x *StorageMove) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[45]
+	mi := &file_wathena_v1_command_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7211,7 +7403,7 @@ type TradeCommand struct {
 
 func (x *TradeCommand) Reset() {
 	*x = TradeCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[46]
+	mi := &file_wathena_v1_command_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7223,7 +7415,7 @@ func (x *TradeCommand) String() string {
 func (*TradeCommand) ProtoMessage() {}
 
 func (x *TradeCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[46]
+	mi := &file_wathena_v1_command_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7527,7 +7719,7 @@ func (b0 TradeCommand_builder) Build() *TradeCommand {
 type case_TradeCommand_Action protoreflect.FieldNumber
 
 func (x case_TradeCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[46].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[47].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -7603,7 +7795,7 @@ type MailCommand struct {
 
 func (x *MailCommand) Reset() {
 	*x = MailCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[47]
+	mi := &file_wathena_v1_command_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7615,7 +7807,7 @@ func (x *MailCommand) String() string {
 func (*MailCommand) ProtoMessage() {}
 
 func (x *MailCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[47]
+	mi := &file_wathena_v1_command_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7888,7 +8080,7 @@ func (b0 MailCommand_builder) Build() *MailCommand {
 type case_MailCommand_Action protoreflect.FieldNumber
 
 func (x case_MailCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[47].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[48].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -7960,7 +8152,7 @@ type MailSend struct {
 
 func (x *MailSend) Reset() {
 	*x = MailSend{}
-	mi := &file_wathena_v1_command_proto_msgTypes[48]
+	mi := &file_wathena_v1_command_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7972,7 +8164,7 @@ func (x *MailSend) String() string {
 func (*MailSend) ProtoMessage() {}
 
 func (x *MailSend) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[48]
+	mi := &file_wathena_v1_command_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8079,7 +8271,7 @@ type MailTake struct {
 
 func (x *MailTake) Reset() {
 	*x = MailTake{}
-	mi := &file_wathena_v1_command_proto_msgTypes[49]
+	mi := &file_wathena_v1_command_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8091,7 +8283,7 @@ func (x *MailTake) String() string {
 func (*MailTake) ProtoMessage() {}
 
 func (x *MailTake) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[49]
+	mi := &file_wathena_v1_command_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8166,7 +8358,7 @@ type VendingCommand struct {
 
 func (x *VendingCommand) Reset() {
 	*x = VendingCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[50]
+	mi := &file_wathena_v1_command_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8178,7 +8370,7 @@ func (x *VendingCommand) String() string {
 func (*VendingCommand) ProtoMessage() {}
 
 func (x *VendingCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[50]
+	mi := &file_wathena_v1_command_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8413,7 +8605,7 @@ func (b0 VendingCommand_builder) Build() *VendingCommand {
 type case_VendingCommand_Action protoreflect.FieldNumber
 
 func (x case_VendingCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[50].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[51].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -8470,7 +8662,7 @@ type VendingOpen struct {
 
 func (x *VendingOpen) Reset() {
 	*x = VendingOpen{}
-	mi := &file_wathena_v1_command_proto_msgTypes[51]
+	mi := &file_wathena_v1_command_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8482,7 +8674,7 @@ func (x *VendingOpen) String() string {
 func (*VendingOpen) ProtoMessage() {}
 
 func (x *VendingOpen) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[51]
+	mi := &file_wathena_v1_command_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8546,7 +8738,7 @@ type VendingLine struct {
 
 func (x *VendingLine) Reset() {
 	*x = VendingLine{}
-	mi := &file_wathena_v1_command_proto_msgTypes[52]
+	mi := &file_wathena_v1_command_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8558,7 +8750,7 @@ func (x *VendingLine) String() string {
 func (*VendingLine) ProtoMessage() {}
 
 func (x *VendingLine) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[52]
+	mi := &file_wathena_v1_command_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8632,7 +8824,7 @@ type VendingBuy struct {
 
 func (x *VendingBuy) Reset() {
 	*x = VendingBuy{}
-	mi := &file_wathena_v1_command_proto_msgTypes[53]
+	mi := &file_wathena_v1_command_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8644,7 +8836,7 @@ func (x *VendingBuy) String() string {
 func (*VendingBuy) ProtoMessage() {}
 
 func (x *VendingBuy) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[53]
+	mi := &file_wathena_v1_command_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8721,7 +8913,7 @@ type VendingBuyLine struct {
 
 func (x *VendingBuyLine) Reset() {
 	*x = VendingBuyLine{}
-	mi := &file_wathena_v1_command_proto_msgTypes[54]
+	mi := &file_wathena_v1_command_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8733,7 +8925,7 @@ func (x *VendingBuyLine) String() string {
 func (*VendingBuyLine) ProtoMessage() {}
 
 func (x *VendingBuyLine) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[54]
+	mi := &file_wathena_v1_command_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8795,7 +8987,7 @@ type BuyingStoreCommand struct {
 
 func (x *BuyingStoreCommand) Reset() {
 	*x = BuyingStoreCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[55]
+	mi := &file_wathena_v1_command_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8807,7 +8999,7 @@ func (x *BuyingStoreCommand) String() string {
 func (*BuyingStoreCommand) ProtoMessage() {}
 
 func (x *BuyingStoreCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[55]
+	mi := &file_wathena_v1_command_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9042,7 +9234,7 @@ func (b0 BuyingStoreCommand_builder) Build() *BuyingStoreCommand {
 type case_BuyingStoreCommand_Action protoreflect.FieldNumber
 
 func (x case_BuyingStoreCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[55].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[56].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -9100,7 +9292,7 @@ type BuyingStoreOpen struct {
 
 func (x *BuyingStoreOpen) Reset() {
 	*x = BuyingStoreOpen{}
-	mi := &file_wathena_v1_command_proto_msgTypes[56]
+	mi := &file_wathena_v1_command_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9112,7 +9304,7 @@ func (x *BuyingStoreOpen) String() string {
 func (*BuyingStoreOpen) ProtoMessage() {}
 
 func (x *BuyingStoreOpen) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[56]
+	mi := &file_wathena_v1_command_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9191,7 +9383,7 @@ type BuyingStoreLine struct {
 
 func (x *BuyingStoreLine) Reset() {
 	*x = BuyingStoreLine{}
-	mi := &file_wathena_v1_command_proto_msgTypes[57]
+	mi := &file_wathena_v1_command_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9203,7 +9395,7 @@ func (x *BuyingStoreLine) String() string {
 func (*BuyingStoreLine) ProtoMessage() {}
 
 func (x *BuyingStoreLine) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[57]
+	mi := &file_wathena_v1_command_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9278,7 +9470,7 @@ type BuyingStoreSell struct {
 
 func (x *BuyingStoreSell) Reset() {
 	*x = BuyingStoreSell{}
-	mi := &file_wathena_v1_command_proto_msgTypes[58]
+	mi := &file_wathena_v1_command_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9290,7 +9482,7 @@ func (x *BuyingStoreSell) String() string {
 func (*BuyingStoreSell) ProtoMessage() {}
 
 func (x *BuyingStoreSell) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[58]
+	mi := &file_wathena_v1_command_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9368,7 +9560,7 @@ type BuyingStoreSellLine struct {
 
 func (x *BuyingStoreSellLine) Reset() {
 	*x = BuyingStoreSellLine{}
-	mi := &file_wathena_v1_command_proto_msgTypes[59]
+	mi := &file_wathena_v1_command_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9380,7 +9572,7 @@ func (x *BuyingStoreSellLine) String() string {
 func (*BuyingStoreSellLine) ProtoMessage() {}
 
 func (x *BuyingStoreSellLine) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[59]
+	mi := &file_wathena_v1_command_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9455,7 +9647,7 @@ type StoreSearchCommand struct {
 
 func (x *StoreSearchCommand) Reset() {
 	*x = StoreSearchCommand{}
-	mi := &file_wathena_v1_command_proto_msgTypes[60]
+	mi := &file_wathena_v1_command_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9467,7 +9659,7 @@ func (x *StoreSearchCommand) String() string {
 func (*StoreSearchCommand) ProtoMessage() {}
 
 func (x *StoreSearchCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[60]
+	mi := &file_wathena_v1_command_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9663,7 +9855,7 @@ func (b0 StoreSearchCommand_builder) Build() *StoreSearchCommand {
 type case_StoreSearchCommand_Action protoreflect.FieldNumber
 
 func (x case_StoreSearchCommand_Action) String() string {
-	md := file_wathena_v1_command_proto_msgTypes[60].Descriptor()
+	md := file_wathena_v1_command_proto_msgTypes[61].Descriptor()
 	if x == 0 {
 		return "not set"
 	}
@@ -9718,7 +9910,7 @@ type StoreSearchQuery struct {
 
 func (x *StoreSearchQuery) Reset() {
 	*x = StoreSearchQuery{}
-	mi := &file_wathena_v1_command_proto_msgTypes[61]
+	mi := &file_wathena_v1_command_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9730,7 +9922,7 @@ func (x *StoreSearchQuery) String() string {
 func (*StoreSearchQuery) ProtoMessage() {}
 
 func (x *StoreSearchQuery) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[61]
+	mi := &file_wathena_v1_command_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9867,7 +10059,7 @@ type StoreSearchRoll struct {
 
 func (x *StoreSearchRoll) Reset() {
 	*x = StoreSearchRoll{}
-	mi := &file_wathena_v1_command_proto_msgTypes[62]
+	mi := &file_wathena_v1_command_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9879,7 +10071,7 @@ func (x *StoreSearchRoll) String() string {
 func (*StoreSearchRoll) ProtoMessage() {}
 
 func (x *StoreSearchRoll) ProtoReflect() protoreflect.Message {
-	mi := &file_wathena_v1_command_proto_msgTypes[62]
+	mi := &file_wathena_v1_command_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9946,7 +10138,7 @@ var File_wathena_v1_command_proto protoreflect.FileDescriptor
 const file_wathena_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18wathena/v1/command.proto\x12\n" +
-	"wathena.v1\"\x86\x0e\n" +
+	"wathena.v1\"\xb5\x0e\n" +
 	"\aCommand\x12-\n" +
 	"\awalk_to\x18\x01 \x01(\v2\x12.wathena.v1.WalkToH\x00R\x06walkTo\x12,\n" +
 	"\x06attack\x18\x02 \x01(\v2\x12.wathena.v1.AttackH\x00R\x06attack\x123\n" +
@@ -9986,8 +10178,18 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\fstore_search\x18\x1e \x01(\v2\x1e.wathena.v1.StoreSearchCommandH\x00R\vstoreSearch\x12&\n" +
 	"\x04memo\x18\x1f \x01(\v2\x10.wathena.v1.MemoH\x00R\x04memo\x12<\n" +
 	"\fquest_active\x18  \x01(\v2\x17.wathena.v1.QuestActiveH\x00R\vquestActive\x12C\n" +
-	"\x0fskill_item_pick\x18! \x01(\v2\x19.wathena.v1.SkillItemPickH\x00R\rskillItemPickB\x06\n" +
-	"\x04body\"X\n" +
+	"\x0fskill_item_pick\x18! \x01(\v2\x19.wathena.v1.SkillItemPickH\x00R\rskillItemPick\x12-\n" +
+	"\x04navi\x18\" \x01(\v2\x17.wathena.v1.NaviCommandH\x00R\x04naviB\x06\n" +
+	"\x04body\"\xaa\x01\n" +
+	"\vNaviCommand\x12\x10\n" +
+	"\x03map\x18\x01 \x01(\tR\x03map\x12\f\n" +
+	"\x01x\x18\x02 \x01(\rR\x01x\x12\f\n" +
+	"\x01y\x18\x03 \x01(\rR\x01y\x12\x18\n" +
+	"\amonster\x18\x04 \x01(\rR\amonster\x12\x1a\n" +
+	"\bservices\x18\x05 \x01(\rR\bservices\x12\x1f\n" +
+	"\vhide_window\x18\x06 \x01(\bR\n" +
+	"hideWindow\x12\x16\n" +
+	"\x06cancel\x18\a \x01(\bR\x06cancel\"X\n" +
 	"\rSkillItemPick\x12\x19\n" +
 	"\bskill_id\x18\x01 \x01(\rR\askillId\x12\x14\n" +
 	"\x05index\x18\x02 \x01(\rR\x05index\x12\x16\n" +
@@ -10294,156 +10496,158 @@ const file_wathena_v1_command_proto_rawDesc = "" +
 	"\rBASE_STAT_LUK\x10\x06B@Z>github.com/lxsmnsyc/wathena/schema/gen/go/wathena/v1;wathenav1b\x06proto3"
 
 var file_wathena_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 63)
+var file_wathena_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 64)
 var file_wathena_v1_command_proto_goTypes = []any{
 	(ChatChannel)(0),            // 0: wathena.v1.ChatChannel
 	(ChannelAction)(0),          // 1: wathena.v1.ChannelAction
 	(BaseStat)(0),               // 2: wathena.v1.BaseStat
 	(*Command)(nil),             // 3: wathena.v1.Command
-	(*SkillItemPick)(nil),       // 4: wathena.v1.SkillItemPick
-	(*QuestActive)(nil),         // 5: wathena.v1.QuestActive
-	(*Memo)(nil),                // 6: wathena.v1.Memo
-	(*WalkTo)(nil),              // 7: wathena.v1.WalkTo
-	(*Attack)(nil),              // 8: wathena.v1.Attack
-	(*UseSkill)(nil),            // 9: wathena.v1.UseSkill
-	(*LearnSkill)(nil),          // 10: wathena.v1.LearnSkill
-	(*Cell)(nil),                // 11: wathena.v1.Cell
-	(*Chat)(nil),                // 12: wathena.v1.Chat
-	(*ChannelCommand)(nil),      // 13: wathena.v1.ChannelCommand
-	(*Block)(nil),               // 14: wathena.v1.Block
-	(*Report)(nil),              // 15: wathena.v1.Report
-	(*NpcClick)(nil),            // 16: wathena.v1.NpcClick
-	(*NpcReply)(nil),            // 17: wathena.v1.NpcReply
-	(*ShopBuy)(nil),             // 18: wathena.v1.ShopBuy
-	(*ShopBuyLine)(nil),         // 19: wathena.v1.ShopBuyLine
-	(*ShopSell)(nil),            // 20: wathena.v1.ShopSell
-	(*ShopSellLine)(nil),        // 21: wathena.v1.ShopSellLine
-	(*ShopClose)(nil),           // 22: wathena.v1.ShopClose
-	(*UseItem)(nil),             // 23: wathena.v1.UseItem
-	(*DropItem)(nil),            // 24: wathena.v1.DropItem
-	(*PickUp)(nil),              // 25: wathena.v1.PickUp
-	(*RaiseStat)(nil),           // 26: wathena.v1.RaiseStat
-	(*EquipItem)(nil),           // 27: wathena.v1.EquipItem
-	(*UnequipItem)(nil),         // 28: wathena.v1.UnequipItem
-	(*InsertCard)(nil),          // 29: wathena.v1.InsertCard
-	(*PartyCommand)(nil),        // 30: wathena.v1.PartyCommand
-	(*PartyCreate)(nil),         // 31: wathena.v1.PartyCreate
-	(*PartyReply)(nil),          // 32: wathena.v1.PartyReply
-	(*PartyOptions)(nil),        // 33: wathena.v1.PartyOptions
-	(*FriendCommand)(nil),       // 34: wathena.v1.FriendCommand
-	(*FriendReply)(nil),         // 35: wathena.v1.FriendReply
-	(*PartyBookingCommand)(nil), // 36: wathena.v1.PartyBookingCommand
-	(*PartyBookingAd)(nil),      // 37: wathena.v1.PartyBookingAd
-	(*PartyBookingSearch)(nil),  // 38: wathena.v1.PartyBookingSearch
-	(*GuildCommand)(nil),        // 39: wathena.v1.GuildCommand
-	(*GuildReply)(nil),          // 40: wathena.v1.GuildReply
-	(*GuildExpel)(nil),          // 41: wathena.v1.GuildExpel
-	(*GuildPositions)(nil),      // 42: wathena.v1.GuildPositions
-	(*GuildPosition)(nil),       // 43: wathena.v1.GuildPosition
-	(*GuildMemberPosition)(nil), // 44: wathena.v1.GuildMemberPosition
-	(*GuildNotice)(nil),         // 45: wathena.v1.GuildNotice
-	(*GuildRelationEnd)(nil),    // 46: wathena.v1.GuildRelationEnd
-	(*StorageCommand)(nil),      // 47: wathena.v1.StorageCommand
-	(*StorageMove)(nil),         // 48: wathena.v1.StorageMove
-	(*TradeCommand)(nil),        // 49: wathena.v1.TradeCommand
-	(*MailCommand)(nil),         // 50: wathena.v1.MailCommand
-	(*MailSend)(nil),            // 51: wathena.v1.MailSend
-	(*MailTake)(nil),            // 52: wathena.v1.MailTake
-	(*VendingCommand)(nil),      // 53: wathena.v1.VendingCommand
-	(*VendingOpen)(nil),         // 54: wathena.v1.VendingOpen
-	(*VendingLine)(nil),         // 55: wathena.v1.VendingLine
-	(*VendingBuy)(nil),          // 56: wathena.v1.VendingBuy
-	(*VendingBuyLine)(nil),      // 57: wathena.v1.VendingBuyLine
-	(*BuyingStoreCommand)(nil),  // 58: wathena.v1.BuyingStoreCommand
-	(*BuyingStoreOpen)(nil),     // 59: wathena.v1.BuyingStoreOpen
-	(*BuyingStoreLine)(nil),     // 60: wathena.v1.BuyingStoreLine
-	(*BuyingStoreSell)(nil),     // 61: wathena.v1.BuyingStoreSell
-	(*BuyingStoreSellLine)(nil), // 62: wathena.v1.BuyingStoreSellLine
-	(*StoreSearchCommand)(nil),  // 63: wathena.v1.StoreSearchCommand
-	(*StoreSearchQuery)(nil),    // 64: wathena.v1.StoreSearchQuery
-	(*StoreSearchRoll)(nil),     // 65: wathena.v1.StoreSearchRoll
+	(*NaviCommand)(nil),         // 4: wathena.v1.NaviCommand
+	(*SkillItemPick)(nil),       // 5: wathena.v1.SkillItemPick
+	(*QuestActive)(nil),         // 6: wathena.v1.QuestActive
+	(*Memo)(nil),                // 7: wathena.v1.Memo
+	(*WalkTo)(nil),              // 8: wathena.v1.WalkTo
+	(*Attack)(nil),              // 9: wathena.v1.Attack
+	(*UseSkill)(nil),            // 10: wathena.v1.UseSkill
+	(*LearnSkill)(nil),          // 11: wathena.v1.LearnSkill
+	(*Cell)(nil),                // 12: wathena.v1.Cell
+	(*Chat)(nil),                // 13: wathena.v1.Chat
+	(*ChannelCommand)(nil),      // 14: wathena.v1.ChannelCommand
+	(*Block)(nil),               // 15: wathena.v1.Block
+	(*Report)(nil),              // 16: wathena.v1.Report
+	(*NpcClick)(nil),            // 17: wathena.v1.NpcClick
+	(*NpcReply)(nil),            // 18: wathena.v1.NpcReply
+	(*ShopBuy)(nil),             // 19: wathena.v1.ShopBuy
+	(*ShopBuyLine)(nil),         // 20: wathena.v1.ShopBuyLine
+	(*ShopSell)(nil),            // 21: wathena.v1.ShopSell
+	(*ShopSellLine)(nil),        // 22: wathena.v1.ShopSellLine
+	(*ShopClose)(nil),           // 23: wathena.v1.ShopClose
+	(*UseItem)(nil),             // 24: wathena.v1.UseItem
+	(*DropItem)(nil),            // 25: wathena.v1.DropItem
+	(*PickUp)(nil),              // 26: wathena.v1.PickUp
+	(*RaiseStat)(nil),           // 27: wathena.v1.RaiseStat
+	(*EquipItem)(nil),           // 28: wathena.v1.EquipItem
+	(*UnequipItem)(nil),         // 29: wathena.v1.UnequipItem
+	(*InsertCard)(nil),          // 30: wathena.v1.InsertCard
+	(*PartyCommand)(nil),        // 31: wathena.v1.PartyCommand
+	(*PartyCreate)(nil),         // 32: wathena.v1.PartyCreate
+	(*PartyReply)(nil),          // 33: wathena.v1.PartyReply
+	(*PartyOptions)(nil),        // 34: wathena.v1.PartyOptions
+	(*FriendCommand)(nil),       // 35: wathena.v1.FriendCommand
+	(*FriendReply)(nil),         // 36: wathena.v1.FriendReply
+	(*PartyBookingCommand)(nil), // 37: wathena.v1.PartyBookingCommand
+	(*PartyBookingAd)(nil),      // 38: wathena.v1.PartyBookingAd
+	(*PartyBookingSearch)(nil),  // 39: wathena.v1.PartyBookingSearch
+	(*GuildCommand)(nil),        // 40: wathena.v1.GuildCommand
+	(*GuildReply)(nil),          // 41: wathena.v1.GuildReply
+	(*GuildExpel)(nil),          // 42: wathena.v1.GuildExpel
+	(*GuildPositions)(nil),      // 43: wathena.v1.GuildPositions
+	(*GuildPosition)(nil),       // 44: wathena.v1.GuildPosition
+	(*GuildMemberPosition)(nil), // 45: wathena.v1.GuildMemberPosition
+	(*GuildNotice)(nil),         // 46: wathena.v1.GuildNotice
+	(*GuildRelationEnd)(nil),    // 47: wathena.v1.GuildRelationEnd
+	(*StorageCommand)(nil),      // 48: wathena.v1.StorageCommand
+	(*StorageMove)(nil),         // 49: wathena.v1.StorageMove
+	(*TradeCommand)(nil),        // 50: wathena.v1.TradeCommand
+	(*MailCommand)(nil),         // 51: wathena.v1.MailCommand
+	(*MailSend)(nil),            // 52: wathena.v1.MailSend
+	(*MailTake)(nil),            // 53: wathena.v1.MailTake
+	(*VendingCommand)(nil),      // 54: wathena.v1.VendingCommand
+	(*VendingOpen)(nil),         // 55: wathena.v1.VendingOpen
+	(*VendingLine)(nil),         // 56: wathena.v1.VendingLine
+	(*VendingBuy)(nil),          // 57: wathena.v1.VendingBuy
+	(*VendingBuyLine)(nil),      // 58: wathena.v1.VendingBuyLine
+	(*BuyingStoreCommand)(nil),  // 59: wathena.v1.BuyingStoreCommand
+	(*BuyingStoreOpen)(nil),     // 60: wathena.v1.BuyingStoreOpen
+	(*BuyingStoreLine)(nil),     // 61: wathena.v1.BuyingStoreLine
+	(*BuyingStoreSell)(nil),     // 62: wathena.v1.BuyingStoreSell
+	(*BuyingStoreSellLine)(nil), // 63: wathena.v1.BuyingStoreSellLine
+	(*StoreSearchCommand)(nil),  // 64: wathena.v1.StoreSearchCommand
+	(*StoreSearchQuery)(nil),    // 65: wathena.v1.StoreSearchQuery
+	(*StoreSearchRoll)(nil),     // 66: wathena.v1.StoreSearchRoll
 }
 var file_wathena_v1_command_proto_depIdxs = []int32{
-	7,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
-	8,  // 1: wathena.v1.Command.attack:type_name -> wathena.v1.Attack
-	9,  // 2: wathena.v1.Command.use_skill:type_name -> wathena.v1.UseSkill
-	12, // 3: wathena.v1.Command.chat:type_name -> wathena.v1.Chat
-	16, // 4: wathena.v1.Command.npc_click:type_name -> wathena.v1.NpcClick
-	17, // 5: wathena.v1.Command.npc_reply:type_name -> wathena.v1.NpcReply
-	23, // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
-	25, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
-	26, // 8: wathena.v1.Command.raise_stat:type_name -> wathena.v1.RaiseStat
-	24, // 9: wathena.v1.Command.drop_item:type_name -> wathena.v1.DropItem
-	18, // 10: wathena.v1.Command.shop_buy:type_name -> wathena.v1.ShopBuy
-	20, // 11: wathena.v1.Command.shop_sell:type_name -> wathena.v1.ShopSell
-	22, // 12: wathena.v1.Command.shop_close:type_name -> wathena.v1.ShopClose
-	27, // 13: wathena.v1.Command.equip_item:type_name -> wathena.v1.EquipItem
-	28, // 14: wathena.v1.Command.unequip_item:type_name -> wathena.v1.UnequipItem
-	29, // 15: wathena.v1.Command.insert_card:type_name -> wathena.v1.InsertCard
-	10, // 16: wathena.v1.Command.learn_skill:type_name -> wathena.v1.LearnSkill
-	13, // 17: wathena.v1.Command.channel:type_name -> wathena.v1.ChannelCommand
-	14, // 18: wathena.v1.Command.block:type_name -> wathena.v1.Block
-	15, // 19: wathena.v1.Command.report:type_name -> wathena.v1.Report
-	30, // 20: wathena.v1.Command.party:type_name -> wathena.v1.PartyCommand
-	34, // 21: wathena.v1.Command.friend:type_name -> wathena.v1.FriendCommand
-	36, // 22: wathena.v1.Command.party_booking:type_name -> wathena.v1.PartyBookingCommand
-	39, // 23: wathena.v1.Command.guild:type_name -> wathena.v1.GuildCommand
-	47, // 24: wathena.v1.Command.storage:type_name -> wathena.v1.StorageCommand
-	49, // 25: wathena.v1.Command.trade:type_name -> wathena.v1.TradeCommand
-	50, // 26: wathena.v1.Command.mail:type_name -> wathena.v1.MailCommand
-	53, // 27: wathena.v1.Command.vending:type_name -> wathena.v1.VendingCommand
-	58, // 28: wathena.v1.Command.buying_store:type_name -> wathena.v1.BuyingStoreCommand
-	63, // 29: wathena.v1.Command.store_search:type_name -> wathena.v1.StoreSearchCommand
-	6,  // 30: wathena.v1.Command.memo:type_name -> wathena.v1.Memo
-	5,  // 31: wathena.v1.Command.quest_active:type_name -> wathena.v1.QuestActive
-	4,  // 32: wathena.v1.Command.skill_item_pick:type_name -> wathena.v1.SkillItemPick
-	11, // 33: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
-	0,  // 34: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
-	1,  // 35: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
-	19, // 36: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
-	21, // 37: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
-	2,  // 38: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
-	31, // 39: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
-	32, // 40: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
-	33, // 41: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
-	33, // 42: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
-	35, // 43: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
-	37, // 44: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
-	38, // 45: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
-	40, // 46: wathena.v1.GuildCommand.reply:type_name -> wathena.v1.GuildReply
-	41, // 47: wathena.v1.GuildCommand.expel:type_name -> wathena.v1.GuildExpel
-	42, // 48: wathena.v1.GuildCommand.positions:type_name -> wathena.v1.GuildPositions
-	44, // 49: wathena.v1.GuildCommand.member_position:type_name -> wathena.v1.GuildMemberPosition
-	45, // 50: wathena.v1.GuildCommand.notice:type_name -> wathena.v1.GuildNotice
-	40, // 51: wathena.v1.GuildCommand.ally_reply:type_name -> wathena.v1.GuildReply
-	46, // 52: wathena.v1.GuildCommand.end_relation:type_name -> wathena.v1.GuildRelationEnd
-	43, // 53: wathena.v1.GuildPositions.positions:type_name -> wathena.v1.GuildPosition
-	48, // 54: wathena.v1.StorageCommand.put:type_name -> wathena.v1.StorageMove
-	48, // 55: wathena.v1.StorageCommand.take:type_name -> wathena.v1.StorageMove
-	48, // 56: wathena.v1.StorageCommand.cart_put:type_name -> wathena.v1.StorageMove
-	48, // 57: wathena.v1.StorageCommand.cart_take:type_name -> wathena.v1.StorageMove
-	48, // 58: wathena.v1.StorageCommand.cart_to_storage:type_name -> wathena.v1.StorageMove
-	48, // 59: wathena.v1.StorageCommand.storage_to_cart:type_name -> wathena.v1.StorageMove
-	48, // 60: wathena.v1.TradeCommand.add_item:type_name -> wathena.v1.StorageMove
-	51, // 61: wathena.v1.MailCommand.send:type_name -> wathena.v1.MailSend
-	52, // 62: wathena.v1.MailCommand.take:type_name -> wathena.v1.MailTake
-	48, // 63: wathena.v1.MailSend.items:type_name -> wathena.v1.StorageMove
-	54, // 64: wathena.v1.VendingCommand.open:type_name -> wathena.v1.VendingOpen
-	56, // 65: wathena.v1.VendingCommand.buy:type_name -> wathena.v1.VendingBuy
-	55, // 66: wathena.v1.VendingOpen.items:type_name -> wathena.v1.VendingLine
-	57, // 67: wathena.v1.VendingBuy.items:type_name -> wathena.v1.VendingBuyLine
-	59, // 68: wathena.v1.BuyingStoreCommand.open:type_name -> wathena.v1.BuyingStoreOpen
-	61, // 69: wathena.v1.BuyingStoreCommand.sell:type_name -> wathena.v1.BuyingStoreSell
-	60, // 70: wathena.v1.BuyingStoreOpen.items:type_name -> wathena.v1.BuyingStoreLine
-	62, // 71: wathena.v1.BuyingStoreSell.items:type_name -> wathena.v1.BuyingStoreSellLine
-	64, // 72: wathena.v1.StoreSearchCommand.query:type_name -> wathena.v1.StoreSearchQuery
-	65, // 73: wathena.v1.StoreSearchQuery.rolls:type_name -> wathena.v1.StoreSearchRoll
-	65, // 74: wathena.v1.StoreSearchQuery.options:type_name -> wathena.v1.StoreSearchRoll
-	75, // [75:75] is the sub-list for method output_type
-	75, // [75:75] is the sub-list for method input_type
-	75, // [75:75] is the sub-list for extension type_name
-	75, // [75:75] is the sub-list for extension extendee
-	0,  // [0:75] is the sub-list for field type_name
+	8,  // 0: wathena.v1.Command.walk_to:type_name -> wathena.v1.WalkTo
+	9,  // 1: wathena.v1.Command.attack:type_name -> wathena.v1.Attack
+	10, // 2: wathena.v1.Command.use_skill:type_name -> wathena.v1.UseSkill
+	13, // 3: wathena.v1.Command.chat:type_name -> wathena.v1.Chat
+	17, // 4: wathena.v1.Command.npc_click:type_name -> wathena.v1.NpcClick
+	18, // 5: wathena.v1.Command.npc_reply:type_name -> wathena.v1.NpcReply
+	24, // 6: wathena.v1.Command.use_item:type_name -> wathena.v1.UseItem
+	26, // 7: wathena.v1.Command.pick_up:type_name -> wathena.v1.PickUp
+	27, // 8: wathena.v1.Command.raise_stat:type_name -> wathena.v1.RaiseStat
+	25, // 9: wathena.v1.Command.drop_item:type_name -> wathena.v1.DropItem
+	19, // 10: wathena.v1.Command.shop_buy:type_name -> wathena.v1.ShopBuy
+	21, // 11: wathena.v1.Command.shop_sell:type_name -> wathena.v1.ShopSell
+	23, // 12: wathena.v1.Command.shop_close:type_name -> wathena.v1.ShopClose
+	28, // 13: wathena.v1.Command.equip_item:type_name -> wathena.v1.EquipItem
+	29, // 14: wathena.v1.Command.unequip_item:type_name -> wathena.v1.UnequipItem
+	30, // 15: wathena.v1.Command.insert_card:type_name -> wathena.v1.InsertCard
+	11, // 16: wathena.v1.Command.learn_skill:type_name -> wathena.v1.LearnSkill
+	14, // 17: wathena.v1.Command.channel:type_name -> wathena.v1.ChannelCommand
+	15, // 18: wathena.v1.Command.block:type_name -> wathena.v1.Block
+	16, // 19: wathena.v1.Command.report:type_name -> wathena.v1.Report
+	31, // 20: wathena.v1.Command.party:type_name -> wathena.v1.PartyCommand
+	35, // 21: wathena.v1.Command.friend:type_name -> wathena.v1.FriendCommand
+	37, // 22: wathena.v1.Command.party_booking:type_name -> wathena.v1.PartyBookingCommand
+	40, // 23: wathena.v1.Command.guild:type_name -> wathena.v1.GuildCommand
+	48, // 24: wathena.v1.Command.storage:type_name -> wathena.v1.StorageCommand
+	50, // 25: wathena.v1.Command.trade:type_name -> wathena.v1.TradeCommand
+	51, // 26: wathena.v1.Command.mail:type_name -> wathena.v1.MailCommand
+	54, // 27: wathena.v1.Command.vending:type_name -> wathena.v1.VendingCommand
+	59, // 28: wathena.v1.Command.buying_store:type_name -> wathena.v1.BuyingStoreCommand
+	64, // 29: wathena.v1.Command.store_search:type_name -> wathena.v1.StoreSearchCommand
+	7,  // 30: wathena.v1.Command.memo:type_name -> wathena.v1.Memo
+	6,  // 31: wathena.v1.Command.quest_active:type_name -> wathena.v1.QuestActive
+	5,  // 32: wathena.v1.Command.skill_item_pick:type_name -> wathena.v1.SkillItemPick
+	4,  // 33: wathena.v1.Command.navi:type_name -> wathena.v1.NaviCommand
+	12, // 34: wathena.v1.UseSkill.cell:type_name -> wathena.v1.Cell
+	0,  // 35: wathena.v1.Chat.channel:type_name -> wathena.v1.ChatChannel
+	1,  // 36: wathena.v1.ChannelCommand.action:type_name -> wathena.v1.ChannelAction
+	20, // 37: wathena.v1.ShopBuy.items:type_name -> wathena.v1.ShopBuyLine
+	22, // 38: wathena.v1.ShopSell.items:type_name -> wathena.v1.ShopSellLine
+	2,  // 39: wathena.v1.RaiseStat.stat:type_name -> wathena.v1.BaseStat
+	32, // 40: wathena.v1.PartyCommand.create:type_name -> wathena.v1.PartyCreate
+	33, // 41: wathena.v1.PartyCommand.reply:type_name -> wathena.v1.PartyReply
+	34, // 42: wathena.v1.PartyCommand.options:type_name -> wathena.v1.PartyOptions
+	34, // 43: wathena.v1.PartyCreate.options:type_name -> wathena.v1.PartyOptions
+	36, // 44: wathena.v1.FriendCommand.reply:type_name -> wathena.v1.FriendReply
+	38, // 45: wathena.v1.PartyBookingCommand.register:type_name -> wathena.v1.PartyBookingAd
+	39, // 46: wathena.v1.PartyBookingCommand.search:type_name -> wathena.v1.PartyBookingSearch
+	41, // 47: wathena.v1.GuildCommand.reply:type_name -> wathena.v1.GuildReply
+	42, // 48: wathena.v1.GuildCommand.expel:type_name -> wathena.v1.GuildExpel
+	43, // 49: wathena.v1.GuildCommand.positions:type_name -> wathena.v1.GuildPositions
+	45, // 50: wathena.v1.GuildCommand.member_position:type_name -> wathena.v1.GuildMemberPosition
+	46, // 51: wathena.v1.GuildCommand.notice:type_name -> wathena.v1.GuildNotice
+	41, // 52: wathena.v1.GuildCommand.ally_reply:type_name -> wathena.v1.GuildReply
+	47, // 53: wathena.v1.GuildCommand.end_relation:type_name -> wathena.v1.GuildRelationEnd
+	44, // 54: wathena.v1.GuildPositions.positions:type_name -> wathena.v1.GuildPosition
+	49, // 55: wathena.v1.StorageCommand.put:type_name -> wathena.v1.StorageMove
+	49, // 56: wathena.v1.StorageCommand.take:type_name -> wathena.v1.StorageMove
+	49, // 57: wathena.v1.StorageCommand.cart_put:type_name -> wathena.v1.StorageMove
+	49, // 58: wathena.v1.StorageCommand.cart_take:type_name -> wathena.v1.StorageMove
+	49, // 59: wathena.v1.StorageCommand.cart_to_storage:type_name -> wathena.v1.StorageMove
+	49, // 60: wathena.v1.StorageCommand.storage_to_cart:type_name -> wathena.v1.StorageMove
+	49, // 61: wathena.v1.TradeCommand.add_item:type_name -> wathena.v1.StorageMove
+	52, // 62: wathena.v1.MailCommand.send:type_name -> wathena.v1.MailSend
+	53, // 63: wathena.v1.MailCommand.take:type_name -> wathena.v1.MailTake
+	49, // 64: wathena.v1.MailSend.items:type_name -> wathena.v1.StorageMove
+	55, // 65: wathena.v1.VendingCommand.open:type_name -> wathena.v1.VendingOpen
+	57, // 66: wathena.v1.VendingCommand.buy:type_name -> wathena.v1.VendingBuy
+	56, // 67: wathena.v1.VendingOpen.items:type_name -> wathena.v1.VendingLine
+	58, // 68: wathena.v1.VendingBuy.items:type_name -> wathena.v1.VendingBuyLine
+	60, // 69: wathena.v1.BuyingStoreCommand.open:type_name -> wathena.v1.BuyingStoreOpen
+	62, // 70: wathena.v1.BuyingStoreCommand.sell:type_name -> wathena.v1.BuyingStoreSell
+	61, // 71: wathena.v1.BuyingStoreOpen.items:type_name -> wathena.v1.BuyingStoreLine
+	63, // 72: wathena.v1.BuyingStoreSell.items:type_name -> wathena.v1.BuyingStoreSellLine
+	65, // 73: wathena.v1.StoreSearchCommand.query:type_name -> wathena.v1.StoreSearchQuery
+	66, // 74: wathena.v1.StoreSearchQuery.rolls:type_name -> wathena.v1.StoreSearchRoll
+	66, // 75: wathena.v1.StoreSearchQuery.options:type_name -> wathena.v1.StoreSearchRoll
+	76, // [76:76] is the sub-list for method output_type
+	76, // [76:76] is the sub-list for method input_type
+	76, // [76:76] is the sub-list for extension type_name
+	76, // [76:76] is the sub-list for extension extendee
+	0,  // [0:76] is the sub-list for field type_name
 }
 
 func init() { file_wathena_v1_command_proto_init() }
@@ -10485,19 +10689,20 @@ func file_wathena_v1_command_proto_init() {
 		(*command_Memo)(nil),
 		(*command_QuestActive)(nil),
 		(*command_SkillItemPick)(nil),
+		(*command_Navi)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[6].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[7].OneofWrappers = []any{
 		(*useSkill_Entity)(nil),
 		(*useSkill_Cell)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[14].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[15].OneofWrappers = []any{
 		(*npcReply_Next)(nil),
 		(*npcReply_Menu)(nil),
 		(*npcReply_InputText)(nil),
 		(*npcReply_InputNumber)(nil),
 		(*npcReply_Close)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[27].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[28].OneofWrappers = []any{
 		(*partyCommand_Create)(nil),
 		(*partyCommand_Invite)(nil),
 		(*partyCommand_Reply)(nil),
@@ -10506,17 +10711,17 @@ func file_wathena_v1_command_proto_init() {
 		(*partyCommand_SetLeader)(nil),
 		(*partyCommand_Options)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[31].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[32].OneofWrappers = []any{
 		(*friendCommand_Add)(nil),
 		(*friendCommand_Reply)(nil),
 		(*friendCommand_Remove)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[33].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[34].OneofWrappers = []any{
 		(*partyBookingCommand_Register)(nil),
 		(*partyBookingCommand_Search)(nil),
 		(*partyBookingCommand_Delete)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[36].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[37].OneofWrappers = []any{
 		(*guildCommand_Create)(nil),
 		(*guildCommand_Invite)(nil),
 		(*guildCommand_Reply)(nil),
@@ -10532,7 +10737,7 @@ func file_wathena_v1_command_proto_init() {
 		(*guildCommand_EndRelation)(nil),
 		(*guildCommand_Disband)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[44].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[45].OneofWrappers = []any{
 		(*storageCommand_Put)(nil),
 		(*storageCommand_Take)(nil),
 		(*storageCommand_Close)(nil),
@@ -10542,7 +10747,7 @@ func file_wathena_v1_command_proto_init() {
 		(*storageCommand_CartToStorage)(nil),
 		(*storageCommand_StorageToCart)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[46].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[47].OneofWrappers = []any{
 		(*tradeCommand_Request)(nil),
 		(*tradeCommand_Respond)(nil),
 		(*tradeCommand_AddItem)(nil),
@@ -10551,7 +10756,7 @@ func file_wathena_v1_command_proto_init() {
 		(*tradeCommand_Confirm)(nil),
 		(*tradeCommand_Cancel)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[47].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[48].OneofWrappers = []any{
 		(*mailCommand_Open)(nil),
 		(*mailCommand_Read)(nil),
 		(*mailCommand_Send)(nil),
@@ -10559,21 +10764,21 @@ func file_wathena_v1_command_proto_init() {
 		(*mailCommand_Delete)(nil),
 		(*mailCommand_Close)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[50].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[51].OneofWrappers = []any{
 		(*vendingCommand_Open)(nil),
 		(*vendingCommand_Close)(nil),
 		(*vendingCommand_Browse)(nil),
 		(*vendingCommand_Buy)(nil),
 		(*vendingCommand_Cancel)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[55].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[56].OneofWrappers = []any{
 		(*buyingStoreCommand_Open)(nil),
 		(*buyingStoreCommand_Close)(nil),
 		(*buyingStoreCommand_Browse)(nil),
 		(*buyingStoreCommand_Sell)(nil),
 		(*buyingStoreCommand_Cancel)(nil),
 	}
-	file_wathena_v1_command_proto_msgTypes[60].OneofWrappers = []any{
+	file_wathena_v1_command_proto_msgTypes[61].OneofWrappers = []any{
 		(*storeSearchCommand_Query)(nil),
 		(*storeSearchCommand_Next)(nil),
 		(*storeSearchCommand_Click)(nil),
@@ -10585,7 +10790,7 @@ func file_wathena_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wathena_v1_command_proto_rawDesc), len(file_wathena_v1_command_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   63,
+			NumMessages:   64,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

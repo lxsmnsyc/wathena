@@ -1610,6 +1610,9 @@ func (b *body) commandErr(name string, args []Expr) error {
 		if ok, err := b.presentCommand(name, args); ok {
 			return err
 		}
+		if ok, err := b.naviCommand(name, args); ok {
+			return err
+		}
 		if ok, err := b.questCommand(name, args); ok {
 			return err
 		}

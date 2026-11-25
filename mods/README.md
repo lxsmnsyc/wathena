@@ -344,6 +344,26 @@ Currencies, such as rAthena's cash points and Kafra points (proposal 0002, revie
 - `owner` is `account`, which the account's characters share, or `character`. It is `account` when left out.
 - `max` is the most a player holds, 1 to 2,147,483,647, the default. A give over it is lost.
 
+### Navigation trips: data/navi.yml
+
+Trips that the client's navigation window may route over besides the warps (proposal 0006, section 5): airships, Kafra teleports and scrolls. Core has none.
+
+```yaml
+- name: airship_izlude_to_juno
+  from: izlude
+  to: yuno
+  x: 200
+  y: 200
+  to_x: 50
+  to_y: 60
+  service: airship
+```
+
+- A record becomes `<mod ID>:<name>`. Every field is required.
+- `from` and `to` are map names that differ. `x` and `y` are the cell to leave `from` at, `to_x` and `to_y` the cell to arrive at, 0 to 65,535.
+- `service` is `airship`, `kafra` or `scroll`. A route uses the trip only when the request's `services` (a value of `wa.navigation`) has that service.
+- A trip goes one way. Add the way back as a second record.
+
 ### NPCs: data/npcs.yml
 
 ```yaml
@@ -2148,6 +2168,7 @@ end
 | `player:take_currency(name, n)` | `currencies.modify` for another mod's currency | Takes a currency. Returns false, and takes nothing, when the player has too little. |
 | `player:send_mail({ to, sender, title, body, zeny, items })` | `mail.send` | Sends a mail, as rAthena's `mail` command. `to` is a name, a character ID or a player handle, the player by default. The recipient may be offline. `items` lists `{ item, amount, roll, bound }`, made for the mail. |
 | `player:open_mail()` | None | Opens the mailbox, as `openmail`. Returns false when the player trades, vends, runs a buying store or has a storage open. |
+| `player:navigate_to(map, { x, y, monster, services, hide_window })` | None | Shows a route to a map on the client's navigation window, as `navigateto`. The route goes over the warps and the trips of `data/navi.yml` that `services` (a value of `wa.navigation`) allows. Returns false when no map of the world has the name. |
 | `player:autotrade()` | None | Closes the connection and keeps the player's store open, as `@autotrade`. Returns false without a store. |
 | `player:search_stores({ uses, effect })` | None | Opens the store search, as `searchstores`. `effect` is `"show"` (the default) or `"open"`. |
 | `player:open_buying_store({ slots })` | None | Opens the buying store setup with 1 to 5 slots, as `buyingstore`. |

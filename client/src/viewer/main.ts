@@ -148,6 +148,7 @@ import {
   buyingStoreMessage,
   closesOwnStore,
 } from './buyingStore';
+import { NaviWindow } from './navi';
 import { SkillItemsWindow } from './skillItems';
 import { StoreSearchWindow, storeSearchMessage } from './storeSearch';
 import { groundItemLabel } from './groundItems';
@@ -2153,6 +2154,9 @@ if (serverURL === null) {
       close: (dialog) => {
         connection.npcReply(dialog, { case: 'close', value: true });
       },
+      navi: (link) => {
+        connection.navi(link);
+      },
     });
     d.label = (id) => itemTexts.label(id);
     itemTexts.loadNames().catch(reportError);
@@ -2542,6 +2546,34 @@ if (serverURL === null) {
     worldMapWindow?.set(m);
     showMapName();
   };
+  // The navigation window shows the route a <NAVI> link or a script asked
+  // for, and an arrow toward its next cell.
+  const naviRoot = document.createElement('section');
+  naviRoot.id = 'navi';
+  naviRoot.className = 'store-window';
+  naviRoot.setAttribute('aria-label', 'Navigation');
+  naviRoot.hidden = true;
+  document.body.append(naviRoot);
+  makeMovable(naviRoot, 'Navigation');
+  const navi = new NaviWindow(naviRoot, {
+    cancel: () => {
+      connection.naviCancel();
+    },
+  });
+  view.onNaviRoute = (route) => {
+    navi.set(route);
+    const cell = view.selfCell;
+    if (cell !== undefined) {
+      navi.setCell(cell[0], cell[1]);
+    }
+  };
+  // The arrow turns as the player walks.
+  setInterval(() => {
+    const cell = navi.open ? view.selfCell : undefined;
+    if (cell !== undefined) {
+      navi.setCell(cell[0], cell[1]);
+    }
+  }, 500);
   // A skill that asks for an item, such as Arrow Crafting, opens its
   // list when the server sends SkillItemList.
   const skillItemsRoot = document.createElement('section');

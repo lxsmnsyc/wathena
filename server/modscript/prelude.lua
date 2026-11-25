@@ -539,6 +539,21 @@ new_player, player_ids = handle_type("player", {
 	autotrade = function(self)
 		return (call(H.player_market_call, player_ids[self], "autotrade"))
 	end,
+	navigate_to = function(self, map, opts)
+		if type(map) ~= "string" then
+			error("player:navigate_to: want a map's name, such as \"prontera\"", 2)
+		end
+		if opts == nil then
+			opts = {}
+		elseif type(opts) ~= "table" then
+			error("player:navigate_to: opts is a table, such as { x = 150, y = 150, services = navigation.kafra_and_airship }", 2)
+		end
+		local hide = opts.hide_window
+		if hide == nil then
+			hide = true
+		end
+		return (call(H.player_navigate, player_ids[self], map, opts.x or 0, opts.y or 0, opts.monster or 0, opts.services or 101, hide))
+	end,
 	search_stores = function(self, spec)
 		if type(spec) ~= "table" then
 			error("player:search_stores: want a table, such as { uses = 10, effect = \"show\" }", 2)

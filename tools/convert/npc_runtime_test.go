@@ -34,6 +34,8 @@ type npcHost struct {
 	labels      map[int64]modscript.MonsterLabel
 	nextMonster int64
 	market      marketHost
+	// navis are the navigations of player:navigate_to.
+	navis []modscript.NaviTarget
 	// questLog is the quest log of every player (npc_quest_test.go).
 	questLog
 	// now is the zone clock in milliseconds, for timers.

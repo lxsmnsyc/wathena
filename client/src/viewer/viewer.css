@@ -3051,3 +3051,40 @@ body.touch #chat-bar button {
   width: 100%;
   text-align: left;
 }
+
+.dialog-body .navi-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: #b9062f;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#navi .navi-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#navi .navi-summary {
+  margin: 0;
+}
+
+#navi .navi-arrow {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  color: #ffd84a;
+  transition: transform 150ms;
+}
+
+#navi .navi-maps {
+  margin: 0;
+  padding-left: 20px;
+}
+
+#navi.compact .navi-maps {
+  display: none;
+}

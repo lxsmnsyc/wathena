@@ -41,6 +41,13 @@ const HelloTimeout = 10 * time.Second
 // clif_parse_StatusUp reads the amount as one byte.
 const MaxRaise = 255
 
+// MaxNaviMap is the longest map name of a NaviCommand, and MaxNaviCell
+// the largest cell it may name (proposal 0006, section 5).
+const (
+	MaxNaviMap  = 64
+	MaxNaviCell = 1<<16 - 1
+)
+
 // Sessions checks the session token of Hello.
 type Sessions interface {
 	// Check returns who a token names. It returns ErrSessionInvalid for
@@ -698,6 +705,14 @@ func (g *Gateway) read(ctx context.Context, c *conn, p *zone.Session, seq uint32
 		case m.GetCommand().HasSkillItemPick():
 			k := m.GetCommand().GetSkillItemPick()
 			queued = p.SkillItemPick(seq, k.GetSkillId(), k.GetIndex(), k.GetCancel())
+		case m.GetCommand().HasNavi():
+			n := m.GetCommand().GetNavi()
+			if len(n.GetMap()) > MaxNaviMap || n.GetX() > MaxNaviCell || n.GetY() > MaxNaviCell || n.GetServices() > 255 || n.GetMonster() > MaxNaviCell {
+				// A value out of range is no map or cell of the game.
+				queued = p.Ack(seq)
+				break
+			}
+			queued = p.Navi(seq, n.GetMap(), n.GetX(), n.GetY(), n.GetMonster(), n.GetServices(), n.GetHideWindow(), n.GetCancel())
 		case m.GetCommand().HasQuestActive():
 			q := m.GetCommand().GetQuestActive()
 			queued = p.QuestActive(seq, q.GetId(), q.GetActive())

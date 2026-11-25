@@ -1225,6 +1225,9 @@ Methods on player handles check their own permissions, such as `player.give_item
     - `player:set_font(font)` chooses the chat font, as `setfont`: the font, or 0 when the player already had it. The client shows no fonts yet.
     - `wa.EquippedItem` gets `position`, the EQP_ bit of the slot the copy sits in, as `getitempos`.
     - `player:heal_percent` with -100 or less kills, as `percentheal`: this replaces review decision 56's rule for -100 (review decision 60, E4).
+68. Client navigation, settled while building it (navigation, [decision 0079](../decisions/0079-client-navigation.md), [proposal 0006](0006-small-systems.md) section 5). These add to API 1.0 only:
+    - `player:navigate_to(map, { x, y, monster, services, hide_window })` shows the player a route on the client's navigation window, as `navigateto`. It needs no permission. `services` is a value of the new `wa.navigation` constants (rAthena's `NAV_*`, default `navigation.kafra_and_airship`), and `hide_window` is true by default. It returns false when no map of this world has the name, which is every classic map in a procedural world.
+    - The route goes over the visible warps between maps. A mod adds airship, Kafra and scroll trips in the optional `data/navi.yml` (`from`, `to`, `x`, `y`, `to_x`, `to_y`, `service`), which a request uses when `services` allows the kind. Core ships none.
 
 ## Version
 

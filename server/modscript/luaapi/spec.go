@@ -436,6 +436,7 @@ var Modules = []Module{
 	},
 	{Name: "wa.effects", Local: "effects", Doc: "Effects for entity:show_effect, from rAthena's EF_ names.", Constants: true},
 	{Name: "wa.headgear_effects", Local: "headgear_effects", Doc: "Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names.", Constants: true},
+	{Name: "wa.navigation", Local: "navigation", Doc: "Services of player:navigate_to, from rAthena's NAV_ names.", Constants: true},
 	{Name: "wa.emotions", Local: "emotions", Doc: "Emotions for npc:show_emotion, from rAthena's ET_ names.", Constants: true},
 	{
 		Name: "wa.jobs", Local: "jobs", Doc: "Jobs, from rAthena's JOB_ names, and job tests. The job tests work with mod jobs too.", Constants: true,
@@ -571,6 +572,8 @@ var Classes = []Class{
 				Doc: "Closes the player's connection and keeps its vending shop or buying store open, as @autotrade. The store opens again after a restart, as autotrade_restore. The player leaves when its store closes or sells out, or when it logs in again. Returns false when the player has no store open."},
 			{Name: "search_stores", Params: []Param{{"search", "wa.StoreSearchSpec", ""}}, Returns: "boolean",
 				Doc: "Opens the store search window, as searchstores, over the vending shops and buying stores of every map. Results can filter by price, cards and the ranges of rolls and random options. Returns false when the window is open already."},
+			{Name: "navigate_to", Params: []Param{{"map", "string", "A map's name, such as prontera."}, {"options", "wa.NavigateOptions?", ""}}, Returns: "boolean",
+				Doc: "Shows the player a route to a map on the client's navigation window, as navigateto (proposal 0006, section 5). The route goes over the warps between maps, and over the airship, Kafra and scroll trips of data/navi.yml that services allows. A target with no route shows alone. The route is made again when the player changes map, until the player reaches the map. Returns false when no map of this world has the name, which is every classic map in a procedural world."},
 			{Name: "open_buying_store", Params: []Param{{"store", "wa.BuyingStoreSpec", ""}}, Returns: "boolean",
 				Doc: "Opens the buying store setup window, as buyingstore. The player then picks what to buy. Returns false when the player is vending, has a buying store open, or is trading, as buyingstore_setup."},
 			{Name: "can_carry", Params: []Param{itemParam, {"amount", "integer", ""}}, Returns: "boolean", Doc: "Whether the items fit, by weight and slots, as checkweight.", Permission: "game.read"},
@@ -1867,6 +1870,13 @@ var Classes = []Class{
 		Name: "wa.StoreSearchSpec", Doc: "The store search of player:search_stores.",
 		Fields: []Field{{"uses", "integer", "How many searches the window allows, 1 to 1000."},
 			{"effect", `"show"|"open"|nil`, `What a click on a result does: "show" (the default) shows the store's place, as SEARCHSTORE_EFFECT_NORMAL; "open" opens the store, as SEARCHSTORE_EFFECT_REMOTE, when it is on the player's map.`}},
+	},
+	{
+		Name: "wa.NavigateOptions", Doc: "Options of player:navigate_to, as the arguments of rAthena's navigateto.",
+		Fields: []Field{{"x", "integer?", "The target cell's x, 0 for none."}, {"y", "integer?", "The target cell's y, 0 for none."},
+			{"monster", "integer?", "A monster ID of the map to hunt. The cell is left out then."},
+			{"services", "integer?", "A value of wa.navigation: the airship, scroll and Kafra trips the route may use. NAV_KAFRA_AND_AIRSHIP by default."},
+			{"hide_window", "boolean?", "Keeps the navigation window closed. True by default."}},
 	},
 	{
 		Name: "wa.BuyingStoreSpec", Doc: "The buying store of player:open_buying_store.",

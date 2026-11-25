@@ -28,6 +28,7 @@ import (
 	"github.com/lxsmnsyc/wathena/server/metrics"
 	"github.com/lxsmnsyc/wathena/server/mod"
 	"github.com/lxsmnsyc/wathena/server/modscript"
+	"github.com/lxsmnsyc/wathena/server/navi"
 	"github.com/lxsmnsyc/wathena/server/progression"
 	"github.com/lxsmnsyc/wathena/server/shop"
 	"github.com/lxsmnsyc/wathena/server/skill"
@@ -243,6 +244,10 @@ type Player struct {
 
 	// arrival is set while a player that warped from another zone joins.
 	arrival *handoff
+	// navi is where the player's navigation points, and naviAt when it
+	// last asked for one (navi.go). Neither is saved.
+	navi   *naviTarget
+	naviAt int64
 	// mapChange is set until the first frame after a warp from another
 	// zone, which starts with MapChange.
 	mapChange bool
@@ -467,6 +472,8 @@ type command struct {
 	questActive *questActiveCommand
 	// skillPick answers a skill's item list (skillitems.go).
 	skillPick *skillPickCommand
+	// navi is a <NAVI> link or the cancel of a route (navi.go).
+	navi *naviCommand
 }
 
 type useSkillCommand struct {
@@ -820,6 +827,11 @@ type Zone struct {
 
 	// warps are the map's warps, in load order.
 	warps []Warp
+	// naviEdges are the warps that routes may use, for the other zones
+	// to read (navi.go). NaviExtra are the edges of data/navi.yml, which
+	// the world shares.
+	naviEdges atomic.Pointer[[]navi.Edge]
+	NaviExtra []navi.Edge
 	// asleep is set while the zone has no players and its ticker is off.
 	asleep bool
 	// nextRentalCheck is when the zone checks rentals next, in zone
@@ -1165,6 +1177,7 @@ func (z *Zone) join(p *Player) joinResult {
 		x, y = z.arrivalCell(x, y)
 		p.ackSeq, p.rewarp, p.mapChange = h.ackSeq, h.rewarp, true
 		p.gmHidden = h.gmHidden
+		p.navi = h.navi
 	case c.Map != z.Map || z.grid.NoPass(x, y):
 		// A character from another map, or one on a cell that is no
 		// longer walkable, starts at the start cell. A character that
@@ -1192,6 +1205,10 @@ func (z *Zone) join(p *Player) joinResult {
 	p.itemDelays = map[uint32]int64{}
 	p.statusDelays = map[string]int64{}
 	if h != nil {
+		// So does the navigation, with a route from this map.
+		if p.navi != nil {
+			z.sendNavi(p)
+		}
 		// Item waits go on across the map change.
 		p.canUseItem = z.now + h.canUseItem
 		for id, left := range h.itemDelays {
@@ -1552,6 +1569,9 @@ func (z *Zone) handle(c command) {
 	}
 	if c.skillPick != nil {
 		z.skillItemPick(p, c.skillPick)
+	}
+	if c.navi != nil {
+		z.naviCommand(p, c.navi)
 	}
 	me := p.entity
 	if me.dead {

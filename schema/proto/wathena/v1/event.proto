@@ -125,7 +125,44 @@ message Event {
     BookOpen book_open = 113;
     MapCells map_cells = 114;
     SkillItemList skill_item_list = 115;
+    NaviRoute navi_route = 138;
   }
+}
+
+// NaviRoute is the route of the client's navigation window (proposal
+// 0006, section 5), as rAthena's clif_navigateTo with the route drawn by
+// the server. The first three fields are the target. A route is sent when
+// the server's navigate_to ran or a NaviCommand arrived, and again when
+// the player changes map on the way, until the target map is reached.
+message NaviRoute {
+  // map is the target's map name without the map/ prefix, such as
+  // prontera.
+  string map = 1;
+  // x and y are the target cell, or 0 for none.
+  uint32 x = 2;
+  uint32 y = 3;
+  // monster is a monster ID to hunt on the target map, or 0.
+  uint32 monster = 4;
+  // services is the NAV_* value the request allowed.
+  uint32 services = 5;
+  // hide_window keeps the navigation window closed.
+  bool hide_window = 6;
+  // found is set when a route exists. Without it the client shows the
+  // target alone. A route of no steps means the player is on the target
+  // map.
+  bool found = 7;
+  // steps are the legs, first leg first.
+  repeated NaviStep steps = 8;
+  // cancel ends the navigation: the other fields are empty.
+  bool cancel = 9;
+}
+
+// NaviStep is one leg of a route: leave map at the cell, toward the next
+// step.
+message NaviStep {
+  string map = 1;
+  uint32 x = 2;
+  uint32 y = 3;
 }
 
 // SkillItemList opens the item list of a skill that asks the player to

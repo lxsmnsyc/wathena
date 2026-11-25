@@ -566,6 +566,33 @@ export class Connection {
   }
 
   /**
+   * Asks for a route to a map, as a <NAVI> link of a dialog does. The
+   * server answers with a NaviRoute, or ignores a map that does not run
+   * and requests within a second of the last.
+   */
+  navi(target: {
+    map: string;
+    x: number;
+    y: number;
+    monster: number;
+    services: number;
+    hideWindow: boolean;
+  }): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'navi', value: { ...target, cancel: false } } }),
+    });
+  }
+
+  /** Ends the navigation. */
+  naviCancel(): void {
+    this.send({
+      case: 'command',
+      value: create(CommandSchema, { body: { case: 'navi', value: { cancel: true } } }),
+    });
+  }
+
+  /**
    * Marks a quest of the log active or inactive, as RO's quest window.
    * The server answers with a QuestUpdate.
    */

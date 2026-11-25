@@ -571,6 +571,7 @@ func (r *Runtime) init() error {
 		{"player_change_currency", r.playerChangeCurrency},
 		{"player_send_mail", r.playerSendMail},
 		{"player_market_call", r.playerMarketCall},
+		{"player_navigate", r.playerNavigate},
 		{"world_get_shop", r.worldGetShop},
 		{"shop_call", r.shopCall},
 		{"items_name", r.itemsName},

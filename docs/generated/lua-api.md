@@ -48,6 +48,7 @@ Generated from [server/modscript/luaapi](../../server/modscript/luaapi) with `go
 | [`wa.statuses`](#wastatuses) | Status effects, from rAthena's SC_ names, and the statuses mods define. |
 | [`wa.effects`](#waeffects) | Effects for entity:show_effect, from rAthena's EF_ names. |
 | [`wa.headgear_effects`](#waheadgear_effects) | Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names. |
+| [`wa.navigation`](#wanavigation) | Services of player:navigate_to, from rAthena's NAV_ names. |
 | [`wa.emotions`](#waemotions) | Emotions for npc:show_emotion, from rAthena's ET_ names. |
 | [`wa.jobs`](#wajobs) | Jobs, from rAthena's JOB_ names, and job tests. The job tests work with mod jobs too. |
 | [`wa.testing`](#watesting) | Test cases. It exists only under wactl mod test, never in a running server. |
@@ -1488,6 +1489,16 @@ Effects for player:show_headgear_effect, from rAthena's HAT_EF_ names.
 
 Constants: [lua-constants.md](lua-constants.md#waheadgear_effects).
 
+### wa.navigation
+
+```lua
+local navigation = require "wa.navigation"
+```
+
+Services of player:navigate_to, from rAthena's NAV_ names.
+
+Constants: [lua-constants.md](lua-constants.md#wanavigation).
+
 ### wa.emotions
 
 ```lua
@@ -1821,6 +1832,15 @@ Opens the store search window, as searchstores, over the vending shops and buyin
 | Parameter | Type | Meaning |
 |---|---|---|
 | `search` | `wa.StoreSearchSpec` |  |
+
+#### `player:navigate_to(map, options?) → boolean`
+
+Shows the player a route to a map on the client's navigation window, as navigateto (proposal 0006, section 5). The route goes over the warps between maps, and over the airship, Kafra and scroll trips of data/navi.yml that services allows. A target with no route shows alone. The route is made again when the player changes map, until the player reaches the map. Returns false when no map of this world has the name, which is every classic map in a procedural world.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `map` | `string` | A map's name, such as prontera. |
+| `options` | `wa.NavigateOptions?` |  |
 
 #### `player:open_buying_store(store) → boolean`
 
@@ -5190,6 +5210,18 @@ The store search of player:search_stores.
 |---|---|---|
 | `uses` | `integer` | How many searches the window allows, 1 to 1000. |
 | `effect` | `"show"\|"open"\|nil` | What a click on a result does: "show" (the default) shows the store's place, as SEARCHSTORE_EFFECT_NORMAL; "open" opens the store, as SEARCHSTORE_EFFECT_REMOTE, when it is on the player's map. |
+
+### wa.NavigateOptions
+
+Options of player:navigate_to, as the arguments of rAthena's navigateto.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `x` | `integer?` | The target cell's x, 0 for none. |
+| `y` | `integer?` | The target cell's y, 0 for none. |
+| `monster` | `integer?` | A monster ID of the map to hunt. The cell is left out then. |
+| `services` | `integer?` | A value of wa.navigation: the airship, scroll and Kafra trips the route may use. NAV_KAFRA_AND_AIRSHIP by default. |
+| `hide_window` | `boolean?` | Keeps the navigation window closed. True by default. |
 
 ### wa.BuyingStoreSpec
 

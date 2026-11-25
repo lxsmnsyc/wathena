@@ -69,6 +69,7 @@ func (z *Zone) SetWarps(warps []Warp) {
 		}
 	}
 	z.warps = warps
+	z.setNaviEdges()
 	for i := range warps {
 		w := &warps[i]
 		if !w.Hidden {
@@ -140,6 +141,8 @@ type handoff struct {
 	statusDelays map[string]int64
 	// rewarp is count_rewarp.
 	rewarp int
+	// navi is the player's navigation, which goes on in the new zone.
+	navi *naviTarget
 	// temp are the player's temporary variables, which last until
 	// logout.
 	temp map[character.Variable]string
@@ -218,7 +221,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	z.removeMap(p.entity)
 	z.stopPassives(p)
 	h := &handoff{sess: s, char: z.snapshot(p), ackSeq: p.ackSeq, rewarp: p.rewarp, temp: p.temp,
-		member: p.member, hub: z.Chat, seen: p.seen, soc: p.soc, social: z.Social, gmHidden: p.gmHidden,
+		member: p.member, hub: z.Chat, seen: p.seen, soc: p.soc, social: z.Social, gmHidden: p.gmHidden, navi: p.navi,
 		canUseItem:   max(p.canUseItem-z.now, 0),
 		itemDelays:   map[uint32]int64{},
 		statusDelays: map[string]int64{},

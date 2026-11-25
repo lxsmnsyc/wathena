@@ -102,6 +102,7 @@ import nearest, { type Target } from './pick';
 import Player, { type Body } from './player';
 import type { WorldEventRun } from './worldEvents';
 import { type QuestView, questOf } from './quests';
+import type { NaviRoute } from './navi';
 import type { SkillItemLine } from './skillItems';
 import { type WorldMapData, worldMapOf } from './worldMap';
 import {
@@ -665,6 +666,8 @@ export default class Online {
   onSkillItemList:
     | ((skillId: number, items: SkillItemLine[], cooking: boolean) => void)
     | undefined;
+  /** Called with the route of the navigation window, or its cancel. */
+  onNaviRoute: ((route: NaviRoute) => void) | undefined;
   /** Called when the server opens the quest log, with a quest or 0. */
   onQuestLogOpen: ((quest: number) => void) | undefined;
   /** Called for an announcement to the map or the world, with its color or 0. */
@@ -1300,6 +1303,21 @@ export default class Online {
             e.body.value.cooking,
           );
           break;
+        case 'naviRoute': {
+          const r = e.body.value;
+          this.onNaviRoute?.({
+            map: r.map,
+            x: r.x,
+            y: r.y,
+            monster: r.monster,
+            services: r.services,
+            hideWindow: r.hideWindow,
+            found: r.found,
+            steps: r.steps.map((s) => ({ map: s.map, x: s.x, y: s.y })),
+            cancel: r.cancel,
+          });
+          break;
+        }
         case 'questLogOpen':
           this.onQuestLogOpen?.(e.body.value.quest);
           break;

@@ -566,6 +566,12 @@ function wa_Player:autotrade() end
 ---@return boolean
 function wa_Player:search_stores(search) end
 
+---Shows the player a route to a map on the client's navigation window, as navigateto (proposal 0006, section 5). The route goes over the warps between maps, and over the airship, Kafra and scroll trips of data/navi.yml that services allows. A target with no route shows alone. The route is made again when the player changes map, until the player reaches the map. Returns false when no map of this world has the name, which is every classic map in a procedural world.
+---@param map string A map's name, such as prontera.
+---@param options? wa.NavigateOptions
+---@return boolean
+function wa_Player:navigate_to(map, options) end
+
 ---Opens the buying store setup window, as buyingstore. The player then picks what to buy. Returns false when the player is vending, has a buying store open, or is trading, as buyingstore_setup.
 ---@param store wa.BuyingStoreSpec
 ---@return boolean
@@ -2934,6 +2940,15 @@ local wa_MailItem = {}
 ---@field uses integer How many searches the window allows, 1 to 1000.
 ---@field effect "show"|"open"|nil What a click on a result does: "show" (the default) shows the store's place, as SEARCHSTORE_EFFECT_NORMAL; "open" opens the store, as SEARCHSTORE_EFFECT_REMOTE, when it is on the player's map.
 local wa_StoreSearchSpec = {}
+
+---Options of player:navigate_to, as the arguments of rAthena's navigateto.
+---@class wa.NavigateOptions
+---@field x integer? The target cell's x, 0 for none.
+---@field y integer? The target cell's y, 0 for none.
+---@field monster integer? A monster ID of the map to hunt. The cell is left out then.
+---@field services integer? A value of wa.navigation: the airship, scroll and Kafra trips the route may use. NAV_KAFRA_AND_AIRSHIP by default.
+---@field hide_window boolean? Keeps the navigation window closed. True by default.
+local wa_NavigateOptions = {}
 
 ---The buying store of player:open_buying_store.
 ---@class wa.BuyingStoreSpec

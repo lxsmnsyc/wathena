@@ -41,7 +41,25 @@ message Command {
     Memo memo = 31;
     QuestActive quest_active = 32;
     SkillItemPick skill_item_pick = 33;
+    NaviCommand navi = 34;
   }
+}
+
+// NaviCommand is a <NAVI> link of a dialog, or the cancel of a route
+// (proposal 0006, section 5). The server checks that the map runs, and
+// answers with a NaviRoute. A request within one second of the last is
+// dropped. The fields are the arguments of navigateto.
+message NaviCommand {
+  // map is a map name such as prontera.
+  string map = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+  uint32 monster = 4;
+  // services is a NAV_* value.
+  uint32 services = 5;
+  bool hide_window = 6;
+  // cancel ends the player's navigation. The other fields are ignored.
+  bool cancel = 7;
 }
 
 // SkillItemPick answers a SkillItemList, as rAthena's

@@ -135,7 +135,8 @@ func kindOf(m *wathenav1.ClientMessage) commandKind {
 		return kindAction
 	case c.HasDropItem():
 		return kindDrop
-	case c.HasNpcClick(), c.HasNpcReply(), c.HasShopBuy(), c.HasShopSell(), c.HasShopClose(), c.HasSkillItemPick():
+	case c.HasNpcClick(), c.HasNpcReply(), c.HasShopBuy(), c.HasShopSell(), c.HasShopClose(), c.HasSkillItemPick(),
+		c.HasNavi():
 		return kindNpc
 	case c.HasStorage():
 		return kindStorage

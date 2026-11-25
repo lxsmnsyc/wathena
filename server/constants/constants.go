@@ -93,6 +93,8 @@ var moduleSpecs = []moduleSpec{
 	{"jobs", "JOB_", []string{"JOB_MAX", "JOB_MAX_BASIC"}},
 	// Emotions (rAthena's emotion), shown with npc:show_emotion.
 	{"emotions", "ET_", nil},
+	// Services of navigateto.
+	{"navigation", "NAV_", nil},
 }
 
 // renames are readable names that the rule alone does not give.
