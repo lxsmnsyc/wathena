@@ -311,7 +311,7 @@ func (createDeadlyPoison) castendNoDamage(z *Zone, src, target *entity, d *skill
 // LUK. A failure costs a quarter of the player's max HP. It returns
 // whether the bottle was made.
 func (z *Zone) produceDeadlyPoison(p *Player) bool {
-	return z.produceMix(p, skill.IDCreateDeadly, itemPoisonBottle, 1, -1, produceMenu{skill: p.menuSkill()})
+	return z.produceMix(p, skill.IDCreateDeadly, itemPoisonBottle, 1, -1, produceMenu{})
 }
 
 // poisonReactBlock is Poison React's part of battle_weapon_attack: a

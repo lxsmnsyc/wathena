@@ -710,13 +710,13 @@ func (twilightAlchemy) castendNoDamage(z *Zone, src, target *entity, d *skill.De
 		if d.ID == skill.IDTwilight2 {
 			product = itemWhiteSlimPotion
 		}
-		if !z.produceMix(p, d.ID, product, 200, -1, produceMenu{skill: p.menuSkill()}) {
+		if !z.produceMix(p, d.ID, product, 200, -1, produceMenu{}) {
 			z.skillFail(src, d.ID, wathenav1.SkillFailure_SKILL_FAILURE_LEVEL)
 		}
 	case skill.IDTwilight3:
 		// 100 Alcohol, 50 Acid Bottles and 50 Bottle Grenades, for 200
 		// Empty Bottles in all.
-		menu := produceMenu{skill: p.menuSkill()}
+		menu := produceMenu{}
 		alcohol := z.canProduceMix(p, itemAlcohol, -1, 100, menu.skill)
 		acid := z.canProduceMix(p, itemAcidBottle, -1, 50, menu.skill)
 		fire := z.canProduceMix(p, itemFireBottle, -1, 50, menu.skill)

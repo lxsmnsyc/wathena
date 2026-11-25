@@ -32,7 +32,7 @@
 
 ## Other choices
 
-- Skills that need a window, a homunculus, or a family fail before they start, as in decision 0011: Repair Weapon, Weapon Refine, Hindsight (for players), Abracadabra, Create Elemental Converter, Prepare Potion, Call Homunculus, Vaporize, Resurrect Homunculus and Call Baby.
+- Skills that need a window, a homunculus, or a family fail before they start, as in decision 0011: Repair Weapon, Weapon Refine, Hindsight (for players), Abracadabra, Create Elemental Converter, Prepare Potion, Call Homunculus, Vaporize, Resurrect Homunculus and Call Baby. Since decision [0073](0073-skill-item-lists.md), Repair Weapon and Weapon Refine open their item lists. Since decision [0074](0074-recipe-lists.md), Create Elemental Converter and Prepare Potion open their recipe lists.
 - Party skills reach the caster alone. Ensembles, Devotion and Redemptio need a party member, so they fail, as rAthena does for a player without a party. Their effects are ported for when parties come.
 - Plant summons (Bio Cannibalize, Sphere Mine) stand still until monster AI exists. They keep rAthena's master, timer and kill rules.
 - A broken item comes off and cannot be worn again in the session. The broken flag is not saved yet.

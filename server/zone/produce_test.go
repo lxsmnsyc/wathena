@@ -52,6 +52,22 @@ func TestPreparePotion(t *testing.T) {
 			if z.countItem(p, itemWhitePotion) != 0 {
 				t.Error("a second pick made a White Potion")
 			}
+			// An empty list closes the open one.
+			cast(z, p, skill.IDPharmacy, 10, p.entity)
+			run(z, p, 550, 1000)
+			if p.skillMenu == nil {
+				t.Fatal("no second list")
+			}
+			z.takeItems(p, 507, 1)
+			z.takeItems(p, 509, 1)
+			give(t, z, p, 7134, 1)
+			cast(z, p, skill.IDPharmacy, 10, p.entity)
+			if lists := skillLists(run(z, p, 1050, 1500)); len(lists) != 1 || len(lists[0].GetItems()) != 0 {
+				t.Fatalf("lists without materials %v", lists)
+			}
+			if p.skillMenu != nil {
+				t.Error("the empty list left the old one open")
+			}
 		})
 	}
 }

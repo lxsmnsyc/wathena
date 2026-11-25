@@ -91,14 +91,6 @@ func (z *Zone) recipes() []skill.Recipe {
 	return nil
 }
 
-// menuSkill is the skill of the player's open list, or 0.
-func (p *Player) menuSkill() int {
-	if p.skillMenu == nil {
-		return 0
-	}
-	return p.skillMenu.produce.skill
-}
-
 // canProduceMix is skill_can_produce_mix: the index of the recipe for
 // qty of a product, or -1. The first row of the product whose skill the
 // player has counts; with a menu skill, a row of another skill does not.
@@ -405,6 +397,9 @@ func (z *Zone) openRecipes(p *Player, listSkill, menuSkill, trigger int, only, c
 	p.pending = append(p.pending, wathenav1.Event_builder{SkillItemList: wathenav1.SkillItemList_builder{
 		SkillId: uint32(listSkill), Items: lines, // #nosec G115 -- skill IDs are positive.
 		ItemLevel: uint32(max(trigger, 0)), Cooking: cooking}.Build()}.Build()) // #nosec G115 -- small.
+	// An empty list closes the old one: the client shows the missing
+	// materials and no window, so no pick of the old list may follow.
+	p.skillMenu = nil
 	if len(lines) > 0 {
 		p.skillMenu = m
 	}

@@ -347,6 +347,9 @@ func TestCreateDeadlyPoison(t *testing.T) {
 	for _, id := range deadlyPoisonRecipe {
 		give(t, z, p, id, 1)
 	}
+	// A Prepare Potion list left open does not limit the skill to
+	// Prepare Potion's rows.
+	p.skillMenu = &skillMenu{skill: skill.IDPharmacy, produce: produceMenu{skill: skill.IDPharmacy}}
 	cast(z, p, skill.IDCreateDeadly, 1, p.entity)
 	run(z, p, 50, 6000)
 	if z.countItem(p, itemPoisonBottle) != 1 {
