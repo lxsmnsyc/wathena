@@ -1,7 +1,7 @@
 ---
 id: item-effects
 title: Item scripts: autobonus effects, statuses, transforms and bonus scripts
-status: todo
+status: active
 priority: must
 type: feature
 outline: false
