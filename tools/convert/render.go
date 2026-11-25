@@ -323,7 +323,10 @@ func (c *itemConv) luaBonus(w *wcall, guard Expr) (string, error) {
 			parts = append(parts, s)
 			continue
 		}
-		if a.kind == kLevel && !isStaticValue(a.v) {
+		// The interval of a regen bonus may depend on the refine, as the
+		// Sealed cards' bHPRegenRate does.
+		interval := amountAt >= 0 && i > amountAt && i-amountAt-1 < len(spec.Extra) && spec.Extra[i-amountAt-1] == "interval"
+		if (a.kind == kLevel || interval) && !isStaticValue(a.v) {
 			s, err := computed(a.v)
 			if err != nil {
 				return "", err

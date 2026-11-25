@@ -134,6 +134,10 @@ func TestConvertBonuses(t *testing.T) {
 	for _, tc := range []struct{ script, want string }{
 		{"bonus bStr,5;", "[str, 5]"},
 		{"bonus2 bSubRace,RC_DemiHuman,15;", "[damage_taken, -15, {from: {race: demi_human}}]"},
+		{"bonus3 bSubRace,RC_Formless,10,BF_WEAPON;", "[damage_taken, -10, {from: {race: formless}, kind: physical}]"},
+		{"bonus3 bSubEle,Ele_Fire,10,BF_WEAPON;", "[damage_taken, -10, {element: fire, kind: physical}]"},
+		{`bonus3 bAutoSpell,"MG_FIREBOLT",0,50;`, "[cast, MG_FIREBOLT, 1, {chance: 500}]"},
+		{"bonus2 bAddDefMonster,99999,-10;", ""},
 		{"bonus2 bAddEff,Eff_Stun,300;", "[cause_status, stun, {chance: 300}]"},
 		{`bonus3 bAutoSpell,"MG_FIREBOLT",3,50;`, "[cast, MG_FIREBOLT, 3, {chance: 500}]"},
 		{`bonus3 bAutoSpellWhenHit,"MG_FIREBOLT",3,50;`, "[cast, MG_FIREBOLT, 3, {chance: 500, on: hit_taken}]"},
@@ -164,6 +168,7 @@ func TestConvertBonuses(t *testing.T) {
 
 func TestConvertComputed(t *testing.T) {
 	for _, tc := range []struct{ script, want string }{
+		{"bonus2 bHPRegenRate,50,((getrefine()>14)?10000:5000);", `bonuses.add("hp_gain_over_time", 50, function() return `},
 		{"bonus bAtk,getrefine()*5;", `bonuses.add("weapon_atk", function() return equipped.refine * 5 end)`},
 		{"if (getrefine() >= 9) bonus bStr,2;", "bonuses.add(\"str\", 2, {\n    when = function() return equipped.refine >= 9 end,\n  })"},
 		{"if (getrefine() >= 9) bonus bUnbreakableArmor;", "bonuses.add(\"unbreakable_armor\", {\n    when = function() return equipped.refine >= 9 end,\n  })"},

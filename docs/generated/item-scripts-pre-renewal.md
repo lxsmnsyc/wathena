@@ -8,7 +8,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Kind | Items with scripts | Full | Partly | Not | Static data | Lua files |
 |---|---:|---:|---:|---:|---:|---:|
-| Equipment and cards | 1995 | 1947 (97.6%) | 24 | 24 | 1667 | 298 |
+| Equipment and cards | 1995 | 1952 (97.8%) | 21 | 22 | 1668 | 299 |
 | Usable | 1537 | 1339 (87.1%) | 12 | 186 | 0 | 1339 |
 | Delayed use | 70 | 12 (17.1%) | 5 | 53 | 0 | 12 |
 
@@ -19,7 +19,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| `skill` | 87 | 86 | 1 | 0 | 87 |  |
+| `skill` | 87 | 87 | 0 | 0 | 87 |  |
 | `specialeffect2` | 36 | 35 | 1 | 0 | 36 |  |
 | `autobonus` | 35 | 34 | 0 | 1 | 34 | status effects: sc_start (1) |
 | `heal` | 20 | 0 | 20 | 0 | 0 | not supported (20) |
@@ -40,7 +40,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 
 | Command | Scripts | Item full | Item partly | Item not | This part converts | Why not |
 |---|---:|---:|---:|---:|---:|---|
-| `bonus bMdef` | 263 | 261 | 2 | 0 | 263 |  |
+| `bonus bMdef` | 263 | 262 | 1 | 0 | 263 |  |
 | `bonus bInt` | 231 | 230 | 1 | 0 | 231 |  |
 | `bonus bDex` | 175 | 174 | 1 | 0 | 175 |  |
 | `bonus bStr` | 174 | 174 | 0 | 0 | 174 |  |
@@ -60,7 +60,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus2 bAddEff` | 76 | 76 | 0 | 0 | 76 |  |
 | `bonus bCritical` | 72 | 72 | 0 | 0 | 72 |  |
 | `bonus bAspdRate` | 70 | 70 | 0 | 0 | 70 |  |
-| `bonus bFlee` | 70 | 69 | 1 | 0 | 70 |  |
+| `bonus bFlee` | 70 | 70 | 0 | 0 | 70 |  |
 | `bonus bBaseAtk` | 69 | 69 | 0 | 0 | 69 |  |
 | `bonus bDef` | 69 | 69 | 0 | 0 | 69 |  |
 | `bonus bHit` | 57 | 57 | 0 | 0 | 57 |  |
@@ -100,7 +100,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus bBreakArmorRate` | 11 | 11 | 0 | 0 | 11 |  |
 | `bonus2 bAddEff2` | 11 | 11 | 0 | 0 | 11 |  |
 | `bonus2 bCastrate` | 11 | 11 | 0 | 0 | 11 |  |
-| `bonus2 bAddDamageClass` | 10 | 7 | 2 | 1 | 9 | unknown monster: 1900 (1) |
+| `bonus2 bAddDamageClass` | 10 | 10 | 0 | 0 | 10 |  |
 | `bonus bSplashRange` | 9 | 9 | 0 | 0 | 9 |  |
 | `bonus2 bSubSize` | 9 | 9 | 0 | 0 | 9 |  |
 | `bonus bBreakWeaponRate` | 7 | 7 | 0 | 0 | 7 |  |
@@ -130,13 +130,13 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus2 bSPRegenRate` | 5 | 5 | 0 | 0 | 5 |  |
 | `bonus bMagicDamageReturn` | 4 | 4 | 0 | 0 | 4 |  |
 | `bonus bNoKnockback` | 4 | 4 | 0 | 0 | 4 |  |
-| `bonus2 bAddDefMonster` | 4 | 1 | 2 | 1 | 1 | unknown monster: 1900 (1); unknown monster: 2048 (1); unknown monster: 2050 (1) |
+| `bonus2 bAddDefMonster` | 4 | 4 | 0 | 0 | 4 |  |
 | `bonus2 bAddMonsterDropItemGroup` | 4 | 4 | 0 | 0 | 4 |  |
 | `bonus2 bHPRegenRate` | 4 | 4 | 0 | 0 | 4 |  |
 | `bonus4 bAutoSpell` | 4 | 4 | 0 | 0 | 4 |  |
 | `bonus bAddItemHealRate` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus bDefRatioAtkClass` | 3 | 3 | 0 | 0 | 3 |  |
-| `bonus bUnbreakableGarment` | 3 | 2 | 1 | 0 | 3 |  |
+| `bonus bUnbreakableGarment` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus bUnbreakableShield` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus2 bSPDrainValueRace` | 3 | 3 | 0 | 0 | 3 |  |
 | `bonus2 bSPVanishRate` | 3 | 3 | 0 | 0 | 3 |  |
@@ -153,7 +153,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus2 bGetZenyNum` | 2 | 2 | 0 | 0 | 2 |  |
 | `bonus2 bSPLossRate` | 2 | 2 | 0 | 0 | 2 |  |
 | `bonus2 bSkillHeal` | 2 | 2 | 0 | 0 | 2 |  |
-| `bonus3 bAddMonsterIdDropItem` | 2 | 0 | 2 | 0 | 2 |  |
+| `bonus3 bAddMonsterIdDropItem` | 2 | 2 | 0 | 0 | 2 |  |
 | `bonus bAspd` | 1 | 1 | 0 | 0 | 1 |  |
 | `bonus bHitRate` | 1 | 1 | 0 | 0 | 1 |  |
 | `bonus bIntravision` | 1 | 1 | 0 | 0 | 1 |  |
@@ -166,7 +166,7 @@ An item converts fully when every part of its scripts converts. A usable item th
 | `bonus bUnbreakableShoes` | 1 | 1 | 0 | 0 | 1 |  |
 | `bonus2 bExpAddClass` | 1 | 1 | 0 | 0 | 1 |  |
 | `bonus2 bSubRace2` | 1 | 1 | 0 | 0 | 1 |  |
-| `bonus3 bSubEle` | 1 | 0 | 1 | 0 | 0 | invalid bonus: bonuses.add("damage_taken"): this combination of options has no rAthena sum; see 0002a, "Damage and da... (1) |
+| `bonus3 bSubEle` | 1 | 1 | 0 | 0 | 1 |  |
 | `bonus5 bAutoSpell` | 1 | 1 | 0 | 0 | 1 |  |
 
 ## Usable
