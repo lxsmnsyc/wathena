@@ -788,6 +788,8 @@ func (z *Zone) touchShown(e *entity, only *Player) {
 func (z *Zone) removeNPC(e *entity) {
 	n := e.npc
 	n.removed = true
+	// npc_unload deletes the NPC's chat room.
+	z.closeNPCRoom(e)
 	if z.entities.has(e) {
 		z.entities.remove(e)
 		z.forget(e)

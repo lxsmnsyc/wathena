@@ -71,6 +71,8 @@ var Catalog = []Permission{
 	{Name: "events.control", Step: 4, Allows: "start, stop and schedule world events"},
 	{Name: "mods.read", Step: 4, Allows: "list installed mods, their permissions and error counts"},
 	{Name: "mods.disable", Step: 4, Allows: "turn a mod off in a zone"},
+	{Name: "chat.join_all", Step: 3, Allows: "join a player's chat room without its password (rAthena's join_all_chat)"},
+	{Name: "chat.no_kick", Step: 3, Allows: "cannot be kicked from a player's chat room (rAthena's no_chat_kick)"},
 }
 
 // DefaultRoles are the roles when the config's staff.roles is not set.
@@ -79,10 +81,10 @@ var Catalog = []Permission{
 // decision 35 gives moderation.ban_permanent to admin alone, so
 // game_master lists its moderation permissions.
 var DefaultRoles = map[string][]string{
-	"admin": {"staff.*", "audit.*", "players.*", "items.*", "moderation.*", "commands.*", "world.*", "events.*", "mods.*"},
+	"admin": {"staff.*", "audit.*", "players.*", "items.*", "moderation.*", "commands.*", "world.*", "events.*", "mods.*", "chat.*"},
 	"game_master": {"audit.read", "players.read", "items.history",
 		"moderation.reports", "moderation.mute", "moderation.kick", "moderation.jail", "moderation.ban", "commands.*",
-		"world.read", "world.announce", "events.control"},
+		"world.read", "world.announce", "events.control", "chat.no_kick", "chat.join_all"},
 	"moderator": {"players.read", "moderation.reports", "moderation.mute", "moderation.kick", "moderation.jail"},
 }
 

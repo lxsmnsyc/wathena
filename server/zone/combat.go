@@ -394,6 +394,8 @@ func (z *Zone) die(e, killer *entity) {
 		// list (menuskill_id).
 		z.delSpiritBall(p, p.spiritBalls())
 		p.skillMenu = nil
+		// A dead player leaves its chat room.
+		z.leaveRoom(p, wathenav1.ChatRoomChange_CHAT_ROOM_CHANGE_LEAVE)
 	}
 	z.castCancel(e, false)
 	e.pending = nil

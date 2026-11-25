@@ -6,10 +6,10 @@ This is the list for the release notes of classic mode, which ships with `mode: 
 
 ## Summary
 
-- 13721 of 19892 NPC lines are placed, duplicates too: 282 shops and 13439 of 19420 script NPCs.
+- 13767 of 19892 NPC lines are placed, duplicates too: 282 shops and 13485 of 19420 script NPCs.
 - 7 placed script NPCs convert partly: a function they call has parts that fail when a script reaches them.
 - 55 of 56 Kafras are placed. Every placed Kafra converts fully, with storage, teleport, save, pushcart rental and Niflheim's HP and SP loss.
-- 686 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
+- 696 of 710 job change NPCs are placed: the script NPCs of the jobs folders, duplicates left out.
 - Pre-renewal classic is experimental until `core.ruleset.pre_renewal` matches rAthena's pre-renewal (phase 10 item 1). `waserver` warns at start.
 
 ## Folders
@@ -28,17 +28,17 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | guild2 | 478 | 0 | 478 |
 | guild3 | 255 | 0 | 255 |
 | instances | 3531 | 4 | 3527 |
-| jobs | 1804 | 1746 | 58 |
+| jobs | 1804 | 1756 | 48 |
 | kafras | 97 | 97 | 0 |
 | merchants | 690 | 493 | 197 |
 | mobs | 13 | 12 | 1 |
-| other | 3466 | 3075 | 391 |
-| quests | 6622 | 6416 | 206 |
+| other | 3466 | 3106 | 360 |
+| quests | 6622 | 6421 | 201 |
 | warps | 250 | 238 | 12 |
 
 ## What blocks the rest
 
-2267 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
+2232 script NPCs that are not duplicates are not placed. Each counts once, for the first part of its script that does not convert. A duplicate is placed when its source is. The 30 most common reasons:
 
 | Reason | Scripts | Most common entry of the coverage report |
 |---|---:|---|
@@ -49,7 +49,6 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | siege folder | 202 | siege folder: the siege system places the NPCs of the guild folders |
 | battleground | 155 | battleground: battlegrounds are a v0.3.0 system |
 | instance_create | 47 | instance_create |
-| waitingroom | 47 | waitingroom |
 | event onagitinit2 | 34 | event onagitinit2 |
 | getcharid | 28 | getcharid: battlegrounds, clans and other IDs |
 | instance_enter | 24 | instance_enter |
@@ -58,6 +57,7 @@ Script NPC lines, duplicates too, by the folder of their file below `npc/` and `
 | questinfo | 17 | questinfo: a computed condition |
 | instance_mapname | 15 | instance_mapname |
 | achievementinfo | 14 | achievementinfo |
+| waitingroom2bg | 14 | waitingroom2bg |
 | add_reputation_points | 11 | add_reputation_points |
 | instance | 10 | instance: 1@mist is an instance map, which wAthena does not have yet |
 | getmercinfo | 9 | getmercinfo |

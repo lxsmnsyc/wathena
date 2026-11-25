@@ -248,6 +248,10 @@ type Player struct {
 	// last asked for one (navi.go). Neither is saved.
 	navi   *naviTarget
 	naviAt int64
+	// room is the chat room the player is in, and roomSeen the version of
+	// each room the client was shown (chatroom.go).
+	room     *room
+	roomSeen map[uint32]uint32
 	// mapChange is set until the first frame after a warp from another
 	// zone, which starts with MapChange.
 	mapChange bool
@@ -474,6 +478,8 @@ type command struct {
 	skillPick *skillPickCommand
 	// navi is a <NAVI> link or the cancel of a route (navi.go).
 	navi *naviCommand
+	// chatRoom is a chat room action (chatroom.go).
+	chatRoom *wathenav1.ChatRoomCommand
 }
 
 type useSkillCommand struct {
@@ -844,6 +850,11 @@ type Zone struct {
 	loot
 	// chats are this tick's local chat lines.
 	chats []chatLine
+	// rooms are the zone's chat rooms by ID, and roomLast the last ID
+	// given (chatroom.go).
+	rooms    map[uint32]*room
+	roomIDs  []uint32
+	roomLast uint32
 	// used are this tick's item uses.
 	used []used
 	// prevHeal and nextHeal are when natural regen last ran and next
@@ -1426,6 +1437,7 @@ func (z *Zone) finishLogout(p *Player) {
 // leaveMap is the end of leave: the player's stores, trades and storage
 // close, it is saved and it vanishes.
 func (z *Zone) leaveMap(p *Player, reason wathenav1.VanishReason) {
+	z.leaveRoom(p, wathenav1.ChatRoomChange_CHAT_ROOM_CHANGE_LEAVE)
 	z.tradeCancel(p, wathenav1.TradeOutcome_TRADE_OUTCOME_CANCELLED)
 	z.closeStores(p)
 	p.skillMenu = nil
@@ -1494,6 +1506,9 @@ func (z *Zone) handle(c command) {
 	}
 	if c.seq > p.ackSeq {
 		p.ackSeq = c.seq
+	}
+	if p.room != nil {
+		z.roomGuard(p, &c)
 	}
 	if c.raise != nil {
 		// rAthena lets a dead player raise stats.
@@ -1572,6 +1587,9 @@ func (z *Zone) handle(c command) {
 	}
 	if c.navi != nil {
 		z.naviCommand(p, c.navi)
+	}
+	if c.chatRoom != nil {
+		z.chatRoomCommand(p, c.chatRoom)
 	}
 	me := p.entity
 	if me.dead {
@@ -1864,6 +1882,7 @@ func (z *Zone) update(p *Player) {
 	events = append(events, z.emotionEvents(p)...)
 	events = append(events, z.usedEvents(p)...)
 	events = append(events, z.chatEvents(p)...)
+	events = append(events, z.roomEvents(p)...)
 	events = append(events, p.pending...)
 	p.pending = nil
 	if len(events) == 0 {

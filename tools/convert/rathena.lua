@@ -1616,6 +1616,104 @@ function R.is_cloaked(target, player)
 	return n:is_cloaked(player)
 end
 
+-- room_of is the waiting room of an NPC or of the NPC's name, or nil:
+-- rAthena's commands do nothing for an NPC without one.
+local function room_of(target)
+	local n = npc_named(target)
+	if n == nil then
+		return nil
+	end
+	return n:chat_room()
+end
+
+-- room_close is delwaitingroom.
+function R.room_close(target)
+	local n = npc_named(target)
+	if n ~= nil then
+		n:close_chat_room()
+	end
+end
+
+-- room_kick_all is kickwaitingroomall.
+function R.room_kick_all(target)
+	local room = room_of(target)
+	if room ~= nil then
+		room:kick_all()
+	end
+end
+
+-- room_kick is waitingroomkick.
+function R.room_kick(target, name)
+	local room = room_of(target)
+	if room ~= nil then
+		room:kick(tostring(name))
+	end
+end
+
+-- room_event is enablewaitingroomevent and disablewaitingroomevent. Enabling
+-- runs the trigger check at once.
+function R.room_event(target, enable)
+	local room = room_of(target)
+	if room == nil then
+		return
+	end
+	if enable then
+		room:enable_event()
+	else
+		room:disable_event()
+	end
+end
+
+-- waitingroomstate is getwaitingroomstate: -1 for an NPC without a room
+-- and for a type that is not one of the list. full is users >= limit,
+-- which differs from the join test of an NPC room.
+function R.waitingroomstate(kind, target)
+	local room = room_of(target)
+	if room == nil then
+		return -1
+	end
+	if kind == 0 then
+		return room.users
+	elseif kind == 1 then
+		return room.limit
+	elseif kind == 2 then
+		return room.trigger
+	elseif kind == 3 then
+		return room.trigger_disabled and 1 or 0
+	elseif kind == 4 then
+		return room.title
+	elseif kind == 5 then
+		return room.password
+	elseif kind == 16 then
+		return room.event
+	elseif kind == 32 then
+		return room.full and 1 or 0
+	elseif kind == 33 then
+		return room.triggered and 1 or 0
+	end
+	return -1
+end
+
+-- warpwaitingpc warps the first n players of the NPC's room, the
+-- trigger's number without n, and puts their account IDs in
+-- $@warpwaitingpc[] and their number in $@warpwaitingpcnum. Elements
+-- past the warped players stay, as mapreg_setreg writes only the
+-- indexes it sets.
+function R.warpwaitingpc(target, map, x, y, n)
+	local room = room_of(target)
+	if room == nil then
+		return
+	end
+	local warped = room:warp_members(map, x, y, n)
+	local var = variables.server_temporary_table("warpwaitingpc")
+	local t = load(var, nil)
+	for i, p in ipairs(warped) do
+		t[i - 1] = p.account_id
+	end
+	store(var, nil, t)
+	variables.server_temporary_integer("warpwaitingpcnum"):set(#warped)
+end
+
 -- fire is donpcevent "<NPC>::<label>": whether the NPC has the label.
 function R.fire(target, label)
 	local n = npc_named(target)

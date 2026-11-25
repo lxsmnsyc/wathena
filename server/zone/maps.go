@@ -98,6 +98,7 @@ const msgNoShopCell = "You can't open a shop on this cell."
 const (
 	markNoVending uint8 = 1 << iota
 	markNoBuyingStore
+	markNoChat
 )
 
 // monsterLabel is a resolved label of spawned monsters.
@@ -813,7 +814,6 @@ var cellRefusals = map[string]string{
 	"water":          "the server's map data has no water cells yet",
 	"basilica":       "wAthena's Basilica is a status of its caster, not a cell flag, and battlegrounds do not exist",
 	"land_protector": "Land Protector does not exist",
-	"no_chat":        "chat rooms do not exist",
 	"maelstrom":      "Maelstrom does not exist",
 	"ice_wall":       "wAthena's Ice Wall is a skill unit, not a cell flag",
 }
@@ -884,10 +884,13 @@ func (z *Zone) setCells(area modscript.Rect, kind string, on, send bool) {
 		for _, p := range z.players {
 			p.pending = append(p.pending, cellEvents(changed)...)
 		}
-	case "no_vending", "no_buying_store":
+	case "no_vending", "no_buying_store", "no_chat":
 		bit := markNoVending
-		if kind == "no_buying_store" {
+		switch kind {
+		case "no_buying_store":
 			bit = markNoBuyingStore
+		case "no_chat":
+			bit = markNoChat
 		}
 		s := &z.shared
 		s.mu.Lock()
@@ -1014,12 +1017,14 @@ func (h scriptHost) CheckCell(mapName string, x, y int, kind string) (bool, erro
 		return inside && to.cellMark(x, y, markNoVending), nil
 	case "no_buying_store":
 		return inside && to.cellMark(x, y, markNoBuyingStore), nil
+	case "no_chat":
+		return inside && to.cellMark(x, y, markNoChat), nil
 	}
 	return false, fmt.Errorf("unknown cell kind %q", kind)
 }
 
 // mapFlagRefusals are rAthena's map flags that scripts cannot set, and
-// why. nomemo is the one map flag wAthena has.
+// why. nomemo and nochat are the map flags wAthena has.
 var mapFlagRefusals = map[string]string{}
 
 func init() {
@@ -1033,7 +1038,6 @@ func init() {
 	refuse("battlegrounds do not exist", "battleground")
 	refuse("the client draws no weather", "snow", "fog", "sakura", "leaves", "rain", "clouds", "clouds2", "fireworks")
 	refuse("day and night do not exist", "nightenabled")
-	refuse("chat rooms do not exist", "nochat")
 	refuse("private airships do not exist", "privateairship_source", "privateairship_destination")
 	refuse("the bank does not exist", "nobank")
 	refuse("the cash shop window does not exist", "nocashshop")
@@ -1054,7 +1058,7 @@ func init() {
 // checkFlag reads a map flag's name: nil for nomemo, an error for one
 // that cannot be set.
 func checkFlag(flag string) (refused string, err error) {
-	if flag == "nomemo" {
+	if flag == "nomemo" || flag == "nochat" {
 		return "", nil
 	}
 	if why, ok := mapFlagRefusals[flag]; ok {

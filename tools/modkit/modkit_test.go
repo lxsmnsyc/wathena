@@ -87,7 +87,10 @@ local ticks = variables.server_integer "ticks"
 local kills = variables.character_integer "kills"
 local restart_reason = variables.server_string "restart_reason"
 local restart_at = variables.server_integer "restart_at"
+local room_events = variables.server_string "room_events"
 return function()
+  events.on("chat_room_join", function(e) room_events:set(room_events:get() .. "join " .. e.name .. ";") end)
+  events.on("chat_room_leave", function(e) room_events:set(room_events:get() .. "leave " .. e.name .. ";") end)
   events.on("restart_planned", function(restart)
     restart_reason:set(restart.reason)
     restart_at:set(restart.at)
@@ -177,6 +180,27 @@ return function()
     testing.expect(function() world:plan_restart(1.5, "x") end).to_fail_with("the minutes are an integer")
   end)
 
+  testing.case("a chat room", function(world)
+    local a = world:new_player { x = 150, y = 150 }
+    local b = world:new_player { x = 151, y = 150 }
+    local room = world:open_chat_room { owner = a, title = "Club", limit = 3, members = { b } }
+    testing.expect(room.users).to_be(2)
+    testing.expect(room.title).to_be("Club")
+    testing.expect(room.public).to_be_true()
+    testing.expect(room.owner == a).to_be_true()
+    testing.expect(b.in_chat_room).to_be_true()
+    testing.expect(b.chat_room == room).to_be_true()
+    testing.expect(#room:members()).to_be(2)
+    testing.expect(room:kick("Nobody")).to_be(false)
+    testing.expect(room:kick(b.name)).to_be_true()
+    world:advance(100)
+    testing.expect(b.in_chat_room).to_be(false)
+    testing.expect(room.users).to_be(1)
+    testing.expect(variables.server_string("room_events"):get()).to_be("join " .. a.name .. ";join " .. b.name .. ";leave " .. b.name .. ";")
+    testing.expect(function() world:open_chat_room { owner = a, title = "Again" } end).to_fail_with("in a chat room already")
+    testing.expect(function() world:open_chat_room { owner = b, title = "" } end).to_fail_with("title of 1 to 36")
+  end)
+
   testing.case("a world runs one map", function(world)
     world:new_player { map = "prontera", x = 150, y = 150 }
     testing.expect(function() world:new_player { map = "izlude", x = 1, y = 1 } end).to_fail_with("runs one map")
@@ -213,7 +237,7 @@ end`,
 			t.Errorf("%s: %v %v", r.Name, r.Err, r.Logs)
 		}
 	}
-	if len(results) != 10 {
+	if len(results) != 11 {
 		t.Errorf("%d results", len(results))
 	}
 	if got := failures["fails at its line"]; got != "tests/fail_test.lua:5: expected 3, got 2" {

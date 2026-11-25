@@ -208,6 +208,7 @@ func (z *Zone) depart(p *Player, to *Zone, x, y int) bool {
 	z.closeTalk(p)
 	p.shop = nil
 	p.skillMenu = nil
+	z.leaveRoom(p, wathenav1.ChatRoomChange_CHAT_ROOM_CHANGE_LEAVE)
 	z.closeStores(p)
 	p.mail.open = false
 	z.closeGuildStorage(p, true)
@@ -357,6 +358,7 @@ func (z *Zone) arrivalCell(x, y int) (int, int) {
 // cell. The player sees itself appear there, as after a revive.
 func (z *Zone) teleport(p *Player, x, y int) {
 	z.closeTalk(p)
+	z.leaveRoom(p, wathenav1.ChatRoomChange_CHAT_ROOM_CHANGE_LEAVE)
 	p.shop = nil
 	// unit_remove_map: a skill's item list closes, on a warp within the
 	// map too.

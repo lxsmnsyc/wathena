@@ -47,6 +47,8 @@
 ---| "mail"
 ---| "world_event_start"
 ---| "world_event_end"
+---| "chat_room_join"
+---| "chat_room_leave"
 ---| "castle_change"
 ---| "restart_planned"
 ---| "dungeon_rotated"
@@ -365,7 +367,7 @@
 ---| "abr"
 ---| "bionic"
 
----A kind of cell of maps.set_cells, as setcell's cell_ types. water, npc, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error: their systems do not exist or keep no cell flag.
+---A kind of cell of maps.set_cells, as setcell's cell_ types. water, npc, basilica, land_protector, maelstrom and ice_wall raise an error: their systems do not exist or keep no cell flag.
 ---@alias wa.CellKind
 ---| "walkable"
 ---| "shootable"
@@ -379,7 +381,7 @@
 ---| "ice_wall"
 ---| "no_buying_store"
 
----A check of maps.check_cell, as checkcell's cell_chk types. water, basilica, land_protector, no_chat, maelstrom and ice_wall raise an error.
+---A check of maps.check_cell, as checkcell's cell_chk types. water, basilica, land_protector, maelstrom and ice_wall raise an error.
 ---@alias wa.CellCheck
 ---| "wall"
 ---| "water"
@@ -444,6 +446,8 @@
 ---@field x integer
 ---@field y integer
 ---@field character_id integer The database ID, 0 without a database.
+---@field chat_room wa.ChatRoom? The chat room the player is in, or nil.
+---@field in_chat_room boolean Whether the player is in a chat room, as checkchatting.
 ---@field account_id integer The database ID, 0 without a database.
 ---@field party wa.Party? The player's party, or nil.
 ---@field guild wa.Guild? The player's guild, or nil.
@@ -1214,6 +1218,25 @@ function wa_Npc:say_aloud(text, options) end
 ---@param options? wa.ShowQuestIconOptions
 function wa_Npc:show_quest_icon(player, icon, options) end
 
+---Opens a waiting room at the NPC, as waitingroom (proposal 0006, section 2). Players join it from the client's room bubble. It takes limit - 1 players: the NPC counts. After a join that brings the users to the trigger, the event runs on its NPC with no player. The room is not saved, and goes with the NPC or npc:close_chat_room. Returns nil when the NPC has a room already, as rAthena logs and ignores. An NPC of another mod needs npcs.control.
+---
+---Needs the permission `chat_rooms.manage`.
+---@param options wa.ChatRoomOptions
+---@return wa.ChatRoom?
+function wa_Npc:open_chat_room(options) end
+
+---Deletes the NPC's room and makes its members leave, as delwaitingroom. Returns false when it had none.
+---
+---Needs the permission `chat_rooms.manage`.
+---@return boolean
+function wa_Npc:close_chat_room() end
+
+---The NPC's room, or nil: getwaitingroomstate's room. An NPC of another map has none to read.
+---
+---Needs the permission `game.read`.
+---@return wa.ChatRoom?
+function wa_Npc:chat_room() end
+
 ---Shows the NPC, as enablenpc: it shows, takes clicks, and its touch area works again. A player who stands in the area gets the touch event, as npc_enable_target (npc.cpp 1100). It does not uncloak the NPC. Another mod's NPC needs npcs.control.
 function wa_Npc:show() end
 
@@ -1961,6 +1984,83 @@ local wa_Guardian = {}
 ---@field previous_owner_id integer The previous owner's guild ID, 0 for none.
 local wa_CastleChange = {}
 
+---A chat room of an NPC (npc:open_chat_room) or a player (proposal 0006, section 2). Two handles of one room are equal. Its fields read the current state and raise an error once the room is gone. Rooms are zone-local and not saved.
+---@class wa.ChatRoom
+---@field title string At most 36 characters.
+---@field limit integer The most users, at most 20. An NPC room takes one player fewer: the NPC counts.
+---@field trigger integer The number of users that runs the event, 0 to 127.
+---@field trigger_disabled boolean Set by disable_event, as bit 0x80 of rAthena's trigger.
+---@field event string The label an NPC room runs, "NPC name::label", or "".
+---@field users integer The members, not counting an NPC.
+---@field password string Empty for an NPC room, and for a mod without chat_rooms.manage.
+---@field public boolean NPC rooms are public.
+---@field full boolean users >= limit, getwaitingroomstate(32). The join test of an NPC room counts the NPC, so a room can be refused before it is full.
+---@field triggered boolean users >= trigger and the trigger is on, getwaitingroomstate(33).
+---@field owner wa.Player? The owner of a player room, or nil for an NPC room.
+---@field npc boolean Whether the room belongs to an NPC.
+local wa_ChatRoom = {}
+
+---The players in the room, in join order.
+---
+---Needs the permission `game.read`.
+---@return wa.Player[]
+function wa_ChatRoom:members() end
+
+---Turns the trigger on and runs its check at once, as enablewaitingroomevent.
+---
+---Needs the permission `chat_rooms.manage`.
+function wa_ChatRoom:enable_event() end
+
+---Turns the trigger off, as disablewaitingroomevent: joins do not run the event.
+---
+---Needs the permission `chat_rooms.manage`.
+function wa_ChatRoom:disable_event() end
+
+---Makes the member leave, as waitingroomkick. Returns false when no member has the name.
+---
+---Needs the permission `chat_rooms.manage`.
+---@param name string A member's name.
+---@return boolean
+function wa_ChatRoom:kick(name) end
+
+---Makes every member leave, last first, as kickwaitingroomall. Returns how many left.
+---
+---Needs the permission `chat_rooms.manage`.
+---@return integer
+function wa_ChatRoom:kick_all() end
+
+---Warps the first n members in join order, as warpwaitingpc. Each pays the room's fee, and the loop stops at the first that cannot pay. Returns the players it warped.
+---
+---Needs the permission `chat_rooms.manage`.
+---@param map string A map's name, "Random" for a random cell of the room's map, or "SavePoint" for each player's save point.
+---@param x? integer
+---@param y? integer
+---@param n? integer How many players. The trigger by default.
+---@return wa.Player[]
+function wa_ChatRoom:warp_members(map, x, y, n) end
+
+---The options of npc:open_chat_room, as the arguments of waitingroom.
+---@class wa.ChatRoomOptions
+---@field title string 1 to 36 characters.
+---@field limit integer The most users, counting the NPC; at most 20. A room of 0 is never joined: a bubble with a title.
+---@field event string? The label to run, "NPC name::OnLabel", with the NPC's name in its mod or its full record name.
+---@field trigger integer? The users that run the event, 0 to 127. The limit by default.
+---@field zeny integer? The fee warp_members takes from each member. 0 by default.
+---@field min_level integer? The least base level to join. 1 by default.
+---@field max_level integer? The highest base level to join. The level cap by default.
+local wa_ChatRoomOptions = {}
+
+---The object of the chat_room_join and chat_room_leave events.
+---@class wa.ChatRoomEvent
+---@field name string The player's name.
+---@field player wa.Player? Who joined or left, or nil when the player warped or logged out and is gone from the map by the time the handler runs.
+---@field room wa.ChatRoom? The room, or nil when the player's leaving deleted it.
+---@field title string
+---@field npc boolean Whether the room is an NPC's.
+---@field users integer The members after the change.
+---@field kicked boolean Whether the player was kicked.
+local wa_ChatRoomEvent = {}
+
 ---The object of the guild_change event.
 ---@class wa.GuildChange
 ---@field guild wa.Guild The guild, whose fields hold the new values.
@@ -2006,7 +2106,7 @@ local wa_WhisperOptions = {}
 ---The object of the chat event and the chat hook: a line a player says. The hook runs after the server's chat filter, and the event after the line went out.
 ---@class wa.ChatMessage
 ---@field player wa.Player The speaker.
----@field channel string "public" for local chat, "whisper", "party", "guild", or a channel's name without its #, such as trade.
+---@field channel string "public" for local chat, "whisper", "party", "guild", "room" for a chat room, or a channel's name without its #, such as trade.
 ---@field text string The line, after the chat filter.
 ---@field to string? A whisper's target name. nil for other channels.
 ---@field map string The speaker's map.
@@ -2299,6 +2399,11 @@ function wa_TestWorld:rotate(dungeon) end
 ---@param y integer A field's y on the grid.
 ---@return string, integer
 function wa_TestWorld:change_region(x, y) end
+
+---Opens a player room for the owner, as the client's create without the checks of the map and the skills, and joins the members through the join checks. Fails when a member cannot join.
+---@param spec wa.TestChatRoomSpec
+---@return wa.ChatRoom
+function wa_TestWorld:open_chat_room(spec) end
 
 ---The player's mails, oldest first, after the mail sent so far arrived.
 ---@param player wa.Player A player handle.
@@ -2688,6 +2793,17 @@ local wa_HealSpec = {}
 ---@field to string? Where the copies go: "storage", "cart" or an extra storage's name, instead of the inventory. They follow the place's restrictions and bound rules.
 ---@field bound wa.Bound? Binds the copies, as getitembound. A bound copy cannot be traded or dropped, and goes only into storage its owner shares.
 local wa_GiveItemOptions = {}
+
+---The room of world:open_chat_room.
+---
+---It exists only in tests that wactl mod test runs.
+---@class wa.TestChatRoomSpec
+---@field owner wa.Player
+---@field title string 1 to 36 characters.
+---@field limit integer? 1 to 20. 20 by default.
+---@field password string? Up to 8 characters. The room is public without one.
+---@field members wa.Player[]? Players that join in order.
+local wa_TestChatRoomSpec = {}
 
 ---A mail as world:get_mails shows it.
 ---

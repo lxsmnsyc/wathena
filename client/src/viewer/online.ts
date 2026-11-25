@@ -23,6 +23,7 @@ import {
   type ChannelInfo,
   type ChannelJoined,
   type ChatRefused,
+  type ChatRoomOutcome,
   DamageKind,
   type DigitsKind,
   type DropItemFailure,
@@ -103,6 +104,7 @@ import Player, { type Body } from './player';
 import type { WorldEventRun } from './worldEvents';
 import { type QuestView, questOf } from './quests';
 import type { NaviRoute } from './navi';
+import type { RoomInfo, RoomMember, RoomView } from './chatroom';
 import type { SkillItemLine } from './skillItems';
 import { type WorldMapData, worldMapOf } from './worldMap';
 import {
@@ -668,6 +670,13 @@ export default class Online {
     | undefined;
   /** Called with the route of the navigation window, or its cancel. */
   onNaviRoute: ((route: NaviRoute) => void) | undefined;
+  /** Chat rooms (chatroom.ts): a room near the player, a room gone, the player's own room, a change of its members, the answer to a join and a line of its chat. */
+  onRoomShow: ((room: RoomInfo) => void) | undefined;
+  onRoomClear: ((room: number) => void) | undefined;
+  onRoomJoined: ((room: RoomView) => void) | undefined;
+  onRoomMember: ((change: RoomMember) => void) | undefined;
+  onRoomResult: ((outcome: ChatRoomOutcome) => void) | undefined;
+  onRoomChat: ((name: string, text: string) => void) | undefined;
   /** Called when the server opens the quest log, with a quest or 0. */
   onQuestLogOpen: ((quest: number) => void) | undefined;
   /** Called for an announcement to the map or the world, with its color or 0. */
@@ -1303,6 +1312,52 @@ export default class Online {
             e.body.value.cooking,
           );
           break;
+        case 'chatRoomShow': {
+          const r = e.body.value;
+          this.onRoomShow?.({
+            room: r.room,
+            owner: r.owner,
+            title: r.title,
+            users: r.users,
+            limit: r.limit,
+            public: r.public,
+            npc: r.npc,
+            minLevel: r.minLevel,
+            maxLevel: r.maxLevel,
+            zeny: r.zeny,
+          });
+          break;
+        }
+        case 'chatRoomClear':
+          this.onRoomClear?.(e.body.value.room);
+          break;
+        case 'chatRoomJoined': {
+          const r = e.body.value;
+          this.onRoomJoined?.({
+            room: r.room,
+            members: [...r.members],
+            owner: r.owner,
+            title: r.title,
+            limit: r.limit,
+            public: r.public,
+          });
+          break;
+        }
+        case 'chatRoomMember': {
+          const m = e.body.value;
+          this.onRoomMember?.({
+            room: m.room,
+            name: m.name,
+            change: m.change,
+            title: m.title,
+            limit: m.limit,
+            public: m.public,
+          });
+          break;
+        }
+        case 'chatRoomResult':
+          this.onRoomResult?.(e.body.value.outcome);
+          break;
         case 'naviRoute': {
           const r = e.body.value;
           this.onNaviRoute?.({
@@ -1335,6 +1390,8 @@ export default class Online {
             this.onPartyChat?.(c.fromName, c.text, c.lineId);
           } else if (c.channel === ChatChannel.GUILD) {
             this.onGuildChat?.(c.fromName, c.text, c.lineId);
+          } else if (c.channel === ChatChannel.ROOM) {
+            this.onRoomChat?.(c.fromName, c.text);
           } else if (c.channel === ChatChannel.NAMED) {
             this.onChannelChat?.(c.channelName, c.fromName, c.text, c.color, c.lineId);
           } else if (c.channel === ChatChannel.SYSTEM) {

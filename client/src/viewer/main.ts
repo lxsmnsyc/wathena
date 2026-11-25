@@ -149,6 +149,7 @@ import {
   closesOwnStore,
 } from './buyingStore';
 import { NaviWindow } from './navi';
+import { ChatRoomWindow } from './chatroom';
 import { SkillItemsWindow } from './skillItems';
 import { StoreSearchWindow, storeSearchMessage } from './storeSearch';
 import { groundItemLabel } from './groundItems';
@@ -2574,6 +2575,79 @@ if (serverURL === null) {
       navi.setCell(cell[0], cell[1]);
     }
   }, 500);
+  // Chat rooms: the window lists the rooms near the player, makes a room
+  // and shows the room the player is in, with its own chat.
+  const roomRoot = document.createElement('section');
+  roomRoot.id = 'chat-rooms';
+  roomRoot.className = 'store-window';
+  roomRoot.setAttribute('aria-label', 'Chat rooms');
+  roomRoot.hidden = true;
+  document.body.append(roomRoot);
+  makeMovable(roomRoot, 'Chat rooms');
+  const rooms = new ChatRoomWindow(
+    roomRoot,
+    {
+      create: (title, password, limit, isPublic) => {
+        connection.chatRoomCreate(title, password, limit, isPublic);
+      },
+      join: (room, password) => {
+        connection.chatRoomJoin(room, password);
+      },
+      leave: () => {
+        connection.chatRoomLeave();
+      },
+      change: (title, password, limit, isPublic) => {
+        connection.chatRoomChange(title, password, limit, isPublic);
+      },
+      owner: (name) => {
+        connection.chatRoomOwner(name);
+      },
+      kick: (name) => {
+        connection.chatRoomKick(name);
+      },
+      say: (text) => {
+        connection.roomChat(text);
+      },
+    },
+    view.selfName ?? '',
+  );
+  const roomToggle = document.createElement('button');
+  roomToggle.type = 'button';
+  roomToggle.id = 'chat-room-toggle';
+  roomToggle.title = 'Chat rooms';
+  roomToggle.textContent = 'Rooms';
+  roomToggle.addEventListener('click', () => {
+    rooms.book.setSelf(view.selfName ?? '');
+    rooms.toggle();
+  });
+  document.querySelector('#guild-toggle')?.parentElement?.append(roomToggle);
+  view.onRoomShow = (r) => {
+    rooms.book.show(r);
+    rooms.render();
+  };
+  view.onRoomClear = (room) => {
+    rooms.book.clear(room);
+    rooms.render();
+  };
+  view.onRoomJoined = (v) => {
+    rooms.book.setSelf(view.selfName ?? '');
+    rooms.book.joined(v);
+    rooms.note('');
+    rooms.show();
+  };
+  view.onRoomMember = (m) => {
+    const notice = rooms.book.member(m);
+    if (notice !== undefined) {
+      rooms.note(notice);
+    }
+    rooms.render();
+  };
+  view.onRoomResult = (outcome) => {
+    rooms.result(outcome);
+  };
+  view.onRoomChat = (name, text) => {
+    rooms.line(name, text);
+  };
   // A skill that asks for an item, such as Arrow Crafting, opens its
   // list when the server sends SkillItemList.
   const skillItemsRoot = document.createElement('section');

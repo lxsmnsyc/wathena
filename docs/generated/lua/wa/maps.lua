@@ -44,7 +44,7 @@ function maps.remove_monsters(map, options) end
 ---@param options? wa.WarpPlayersOptions
 function maps.warp_players(map, to_map, x, y, options) end
 
----Turns a kind of cell on or off in a rectangle, as setcell (review decision 58). walkable and shootable change where units walk and shoot. The players' clients are not told, as rAthena's setcell sends nothing; with send, the map's players get the cells, and players who enter later get them too, as setwall sends a wall's cells. no_vending and no_buying_store refuse shops there. Kinds whose systems do not exist raise an error. The map's zone changes them after the current step.
+---Turns a kind of cell on or off in a rectangle, as setcell (review decision 58). walkable and shootable change where units walk and shoot. The players' clients are not told, as rAthena's setcell sends nothing; with send, the map's players get the cells, and players who enter later get them too, as setwall sends a wall's cells. no_vending and no_buying_store refuse shops there, and no_chat refuses player chat rooms. Kinds whose systems do not exist raise an error. The map's zone changes them after the current step.
 ---
 ---Needs the permission `maps.control`.
 ---@param map string A map name, such as prontera.
@@ -67,7 +67,7 @@ function maps.set_cells(map, x1, y1, x2, y2, kind, on, options) end
 ---@return boolean
 function maps.check_cell(map, x, y, kind) end
 
----Sets a map flag, as setmapflag and removemapflag (review decision 58). nomemo is the flag wAthena has. Other flags raise an error that says why: their systems do not exist, or their effects are not built. The map's zone sets it after the current step.
+---Sets a map flag, as setmapflag and removemapflag (review decision 58). nomemo and nochat are the flags wAthena has: nochat refuses player chat rooms on the map. Other flags raise an error that says why: their systems do not exist, or their effects are not built. The map's zone sets it after the current step.
 ---@param map string A map name, such as prontera.
 ---@param flag string rAthena's name without MF_, such as nomemo.
 ---@param value boolean false removes it, as removemapflag.

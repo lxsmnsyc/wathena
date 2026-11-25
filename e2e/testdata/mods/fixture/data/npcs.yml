@@ -43,6 +43,15 @@
   sprite: 4_F_KAFRA1
   display_name: Kafra
   script: scripts/npc/kafra.lua
+# The waiting room of the chat room scenario: it takes 3 players, runs
+# its event at 2 and warps them to the field for a fee of 10 zeny.
+- name: Arena#e2e
+  map: placeholder/map
+  x: 9
+  y: 12
+  sprite: 4_M_JOB_KNIGHT1
+  display_name: Arena
+  script: scripts/npc/arena.lua
 # A shop of the table form, for the shop and currency scenarios. It does
 # not buy from players.
 #   - An Apple costs 10 zeny, 2 Jellopy and 1 token. The shop has 3 for

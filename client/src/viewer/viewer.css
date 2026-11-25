@@ -3088,3 +3088,30 @@ body.touch #chat-bar button {
 #navi.compact .navi-maps {
   display: none;
 }
+
+#chat-rooms .room-near,
+#chat-rooms .room-members,
+#chat-rooms .room-log {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+#chat-rooms .room-log {
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+#chat-rooms .room-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#chat-rooms .room-members li.selected {
+  background: rgb(255 216 74 / 30%);
+}
+
+#chat-rooms .room-notice:empty {
+  display: none;
+}
