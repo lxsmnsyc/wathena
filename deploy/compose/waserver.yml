@@ -49,7 +49,8 @@ captcha: none
 # role counts only after a login with TOTP, a recovery code, or a
 # passkey that checks a PIN or fingerprint. staff.owners names more
 # owners by account name, for worlds made before the owner ID. The
-# server warns at start when it is set.
+# server warns at start when it is set, and refuses to start while a
+# listed name has no account.
 # staff:
 #   owners: [Admin]
 

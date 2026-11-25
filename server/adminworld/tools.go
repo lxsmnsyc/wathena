@@ -428,7 +428,13 @@ func (w *World) EventAction(ctx context.Context, o admin.EventOrder) (*adminv1.E
 		Target: o.Name, Reason: o.Reason}
 	switch o.Action {
 	case admin.EventStart, admin.EventStop:
-		err := t.Scheduler.Do(ctx, worldevent.Change{Event: o.Name, Start: o.Action == admin.EventStart, Stop: o.Action == admin.EventStop})
+		// Do queues the change before it waits, so the change applies
+		// even when the request ends. Wait under a context that
+		// outlives it, so the answer and the audit row follow the change
+		// (review decision 61).
+		actx, done := afterChange(ctx)
+		defer done()
+		err := t.Scheduler.Do(actx, worldevent.Change{Event: o.Name, Start: o.Action == admin.EventStart, Stop: o.Action == admin.EventStop})
 		switch {
 		case errors.Is(err, worldevent.ErrRunning):
 			return nil, &admin.WorldError{Code: "conflict", Message: "The event runs already."}
@@ -442,7 +448,7 @@ func (w *World) EventAction(ctx context.Context, o admin.EventOrder) (*adminv1.E
 			return nil, &admin.WorldError{Code: "conflict", Message: "The event did not " + o.Action + ": " + err.Error()}
 		}
 		if w.cfg.Store != nil {
-			if err := w.cfg.Store.WriteAudit(ctx, audit); err != nil {
+			if err := w.cfg.Store.WriteAudit(actx, audit); err != nil {
 				return nil, err
 			}
 		}

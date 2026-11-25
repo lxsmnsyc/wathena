@@ -6,7 +6,7 @@
 #   scripts/check.sh quick        vet, unit and lint: before each commit
 #   scripts/check.sh quick client the quick steps and the client's checks
 #   scripts/check.sh              the default steps: before a push
-#   scripts/check.sh all          the default steps, then compose and browsers
+#   scripts/check.sh all          the default steps, then compose, browsers and tools
 #   scripts/check.sh lint e2e     only the steps named
 #
 # Steps:
@@ -59,6 +59,8 @@
 #             the package with a short
 #             exit check, so it is not a default step.
 #   compose   the Compose stack smoke test. Only with all.
+#   tools     scripts/release.sh --check-tools: the versions of Go, zig,
+#             Node and pnpm, and go mod verify. Only with all.
 #   browsers  the client in Chromium, with the phase 6 exit check
 #             (decision 0035) on desktops against waserver and
 #             PostgreSQL, a walk on
@@ -125,7 +127,7 @@ test_jobs="${CHECK_TEST_JOBS:-1}"
 test_parallel="${CHECK_TEST_PARALLEL:-2}"
 
 default_steps="vet test mods lua loadtest schema queries lint security fuzz client tinygo gen"
-all_steps="$default_steps compose browsers"
+all_steps="$default_steps compose browsers tools"
 known_steps="$all_steps unit e2e economy"
 quick_steps="vet unit lint"
 
@@ -497,6 +499,10 @@ step_compose() {
 	have docker || skip "the Compose test needs Docker"
 	(cd deploy/compose && docker compose --env-file .env.example --profile tools config --quiet)
 	scripts/compose-smoke.sh
+}
+
+step_tools() {
+	scripts/release.sh --check-tools
 }
 
 step_browsers() {

@@ -160,11 +160,25 @@ type Status struct {
 	Warnings []string
 }
 
+// wallClock is this process's clock. Tests replace it.
+var wallClock = time.Now
+
+// runStart is the time a run takes its cutoffs from: Clock when set,
+// else the database's clock. The log functions refuse a cutoff by the
+// database's clock, so a process clock that runs ahead would fail every
+// run (review decision 61).
+func (j *Job) runStart(ctx context.Context) (time.Time, error) {
+	if j.Clock != nil {
+		return j.Clock(), nil
+	}
+	return store.DatabaseNow(ctx, j.Game)
+}
+
 func (j *Job) now() time.Time {
 	if j.Clock != nil {
 		return j.Clock()
 	}
-	return time.Now()
+	return wallClock()
 }
 
 func (j *Job) log() *slog.Logger {
@@ -241,8 +255,14 @@ type Result struct {
 // RunOnce runs the job once. Each kind runs even when another failed,
 // and the errors are joined.
 func (j *Job) RunOnce(ctx context.Context) (Result, error) {
-	start := j.now()
 	res := Result{Deleted: map[string]int64{}}
+	began := j.now()
+	start, err := j.runStart(ctx)
+	if err != nil {
+		start = began
+		j.finish(start, res, err)
+		return res, fmt.Errorf("retention clock: %w", err)
+	}
 	unlock, ok, err := store.LockRetention(ctx, j.Game)
 	if err != nil {
 		j.finish(start, res, err)
@@ -290,7 +310,7 @@ func (j *Job) RunOnce(ctx context.Context) (Result, error) {
 	if len(errs) > 0 {
 		runErr = errors.New(strings.Join(errs, "; "))
 	}
-	args := []any{"took", j.now().Sub(start).Round(time.Millisecond), "partitions_dropped", res.Partitions}
+	args := []any{"took", j.now().Sub(began).Round(time.Millisecond), "partitions_dropped", res.Partitions}
 	for _, k := range Kinds {
 		args = append(args, k, res.Deleted[k])
 	}

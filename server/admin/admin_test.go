@@ -88,6 +88,18 @@ type world struct {
 	eventOrders   []admin.EventOrder
 	changeOrders  []admin.ChangeOrder
 	modOrders     []admin.ModOrder
+	// cancel ends the request that is being served. endRequest makes the
+	// tools' calls above call it, as a client that hangs up or a
+	// timeout does while the zone applies a change.
+	cancel     context.CancelFunc
+	endRequest bool
+}
+
+// ended ends the request, when a test asked for it.
+func (w *world) ended() {
+	if w.endRequest && w.cancel != nil {
+		w.cancel()
+	}
 }
 
 func (w *world) StaffChanged(_ context.Context, _ int64, role string) error {
@@ -182,7 +194,14 @@ func setup(t *testing.T, o options) *env {
 	e.handler = h
 	mux := http.NewServeMux()
 	mux.Handle(account.Prefix, svc)
-	mux.Handle(admin.Prefix, h)
+	mux.Handle(admin.Prefix, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		e.world.mu.Lock()
+		e.world.cancel = cancel
+		e.world.mu.Unlock()
+		h.ServeHTTP(rw, r.WithContext(ctx))
+	}))
 	e.srv = httptest.NewServer(mux)
 	t.Cleanup(e.srv.Close)
 	return e
@@ -391,6 +410,29 @@ func TestMissingOwners(t *testing.T) {
 	missing, err = e.handler.MissingOwners(ctx)
 	if err != nil || !slices.Equal(missing, []string{"Second"}) {
 		t.Fatalf("after signup: %v %v", missing, err)
+	}
+}
+
+// TestCheckOwners checks that a start with a staff.owners name that has
+// no account fails, and that --dev only warns (review decision 61).
+func TestCheckOwners(t *testing.T) {
+	e := setup(t, options{owners: []string{"Owner", "Second"}})
+	ctx := context.Background()
+	err := e.handler.CheckOwners(ctx, false)
+	if err == nil || !strings.Contains(err.Error(), "Owner, Second") {
+		t.Fatalf("missing names, no dev: %v", err)
+	}
+	if err := e.handler.CheckOwners(ctx, true); err != nil {
+		t.Fatalf("missing names, dev: %v", err)
+	}
+	e.signup("owner")
+	err = e.handler.CheckOwners(ctx, false)
+	if err == nil || strings.Contains(err.Error(), "Owner") || !strings.Contains(err.Error(), "Second") {
+		t.Fatalf("one name left: %v", err)
+	}
+	e.signup("second")
+	if err := e.handler.CheckOwners(ctx, false); err != nil {
+		t.Fatalf("all names have accounts: %v", err)
 	}
 }
 

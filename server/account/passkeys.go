@@ -33,6 +33,9 @@ import (
 //     too, when TOTP is on. Without TOTP it logs in with the factor
 //     passkey alone, which does not count for a staff role (review
 //     decision 54).
+//   - A reauth with a passkey needs user verification in every case,
+//     with or without TOTP (decision 0076). Without it, the player uses
+//     the password.
 //   - The signature counter must go up when it is used. A passkey whose
 //     counter does not is marked with a clone warning and refused.
 //   - A ceremony's challenge is kept in the database, under the hash of
@@ -463,7 +466,7 @@ func (s *Service) sessionUser(ctx context.Context, sess db.UseSessionRow) (*waUs
 // finishPasskeyLogin checks a passkey's answer. For a login it starts a
 // session, or a pending login when the passkey did not verify the user
 // and TOTP is on. For a reauth it marks the session as recently
-// authenticated.
+// authenticated, and refuses a passkey that did not verify the user.
 func (s *Service) finishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 	if !s.passkeyPost(w, r) {
 		return
@@ -543,8 +546,14 @@ func (s *Service) finishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if c.kind == "reauth" {
-		if !verified && on {
-			jsonError(w, http.StatusForbidden, "verify", "This passkey did not check a PIN or fingerprint. Use your password and code instead.")
+		// A reauth always needs user verification: possession of the key
+		// is not enough to renew a login, whether or not TOTP is on.
+		if !verified {
+			text := "This passkey did not check a PIN or fingerprint. Use your password instead."
+			if on {
+				text = "This passkey did not check a PIN or fingerprint. Use your password and code instead."
+			}
+			jsonError(w, http.StatusForbidden, "verify", text)
 			return
 		}
 		if err := s.q.Reauthenticate(ctx, sess.ID); err != nil {

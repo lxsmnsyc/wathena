@@ -368,6 +368,28 @@ func TestEventOverridesSurviveRestart(t *testing.T) {
 	}
 }
 
+// TestEventStartAfterEndedRequest: a start or stop whose request has
+// ended is applied, answers success and writes its audit row. The change
+// is queued for the scheduler before the call waits, so the answer must
+// not depend on whether the request or the scheduler finished first
+// (review decision 61).
+func TestEventStartAfterEndedRequest(t *testing.T) {
+	adminPool := storetest.Migrated(t)
+	tw := startTools(t, adminPool)
+	actor := admin.Actor{AccountID: 99, AccountName: "Admin1", Role: "admin"}
+	ended, cancel := context.WithCancel(tw.ctx)
+	cancel()
+	for _, action := range []string{admin.EventStart, admin.EventStop} {
+		if _, err := tw.aw.EventAction(ended, admin.EventOrder{Actor: actor, Name: night.Name, Action: action}); err != nil {
+			t.Fatalf("%s with an ended request: %v", action, err)
+		}
+	}
+	var n int
+	if err := adminPool.QueryRow(tw.ctx, "SELECT count(*) FROM staff_audit WHERE action IN ('events.start', 'events.stop')").Scan(&n); err != nil || n != 2 {
+		t.Errorf("audit rows %d %v", n, err)
+	}
+}
+
 // TestWorldViewAndRestart: the world view lists the zones, the players
 // and the planned restart, and announcements reach a map's players.
 func TestWorldViewAndRestart(t *testing.T) {

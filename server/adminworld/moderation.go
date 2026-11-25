@@ -238,7 +238,11 @@ func (w *World) onlineSanction(ctx context.Context, z *zone.Zone, o order) (stor
 	if w.cfg.Store == nil {
 		return row, true, nil
 	}
-	row.ID, err = w.cfg.Store.AddCharacterSanction(ctx, store.CharacterSanction{Character: o.character, Kind: o.kind, Reason: o.reason,
+	// The zone applied it, so the rows are written even when the request
+	// ended meanwhile (review decision 61).
+	actx, done := afterChange(ctx)
+	defer done()
+	row.ID, err = w.cfg.Store.AddCharacterSanction(actx, store.CharacterSanction{Character: o.character, Kind: o.kind, Reason: o.reason,
 		Start: s.Start, End: s.End, By: o.actor.AccountName, ReturnMap: s.ReturnMap, ReturnX: s.ReturnX, ReturnY: s.ReturnY},
 		o.audit("moderation."+o.kind, name, account, map[string]any{"character_id": o.character, "minutes": o.minutes}))
 	return row, true, err
@@ -306,8 +310,12 @@ func (w *World) kick(ctx context.Context, o order) (store.SanctionRow, error) {
 	if w.cfg.Store == nil {
 		return row, nil
 	}
+	// The character is kicked, so the rows are written even when the
+	// request ended meanwhile (review decision 61).
+	actx, done := afterChange(ctx)
+	defer done()
 	var err error
-	row.ID, err = w.cfg.Store.AddCharacterSanction(ctx, store.CharacterSanction{Character: o.character, Kind: store.SanctionKick,
+	row.ID, err = w.cfg.Store.AddCharacterSanction(actx, store.CharacterSanction{Character: o.character, Kind: store.SanctionKick,
 		Reason: o.reason, Start: row.Start, End: row.End, By: o.actor.AccountName},
 		o.audit("moderation.kick", row.Character, row.AccountID, map[string]any{"character_id": o.character}))
 	return row, err
