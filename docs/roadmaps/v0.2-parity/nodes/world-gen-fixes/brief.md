@@ -1,7 +1,7 @@
 ---
 id: world-gen-fixes
 title: World generation fixes from review decision 62
-status: active
+status: done
 priority: should
 type: feature
 outline: false

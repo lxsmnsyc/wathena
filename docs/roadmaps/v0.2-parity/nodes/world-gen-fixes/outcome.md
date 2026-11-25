@@ -1,5 +1,7 @@
 # Outcome: world-gen-fixes
 
+spent: about 291k tokens (worker with one fix round 172k, fresh review 119k), 1 active day (2026-11-25)
+
 ## Built
 
 None of the seven items existed on the base (99a808a). All seven are built on branch `fix/world-gen-fixes`. Decision record: docs/decisions/0077-world-generation-fixes.md (decision number taken: 0077; no review decision, migration or proposal number taken).
